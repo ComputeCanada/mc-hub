@@ -1,0 +1,27 @@
+title Magic Castle UI Workflow
+
+participant User
+participant CLI
+participant Browser
+participant Flask Server
+participant Terraform
+
+User->CLI: Setups environment variables for Terraform
+User->CLI: Launches Magic Castle UI
+CLI->Flask Server: Starts Flask Server
+Flask Server-->CLI: Web app URL
+CLI-->User: Web app URL
+CLI->Browser: Navigates to web app URL
+Browser->Flask Server: Requests homepage
+Flask Server-->Browser: Cluster creation form
+Browser-->User: Displays cluster creation form
+User->Browser: Fills in the form
+User->Browser: Clicks on the "Spawn" button
+Browser-->User: Displays spinning wheel
+Browser->Flask Server: Submits the form
+Flask Server->Flask Server: Creates a folder with the cluster name
+Flask Server->Flask Server: main.tf Jinja template is filled in with the form variables
+Flask Server->Terraform: Terraform apply
+Terraform-->Flask Server: Terraform output
+Flask Server-->Browser: Terraform output
+Browser-->User: Displays Terraform output
