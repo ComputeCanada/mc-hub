@@ -36,7 +36,9 @@ module "openstack" {
 
   # OpenStack specific
   os_floating_ips = [
-    "{{ os_floating_ips | join('", "') }}"
+    {% if os_floating_ips | length > 0 %}
+      "{{ os_floating_ips | join('", "') }}"
+    {% endif %}
   ]
 }
 
