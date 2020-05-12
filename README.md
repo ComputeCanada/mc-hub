@@ -1,11 +1,16 @@
-# magic_castle-ui
-Web interface to launch Magic Castles without knowing anything about Terraform
+# Magic Castle UI
+Web interface to launch Magic Castles without knowing anything about Terraform.
 
 ## Requirements
 
-- Flask
-- SQLite
-- Terraform
+- Docker
+- Bash interpreter
+
+## Setup for OpenStack Cloud
+
+- Source your project openrc file : `source _project_-openrc.sh`.
+- Run start.sh : `./start.sh`. This will build and run the docker container for the Flask Server.
+
 
 ## Compute Canada Web Deployment Architecture
 
