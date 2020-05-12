@@ -3,7 +3,7 @@ terraform {
 }
 
 module "openstack" {
-  source = "./openstack"
+  source = "{{ magic_castle_release_path }}/openstack"
 
   cluster_name = "{{ cluster_name }}"
   domain       = "{{ domain }}"
@@ -58,7 +58,7 @@ output "public_ip" {
 
 ## Uncomment to register your domain name with CloudFlare
 # module "dns" {
-#   source           = "./dns/cloudflare"
+#   source           = "{{ magic_castle_release_path }}/dns/cloudflare"
 #   email            = "you@example.com"
 #   name             = module.openstack.cluster_name
 #   domain           = module.openstack.domain
@@ -69,7 +69,7 @@ output "public_ip" {
 
 ## Uncomment to register your domain name with Google Cloud
 # module "dns" {
-#   source           = "./dns/gcloud"
+#   source           = "{{ magic_castle_release_path }}/dns/gcloud"
 #   email            = "you@example.com"
 #   project          = "your-project-name"
 #   zone_name        = "you-zone-name"

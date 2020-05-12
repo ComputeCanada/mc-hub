@@ -1,13 +1,16 @@
 from flask import render_template, request
 from flask_restful import Resource
-from os import path, mkdir
+from os import path, mkdir, environ
 from marshmallow import Schema, fields, ValidationError, validate
+from subprocess import Popen
 
 INSTANCE_CATEGORIES = ['mgmt', 'login', 'node']
+MAGIC_CASTLE_RELEASE_PATH = '/app/magic_castle-openstack-' + environ['MAGIC_CASTLE_VERSION']
+BUILD_MAGIC_CASTLE_SCRIPT = '/app/build_magic_castle.sh'
 
 
 def get_cluster_path(cluster_name):
-    return 'clusters/' + cluster_name
+    return '/app/clusters/' + cluster_name
 
 
 def validate_cluster_is_unique(cluster_name):
@@ -18,9 +21,13 @@ def validate_cluster_is_unique(cluster_name):
 def launch_magic_castle_build(magic_castle):
     cluster_path = get_cluster_path(magic_castle['cluster_name'])
     mkdir(cluster_path)
-    terraform_config_file = open(cluster_path + '/main.tf', 'w')
-    terraform_config_file.write(render_template('main.tf', **magic_castle))
-    terraform_config_file.close()
+
+    magic_castle_config_file = open(cluster_path + '/main.tf', 'w')
+    magic_castle_config_file.write(render_template('main.tf', **magic_castle,
+                                                   magic_castle_release_path=MAGIC_CASTLE_RELEASE_PATH))
+    magic_castle_config_file.close()
+
+    Popen(['/bin/sh', BUILD_MAGIC_CASTLE_SCRIPT], cwd=cluster_path)
 
 
 class StorageSchema(Schema):
