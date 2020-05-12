@@ -8,8 +8,14 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
 
 ## Setup for OpenStack Cloud
 
-- Source your project openrc file : `source _project_-openrc.sh`.
-- Run start.sh : `./start.sh`. This will build and run the docker container for the Flask Server.
+1. Source your project openrc file.
+    ```
+    source _project_-openrc.sh
+    ```
+2. Run start.sh. This will build and run the docker container for the Flask Server.
+   ```
+   ./start.sh
+   ```
 
 
 ## Compute Canada Web Deployment Architecture

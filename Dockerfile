@@ -5,28 +5,36 @@ ENV MAGIC_CASTLE_VERSION 6.4
 
 WORKDIR /app
 
-# External dependencies
+#
+# EXTERNAL DEPENDENCIES
+#
 
+# Terraform
 RUN apk add curl=7.67.0-r0
-
 RUN cd /usr/local/bin && \
     curl https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
     -o terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
+# Terraform plugin caching
 RUN mkdir ~/.terraform.d && mkdir ~/.terraform.d/plugin-cache
 COPY ./.terraformrc /root/.terraformrc
 
+# Terraform init for Magic Castle
 COPY ./app/magic_castle-openstack-${MAGIC_CASTLE_VERSION} ./magic_castle-openstack-${MAGIC_CASTLE_VERSION}
-
 RUN (cd magic_castle-openstack-${MAGIC_CASTLE_VERSION} && terraform init)
 
-# Application
+# Python requirements
+COPY ./app/requirements.txt ./requirements.txt
+RUN pip install -r requirements.txt
+
+#
+# APPLICATION
+#
 
 RUN mkdir clusters
 COPY ./app .
-RUN pip install -r requirements.txt
 
 EXPOSE 5000
 
