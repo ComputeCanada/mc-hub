@@ -12,7 +12,11 @@ module "openstack" {
 
   instances = {
     {% for category, instance in instances.items() %}
-      {{ category }} = { type = "{{ instance.type }}", count = {{ instance.count }} }
+      {% if category == 'node' %}
+        {{ category }} = [ { type = "{{ instance.type }}", count = {{ instance.count }} } ]
+      {% else %}
+        {{ category }} = { type = "{{ instance.type }}", count = {{ instance.count }} }
+      {% endif %}
     {% endfor %}
   }
 
