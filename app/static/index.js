@@ -12,7 +12,7 @@ new Vue({
             errorDialog: false,
             errorMessage: '',
             magicCastle: {
-                cluster_name: "phoneix",
+                cluster_name: "phoenix",
                 domain: "calculquebec.cloud",
                 image: "CentOS-7-x64-2019-07",
                 nb_users: 10,
