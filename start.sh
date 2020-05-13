@@ -5,9 +5,15 @@ set -e
 
 repository='magic_castle-ui'
 tag='latest'
+port=5000
 
 echo "Building $repository..."
-docker build --tag "$repository:$tag" .
+if [[ $1 == '--verbose' ]]; then
+  docker build --tag "$repository:$tag" .
+else
+  docker build --tag "$repository:$tag" --quiet .
+fi
 
 echo "Running $repository..."
-docker run --env-file ./env.list --publish 5000:5000 "$repository"
+echo "Go to http://localhost:$port/"
+docker run --env-file ./env.list --publish $port:$port "$repository"
