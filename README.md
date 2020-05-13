@@ -16,6 +16,7 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    ```
    ./start.sh
    ```
+3. Navigate to `http://localhost:5000` and start building clusters!
 
 
 ## Compute Canada Web Deployment Architecture
