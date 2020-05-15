@@ -1,17 +1,12 @@
 from flask_restful import Resource
-from resources.magic_castle import get_cluster_path
-from os import path
+from utils.cluster_utils import get_cluster_status
+from models.cluster_status_code import ClusterStatusCode
 
 
 class MagicCastleStatus(Resource):
     def get(self, cluster_name):
-        cluster_path = get_cluster_path(cluster_name)
-        if not path.exists(cluster_path):
-            return {'message': 'The cluster does not exist'}, 404
+        status = get_cluster_status(cluster_name)
+        if status == ClusterStatusCode.NOT_FOUND:
+            return {'message': 'The cluster or status file does not exist'}, 404
 
-        status_file_path = get_cluster_path(cluster_name) + '/status.txt'
-        if not path.exists(status_file_path):
-            return {'message': 'The status file for this cluster does not exist'}, 500
-
-        status = open(status_file_path, 'r').read()
-        return {'status': status}
+        return {'status': status.value}

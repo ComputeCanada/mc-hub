@@ -1,21 +1,21 @@
 from flask import render_template, request
 from flask_restful import Resource
-from os import path, mkdir, environ
+from os import mkdir, environ
 from marshmallow import Schema, fields, ValidationError, validate
 from subprocess import Popen
 from threading import Thread
+from shutil import rmtree
+from utils.cluster_utils import *
+from models.invalid_usage import InvalidUsage
 
 INSTANCE_CATEGORIES = ['mgmt', 'login', 'node']
+
 MAGIC_CASTLE_RELEASE_PATH = '/app/magic_castle-openstack-' + environ['MAGIC_CASTLE_VERSION']
 BUILD_CLUSTER_SCRIPT = '/app/build_cluster.sh'
 
 
-def get_cluster_path(cluster_name):
-    return '/app/clusters/' + cluster_name
-
-
 def validate_cluster_is_unique(cluster_name):
-    if path.exists(get_cluster_path(cluster_name)):
+    if cluster_exists(cluster_name):
         raise ValidationError('The cluster name already exists')
 
 
@@ -48,42 +48,79 @@ class MagicCastleSchema(Schema):
 magic_castle_schema = MagicCastleSchema()
 
 
-class MagicCastle(Resource):
+class MagicCastleList(Resource):
     def __init__(self):
         self.magic_castle = None
+        self.cluster_name = None
 
-    def launch_magic_castle_build(self):
-
-        cluster_path = get_cluster_path(self.magic_castle['cluster_name'])
+    def launch_cluster_build(self):
+        self.cluster_name = self.magic_castle['cluster_name']
+        cluster_path = get_cluster_path(self.cluster_name)
         mkdir(cluster_path)
 
-        magic_castle_config_file = open(cluster_path + '/main.tf', 'w')
-        magic_castle_config_file.write(render_template('main.tf', **self.magic_castle,
-                                                       magic_castle_release_path=MAGIC_CASTLE_RELEASE_PATH))
-        magic_castle_config_file.close()
+        cluster_config_file = open(cluster_path + '/main.tf', 'w')
+        cluster_config_file.write(render_template('main.tf', **self.magic_castle,
+                                                  magic_castle_release_path=MAGIC_CASTLE_RELEASE_PATH))
+        cluster_config_file.close()
 
-        status_file_path = cluster_path + '/status.txt'
-        with open(status_file_path, 'w') as status_file:
-            status_file.write('running')
+        update_cluster_status(self.cluster_name, ClusterStatusCode.BUILD_RUNNING)
 
-        def build_magic_castle():
+        def build_cluster():
             process = Popen(['/bin/sh', BUILD_CLUSTER_SCRIPT], cwd=cluster_path)
             process.wait()
 
-            with open(status_file_path, 'w') as status_file:
-                status_file.write('success' if process.returncode == 0 else 'error')
+            status = ClusterStatusCode.BUILD_SUCCESS if process.returncode == 0 else ClusterStatusCode.BUILD_ERROR
+            update_cluster_status(self.cluster_name, status)
 
-        build_magic_castle_thread = Thread(target=build_magic_castle)
-        build_magic_castle_thread.start()
+        build_cluster_thread = Thread(target=build_cluster)
+        build_cluster_thread.start()
 
     def post(self):
         json_data = request.get_json()
         if not json_data:
-            return {'message': 'No json data was provided'}, 400
+            raise InvalidUsage('No json data was provided', 400)
 
         try:
             self.magic_castle = magic_castle_schema.load(json_data)
-            self.launch_magic_castle_build()
+            self.launch_cluster_build()
             return self.magic_castle
         except ValidationError as e:
-            return e.messages, 422
+            return e.messages, 400
+
+
+class MagicCastle(Resource):
+    def __init__(self):
+        self.cluster_name = None
+
+    def launch_cluster_destruction(self):
+        if not cluster_exists(self.cluster_name):
+            raise InvalidUsage('The cluster does not exist')
+
+        if get_cluster_status(self.cluster_name) != ClusterStatusCode.BUILD_SUCCESS:
+            raise InvalidUsage('The cluster is not fully built yet')
+
+        cluster_path = get_cluster_path(self.cluster_name)
+
+        update_cluster_status(self.cluster_name, ClusterStatusCode.DESTROY_RUNNING)
+
+        def destroy_cluster():
+            with open(cluster_path + '/terraform_destroy.log', 'w') as output_file:
+                process = Popen(['/usr/bin/env', 'terraform', 'destroy', '-no-color', '-auto-approve'],
+                                cwd=cluster_path, stdout=output_file, stderr=output_file)
+                process.wait()
+
+            if process.returncode != 0:
+                update_cluster_status(self.cluster_name, ClusterStatusCode.DESTROY_ERROR)
+            else:
+                rmtree(cluster_path)
+
+        destroy_cluster_thread = Thread(target=destroy_cluster)
+        destroy_cluster_thread.start()
+
+    def delete(self, cluster_name):
+        self.cluster_name = cluster_name
+        try:
+            self.launch_cluster_destruction()
+        except InvalidUsage as e:
+            return e.get_response()
+        return {}
