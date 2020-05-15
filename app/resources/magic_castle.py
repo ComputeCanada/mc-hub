@@ -7,7 +7,7 @@ from threading import Thread
 
 INSTANCE_CATEGORIES = ['mgmt', 'login', 'node']
 MAGIC_CASTLE_RELEASE_PATH = '/app/magic_castle-openstack-' + environ['MAGIC_CASTLE_VERSION']
-BUILD_MAGIC_CASTLE_SCRIPT = '/app/build_magic_castle.sh'
+BUILD_CLUSTER_SCRIPT = '/app/build_cluster.sh'
 
 
 def get_cluster_path(cluster_name):
@@ -67,7 +67,7 @@ class MagicCastle(Resource):
             status_file.write('running')
 
         def build_magic_castle():
-            process = Popen(['/bin/sh', BUILD_MAGIC_CASTLE_SCRIPT], cwd=cluster_path)
+            process = Popen(['/bin/sh', BUILD_CLUSTER_SCRIPT], cwd=cluster_path)
             process.wait()
 
             with open(status_file_path, 'w') as status_file:

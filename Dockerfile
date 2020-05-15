@@ -17,12 +17,18 @@ RUN cd /usr/local/bin && \
     unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
-# Terraform plugin caching
+# Terraform plugin caching setup
 RUN mkdir ~/.terraform.d && mkdir ~/.terraform.d/plugin-cache
 COPY ./.terraformrc /root/.terraformrc
 
+# Download Magic Castle Open Stack release
+RUN curl -L \
+ https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip \
+ -o magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip && \
+ unzip magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip && \
+ rm magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip
+
 # Terraform init for Magic Castle
-COPY ./app/magic_castle-openstack-${MAGIC_CASTLE_VERSION} ./magic_castle-openstack-${MAGIC_CASTLE_VERSION}
 RUN (cd magic_castle-openstack-${MAGIC_CASTLE_VERSION} && terraform init)
 
 # Python requirements
