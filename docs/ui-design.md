@@ -1,6 +1,6 @@
-# User Interfaace Design Requirements
+# User Interface Design Requirements
 
-# v1
+# v1.0
 
 - Every field figuring in OpenStack `main.tf` example should figure as a text field in the form
 - The form should have a spawn button to create the cluster
@@ -11,6 +11,7 @@ Related issue : https://github.com/ComputeCanada/magic_castle-ui/issues/1
 # v1.5
 
 - A destroy button should be present to allow destruction of the cluster once created
+- An existing cluster can now be modified by accessing its URL
 
 # v2.0
 
