@@ -6,7 +6,7 @@ set -e
 repository='magic_castle-ui'
 tag='latest'
 port=5000
-clusters_path='/clusters'
+clusters_path='/home/mcu/clusters'
 
 echo "Building $repository..."
 if [[ $1 == '--verbose' ]]; then
