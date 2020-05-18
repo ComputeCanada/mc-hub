@@ -19,8 +19,9 @@ RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
 RUN adduser -D mcu
 USER mcu
 WORKDIR /home/mcu
-ADD app /home/mcu/app
 ADD .terraformrc /home/mcu
+RUN mkdir /home/mcu/app
+ADD app/requirements.txt /home/mcu/app
 
 ## Download Magic Castle Open Stack release
 RUN curl -L ${MAGIC_CASTLE_URL} -o magic_castle-openstack.zip && \
@@ -31,11 +32,14 @@ RUN curl -L ${MAGIC_CASTLE_URL} -o magic_castle-openstack.zip && \
 RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
 
 ## Terraform init for Magic Castle
-RUN mkdir clusters
 RUN terraform init magic_castle-openstack-${MAGIC_CASTLE_VERSION}
 
 ## Python requirements
 RUN pip install -r app/requirements.txt --user
+
+
+## APPLICATION CODE
+ADD app /home/mcu/app
 
 EXPOSE 5000
 
