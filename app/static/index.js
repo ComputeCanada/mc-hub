@@ -1,5 +1,15 @@
 const API_URL = 'http://localhost:5000/api'
-const IDLE_STATUS = 'idle', RUNNING_STATUS = 'running', SUCCESS_STATUS = 'success', ERROR_STATUS = 'error'
+
+const ClusterStatusCode = Object.freeze({
+    IDLE: 'idle',
+    BUILD_RUNNING: 'build_running',
+    BUILD_SUCCESS: 'build_success',
+    BUILD_ERROR: 'build_error',
+    DESTROY_RUNNING: 'destroy_running',
+    DESTROY_ERROR: 'destroy_error',
+    NOT_FOUND: 'not_found'
+})
+
 const POLL_STATUS_INTERVAL = 1000
 
 new Vue({
@@ -62,7 +72,7 @@ new Vue({
             this.loading = true
 
             try {
-                // Magic Castle creation request
+                // Magic Castle cluster creation request
                 let creationResponse = await fetch(API_URL + '/magic-castle',
                     {
                         method: 'POST',
@@ -73,28 +83,29 @@ new Vue({
                     }
                 )
                 if (!creationResponse.ok)
-                    throw new Error('You provided one or many invalid cluster parameters.')
+                    throw 'You provided one or many invalid cluster parameters.'
 
-                // Magic Castle status polling
+                // Magic Castle cluster status polling
                 let statusFetcher = async () => {
                     let statusResponse = await fetch(
                         API_URL + '/magic-castle/' + this.magicCastle.cluster_name + '/status'
                     )
                     const {status} = await statusResponse.json()
-                    if (status !== RUNNING_STATUS) {
+
+                    if (status !== ClusterStatusCode.BUILD_RUNNING) {
                         clearInterval(statusPoller)
                         switch (status) {
-                            case SUCCESS_STATUS:
+                            case ClusterStatusCode.BUILD_SUCCESS:
                                 this.showSuccess()
                                 break
-                            case IDLE_STATUS:
+                            case ClusterStatusCode.IDLE:
                                 this.showError('The server is still idle')
                                 break
-                            case ERROR_STATUS:
+                            case ClusterStatusCode.BUILD_ERROR:
                                 this.showError('Terraform returned an error while creating the cluster.')
                                 break
                             default:
-                                this.showError('An unknown status code was sent by the server')
+                                this.showError('An unexpected status code was sent by the server: ' + status)
                         }
                     }
                 }
