@@ -137,7 +137,6 @@ class MagicCastle(Resource):
                     stdout=output_file,
                     stderr=output_file,
                 )
-                process.wait()
 
             if process.returncode != 0:
                 update_cluster_status(
