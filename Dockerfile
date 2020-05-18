@@ -39,7 +39,6 @@ RUN pip install -r requirements.txt
 # APPLICATION
 #
 
-RUN mkdir clusters
 COPY ./app .
 
 EXPOSE 5000

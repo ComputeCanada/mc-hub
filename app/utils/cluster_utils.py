@@ -3,7 +3,7 @@ from os import path
 
 
 def get_cluster_path(cluster_name):
-    return '/app/clusters/' + cluster_name
+    return '/clusters/' + cluster_name
 
 
 def cluster_exists(cluster_name):

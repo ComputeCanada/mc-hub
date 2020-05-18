@@ -6,6 +6,7 @@ set -e
 repository='magic_castle-ui'
 tag='latest'
 port=5000
+clusters_path='/clusters'
 
 echo "Building $repository..."
 if [[ $1 == '--verbose' ]]; then
@@ -16,4 +17,8 @@ fi
 
 echo "Running $repository..."
 echo "Go to http://localhost:$port/"
-docker run --env-file ./env.list --publish $port:$port "$repository"
+docker run \
+  --env-file ./env.list \
+  --mount "type=volume,source=clusters,destination=$clusters_path" \
+  --publish $port:$port \
+  "$repository"
