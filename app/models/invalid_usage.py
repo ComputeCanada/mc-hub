@@ -7,4 +7,4 @@ class InvalidUsage(Exception):
         self.message = message
 
     def get_response(self):
-        return {'message': self.message}, self.status_code
+        return {"message": self.message}, self.status_code

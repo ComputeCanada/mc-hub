@@ -1,4 +1,29 @@
 root = true
 
-[*.sh]
+[*]
+charset = utf-8
 end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = false
+max_line_length = 120
+tab_width = 2
+
+[*.css]
+indent_size = 4
+tab_width = 4
+
+[{*.cjs, *.js}]
+indent_size = 4
+tab_width = 4
+
+[{*.har, *.jsb2, *.jsb3, *.json, .babelrc, .eslintrc, .stylelintrc, bowerrc, jest.config}]
+tab_width = 4
+
+[{*.htm, *.html, *.ng, *.sht, *.shtm, *.shtml}]
+indent_size = 4
+tab_width = 4
+
+[{*.py, *.pyw}]
+indent_size = 4
+tab_width = 4
