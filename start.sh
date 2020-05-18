@@ -16,9 +16,16 @@ else
 fi
 
 echo "Running $repository..."
-echo "Go to http://localhost:$port/"
-docker run \
+container_id=$(docker run \
+  --detach \
   --env-file ./env.list \
   --mount "type=volume,source=clusters,destination=$clusters_path" \
   --publish $port:$port \
-  "$repository"
+  "$repository")
+
+# Make mcu the owner of the clusters volume, instead of root
+docker exec -it -u root "$container_id" /usr/bin/env chown mcu "$clusters_path"
+
+echo "Go to http://localhost:$port/"
+echo "Don't forget to kill your container when you are done:"
+echo "docker kill $container_id"

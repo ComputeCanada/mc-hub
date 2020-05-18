@@ -80,11 +80,13 @@ class MagicCastleList(Resource):
                 capture_output=True,
             )
             if process.returncode == 0:
-                process = run(
-                    ["terraform", "apply", "-no-color", "-auto-approve",],
-                    cwd=cluster_path,
-                    capture_output=True,
-                )
+                with open(cluster_path + "/terraform_apply.log", "w") as output_file:
+                    process = run(
+                        ["terraform", "apply", "-no-color", "-auto-approve",],
+                        cwd=cluster_path,
+                        stdout=output_file,
+                        stderr=output_file,
+                    )
             status = (
                 ClusterStatusCode.BUILD_SUCCESS
                 if process.returncode == 0
