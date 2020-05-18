@@ -1,9 +1,8 @@
 from models.cluster_status_code import ClusterStatusCode
-from os import path
-
+from os import path, getcwd, environ
 
 def get_cluster_path(cluster_name):
-    return '/app/clusters/' + cluster_name
+    return path.join(getcwd(), 'clusters', cluster_name)
 
 
 def cluster_exists(cluster_name):
