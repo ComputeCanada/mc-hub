@@ -1,19 +1,17 @@
 from flask import render_template, request
 from flask_restful import Resource
-from os import mkdir, environ
+from os import mkdir, environ, path, getcwd
 from marshmallow import Schema, fields, ValidationError, validate
-from subprocess import Popen
+from subprocess import run
 from threading import Thread
 from shutil import rmtree
 from utils.cluster_utils import *
 from models.invalid_usage import InvalidUsage
 
 INSTANCE_CATEGORIES = ["mgmt", "login", "node"]
-
-MAGIC_CASTLE_RELEASE_PATH = (
-    "/app/magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
+MAGIC_CASTLE_RELEASE_PATH = path.join(
+    getcwd(), "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
 )
-BUILD_CLUSTER_SCRIPT = "/app/build_cluster.sh"
 
 
 def validate_cluster_is_unique(cluster_name):
@@ -70,9 +68,23 @@ class MagicCastleList(Resource):
         update_cluster_status(self.cluster_name, ClusterStatusCode.BUILD_RUNNING)
 
         def build_cluster():
-            process = Popen(["/bin/sh", BUILD_CLUSTER_SCRIPT], cwd=cluster_path)
-            process.wait()
-
+            process = run(
+                [
+                    "terraform",
+                    "init",
+                    "-no-color",
+                    "-plugin-dir",
+                    environ["HOME"] + "/.terraform.d/plugin-cache/linux_amd64",
+                ],
+                cwd=cluster_path,
+                capture_output=True,
+            )
+            if process.returncode == 0:
+                process = run(
+                    ["terraform", "apply", "-no-color", "-auto-approve",],
+                    cwd=cluster_path,
+                    capture_output=True,
+                )
             status = (
                 ClusterStatusCode.BUILD_SUCCESS
                 if process.returncode == 0
@@ -113,7 +125,7 @@ class MagicCastle(Resource):
 
         def destroy_cluster():
             with open(cluster_path + "/terraform_destroy.log", "w") as output_file:
-                process = Popen(
+                process = run(
                     [
                         "/usr/bin/env",
                         "terraform",
