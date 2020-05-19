@@ -8,7 +8,6 @@ from shutil import rmtree
 from utils.cluster_utils import *
 from models.invalid_usage import InvalidUsage
 
-INSTANCE_CATEGORIES = ["mgmt", "login", "node"]
 MAGIC_CASTLE_RELEASE_PATH = path.join(
     getcwd(), "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
 )
@@ -149,6 +148,19 @@ class MagicCastle(Resource):
 
         destroy_cluster_thread = Thread(target=destroy_cluster)
         destroy_cluster_thread.start()
+
+    def get(self, cluster_name):
+        self.cluster_name = cluster_name
+        if get_cluster_status(self.cluster_name) != ClusterStatusCode.BUILD_SUCCESS:
+            return {"message": "This cluster is not fully built yet"}, 400
+
+        terraform_state_path = path.join(
+            get_cluster_path(self.cluster_name), "terraform.tfstate"
+        )
+        with open(terraform_state_path, "r") as terraform_state_file:
+            state = json.load(terraform_state_file)
+        parser = TerraformStateParser(state)
+        return magic_castle_schema.dump(parser.get_state_summary())
 
     def delete(self, cluster_name):
         self.cluster_name = cluster_name

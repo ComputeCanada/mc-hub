@@ -21,7 +21,6 @@ fi
 echo "Running $repository..."
 container_id=$(docker run \
   --detach \
-  --rm \
   --env-file ./env.list \
   --mount "type=bind,source=$host_clusters_path,target=$container_clusters_path" \
   --mount "type=bind,source=$host_app_path,target=$container_app_path,readonly" \
