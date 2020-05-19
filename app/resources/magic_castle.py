@@ -7,6 +7,9 @@ from threading import Thread
 from shutil import rmtree
 from utils.cluster_utils import *
 from models.invalid_usage import InvalidUsage
+import json
+from models.terraform_state_parser import TerraformStateParser
+from models.constants import INSTANCE_CATEGORIES
 
 MAGIC_CASTLE_RELEASE_PATH = path.join(
     getcwd(), "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
