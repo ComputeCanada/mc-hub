@@ -7,7 +7,9 @@ repository='magic_castle-ui'
 tag='latest'
 port=5000
 host_clusters_path=$(pwd)/clusters_backup
+host_app_path=$(pwd)/app
 container_clusters_path='/home/mcu/clusters'
+container_app_path='/home/mcu/app'
 
 echo "Building $repository..."
 if [[ $1 == '--verbose' ]]; then
@@ -19,8 +21,10 @@ fi
 echo "Running $repository..."
 container_id=$(docker run \
   --detach \
+  --rm \
   --env-file ./env.list \
   --mount "type=bind,source=$host_clusters_path,target=$container_clusters_path" \
+  --mount "type=bind,source=$host_app_path,target=$container_app_path,readonly" \
   --publish $port:$port \
   "$repository")
 
