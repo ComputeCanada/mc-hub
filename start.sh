@@ -6,7 +6,8 @@ set -e
 repository='magic_castle-ui'
 tag='latest'
 port=5000
-clusters_path='/home/mcu/clusters'
+host_clusters_path=$(pwd)/clusters_backup
+container_clusters_path='/home/mcu/clusters'
 
 echo "Building $repository..."
 if [[ $1 == '--verbose' ]]; then
@@ -19,12 +20,9 @@ echo "Running $repository..."
 container_id=$(docker run \
   --detach \
   --env-file ./env.list \
-  --mount "type=volume,source=clusters,destination=$clusters_path" \
+  --mount "type=bind,source=$host_clusters_path,target=$container_clusters_path" \
   --publish $port:$port \
   "$repository")
-
-# Make mcu the owner of the clusters volume, instead of root
-docker exec -it -u root "$container_id" /usr/bin/env chown mcu "$clusters_path"
 
 echo "Go to http://localhost:$port/"
 echo "Don't forget to kill your container when you are done:"

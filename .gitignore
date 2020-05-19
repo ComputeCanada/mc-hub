@@ -130,3 +130,6 @@ dmypy.json
 
 # IntelliJ
 .idea/
+
+# Project specific (Magic Castle UI)
+clusters_backup/
