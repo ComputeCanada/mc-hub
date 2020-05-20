@@ -1,11 +1,5 @@
 from marshmallow import Schema, fields, ValidationError, validate
-from utils.cluster_utils import *
 from models.constants import INSTANCE_CATEGORIES
-
-
-def validate_cluster_is_unique(cluster_name):
-    if cluster_exists(cluster_name):
-        raise ValidationError("The cluster name already exists")
 
 
 class StorageSchema(Schema):
@@ -16,7 +10,7 @@ class StorageSchema(Schema):
 
 
 class MagicCastleSchema(Schema):
-    cluster_name = fields.Str(validate=validate_cluster_is_unique, required=True)
+    cluster_name = fields.Str(required=True)
     domain = fields.Str(required=True)
     image = fields.Str(required=True)
     nb_users = fields.Int(required=True)

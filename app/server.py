@@ -1,8 +1,8 @@
 from flask import Flask, send_file, send_from_directory, jsonify
 from flask_restful import Api
-from resources.magic_castle import MagicCastle
-from resources.magic_castle_list import MagicCastleList
-from resources.magic_castle_status import MagicCastleStatus
+from resources.magic_castle_resource import MagicCastleResource
+from resources.magic_castle_list_resource import MagicCastleListResource
+from resources.magic_castle_status_resource import MagicCastleStatusResource
 from flask_cors import CORS
 
 magic_castle_status = "idle"
@@ -12,9 +12,11 @@ app = Flask(__name__)
 CORS(app)
 
 api = Api(app, prefix="/api")
-api.add_resource(MagicCastleList, "/magic-castle")
-api.add_resource(MagicCastle, "/magic-castle/<string:cluster_name>")
-api.add_resource(MagicCastleStatus, "/magic-castle/<string:cluster_name>/status")
+api.add_resource(MagicCastleListResource, "/magic-castle")
+api.add_resource(MagicCastleResource, "/magic-castle/<string:cluster_name>")
+api.add_resource(
+    MagicCastleStatusResource, "/magic-castle/<string:cluster_name>/status"
+)
 
 
 @app.route("/")
