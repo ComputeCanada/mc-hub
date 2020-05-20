@@ -82,10 +82,6 @@ class MagicCastle:
     def __apply(self):
         self.__update_status(ClusterStatusCode.BUILD_RUNNING)
 
-        # New cluster
-        if not path.exists(self.__get_cluster_path()):
-            mkdir(self.__get_cluster_path())
-
         with open(self.__get_cluster_path("main.tf"), "w") as cluster_config_file:
             cluster_config_file.write(
                 render_template(
