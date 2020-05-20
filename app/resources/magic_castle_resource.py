@@ -15,6 +15,20 @@ class MagicCastleResource(Resource):
         except InvalidUsage as e:
             return e.get_response()
 
+    def put(self, cluster_name):
+        magic_castle = MagicCastle(cluster_name)
+        json_data = request.get_json()
+
+        if not json_data:
+            return {"message": "No json data was provided"}, 400
+
+        try:
+            magic_castle.load_configuration(json_data)
+            magic_castle.apply_existing()
+            return {}
+        except InvalidUsage as e:
+            return e.get_response()
+
     def delete(self, cluster_name):
         magic_castle = MagicCastle(cluster_name)
         try:
