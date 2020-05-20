@@ -1,6 +1,7 @@
 from flask import Flask, send_file, send_from_directory, jsonify
 from flask_restful import Api
-from resources.magic_castle import MagicCastle, MagicCastleList
+from resources.magic_castle import MagicCastle
+from resources.magic_castle_list import MagicCastleList
 from resources.magic_castle_status import MagicCastleStatus
 from flask_cors import CORS
 
