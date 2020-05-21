@@ -1,6 +1,12 @@
 # Magic Castle UI
 Web interface to launch Magic Castles without knowing anything about Terraform.
 
+## Compute Canada Web Deployment Architecture
+
+The app will eventually be accessible with a Compute Canada account to launch a Magic Castle cluster in shared project in Compute Canada cloud. Here is an early draft of the app design:
+
+![Magic Castle CC UI Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRe4JZSPiKY7tW5xO3WpsWoA8h0XC6zAjiMBwbgn-UIY6PMBC_5X-gJj9AbmdRCoEU4OXORh04xexO5/pub?w=721&amp;h=498 "Magic Castle CC UI Architecture")
+
 ## Requirements
 
 - Docker
@@ -23,6 +29,11 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    docker kill <CONTAINER ID>
    ```
 
+## Running Tests
+Make sure you have built an image of Magic Castle UI first, as shown in the previous step. Then, run the following command:
+````shell script
+docker run --env-file ./env.list "magic_castle-ui" python -m pytest
+````
 
 ## Cluster storage & backup
 
@@ -67,9 +78,3 @@ Open the terminal on your host machine and access the `clusters_backup` director
    ```
    terraform show
    ```
-
-## Compute Canada Web Deployment Architecture
-
-The app will eventually be accessible with a Compute Canada account to launch a Magic Castle cluster in shared project in Compute Canada cloud. Here is an early draft of the app design:
-
-![Magic Castle CC UI Architecture](https://docs.google.com/drawings/d/e/2PACX-1vRe4JZSPiKY7tW5xO3WpsWoA8h0XC6zAjiMBwbgn-UIY6PMBC_5X-gJj9AbmdRCoEU4OXORh04xexO5/pub?w=721&amp;h=498 "Magic Castle CC UI Architecture")
