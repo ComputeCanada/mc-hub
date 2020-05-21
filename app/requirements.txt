@@ -11,3 +11,4 @@ Werkzeug==1.0.1
 marshmallow==3.6.0
 flask-cors==3.0.8
 jsonpath-ng==1.5.1
+pytest==5.4.2

@@ -1,11 +1,11 @@
 from os import path, environ, getcwd, mkdir
 from flask import render_template
-from models.cluster_status_code import ClusterStatusCode
 from subprocess import run
 from shutil import rmtree
 from threading import Thread
-from models.magic_castle_schema import MagicCastleSchema
 from marshmallow import ValidationError
+from models.cluster_status_code import ClusterStatusCode
+from models.magic_castle_schema import MagicCastleSchema
 from models.invalid_usage import InvalidUsage
 from models.terraform_state_parser import TerraformStateParser
 import json
@@ -125,7 +125,7 @@ class MagicCastle:
 
     def destroy(self):
         if self.get_status() != ClusterStatusCode.BUILD_SUCCESS:
-            raise InvalidUsage("The cluster is not fully built yet")
+            raise InvalidUsage("This cluster is not fully built yet")
 
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 

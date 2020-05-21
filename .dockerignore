@@ -1,2 +1,7 @@
-app/frontend/node_modules/
-app/frontend/dist/
+frontend/node_modules
+app/.pytest_cache
+
+docs
+venv
+clusters_backup
+frontend/dist
