@@ -1,0 +1,8 @@
+language: bash
+
+services:
+  - docker
+
+install:
+  - docker build --tag "magic_castle-ui:latest"
+  - docker run --detach --env-file ./env.list --publish 5000:5000 "$repository"
