@@ -5,4 +5,6 @@ services:
 
 install:
   - docker build --tag "magic_castle-ui:latest" .
-  - docker run --detach --env-file ./env.list --publish 5000:5000 "magic_castle-ui:latest"
+
+script:
+  - docker run --detach --env-file ./env.list --publish 5000:5000 "magic_castle-ui:latest" python -m pytest
