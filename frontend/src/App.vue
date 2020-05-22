@@ -1,12 +1,13 @@
 <template>
   <div id="app">
-    <v-app>
+    <v-app
+      style="background: #eef3f3">
       <v-app-bar
         dense
         color="primary"
         dark
       >
-        <v-toolbar-title>Magic Castle UI</v-toolbar-title>
+        <v-btn text to="/" exact>Magic Castle UI</v-btn>
       </v-app-bar>
       <v-container style="height: 100%">
         <router-view/>

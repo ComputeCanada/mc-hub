@@ -42,7 +42,11 @@ class MagicCastle:
             return ClusterStatusCode(status_file.read())
 
     def get_state(self):
-        if self.get_status() != ClusterStatusCode.BUILD_SUCCESS:
+        if self.get_status() in [
+            ClusterStatusCode.BUILD_RUNNING,
+            ClusterStatusCode.DESTROY_RUNNING,
+            ClusterStatusCode.NOT_FOUND,
+        ]:
             raise InvalidUsage("This cluster is not fully built yet")
 
         with open(
