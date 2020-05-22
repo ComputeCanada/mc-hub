@@ -75,7 +75,7 @@ class TerraformStateParser:
 
     def __get_os_floating_ips(self):
         parser = parse(
-            "resources[?type=openstack_networking_floatingip_v2].instances[*].attributes.address"
+            "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.floating_ip"
         )
         return [match.value for match in parser.find(self.__tf_state)]
 
