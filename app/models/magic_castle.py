@@ -8,6 +8,7 @@ from models.cluster_status_code import ClusterStatusCode
 from models.magic_castle_schema import MagicCastleSchema
 from models.invalid_usage import InvalidUsage
 from models.terraform_state_parser import TerraformStateParser
+from models.openstack_manager import OpenStackManager
 import json
 
 MAGIC_CASTLE_RELEASE_PATH = path.join(
@@ -55,6 +56,10 @@ class MagicCastle:
             state = json.load(terraform_state_file)
         parser = TerraformStateParser(state)
         return MagicCastleSchema().dump(parser.get_state_summary())
+
+    def get_fields(self):
+        openstack_manager = OpenStackManager()
+        return openstack_manager.get_fields()
 
     def __get_cluster_path(self, sub_path=""):
         if self.__get_cluster_name():

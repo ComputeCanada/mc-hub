@@ -3,6 +3,7 @@ from flask_restful import Api
 from resources.magic_castle_resource import MagicCastleResource
 from resources.magic_castle_list_resource import MagicCastleListResource
 from resources.magic_castle_status_resource import MagicCastleStatusResource
+from resources.magic_castle_fields_resource import MagicCastleFieldsResource
 from flask_cors import CORS
 
 magic_castle_status = "idle"
@@ -17,6 +18,7 @@ api.add_resource(MagicCastleResource, "/magic-castle/<string:cluster_name>")
 api.add_resource(
     MagicCastleStatusResource, "/magic-castle/<string:cluster_name>/status"
 )
+api.add_resource(MagicCastleFieldsResource, "/fields/magic-castle")
 
 
 @app.route("/css/<path:path>")

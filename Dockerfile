@@ -20,6 +20,7 @@ ENV MAGIC_CASTLE_URL https://github.com/ComputeCanada/magic_castle/releases/down
 ## EXTERNAL DEPENDENCIES
 
 RUN apk add curl=7.67.0-r0
+RUN apk add build-base=0.5-r1 libffi-dev=3.2.1-r6 openssl-dev=1.1.1g-r0
 
 # Terraform
 RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
