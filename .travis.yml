@@ -3,8 +3,24 @@ language: bash
 services:
   - docker
 
+env:
+  global:
+    - IMAGE_NAME=fredericfc/magic_castle-ui
+
 install:
-  - docker build --tag "magic_castle-ui:latest" .
+  - docker build --tag "$IMAGE_NAME" .
 
 script:
-  - docker run --env-file ./env.list --publish 5000:5000 "magic_castle-ui:latest" python -m pytest
+  - docker run --env-file ./env.list --publish 5000:5000 "$IMAGE_NAME" python -m pytest
+
+before_deploy:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:$(git describe --tags --abbrev=0)"
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:$(git describe --tags --abbrev=0)"
+  on:
+    tags: true
