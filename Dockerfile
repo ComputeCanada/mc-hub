@@ -32,6 +32,7 @@ USER mcu
 WORKDIR /home/mcu
 ADD .terraformrc /home/mcu
 RUN mkdir /home/mcu/app
+RUN mkdir /home/mcu/clusters
 
 ## Download Magic Castle Open Stack release
 RUN curl -L ${MAGIC_CASTLE_URL} -o magic_castle-openstack.zip && \
