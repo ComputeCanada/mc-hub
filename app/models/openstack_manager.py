@@ -42,5 +42,4 @@ class OpenStackManager:
             "image": self.__get_images(),
             "instances": {category: flavors for category in INSTANCE_CATEGORIES},
             "os_floating_ips": self.__get_available_floating_ips(),
-            "compute_quotas": self.__get_compute_quotas(),
         }
