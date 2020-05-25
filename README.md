@@ -12,19 +12,43 @@ The app will eventually be accessible with a Compute Canada account to launch a 
 - Docker
 - Bash interpreter
 
-## Setup for OpenStack Cloud
+## Running the pre-built docker image
 
 1. Source your project openrc file.
     ```
     source _project_-openrc.sh
     ```
-2. Run start.sh. This will build and run the docker container for the Flask Server.
+2. Copy env.list from this repository to your current directory.
+3. Run the latest version of Magic Castle UI.
+   ```shell script   
+   docker run -d -p 5000:5000 --env-file ./env.list fredericfc/magic_castle-ui:latest
    ```
+4.  Navigate to `http://localhost:5000` and start building clusters!
+5. Kill the container when you are done.
+   ```
+   docker kill <CONTAINER ID>
+   ```
+
+## Building and running from source
+
+1. Clone this repository.
+   ```
+   git clone https://github.com/ComputeCanada/magic_castle-ui.git
+   ```
+
+2. Source your project openrc file.
+    ```
+    source _project_-openrc.sh
+    ```
+3. Run start.sh. This will build and run the docker container for the Flask Server.
+   ```
+   cd magic-castle-ui
    ./start.sh
    ```
-3. Navigate to `http://localhost:5000` and start building clusters!
+   
+4. Navigate to `http://localhost:5000` and start building clusters!
 
-4. Kill the container when you are done.
+5. Kill the container when you are done.
    ```
    docker kill <CONTAINER ID>
    ```
@@ -44,6 +68,9 @@ directory.
 
 ### Accessing clusters manually with Terraform
 
+If there was a problem when destroying a cluster using the UI or you want to access the terraform logs,
+this section if for you.
+
 #### Option 1 (recommended)
 Start a shell within your running container.
 ```shell script
@@ -56,7 +83,7 @@ terraform show
 ```
 
 #### Option 2
-Open the terminal on your host machine and access the `clusters_backup` directory.
+This option only works if you used the `--mount` option when running your docker instance. Open the terminal on your host machine and access the `clusters_backup` directory.
 1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
 2. Delete de folder named `.terraform`.
 3. Download [magic_castle-openstack-6.4.zip
