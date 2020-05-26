@@ -7,28 +7,28 @@ import ModifyCluster from "@/views/ModifyCluster";
 Vue.use(VueRouter);
 
 const routes = [
-    {
-        path: "/",
-        name: "Home",
-        component: Home
-    },
-    {
-        path: "/clusters/:clusterName",
-        name: "Edit an existing Magic Castle",
-        component: ModifyCluster,
-        props: true
-    },
-    {
-        path: "*",
-        name: "Not Found",
-        component: NotFound
-    }
+  {
+    path: "/",
+    name: "Home",
+    component: Home
+  },
+  {
+    path: "/clusters/:clusterName",
+    name: "Edit an existing Magic Castle",
+    component: ModifyCluster,
+    props: true
+  },
+  {
+    path: "*",
+    name: "Not Found",
+    component: NotFound
+  }
 ];
 
 const router = new VueRouter({
-    mode: "history",
-    base: process.env.BASE_URL,
-    routes
+  mode: "history",
+  base: process.env.BASE_URL,
+  routes
 });
 
 export default router;

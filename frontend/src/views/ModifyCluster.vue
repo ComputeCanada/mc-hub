@@ -3,12 +3,12 @@
 </template>
 
 <script>
-  import ClusterEditor from "@/components/ClusterEditor";
+import ClusterEditor from "@/components/ClusterEditor";
 
-  export default {
-    components: {ClusterEditor},
-    props: {
-      clusterName: String
-    }
-  };
+export default {
+  components: { ClusterEditor },
+  props: {
+    clusterName: String
+  }
+};
 </script>
