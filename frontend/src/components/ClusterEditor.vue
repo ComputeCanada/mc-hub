@@ -86,10 +86,12 @@
                 type="number"
                 label="Storage scratch size (GiB)"
               />
-
-              <v-text-field v-model="magicCastle.public_keys[0]"
-                            @change="publicKeysUpdated"
-                            label="Public key"/>
+              <!-- v-model="magicCastle.public_keys[0]" -->
+              <v-file-input
+                ref="a"
+                @change="publicKeysUpdated"
+                label="SSH public key file"
+              />
 
               <v-text-field v-model="magicCastle.guest_passwd" label="Guest password (optional)"/>
 
@@ -264,11 +266,16 @@
           this.magicCastle.os_floating_ips = []
         }
       },
-      publicKeysUpdated() {
-        // When the public key text field is empty, we need to empty the public key array
-        if (this.magicCastle.public_keys[0] === '') {
+      publicKeysUpdated(file) {
+        const reader = new FileReader()
+        reader.addEventListener('load', event => {
+          const publicKey = event.target.result
+          this.magicCastle.public_keys = [publicKey]
+        })
+        if (typeof file === 'object')
+          reader.readAsText(file)
+        else
           this.magicCastle.public_keys = []
-        }
       },
       showSuccess() {
         this.successDialog = true
