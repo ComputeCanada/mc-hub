@@ -70,11 +70,18 @@ EXISTING_CLUSTER_STATE = {
 
 
 @pytest.fixture
-def client():
+def client(mocker):
     app.config["TESTING"] = True
     copytree(
         path.join(path.dirname(__file__), "fake-cluster"),
         "/home/mcu/clusters/fake-cluster",
+    )
+    mocker.patch(
+        "models.openstack_manager.OpenStackManager.__init__", return_value=None
+    )
+    mocker.patch(
+        "models.openstack_manager.OpenStackManager.get_available_floating_ips",
+        return_value=["1.2.3.4"],
     )
 
     with app.test_client() as client:
