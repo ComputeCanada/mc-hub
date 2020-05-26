@@ -318,7 +318,8 @@
       publicKeysUpdated(file) {
         const reader = new FileReader()
         reader.addEventListener('load', event => {
-          const publicKey = event.target.result
+          // The new lines (\n) at the end of ssh key files must be removed
+          const publicKey = event.target.result.replace(/(\n)+$/, "")
           this.magicCastle.public_keys = [publicKey]
         })
         if (typeof file === 'object')
