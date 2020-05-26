@@ -34,11 +34,12 @@
             </div>
             <template v-if="magicCastle !== null">
               <v-text-field v-model="magicCastle.domain" label="Domain"/>
-              <v-text-field v-model="magicCastle.image" label="Image"/>
+              <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image"/>
               <v-text-field v-model.number="magicCastle.nb_users" type="number" label="Number of users"/>
 
               <!-- Instances -->
-              <v-text-field
+              <v-select
+                :items="getPossibleValues('instances.mgmt.type')"
                 v-model="magicCastle.instances.mgmt.type"
                 label="Management (mgmt) instance type"
               />
@@ -47,13 +48,21 @@
                 type="number"
                 label="Management (mgmt) instance count"
               />
-              <v-text-field v-model="magicCastle.instances.login.type" label="Login instance type"/>
+              <v-select
+                :items="getPossibleValues('instances.login.type')"
+                v-model="magicCastle.instances.login.type"
+                label="Login instance type"
+              />
               <v-text-field
                 v-model.number="magicCastle.instances.login.count"
                 type="number"
                 label="Login instance count"
               />
-              <v-text-field v-model="magicCastle.instances.node.type" label="Node instance type"/>
+              <v-select
+                :items="getPossibleValues('instances.login.type')"
+                v-model="magicCastle.instances.node.type"
+                label="Node instance type"
+              />
               <v-text-field
                 v-model.number="magicCastle.instances.node.count"
                 type="number"
@@ -84,7 +93,8 @@
 
               <v-text-field v-model="magicCastle.guest_passwd" label="Guest password (optional)"/>
 
-              <v-text-field
+              <v-select
+                :items="[...getPossibleValues('os_floating_ips'), ...magicCastle.os_floating_ips]"
                 v-model="magicCastle.os_floating_ips[0]"
                 @change="osFloatingIpsUpdated"
                 label="OpenStack floating IP (optional)"
@@ -212,10 +222,12 @@
         errorMessage: '',
         statusPoller: null,
         currentStatus: null,
-        magicCastle: null
+        magicCastle: null,
+        fieldsPossibleValues: null
       }
     },
     created() {
+      this.loadFieldsPossibleValues()
       if (this.existingCluster) {
         this.startStatusPolling()
       } else {
@@ -239,6 +251,13 @@
       }
     },
     methods: {
+      getPossibleValues(fieldPath) {
+        if (this.fieldsPossibleValues === null) {
+          return []
+        } else {
+          return fieldPath.split('.').reduce((acc, x) => acc[x], this.fieldsPossibleValues)
+        }
+      },
       osFloatingIpsUpdated() {
         // When the floating IP text field is empty, we need to empty the floating IPs array
         if (this.magicCastle.os_floating_ips[0] === '') {
@@ -296,9 +315,15 @@
       stopStatusPolling() {
         clearInterval(this.statusPoller)
       },
+      async loadFieldsPossibleValues() {
+        let response = await fetch(`${API_URL}/fields/magic-castle`, {
+          method: 'GET'
+        })
+        this.fieldsPossibleValues = await response.json()
+      },
       async createCluster() {
         try {
-          let creationResponse = await fetch(`${API_URL}/magic-castle`,
+          let response = await fetch(`${API_URL}/magic-castle`,
             {
               method: 'POST',
               headers: {
@@ -307,7 +332,7 @@
               body: JSON.stringify(this.magicCastle)
             }
           )
-          if (!creationResponse.ok)
+          if (!response.ok)
             throw Error('You provided one or many invalid cluster parameters.')
 
           await this.$router.push({path: `/clusters/${this.magicCastle.cluster_name}`})
@@ -317,14 +342,14 @@
       },
       async loadCluster() {
         try {
-          let loadResponse = await fetch(`${API_URL}/magic-castle/${this.clusterName}`,
+          let response = await fetch(`${API_URL}/magic-castle/${this.clusterName}`,
             {
               method: 'GET'
             })
-          if (!loadResponse.ok)
+          if (!response.ok)
             throw Error('The cluster is invalid.')
 
-          this.magicCastle = await loadResponse.json()
+          this.magicCastle = await response.json()
 
         } catch (e) {
           console.log(e.message)
@@ -336,7 +361,7 @@
       },
       async modifyCluster() {
         try {
-          let creationResponse = await fetch(`${API_URL}/magic-castle/${this.magicCastle.cluster_name}`,
+          let response = await fetch(`${API_URL}/magic-castle/${this.magicCastle.cluster_name}`,
             {
               method: 'PUT',
               headers: {
@@ -345,7 +370,7 @@
               body: JSON.stringify(this.magicCastle)
             }
           )
-          if (!creationResponse.ok)
+          if (!response.ok)
             throw Error('You provided one or many invalid cluster parameters.')
           this.unloadCluster()
         } catch (e) {
@@ -354,7 +379,7 @@
       },
       async deleteCluster() {
         try {
-          let creationResponse = await fetch(`${API_URL}/magic-castle/${this.magicCastle.cluster_name}`,
+          let response = await fetch(`${API_URL}/magic-castle/${this.magicCastle.cluster_name}`,
             {
               method: 'DELETE',
               headers: {
@@ -363,7 +388,7 @@
               body: JSON.stringify(this.magicCastle)
             }
           )
-          if (!creationResponse.ok)
+          if (!response.ok)
             throw Error('The server returned an error.')
           this.unloadCluster()
         } catch (e) {

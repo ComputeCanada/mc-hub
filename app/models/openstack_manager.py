@@ -40,6 +40,8 @@ class OpenStackManager:
         flavors = self.__get_flavors()
         return {
             "image": self.__get_images(),
-            "instances": {category: flavors for category in INSTANCE_CATEGORIES},
+            "instances": {
+                category: {"type": flavors} for category in INSTANCE_CATEGORIES
+            },
             "os_floating_ips": self.get_available_floating_ips(),
         }
