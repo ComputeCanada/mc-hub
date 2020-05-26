@@ -19,7 +19,7 @@ The app will eventually be accessible with a Compute Canada account to launch a 
     source _project_-openrc.sh
     ```
 2. Copy env.list from this repository to your current directory.
-3. Run the latest version of Magic Castle UI.
+3. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
    ```shell script   
    docker run -d -p 5000:5000 --env-file ./env.list fredericfc/magic_castle-ui:latest
    ```
