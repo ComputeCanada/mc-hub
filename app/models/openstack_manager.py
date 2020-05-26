@@ -44,4 +44,5 @@ class OpenStackManager:
                 category: {"type": flavors} for category in INSTANCE_CATEGORIES
             },
             "os_floating_ips": self.get_available_floating_ips(),
+            "storage": {"type": ["nfs"]},
         }
