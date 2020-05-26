@@ -3,104 +3,142 @@
   <div>
     <v-container>
       <v-card max-width="500" class="mx-auto" :loading="loading">
-        <v-card-title v-if="existingCluster" class="mx-auto">
+        <v-card-title v-if="existingCluster" class="mx-auto pl-8">
           Cluster modification
         </v-card-title>
-        <v-card-title v-else class="mx-auto">
+        <v-card-title v-else class="mx-auto pl-8">
           Cluster creation
         </v-card-title>
         <v-card-text>
           <v-form>
-            <div style="display: flex; align-items: center">
-              <v-text-field
-                v-if="existingCluster"
-                v-model="clusterName"
-                label="Cluster name"
-                disabled
-              />
-              <v-text-field
-                v-else
-                v-model="magicCastle.cluster_name"
-                label="Cluster name"
-              />
-              <v-chip
-                class="ml-3"
-                label
-                :color="formattedStatus.color"
-                dark
-                v-if="currentStatus !== null"
-              >{{formattedStatus.text}}
-              </v-chip>
-            </div>
+            <v-subheader>General configuration</v-subheader>
+            <v-list class="pb-0">
+              <v-list-item>
+                <div style="display: flex; align-items: center; width: 100%">
+                  <v-text-field
+                    v-if="existingCluster"
+                    v-model="clusterName"
+                    label="Cluster name"
+                    disabled
+                  />
+                  <v-text-field
+                    v-else
+                    v-model="magicCastle.cluster_name"
+                    label="Cluster name"
+                  />
+                  <v-chip
+                    class="ml-3"
+                    label
+                    :color="formattedStatus.color"
+                    dark
+                    v-if="currentStatus !== null"
+                  >{{formattedStatus.text}}
+                  </v-chip>
+                </div>
+              </v-list-item>
+            </v-list>
             <template v-if="magicCastle !== null">
-              <v-text-field v-model="magicCastle.domain" label="Domain"/>
-              <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image"/>
-              <v-text-field v-model.number="magicCastle.nb_users" type="number" label="Number of users"/>
+              <v-list class="pt-0">
+                <v-list-item>
+                  <v-text-field v-model="magicCastle.domain" label="Domain"/>
+                </v-list-item>
+                <v-list-item>
+
+                  <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image"/>
+                </v-list-item>
+                <v-list-item>
+                  <v-text-field v-model.number="magicCastle.nb_users" type="number" label="Number of users"/>
+                </v-list-item>
+              </v-list>
+              <v-divider/>
 
               <!-- Instances -->
-              <v-select
-                :items="getPossibleValues('instances.mgmt.type')"
-                v-model="magicCastle.instances.mgmt.type"
-                label="Management (mgmt) instance type"
-              />
-              <v-text-field
-                v-model.number="magicCastle.instances.mgmt.count"
-                type="number"
-                label="Management (mgmt) instance count"
-              />
-              <v-select
-                :items="getPossibleValues('instances.login.type')"
-                v-model="magicCastle.instances.login.type"
-                label="Login instance type"
-              />
-              <v-text-field
-                v-model.number="magicCastle.instances.login.count"
-                type="number"
-                label="Login instance count"
-              />
-              <v-select
-                :items="getPossibleValues('instances.login.type')"
-                v-model="magicCastle.instances.node.type"
-                label="Node instance type"
-              />
-              <v-text-field
-                v-model.number="magicCastle.instances.node.count"
-                type="number"
-                label="Node instance count"
-              />
+              <v-subheader>Node instances</v-subheader>
+              <v-list>
+                <div :key="id" v-for="[id, label] in Object.entries(NODE_LABELS)">
+                  <v-list-item>
+                    <v-col cols="12" sm="3" class="pl-0">
+                      <p>{{label}}</p>
+                    </v-col>
+
+                    <v-col cols="12" sm="5">
+                      <v-select
+                        :items="getPossibleValues(`instances.${id}.type`)"
+                        v-model="magicCastle.instances[id].type"
+                        label="Type"
+                      />
+                    </v-col>
+
+                    <v-col cols="12" sm="4">
+                      <v-text-field
+                        v-model.number="magicCastle.instances[id].count"
+                        type="number"
+                        label="Count"
+                      />
+                    </v-col>
+                  </v-list-item>
+                  <v-divider/>
+                </div>
+              </v-list>
 
               <!-- Storage -->
-              <v-text-field v-model="magicCastle.storage.type" label="Storage type"/>
-              <v-text-field
-                v-model.number="magicCastle.storage.home_size"
-                type="number"
-                label="Storage home size (GiB)"
-              />
-              <v-text-field
-                v-model.number="magicCastle.storage.project_size"
-                type="number"
-                label="Storage project size (GiB)"
-              />
-              <v-text-field
-                v-model.number="magicCastle.storage.scratch_size"
-                type="number"
-                label="Storage scratch size (GiB)"
-              />
-              <!-- v-model="magicCastle.public_keys[0]" -->
-              <v-file-input
-                ref="a"
-                @change="publicKeysUpdated"
-                label="SSH public key file"
-              />
+              <v-subheader>Storage</v-subheader>
+              <v-list>
+                <v-list-item>
+                  <v-col cols="12" sm="3" class="pl-0">
+                    Type
+                  </v-col>
+                  <v-col cols="12" sm="9">
+                    <v-select
+                      :items="getPossibleValues('storage.type')"
+                      v-model="magicCastle.storage.type"
+                    />
+                  </v-col>
+                </v-list-item>
+                <v-divider/>
+                <div :key="id" v-for="[id, label] in Object.entries(STORAGE_LABELS)">
+                  <v-list-item>
+                    <v-col cols="12" sm="3" class="pl-0">
+                      {{label}} size
+                    </v-col>
+                    <v-col cols="12" sm="9">
+                      <v-text-field
+                        v-model.number="magicCastle.storage[`${id}_size`]"
+                        type="number"
+                        suffix="GB"
+                      />
+                    </v-col>
+                  </v-list-item>
+                  <v-divider/>
+                </div>
+              </v-list>
 
-              <v-text-field v-model="magicCastle.guest_passwd" label="Guest password (optional)"/>
+              <!-- Networking & security -->
+              <v-subheader>Networking and security</v-subheader>
+              <v-list>
+                <v-list-item>
 
-              <v-select
-                :items="[...getPossibleValues('os_floating_ips'), ...magicCastle.os_floating_ips]"
-                v-model="magicCastle.os_floating_ips[0]"
-                @change="osFloatingIpsUpdated"
-                label="OpenStack floating IP (optional)"
-              />
+                  <v-file-input
+                    ref="a"
+                    @change="publicKeysUpdated"
+                    label="SSH public key file"
+                  />
+                </v-list-item>
+                <v-list-item>
+
+
+                  <v-text-field v-model="magicCastle.guest_passwd" label="Guest password (optional)"/>
+                </v-list-item>
+                <v-list-item>
+
+                  <v-select
+                    :items="[...getPossibleValues('os_floating_ips'), ...magicCastle.os_floating_ips]"
+                    v-model="magicCastle.os_floating_ips[0]"
+                    @change="osFloatingIpsUpdated"
+                    label="OpenStack floating IP (optional)"
+                  />
+                </v-list-item>
+              </v-list>
 
               <template v-if="existingCluster === true">
                 <v-btn @click="modifyCluster" color="primary" class="ma-2"
@@ -219,13 +257,24 @@
     },
     data: function () {
       return {
+        NODE_LABELS: {
+          'mgmt': 'Management',
+          'login': 'Login',
+          'node': 'Compute'
+        },
+        STORAGE_LABELS: {
+          'home': 'Home',
+          'project': 'Project',
+          'scratch': 'Scratch'
+        },
+
         successDialog: false,
         errorDialog: false,
         errorMessage: '',
         statusPoller: null,
         currentStatus: null,
         magicCastle: null,
-        fieldsPossibleValues: null
+        fieldsPossibleValues: null,
       }
     },
     created() {
