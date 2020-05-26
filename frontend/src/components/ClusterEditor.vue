@@ -253,7 +253,8 @@ export default {
       const currentlyRunning = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(
         this.currentStatus
       );
-      return this.existingCluster && (this.currentStatus === null || currentlyRunning);
+      const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || currentlyRunning);
+      return this.fieldsPossibleValues === null || existingClusterIsLoading;
     },
     formattedStatus() {
       if (this.currentStatus === null) {
