@@ -10,7 +10,7 @@ class OpenStackManager:
     def __get_images(self):
         return [image.name for image in self.__connection.image.images()]
 
-    def __get_available_floating_ips(self):
+    def get_available_floating_ips(self):
         return [
             ip.floating_ip_address
             for ip in self.__connection.network.ips(status="DOWN")
@@ -41,5 +41,5 @@ class OpenStackManager:
         return {
             "image": self.__get_images(),
             "instances": {category: flavors for category in INSTANCE_CATEGORIES},
-            "os_floating_ips": self.__get_available_floating_ips(),
+            "os_floating_ips": self.get_available_floating_ips(),
         }

@@ -35,6 +35,14 @@ class MagicCastle:
         except ValidationError:
             raise InvalidUsage("The magic castle configuration could not be parsed")
 
+        # When modifying a cluster, the existing floating ip must be excluded
+        # from the configuration, as it does not look available to Open Stack.
+        available_floating_ips = set(OpenStackManager().get_available_floating_ips())
+        if not set(self.__configuration["os_floating_ips"]).issubset(
+            available_floating_ips
+        ):
+            self.__configuration["os_floating_ips"] = []
+
     def get_status(self) -> ClusterStatusCode:
         status_file_path = self.__get_cluster_path("status.txt")
         if not status_file_path or not path.exists(status_file_path):
