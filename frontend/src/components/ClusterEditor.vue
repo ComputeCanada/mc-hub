@@ -75,7 +75,7 @@
                 <v-divider />
                 <div :key="id" v-for="[id, label] in Object.entries(STORAGE_LABELS)">
                   <v-list-item>
-                    <v-col cols="12" sm="3" class="pl-0"> {{ label }} size </v-col>
+                    <v-col cols="12" sm="3" class="pl-0"> {{ label }} size</v-col>
                     <v-col cols="12" sm="9">
                       <v-text-field v-model.number="magicCastle.storage[`${id}_size`]" type="number" suffix="GB" />
                     </v-col>
@@ -238,10 +238,10 @@ export default {
     };
   },
   created() {
-    this.loadAvailableResources();
     if (this.existingCluster) {
       this.startStatusPolling();
     } else {
+      this.loadAvailableResources();
       this.magicCastle = DEFAULT_MAGIC_CASTLE;
     }
   },
@@ -250,10 +250,10 @@ export default {
   },
   computed: {
     loading() {
-      const currentlyRunning = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(
+      const clusterIsBusy = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(
         this.currentStatus
       );
-      const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || currentlyRunning);
+      const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || clusterIsBusy);
       return this.availableResources === null || existingClusterIsLoading;
     },
     formattedStatus() {
@@ -302,7 +302,11 @@ export default {
 
         if (this.currentStatus !== status) {
           // The cluster status changed or was fetched for the first time
-          await this.loadCluster();
+          const clusterIsBusy = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(status);
+          if (!clusterIsBusy) {
+            this.loadAvailableResources();
+            this.loadCluster();
+          }
           if (this.currentStatus !== null) {
             this.showStatusDialog(status);
           }
@@ -337,7 +341,7 @@ export default {
       let response = await fetch(apiRoute, {
         method: "GET"
       });
-      this.availableResources = await response.json();
+      if (response.ok) this.availableResources = await response.json();
     },
     async createCluster() {
       try {
