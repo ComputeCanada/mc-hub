@@ -1,4 +1,4 @@
-class InvalidUsage(Exception):
+class InvalidUsageException(Exception):
     DEFAULT_STATUS_CODE = 400
 
     def __init__(self, message: str, status_code: int = DEFAULT_STATUS_CODE):

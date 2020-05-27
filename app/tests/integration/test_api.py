@@ -2,6 +2,7 @@ from server import app
 from os import path
 from shutil import rmtree, copytree
 from models.cluster_status_code import ClusterStatusCode
+from pathlib import Path
 import pytest
 
 NON_EXISTING_CLUSTER_NAME = "non-existing"
@@ -73,7 +74,7 @@ EXISTING_CLUSTER_STATE = {
 def client(mocker):
     app.config["TESTING"] = True
     copytree(
-        path.join(path.dirname(__file__), "fake-cluster"),
+        path.join(Path(__file__).parent.parent, "fake-cluster"),
         "/home/mcu/clusters/fake-cluster",
     )
     mocker.patch(
@@ -99,7 +100,7 @@ def test_get_state_existing(client):
 
 def test_get_state_non_existing(client):
     res = client.get(f"/api/magic-castle/{NON_EXISTING_CLUSTER_NAME}")
-    assert res.get_json() == {"message": "This cluster is not fully built yet"}
+    assert res.get_json() == {"message": "This cluster does not exist"}
     assert res.status_code != 200
 
 

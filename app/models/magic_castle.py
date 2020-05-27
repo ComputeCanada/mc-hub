@@ -6,7 +6,9 @@ from threading import Thread
 from marshmallow import ValidationError
 from models.cluster_status_code import ClusterStatusCode
 from models.magic_castle_schema import MagicCastleSchema
-from models.invalid_usage import InvalidUsage
+from exceptions.invalid_usage_exception import InvalidUsageException
+from exceptions.busy_cluster_exception import BusyClusterException
+from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from models.terraform_state_parser import TerraformStateParser
 from models.openstack_manager import OpenStackManager
 import json
@@ -33,7 +35,9 @@ class MagicCastle:
         try:
             self.__configuration = MagicCastleSchema().load(configuration)
         except ValidationError:
-            raise InvalidUsage("The magic castle configuration could not be parsed")
+            raise InvalidUsageException(
+                "The magic castle configuration could not be parsed"
+            )
 
         # When modifying a cluster, the existing floating ip must be excluded
         # from the configuration, as it does not look available to Open Stack.
@@ -51,12 +55,16 @@ class MagicCastle:
             return ClusterStatusCode(status_file.read())
 
     def get_state(self):
+        if self.__is_busy():
+            raise BusyClusterException
+        if self.__not_found():
+            raise ClusterNotFoundException
         if self.get_status() in [
             ClusterStatusCode.BUILD_RUNNING,
             ClusterStatusCode.DESTROY_RUNNING,
             ClusterStatusCode.NOT_FOUND,
         ]:
-            raise InvalidUsage("This cluster is not fully built yet")
+            raise InvalidUsageException("This cluster is not fully built yet")
 
         with open(
             self.__get_cluster_path("terraform.tfstate"), "r"
@@ -68,6 +76,15 @@ class MagicCastle:
     def get_fields(self):
         openstack_manager = OpenStackManager()
         return openstack_manager.get_fields()
+
+    def __is_busy(self):
+        return self.get_status() in [
+            ClusterStatusCode.BUILD_RUNNING,
+            ClusterStatusCode.DESTROY_RUNNING,
+        ]
+
+    def __not_found(self):
+        return self.get_status() == ClusterStatusCode.NOT_FOUND
 
     def __get_cluster_path(self, sub_path=""):
         if self.__get_cluster_name():
@@ -82,18 +99,18 @@ class MagicCastle:
 
     def apply_new(self):
         if self.get_status() != ClusterStatusCode.NOT_FOUND:
-            raise InvalidUsage("The cluster already exists")
+            raise InvalidUsageException("The cluster already exists")
         mkdir(self.__get_cluster_path())
         return self.__apply()
 
     def apply_existing(self):
         if self.get_status() == ClusterStatusCode.NOT_FOUND:
-            raise InvalidUsage("The cluster does not exist")
+            raise InvalidUsageException("The cluster does not exist")
         elif self.get_status() in [
             ClusterStatusCode.BUILD_RUNNING,
             ClusterStatusCode.DESTROY_RUNNING,
         ]:
-            raise InvalidUsage("The cluster is not ready")
+            raise InvalidUsageException("The cluster is not ready")
         return self.__apply()
 
     def __apply(self):
@@ -142,7 +159,7 @@ class MagicCastle:
 
     def destroy(self):
         if self.get_status() != ClusterStatusCode.BUILD_SUCCESS:
-            raise InvalidUsage("This cluster is not fully built yet")
+            raise InvalidUsageException("This cluster is not fully built yet")
 
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 
