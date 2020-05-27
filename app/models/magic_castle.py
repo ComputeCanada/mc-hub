@@ -74,7 +74,22 @@ class MagicCastle:
         return MagicCastleSchema().dump(parser.get_state_summary())
 
     def get_fields(self):
-        openstack_manager = OpenStackManager()
+        if self.__is_busy():
+            raise BusyClusterException
+        elif self.__not_found():
+            openstack_manager = OpenStackManager()
+        else:
+            with open(
+                self.__get_cluster_path("terraform.tfstate"), "r"
+            ) as terraform_state_file:
+                state = json.load(terraform_state_file)
+            parser = TerraformStateParser(state)
+
+            openstack_manager = OpenStackManager(
+                pre_allocated_ram=parser.get_used_ram(),
+                pre_allocated_cores=parser.get_used_cores(),
+            )
+
         return openstack_manager.get_fields()
 
     def __is_busy(self):

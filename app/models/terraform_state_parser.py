@@ -3,8 +3,40 @@ from models.constants import INSTANCE_CATEGORIES, STORAGE_SPACES
 
 
 class TerraformStateParser:
+    """
+    TerraformStateParser handles the parsing of the state file of a cluster, i.e. the terraform.tfstate file.
+    It makes it easy to get access to the important variables in the state (intance types, guest password, ...)
+    through the get_state_summary method.
+    """
+
     def __init__(self, tf_state: object):
         self.__tf_state = tf_state
+
+    def get_state_summary(self):
+        return {
+            "cluster_name": self.__get_cluster_name(),
+            "domain": self.__get_domain(),
+            "image": self.__get_image(),
+            "nb_users": self.__get_nb_users(),
+            "instances": self.__get_instances(),
+            "storage": self.__get_storage(),
+            "public_keys": self.__get_public_keys(),
+            "guest_passwd": self.__get_guest_passwd(),
+            "os_floating_ips": self.__get_os_floating_ips(),
+        }
+
+    def get_used_cores(self) -> int:
+        parser = parse(
+            "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.vcpus"
+        )
+
+        return sum([cores.value for cores in parser.find(self.__tf_state)])
+
+    def get_used_ram(self) -> int:
+        parser = parse(
+            "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.ram"
+        )
+        return sum([ram.value for ram in parser.find(self.__tf_state)])
 
     def __get_cluster_name(self):
         parser = parse(
@@ -78,16 +110,3 @@ class TerraformStateParser:
             "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.floating_ip"
         )
         return [match.value for match in parser.find(self.__tf_state)]
-
-    def get_state_summary(self):
-        return {
-            "cluster_name": self.__get_cluster_name(),
-            "domain": self.__get_domain(),
-            "image": self.__get_image(),
-            "nb_users": self.__get_nb_users(),
-            "instances": self.__get_instances(),
-            "storage": self.__get_storage(),
-            "public_keys": self.__get_public_keys(),
-            "guest_passwd": self.__get_guest_passwd(),
-            "os_floating_ips": self.__get_os_floating_ips(),
-        }

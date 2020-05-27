@@ -4,8 +4,10 @@ from models.constants import INSTANCE_CATEGORIES
 
 
 class OpenStackManager:
-    def __init__(self):
+    def __init__(self, *, pre_allocated_cores=0, pre_allocated_ram=0):
         self.__connection = openstack.connect()
+        self.__pre_allocated_cores = pre_allocated_cores
+        self.__pre_allocated_ram = pre_allocated_ram
 
     def __get_images(self):
         return [image.name for image in self.__connection.image.images()]
@@ -18,8 +20,14 @@ class OpenStackManager:
 
     def __get_flavors(self):
         quotas = self.__get_compute_quotas()
-        available_ram = quotas["ram"]["limit"] - quotas["ram"]["in_use"]
-        available_cores = quotas["cores"]["limit"] - quotas["cores"]["in_use"]
+        available_ram = (
+            self.__pre_allocated_ram + quotas["ram"]["limit"] - quotas["ram"]["in_use"]
+        )
+        available_cores = (
+            self.__pre_allocated_cores
+            + quotas["cores"]["limit"]
+            - quotas["cores"]["in_use"]
+        )
         return [
             flavor.name
             for flavor in self.__connection.compute.flavors()
