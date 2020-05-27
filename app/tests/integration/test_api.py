@@ -137,17 +137,17 @@ def test_get_status(client):
 # DELETE /api/magic-castle/<cluster_name>
 def test_delete_invalid_status(client):
     res = client.delete(f"/api/magic-castle/{NON_EXISTING_CLUSTER_NAME}")
-    assert res.get_json() == {"message": "This cluster is not fully built yet"}
+    assert res.get_json() == {"message": "This cluster does not exist"}
     assert res.status_code != 200
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.DESTROY_RUNNING)
     res = client.delete(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}")
-    assert res.get_json() == {"message": "This cluster is not fully built yet"}
+    assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.BUILD_RUNNING)
     res = client.delete(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}")
-    assert res.get_json() == {"message": "This cluster is not fully built yet"}
+    assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
 
 
@@ -157,7 +157,7 @@ def test_modify_invalid_status(client):
         f"/api/magic-castle/{NON_EXISTING_CLUSTER_NAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,
     )
-    assert res.get_json() == {"message": "The cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist"}
     assert res.status_code != 200
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.BUILD_RUNNING)
@@ -165,7 +165,7 @@ def test_modify_invalid_status(client):
         f"/api/magic-castle/{EXISTING_CLUSTER_NAME}",
         json=EXISTING_CLUSTER_CONFIGURATION,
     )
-    assert res.get_json() == {"message": "The cluster is not ready"}
+    assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.DESTROY_RUNNING)
@@ -173,7 +173,7 @@ def test_modify_invalid_status(client):
         f"/api/magic-castle/{EXISTING_CLUSTER_NAME}",
         json=EXISTING_CLUSTER_CONFIGURATION,
     )
-    assert res.get_json() == {"message": "The cluster is not ready"}
+    assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
 
 

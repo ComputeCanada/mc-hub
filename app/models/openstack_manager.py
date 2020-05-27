@@ -1,7 +1,7 @@
-import openstack
 from os import environ
 from models.constants import INSTANCE_CATEGORIES
 from re import search, IGNORECASE
+import openstack
 
 VALID_IMAGES = r"centos"
 
