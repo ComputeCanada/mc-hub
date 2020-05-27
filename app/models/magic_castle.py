@@ -73,7 +73,7 @@ class MagicCastle:
         parser = TerraformStateParser(state)
         return MagicCastleSchema().dump(parser.get_state_summary())
 
-    def get_fields(self):
+    def get_available_resources(self):
         if self.__is_busy():
             raise BusyClusterException
         elif self.__not_found():
@@ -90,7 +90,7 @@ class MagicCastle:
                 pre_allocated_cores=parser.get_used_cores(),
             )
 
-        return openstack_manager.get_fields()
+        return openstack_manager.get_available_resources()
 
     def __is_busy(self):
         return self.get_status() in [
@@ -157,7 +157,7 @@ class MagicCastle:
                     self.__get_cluster_path("terraform_apply.log"), "w"
                 ) as output_file:
                     process = run(
-                        ["terraform", "apply", "-no-color", "-auto-approve",],
+                        ["terraform", "apply", "-no-color", "-auto-approve"],
                         cwd=self.__get_cluster_path(),
                         stdout=output_file,
                         stderr=output_file,

@@ -234,11 +234,11 @@ export default {
       statusPoller: null,
       currentStatus: null,
       magicCastle: null,
-      fieldsPossibleValues: null
+      availableResources: null
     };
   },
   created() {
-    this.loadFieldsPossibleValues();
+    this.loadAvailableResources();
     if (this.existingCluster) {
       this.startStatusPolling();
     } else {
@@ -254,7 +254,7 @@ export default {
         this.currentStatus
       );
       const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || currentlyRunning);
-      return this.fieldsPossibleValues === null || existingClusterIsLoading;
+      return this.availableResources === null || existingClusterIsLoading;
     },
     formattedStatus() {
       if (this.currentStatus === null) {
@@ -266,10 +266,10 @@ export default {
   },
   methods: {
     getPossibleValues(fieldPath) {
-      if (this.fieldsPossibleValues === null) {
+      if (this.availableResources === null) {
         return [];
       } else {
-        return fieldPath.split(".").reduce((acc, x) => acc[x], this.fieldsPossibleValues);
+        return fieldPath.split(".").reduce((acc, x) => acc[x], this.availableResources);
       }
     },
     osFloatingIpsUpdated() {
@@ -330,11 +330,14 @@ export default {
     stopStatusPolling() {
       clearInterval(this.statusPoller);
     },
-    async loadFieldsPossibleValues() {
-      let response = await fetch(`${API_URL}/fields/magic-castle`, {
+    async loadAvailableResources() {
+      const apiRoute = this.existingCluster
+        ? `${API_URL}/available-resources/${this.clusterName}`
+        : `${API_URL}/available-resources`;
+      let response = await fetch(apiRoute, {
         method: "GET"
       });
-      this.fieldsPossibleValues = await response.json();
+      this.availableResources = await response.json();
     },
     async createCluster() {
       try {

@@ -44,7 +44,7 @@ class OpenStackManager:
             f"/os-quota-sets/{environ['OS_PROJECT_ID']}/detail"
         ).json()["quota_set"]
 
-    def get_fields(self):
+    def get_available_resources(self):
         flavors = self.__get_flavors()
         return {
             "image": self.__get_images(),

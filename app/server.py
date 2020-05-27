@@ -1,9 +1,10 @@
-from flask import Flask, send_file, send_from_directory, jsonify, render_template
+from flask import Flask, send_file, send_from_directory
 from flask_restful import Api
 from resources.magic_castle_resource import MagicCastleResource
 from resources.magic_castle_list_resource import MagicCastleListResource
 from resources.magic_castle_status_resource import MagicCastleStatusResource
-from resources.magic_castle_fields_resource import MagicCastleFieldsResource
+from resources.available_resources_resource import AvailableResourcesResource
+from resources.available_resources_list_resource import AvailableResourcesListResource
 from flask_cors import CORS
 
 magic_castle_status = "idle"
@@ -18,7 +19,10 @@ api.add_resource(MagicCastleResource, "/magic-castle/<string:cluster_name>")
 api.add_resource(
     MagicCastleStatusResource, "/magic-castle/<string:cluster_name>/status"
 )
-api.add_resource(MagicCastleFieldsResource, "/fields/magic-castle")
+api.add_resource(AvailableResourcesListResource, "/available-resources")
+api.add_resource(
+    AvailableResourcesResource, "/available-resources/<string:cluster_name>"
+)
 
 
 @app.route("/css/<path:path>")
