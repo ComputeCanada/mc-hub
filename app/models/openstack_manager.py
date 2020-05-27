@@ -35,11 +35,14 @@ class OpenStackManager:
             + quotas["cores"]["limit"]
             - quotas["cores"]["in_use"]
         )
-        return [
-            flavor.name
+
+        available_flavors = [
+            flavor
             for flavor in self.__connection.compute.flavors()
             if flavor.ram <= available_ram and flavor.vcpus <= available_cores
         ]
+        available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
+        return [flavor.name for flavor in available_flavors]
 
     def __get_compute_quotas(self):
         # Normally, we should use self.__connection.get_compute_quotas(...) from openstack sdk.
