@@ -1,6 +1,9 @@
 import openstack
 from os import environ
 from models.constants import INSTANCE_CATEGORIES
+from re import search, IGNORECASE
+
+VALID_IMAGES = r"centos"
 
 
 class OpenStackManager:
@@ -10,7 +13,11 @@ class OpenStackManager:
         self.__pre_allocated_ram = pre_allocated_ram
 
     def __get_images(self):
-        return [image.name for image in self.__connection.image.images()]
+        return [
+            image.name
+            for image in self.__connection.image.images()
+            if search(VALID_IMAGES, image.name, IGNORECASE)
+        ]
 
     def get_available_floating_ips(self):
         return [
