@@ -152,7 +152,8 @@
 </template>
 
 <script>
-const API_URL = "http://localhost:5000/api";
+import MagicCastleRepository from "@/repositories/MagicCastleRepository";
+import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 
 const ClusterStatusCode = Object.freeze({
   IDLE: "idle",
@@ -297,8 +298,7 @@ export default {
     },
     startStatusPolling() {
       let fetchStatus = async () => {
-        let statusResponse = await fetch(`${API_URL}/magic-castle/${this.clusterName}/status`);
-        const { status } = await statusResponse.json();
+        const { status } = (await MagicCastleRepository.getStatus(this.clusterName)).data;
 
         if (this.currentStatus !== status) {
           // The cluster status changed or was fetched for the first time
@@ -335,75 +335,46 @@ export default {
       clearInterval(this.statusPoller);
     },
     async loadAvailableResources() {
-      const apiRoute = this.existingCluster
-        ? `${API_URL}/available-resources/${this.clusterName}`
-        : `${API_URL}/available-resources`;
-      let response = await fetch(apiRoute, {
-        method: "GET"
-      });
-      if (response.ok) this.availableResources = await response.json();
+      if (this.existingCluster) {
+        this.availableResources = (await AvailableResourcesRepository.get(this.clusterName)).data;
+      } else {
+        this.availableResources = (await AvailableResourcesRepository.get()).data;
+      }
     },
     async createCluster() {
       try {
-        let response = await fetch(`${API_URL}/magic-castle`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(this.magicCastle)
-        });
-        if (!response.ok) throw Error("You provided one or many invalid cluster parameters.");
-
+        await MagicCastleRepository.create(this.magicCastle);
         await this.$router.push({ path: `/clusters/${this.magicCastle.cluster_name}` });
       } catch (e) {
-        this.showError(e.message);
+        this.showError(e.response.data.message);
       }
     },
     async loadCluster() {
       try {
-        let response = await fetch(`${API_URL}/magic-castle/${this.clusterName}`, {
-          method: "GET"
-        });
-        if (!response.ok) throw Error("The cluster is invalid.");
-
-        this.magicCastle = await response.json();
+        this.magicCastle = (await MagicCastleRepository.getState(this.clusterName)).data;
       } catch (e) {
-        console.log(e.message);
+        console.log(e.response.data.message);
+      }
+    },
+    async modifyCluster() {
+      try {
+        await MagicCastleRepository.update(this.clusterName, this.magicCastle);
+        this.unloadCluster();
+      } catch (e) {
+        this.showError(e.response.data.message);
+      }
+    },
+    async deleteCluster() {
+      try {
+        await MagicCastleRepository.delete(this.clusterName);
+        this.unloadCluster();
+      } catch (e) {
+        this.showError(e.response.data.message);
       }
     },
     unloadCluster() {
       this.magicCastle = null;
       this.currentStatus = null;
-    },
-    async modifyCluster() {
-      try {
-        let response = await fetch(`${API_URL}/magic-castle/${this.magicCastle.cluster_name}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(this.magicCastle)
-        });
-        if (!response.ok) throw Error("You provided one or many invalid cluster parameters.");
-        this.unloadCluster();
-      } catch (e) {
-        this.showError(e.message);
-      }
-    },
-    async deleteCluster() {
-      try {
-        let response = await fetch(`${API_URL}/magic-castle/${this.magicCastle.cluster_name}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(this.magicCastle)
-        });
-        if (!response.ok) throw Error("The server returned an error.");
-        this.unloadCluster();
-      } catch (e) {
-        this.showError(e.message);
-      }
     }
   }
 };
