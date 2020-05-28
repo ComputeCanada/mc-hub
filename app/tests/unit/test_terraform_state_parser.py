@@ -5,29 +5,63 @@ import pytest
 import json
 
 
-@pytest.fixture
-def fake_state():
+def load_state(cluster_name):
     state_file_path = path.join(
-        Path(__file__).parent.parent, "fake-cluster", "terraform.tfstate"
+        Path(__file__).parent.parent, "mock-clusters", cluster_name, "terraform.tfstate"
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)
 
 
-def test_get_used_cores(fake_state):
-    parser = TerraformStateParser(fake_state)
+@pytest.fixture
+def valid_state():
+    return load_state("valid-1")
+
+
+@pytest.fixture
+def empty_state():
+    return load_state("empty")
+
+
+@pytest.fixture
+def missing_nodes_state():
+    return load_state("missing-nodes")
+
+
+def test_get_used_cores_valid(valid_state):
+    parser = TerraformStateParser(valid_state)
     assert parser.get_used_cores() == 4 + 4 + 2
 
 
-def test_get_used_ram(fake_state):
-    parser = TerraformStateParser(fake_state)
+def test_get_used_cores_empty(empty_state):
+    parser = TerraformStateParser(empty_state)
+    assert parser.get_used_cores() == 0
+
+
+def test_get_used_cores_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser(missing_nodes_state)
+    assert parser.get_used_cores() == 0
+
+
+def test_get_used_ram_valid(valid_state):
+    parser = TerraformStateParser(valid_state)
     assert parser.get_used_ram() == 6144 + 6144 + 3072
 
 
-def test_get_state_summary(fake_state):
-    parser = TerraformStateParser(fake_state)
+def test_get_used_ram_empty(empty_state):
+    parser = TerraformStateParser(empty_state)
+    assert parser.get_used_ram() == 0
+
+
+def test_get_used_ram_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser(missing_nodes_state)
+    assert parser.get_used_ram() == 0
+
+
+def test_get_state_summary_valid(valid_state):
+    parser = TerraformStateParser(valid_state)
     assert parser.get_state_summary() == {
-        "cluster_name": "fake-cluster",
+        "cluster_name": "valid-1",
         "nb_users": 10,
         "guest_passwd": "password-123",
         "storage": {
@@ -40,6 +74,54 @@ def test_get_state_summary(fake_state):
             "mgmt": {"type": "p4-6gb", "count": 1},
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 1},
+        },
+        "domain": "example.com",
+        "public_keys": ["ssh-rsa FAKE"],
+        "image": "CentOS-7-x64-2019-07",
+        "os_floating_ips": ["100.101.102.103"],
+    }
+
+
+def test_get_state_summary_empty(empty_state):
+    parser = TerraformStateParser(empty_state)
+    assert parser.get_state_summary() == {
+        "cluster_name": "",
+        "domain": "",
+        "image": "",
+        "nb_users": 0,
+        "instances": {
+            "mgmt": {"type": "", "count": 0},
+            "login": {"type": "", "count": 0},
+            "node": {"type": "", "count": 0},
+        },
+        "storage": {
+            "type": "nfs",
+            "home_size": 0,
+            "project_size": 0,
+            "scratch_size": 0,
+        },
+        "public_keys": [],
+        "guest_passwd": "",
+        "os_floating_ips": [],
+    }
+
+
+def test_get_state_summary_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser(missing_nodes_state)
+    assert parser.get_state_summary() == {
+        "cluster_name": "valid-1",
+        "nb_users": 10,
+        "guest_passwd": "password-123",
+        "storage": {
+            "type": "nfs",
+            "home_size": 100,
+            "scratch_size": 50,
+            "project_size": 50,
+        },
+        "instances": {
+            "mgmt": {"type": "", "count": 0},
+            "login": {"type": "", "count": 0},
+            "node": {"type": "", "count": 0},
         },
         "domain": "example.com",
         "public_keys": ["ssh-rsa FAKE"],

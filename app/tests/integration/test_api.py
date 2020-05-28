@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 NON_EXISTING_CLUSTER_NAME = "non-existing"
-EXISTING_CLUSTER_NAME = "fake-cluster"
+EXISTING_CLUSTER_NAME = "valid-1"
 
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "non-existing",
@@ -29,7 +29,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "os_floating_ips": [],
 }
 EXISTING_CLUSTER_CONFIGURATION = {
-    "cluster_name": "fake-cluster",
+    "cluster_name": "valid-1",
     "domain": "example.com",
     "image": "CentOS-7-x64-2019-07",
     "nb_users": 10,
@@ -49,7 +49,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "os_floating_ips": [],
 }
 EXISTING_CLUSTER_STATE = {
-    "cluster_name": "fake-cluster",
+    "cluster_name": "valid-1",
     "nb_users": 10,
     "guest_passwd": "password-123",
     "storage": {
@@ -74,8 +74,8 @@ EXISTING_CLUSTER_STATE = {
 def client(mocker):
     app.config["TESTING"] = True
     copytree(
-        path.join(Path(__file__).parent.parent, "fake-cluster"),
-        "/home/mcu/clusters/fake-cluster",
+        path.join(Path(__file__).parent.parent, "mock-clusters", "valid-1"),
+        "/home/mcu/clusters/valid-1",
     )
     mocker.patch(
         "models.openstack_manager.OpenStackManager.__init__", return_value=None
@@ -88,7 +88,7 @@ def client(mocker):
     with app.test_client() as client:
         yield client
 
-    rmtree("/home/mcu/clusters/fake-cluster")
+    rmtree("/home/mcu/clusters/valid-1")
 
 
 # GET /api/magic-castle/<cluster_name>

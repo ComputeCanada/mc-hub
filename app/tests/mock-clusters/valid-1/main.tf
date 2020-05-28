@@ -1,11 +1,11 @@
 terraform {
-  required_version = ">= 0.12"
+  required_version = ">= 0.12.21"
 }
 
 module "openstack" {
   source = "/home/mcu/magic_castle-openstack-6.4/openstack"
 
-  cluster_name = "fake-cluster"
+  cluster_name = "valid-1"
   domain       = "example.com"
   image        = "CentOS-7-x64-2019-07"
   nb_users     = 10
