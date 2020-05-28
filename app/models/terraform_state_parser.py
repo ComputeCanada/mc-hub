@@ -2,6 +2,25 @@ from jsonpath_ng.ext import parse
 from models.constants import INSTANCE_CATEGORIES, STORAGE_SPACES
 
 
+def default(default_value):
+    """
+    This decorator allows a function that normally throws an exception to return a default value instead.
+    :param default_value: The default return value, in case of an exception.
+    :return: The decorated function's return value or the default value.
+    """
+
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception:
+                return default_value
+
+        return wrapper
+
+    return decorator
+
+
 class TerraformStateParser:
     """
     TerraformStateParser handles the parsing of the state file of a cluster, i.e. the terraform.tfstate file.
@@ -29,7 +48,6 @@ class TerraformStateParser:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.vcpus"
         )
-
         return sum([cores.value for cores in parser.find(self.__tf_state)])
 
     def get_used_ram(self) -> int:
@@ -38,12 +56,14 @@ class TerraformStateParser:
         )
         return sum([ram.value for ram in parser.find(self.__tf_state)])
 
+    @default("")
     def __get_cluster_name(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.cluster_name"
         )
         return parser.find(self.__tf_state)[0].value
 
+    @default("")
     def __get_domain(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.domain_name"
@@ -51,10 +71,12 @@ class TerraformStateParser:
         full_domain_name = parser.find(self.__tf_state)[0].value
         return full_domain_name[len(self.__get_cluster_name()) + 1 :]
 
+    @default("")
     def __get_image(self):
         parser = parse("resources[?name=image].instances[0].attributes.name")
         return parser.find(self.__tf_state)[0].value
 
+    @default(0)
     def __get_nb_users(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.nb_users"
@@ -62,12 +84,14 @@ class TerraformStateParser:
         return int(parser.find(self.__tf_state)[0].value)
 
     def __get_instances(self):
+        @default("")
         def get_instance_type(instance_category):
             parser = parse(
                 f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[0].attributes.flavor_name'
             )
             return parser.find(self.__tf_state)[0].value
 
+        @default(0)
         def get_instance_count(instance_category):
             parser = parse(
                 f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[*]'
@@ -83,6 +107,7 @@ class TerraformStateParser:
         }
 
     def __get_storage(self):
+        @default(0)
         def get_storage_size(space_name):
             parser = parse(
                 f'resources[?type="openstack_blockstorage_volume_v2" & name="{space_name}"].instances[0].attributes.size'
@@ -99,6 +124,7 @@ class TerraformStateParser:
         )
         return [match.value for match in parser.find(self.__tf_state)]
 
+    @default("")
     def __get_guest_passwd(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.guest_passwd"
