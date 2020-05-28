@@ -204,7 +204,7 @@ const DEFAULT_MAGIC_CASTLE = {
   },
   public_keys: [],
   guest_passwd: "",
-  os_floating_ips: []
+  os_floating_ips: ["Automatic allocation"]
 };
 
 export default {

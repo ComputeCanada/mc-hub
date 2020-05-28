@@ -4,6 +4,7 @@ from re import search, IGNORECASE
 import openstack
 
 VALID_IMAGES = r"centos"
+AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
 
 
 class OpenStackManager:
@@ -56,11 +57,12 @@ class OpenStackManager:
 
     def get_available_resources(self):
         flavors = self.__get_flavors()
+        floating_ips = self.get_available_floating_ips() + [AUTO_ALLOCATED_IP_LABEL]
         return {
             "image": self.__get_images(),
             "instances": {
                 category: {"type": flavors} for category in INSTANCE_CATEGORIES
             },
-            "os_floating_ips": self.get_available_floating_ips(),
+            "os_floating_ips": floating_ips,
             "storage": {"type": ["nfs"]},
         }
