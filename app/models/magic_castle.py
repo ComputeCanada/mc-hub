@@ -65,7 +65,7 @@ class MagicCastle:
             self.__get_cluster_path("terraform.tfstate"), "r"
         ) as terraform_state_file:
             state = json.load(terraform_state_file)
-        parser = TerraformStateParser(state)
+        parser = TerraformStateParser(self.__get_cluster_name(), state)
         return MagicCastleSchema().dump(parser.get_state_summary())
 
     def get_available_resources(self):
@@ -77,7 +77,7 @@ class MagicCastle:
                 self.__get_cluster_path("terraform.tfstate"), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
-            parser = TerraformStateParser(state)
+            parser = TerraformStateParser(self.__get_cluster_name(), state)
 
             openstack_manager = OpenStackManager(
                 pre_allocated_ram=parser.get_used_ram(),

@@ -28,12 +28,21 @@ class TerraformStateParser:
     through the get_state_summary method.
     """
 
-    def __init__(self, tf_state: object):
+    def __init__(self, cluster_name, tf_state: object):
+        """
+        Initializes the cluster name and Terraform state object.
+
+        Note: Here, the cluster name is required to return somewhat valid states,
+        even if the cluster name can't be parsed correctly from the tf_state object.
+        :param cluster_name: The cluster name
+        :param tf_state: The corresponding terraform state object
+        """
+        self.__cluster_name = cluster_name
         self.__tf_state = tf_state
 
     def get_state_summary(self):
         return {
-            "cluster_name": self.__get_cluster_name(),
+            "cluster_name": self.__cluster_name,
             "domain": self.__get_domain(),
             "image": self.__get_image(),
             "nb_users": self.__get_nb_users(),
@@ -57,19 +66,12 @@ class TerraformStateParser:
         return sum([ram.value for ram in parser.find(self.__tf_state)])
 
     @default("")
-    def __get_cluster_name(self):
-        parser = parse(
-            "resources[?name=hieradata].instances[0].attributes.vars.cluster_name"
-        )
-        return parser.find(self.__tf_state)[0].value
-
-    @default("")
     def __get_domain(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.domain_name"
         )
         full_domain_name = parser.find(self.__tf_state)[0].value
-        return full_domain_name[len(self.__get_cluster_name()) + 1 :]
+        return full_domain_name[len(self.__cluster_name) + 1 :]
 
     @default("")
     def __get_image(self):

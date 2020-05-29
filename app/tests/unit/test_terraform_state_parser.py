@@ -29,37 +29,37 @@ def missing_nodes_state():
 
 
 def test_get_used_cores_valid(valid_state):
-    parser = TerraformStateParser(valid_state)
+    parser = TerraformStateParser("valid-1", valid_state)
     assert parser.get_used_cores() == 4 + 4 + 2
 
 
 def test_get_used_cores_empty(empty_state):
-    parser = TerraformStateParser(empty_state)
+    parser = TerraformStateParser("empty", empty_state)
     assert parser.get_used_cores() == 0
 
 
 def test_get_used_cores_missing_nodes(missing_nodes_state):
-    parser = TerraformStateParser(missing_nodes_state)
+    parser = TerraformStateParser("missing-nodes", missing_nodes_state)
     assert parser.get_used_cores() == 0
 
 
 def test_get_used_ram_valid(valid_state):
-    parser = TerraformStateParser(valid_state)
+    parser = TerraformStateParser("valid-1", valid_state)
     assert parser.get_used_ram() == 6144 + 6144 + 3072
 
 
 def test_get_used_ram_empty(empty_state):
-    parser = TerraformStateParser(empty_state)
+    parser = TerraformStateParser("empty", empty_state)
     assert parser.get_used_ram() == 0
 
 
 def test_get_used_ram_missing_nodes(missing_nodes_state):
-    parser = TerraformStateParser(missing_nodes_state)
+    parser = TerraformStateParser("missing-nodes", missing_nodes_state)
     assert parser.get_used_ram() == 0
 
 
 def test_get_state_summary_valid(valid_state):
-    parser = TerraformStateParser(valid_state)
+    parser = TerraformStateParser("valid-1", valid_state)
     assert parser.get_state_summary() == {
         "cluster_name": "valid-1",
         "nb_users": 10,
@@ -83,9 +83,9 @@ def test_get_state_summary_valid(valid_state):
 
 
 def test_get_state_summary_empty(empty_state):
-    parser = TerraformStateParser(empty_state)
+    parser = TerraformStateParser("empty", empty_state)
     assert parser.get_state_summary() == {
-        "cluster_name": "",
+        "cluster_name": "empty",
         "domain": "",
         "image": "",
         "nb_users": 0,
@@ -107,9 +107,9 @@ def test_get_state_summary_empty(empty_state):
 
 
 def test_get_state_summary_missing_nodes(missing_nodes_state):
-    parser = TerraformStateParser(missing_nodes_state)
+    parser = TerraformStateParser("missing-nodes", missing_nodes_state)
     assert parser.get_state_summary() == {
-        "cluster_name": "valid-1",
+        "cluster_name": "missing-nodes",
         "nb_users": 10,
         "guest_passwd": "password-123",
         "storage": {
