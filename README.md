@@ -1,4 +1,7 @@
 # Magic Castle UI
+
+[![Build Status](https://travis-ci.com/ComputeCanada/magic_castle-ui.svg?branch=master)](https://travis-ci.com/ComputeCanada/magic_castle-ui)
+
 Web interface to launch Magic Castles without knowing anything about Terraform.
 
 ## Requirements
@@ -52,6 +55,8 @@ Make sure you have built an image of Magic Castle UI first, as shown in the prev
 ````shell script
 docker run --env-file ./env.list "magic_castle-ui" python -m pytest
 ````
+
+> **Check your existing clusters**: MC UI will overwrite the following cluster names when running tests: valid-1, missing-nodes, empty.
 
 ## Cluster storage & backup
 
