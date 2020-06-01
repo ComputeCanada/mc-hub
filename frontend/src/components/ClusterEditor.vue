@@ -3,13 +3,13 @@
     <v-container>
       <v-card max-width="500" class="mx-auto" :loading="loading">
         <v-card-title v-if="existingCluster" class="mx-auto pl-8">
-          Cluster modification
+          Magic Castle Modification
         </v-card-title>
         <v-card-title v-else class="mx-auto pl-8">
-          Cluster creation
+          Magic Castle Creation
         </v-card-title>
         <v-card-text>
-          <v-form>
+          <v-form ref="form" v-model="validForm">
             <v-subheader>General configuration</v-subheader>
             <v-list class="pb-0">
               <v-list-item>
@@ -50,15 +50,26 @@
                         :items="getPossibleValues(`instances.${id}.type`)"
                         v-model="magicCastle.instances[id].type"
                         label="Type"
+                        :rules="instanceRules"
                       />
                     </v-col>
 
                     <v-col cols="12" sm="4">
-                      <v-text-field v-model.number="magicCastle.instances[id].count" type="number" label="Count" />
+                      <v-text-field
+                        v-model.number="magicCastle.instances[id].count"
+                        type="number"
+                        label="Count"
+                        :rules="instanceRules"
+                      />
                     </v-col>
                   </v-list-item>
                   <v-divider />
                 </div>
+                <v-list-item>
+                  <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+                  <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+                </v-list-item>
+                <v-divider />
               </v-list>
 
               <!-- Storage -->
@@ -102,20 +113,27 @@
                   />
                 </v-list-item>
               </v-list>
-
-              <template v-if="existingCluster === true">
-                <v-btn @click="modifyCluster" color="primary" class="ma-2" :disabled="loading" large>
-                  Modify
-                </v-btn>
-                <v-btn @click="deleteCluster" color="primary" class="ma-2" :disabled="loading" large outlined>
-                  Delete
-                </v-btn>
-              </template>
-              <template v-else>
-                <v-btn @click="createCluster" color="primary" class="text-right" :disabled="loading" large
-                  >Spawn
-                </v-btn>
-              </template>
+              <div class="text-center">
+                <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
+                <template v-if="existingCluster === true">
+                  <v-btn @click="modifyCluster" color="primary" class="ma-2" :disabled="loading || !validForm" large>
+                    Modify
+                  </v-btn>
+                  <v-btn @click="deleteCluster" color="primary" class="ma-2" :disabled="loading" large outlined>
+                    Delete
+                  </v-btn>
+                </template>
+                <template v-else>
+                  <v-btn
+                    @click="createCluster"
+                    color="primary"
+                    class="text-right"
+                    :disabled="loading || !validForm"
+                    large
+                    >Spawn
+                  </v-btn>
+                </template>
+              </div>
             </template>
           </v-form>
         </v-card-text>
@@ -154,6 +172,7 @@
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import ResourceUsageDisplay from "./ResourceUsageDisplay";
 
 const ClusterStatusCode = Object.freeze({
   IDLE: "idle",
@@ -207,8 +226,11 @@ const DEFAULT_MAGIC_CASTLE = {
   os_floating_ips: ["Automatic allocation"]
 };
 
+const MB_PER_GB = 1024;
+
 export default {
   name: "ClusterEditor",
+  components: { ResourceUsageDisplay },
   props: {
     clusterName: String,
     existingCluster: {
@@ -229,13 +251,16 @@ export default {
         scratch: "Scratch"
       },
 
+      validForm: true,
       successDialog: false,
       errorDialog: false,
       errorMessage: "",
       statusPoller: null,
       currentStatus: null,
       magicCastle: null,
-      availableResources: null
+      quotas: null,
+      resourceDetails: null,
+      possibleResources: null
     };
   },
   created() {
@@ -255,7 +280,7 @@ export default {
         this.currentStatus
       );
       const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || clusterIsBusy);
-      return this.availableResources === null || existingClusterIsLoading;
+      return this.possibleResources === null || existingClusterIsLoading;
     },
     formattedStatus() {
       if (this.currentStatus === null) {
@@ -263,15 +288,48 @@ export default {
       } else {
         return ClusterFormattedStatus[this.currentStatus];
       }
+    },
+    instanceRules() {
+      return [
+        this.ramGbUsed < this.ramGbMax || "Ram exceeds maximum",
+        this.vcpuUsed < this.vcpuMax || "Cores exceeds maximum"
+      ];
+    },
+    ramGbUsed() {
+      if (!this.magicCastle || !this.resourceDetails) return 0;
+      const instances = Object.values(this.magicCastle.instances);
+      return (
+        instances.reduce((acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "ram"), 0) /
+        MB_PER_GB
+      );
+    },
+    ramGbMax() {
+      return this.quotas.ram.max / MB_PER_GB;
+    },
+    vcpuUsed() {
+      if (!this.magicCastle || !this.resourceDetails) return 0;
+      const instances = Object.values(this.magicCastle.instances);
+      return instances.reduce(
+        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
+        0
+      );
+    },
+    vcpuMax() {
+      return this.quotas.vcpus.max;
     }
   },
   methods: {
     getPossibleValues(fieldPath) {
-      if (this.availableResources === null) {
+      if (this.possibleResources === null) {
         return [];
       } else {
-        return fieldPath.split(".").reduce((acc, x) => acc[x], this.availableResources);
+        return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
       }
+    },
+    getInstanceDetail(instanceType, detailName) {
+      return this.resourceDetails.instance_types.filter(
+        instanceTypeDetails => instanceTypeDetails.name === instanceType
+      )[0][detailName];
     },
     osFloatingIpsUpdated() {
       // When the floating IP text field is empty, we need to empty the floating IPs array
@@ -335,11 +393,12 @@ export default {
       clearInterval(this.statusPoller);
     },
     async loadAvailableResources() {
-      if (this.existingCluster) {
-        this.availableResources = (await AvailableResourcesRepository.get(this.clusterName)).data;
-      } else {
-        this.availableResources = (await AvailableResourcesRepository.get()).data;
-      }
+      const availableResources = this.existingCluster
+        ? (await AvailableResourcesRepository.get(this.clusterName)).data
+        : (await AvailableResourcesRepository.get()).data;
+      this.possibleResources = availableResources.possible_resources;
+      this.quotas = availableResources.quotas;
+      this.resourceDetails = availableResources.resource_details;
     },
     async createCluster() {
       try {
