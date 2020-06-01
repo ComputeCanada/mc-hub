@@ -13,12 +13,15 @@ class OpenStackManager:
         self.__pre_allocated_cores = pre_allocated_cores
         self.__pre_allocated_ram = pre_allocated_ram
 
-    def __get_images(self):
-        return [
-            image.name
-            for image in self.__connection.image.images()
-            if search(VALID_IMAGES, image.name, IGNORECASE)
-        ]
+        self.__compute_quotas = None
+        self.__available_flavors = None
+
+    def get_available_resources(self):
+        return {
+            "quotas": self.__get_quotas(),
+            "resource_details": self.__get_resource_details(),
+            "possible_resources": self.__get_possible_resources(),
+        }
 
     def get_available_floating_ips(self):
         return [
@@ -26,37 +29,14 @@ class OpenStackManager:
             for ip in self.__connection.network.ips(status="DOWN")
         ]
 
-    def __get_flavors(self):
-        quotas = self.__get_compute_quotas()
-        available_ram = (
-            self.__pre_allocated_ram + quotas["ram"]["limit"] - quotas["ram"]["in_use"]
-        )
-        available_cores = (
-            self.__pre_allocated_cores
-            + quotas["cores"]["limit"]
-            - quotas["cores"]["in_use"]
-        )
+    def __get_quotas(self):
+        return {
+            "ram": {"max": self.__get_available_ram()},
+            "vcpus": {"max": self.__get_available_vcpus()},
+        }
 
-        available_flavors = [
-            flavor
-            for flavor in self.__connection.compute.flavors()
-            if flavor.ram <= available_ram and flavor.vcpus <= available_cores
-        ]
-        available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
-        return [flavor.name for flavor in available_flavors]
-
-    def __get_compute_quotas(self):
-        # Normally, we should use self.__connection.get_compute_quotas(...) from openstack sdk.
-        # However, this method executes the action
-        # identity:list_projects from the identity api which is forbidden
-        # to some users.
-
-        return self.__connection.compute.get(
-            f"/os-quota-sets/{environ['OS_PROJECT_ID']}/detail"
-        ).json()["quota_set"]
-
-    def get_available_resources(self):
-        flavors = self.__get_flavors()
+    def __get_possible_resources(self):
+        flavors = list(map(lambda flavor: flavor.name, self.__get_available_flavors()))
         floating_ips = self.get_available_floating_ips() + [AUTO_ALLOCATED_IP_LABEL]
         return {
             "image": self.__get_images(),
@@ -66,3 +46,54 @@ class OpenStackManager:
             "os_floating_ips": floating_ips,
             "storage": {"type": ["nfs"]},
         }
+
+    def __get_resource_details(self):
+        return {
+            "instance_types": [
+                {"name": flavor.name, "vcpus": flavor.vcpus, "ram": flavor.ram}
+                for flavor in self.__get_available_flavors()
+            ]
+        }
+
+    def __get_images(self):
+        return [
+            image.name
+            for image in self.__connection.image.images()
+            if search(VALID_IMAGES, image.name, IGNORECASE)
+        ]
+
+    def __get_available_flavors(self):
+        if self.__available_flavors is None:
+            self.__available_flavors = [
+                flavor
+                for flavor in self.__connection.compute.flavors()
+                if flavor.ram <= self.__get_available_ram()
+                and flavor.vcpus <= self.__get_available_vcpus()
+            ]
+            self.__available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
+        return self.__available_flavors
+
+    def __get_available_ram(self):
+        return (
+            self.__pre_allocated_ram
+            + self.__get_compute_quotas()["ram"]["limit"]
+            - self.__get_compute_quotas()["ram"]["in_use"]
+        )
+
+    def __get_available_vcpus(self):
+        return (
+            self.__pre_allocated_cores
+            + self.__get_compute_quotas()["cores"]["limit"]
+            - self.__get_compute_quotas()["cores"]["in_use"]
+        )
+
+    def __get_compute_quotas(self):
+        if self.__compute_quotas is None:
+            # Normally, we should use self.__connection.get_compute_quotas(...) from openstack sdk.
+            # However, this method executes the action
+            # identity:list_projects from the identity api which is forbidden
+            # to some users.
+            self.__compute_quotas = self.__connection.compute.get(
+                f"/os-quota-sets/{environ['OS_PROJECT_ID']}/detail"
+            ).json()["quota_set"]
+        return self.__compute_quotas

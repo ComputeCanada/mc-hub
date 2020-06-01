@@ -35,7 +35,7 @@ def mock_openstack_manager(mocker):
         "models.openstack_manager.OpenStackManager._OpenStackManager__get_compute_quotas",
         return_value={
             "cores": {"limit": 500, "in_use": 199},
-            "ram": {"limit": 280000, "in_use": 180000},
+            "ram": {"limit": 280_000, "in_use": 180_000},
         },
     )
     mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
@@ -159,20 +159,51 @@ def test_get_available_resources_valid():
     """
     magic_castle = MagicCastle("valid-1")
     assert magic_castle.get_available_resources() == {
-        "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
-        "instances": {
-            "mgmt": {
-                "type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186", "g2-c24-112gb-500",]
-            },
-            "login": {
-                "type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186", "g2-c24-112gb-500",]
-            },
-            "node": {
-                "type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186", "g2-c24-112gb-500",]
-            },
+        "quotas": {"ram": {"max": 115_360}, "vcpus": {"max": 311}},
+        "resource_details": {
+            "instance_types": [
+                {"name": "p1-1.5gb", "vcpus": 1, "ram": 1_500},
+                {"name": "c8-30gb-186", "vcpus": 8, "ram": 30_000},
+                {"name": "c8-90gb-186", "vcpus": 8, "ram": 90_000},
+                {"name": "g2-c24-112gb-500", "vcpus": 24, "ram": 112_000},
+            ]
         },
-        "os_floating_ips": ["2.1.1.1", "2.1.1.2", "2.1.1.3", "Automatic allocation"],
-        "storage": {"type": ["nfs"]},
+        "possible_resources": {
+            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "instances": {
+                "mgmt": {
+                    "type": [
+                        "p1-1.5gb",
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                    ]
+                },
+                "login": {
+                    "type": [
+                        "p1-1.5gb",
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                    ]
+                },
+                "node": {
+                    "type": [
+                        "p1-1.5gb",
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                    ]
+                },
+            },
+            "os_floating_ips": [
+                "2.1.1.1",
+                "2.1.1.2",
+                "2.1.1.3",
+                "Automatic allocation",
+            ],
+            "storage": {"type": ["nfs"]},
+        },
     }
 
 
@@ -188,14 +219,29 @@ def test_get_available_resources_empty():
     """
     magic_castle = MagicCastle("empty")
     assert magic_castle.get_available_resources() == {
-        "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
-        "instances": {
-            "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-            "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-            "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+        "quotas": {"ram": {"max": 100_000}, "vcpus": {"max": 301}},
+        "resource_details": {
+            "instance_types": [
+                {"name": "p1-1.5gb", "vcpus": 1, "ram": 1_500},
+                {"name": "c8-30gb-186", "vcpus": 8, "ram": 30_000},
+                {"name": "c8-90gb-186", "vcpus": 8, "ram": 90_000},
+            ]
         },
-        "os_floating_ips": ["2.1.1.1", "2.1.1.2", "2.1.1.3", "Automatic allocation"],
-        "storage": {"type": ["nfs"]},
+        "possible_resources": {
+            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "instances": {
+                "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+            },
+            "os_floating_ips": [
+                "2.1.1.1",
+                "2.1.1.2",
+                "2.1.1.3",
+                "Automatic allocation",
+            ],
+            "storage": {"type": ["nfs"]},
+        },
     }
 
 
@@ -211,14 +257,29 @@ def test_get_available_resources_missing_nodes():
     """
     magic_castle = MagicCastle("missing-nodes")
     assert magic_castle.get_available_resources() == {
-        "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
-        "instances": {
-            "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-            "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-            "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+        "quotas": {"ram": {"max": 100_000}, "vcpus": {"max": 301}},
+        "resource_details": {
+            "instance_types": [
+                {"name": "p1-1.5gb", "vcpus": 1, "ram": 1_500},
+                {"name": "c8-30gb-186", "vcpus": 8, "ram": 30_000},
+                {"name": "c8-90gb-186", "vcpus": 8, "ram": 90_000},
+            ]
         },
-        "os_floating_ips": ["2.1.1.1", "2.1.1.2", "2.1.1.3", "Automatic allocation"],
-        "storage": {"type": ["nfs"]},
+        "possible_resources": {
+            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "instances": {
+                "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+            },
+            "os_floating_ips": [
+                "2.1.1.1",
+                "2.1.1.2",
+                "2.1.1.3",
+                "Automatic allocation",
+            ],
+            "storage": {"type": ["nfs"]},
+        },
     }
 
 
@@ -232,12 +293,27 @@ def test_get_available_resources_not_found():
     """
     magic_castle = MagicCastle()
     assert magic_castle.get_available_resources() == {
-        "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
-        "instances": {
-            "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-            "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-            "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+        "quotas": {"ram": {"max": 100_000}, "vcpus": {"max": 301}},
+        "resource_details": {
+            "instance_types": [
+                {"name": "p1-1.5gb", "vcpus": 1, "ram": 1_500},
+                {"name": "c8-30gb-186", "vcpus": 8, "ram": 30_000},
+                {"name": "c8-90gb-186", "vcpus": 8, "ram": 90_000},
+            ]
         },
-        "os_floating_ips": ["2.1.1.1", "2.1.1.2", "2.1.1.3", "Automatic allocation"],
-        "storage": {"type": ["nfs"]},
+        "possible_resources": {
+            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "instances": {
+                "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+            },
+            "os_floating_ips": [
+                "2.1.1.1",
+                "2.1.1.2",
+                "2.1.1.3",
+                "Automatic allocation",
+            ],
+            "storage": {"type": ["nfs"]},
+        },
     }
