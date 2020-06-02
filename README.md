@@ -60,10 +60,13 @@ docker run --env-file ./env.list "magic_castle-ui" python -m pytest
 
 ## Cluster storage & backup
 
-All Magic Castle clusters are built in a directory shared with the
-host computer: `<PROJECT ROOT>/clusters_backup`. If one container is destroyed or
-fails, a new container will recover all the previously created clusters in the
-directory.
+Magic Castle clusters are built in the directory `/home/mcu/clusters/<cluster name>`.
+This folder contains the logs from terraform commands and the `terraform.tfstate` file.
+
+If you ran the docker image with the start.sh script, a bind mount was created, which 
+makes the clusters folder accessible to the host machine: `<PROJECT ROOT>/clusters_backup`.
+If one container is destroyed or fails, a new container will recover all the previously 
+created clusters in the directory.
 
 ### Accessing clusters manually with Terraform
 
@@ -82,15 +85,17 @@ terraform show
 ```
 
 #### Option 2
-This option only works if you used the `--mount` option when running your docker instance. Open the terminal on your host machine and access the `clusters_backup` directory.
+This option only works if you used the `--mount` option when running your docker instance
+(i.e. by running the start.sh script).
+Open the terminal on your host machine and access the `clusters_backup` directory.
 1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
-2. Delete de folder named `.terraform`.
+2. Delete the folder named `.terraform`.
 3. Download [magic_castle-openstack-7.2.zip
 ](https://github.com/ComputeCanada/magic_castle/releases/download/7.2/magic_castle-openstack-7.2.zip)
 4. Extract the folder and copy the `openstack` folder in `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
 5. Edit the following line in main.tf:
    ```
-   source = "/home/mcu/magic_castle-openstack-6.4/openstack"
+   source = "/home/mcu/magic_castle-openstack-7.2/openstack"
    ```
    And change it for:
    ```
