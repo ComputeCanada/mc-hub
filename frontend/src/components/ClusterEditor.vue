@@ -66,8 +66,12 @@
                   <v-divider />
                 </div>
                 <v-list-item>
-                  <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
-                  <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+                  <v-col cols="12" sm="6">
+                    <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+                  </v-col>
                 </v-list-item>
                 <v-divider />
               </v-list>
@@ -88,11 +92,27 @@
                   <v-list-item>
                     <v-col cols="12" sm="3" class="pl-0"> {{ label }} size</v-col>
                     <v-col cols="12" sm="9">
-                      <v-text-field v-model.number="magicCastle.storage[`${id}_size`]" type="number" suffix="GB" />
+                      <v-text-field
+                        v-model.number="magicCastle.storage[`${id}_size`]"
+                        type="number"
+                        suffix="GB"
+                        :rules="storageRules"
+                      />
                     </v-col>
                   </v-list-item>
                   <v-divider />
                 </div>
+                <v-list-item>
+                  <v-col cols="12">
+                    <resource-usage-display
+                      :max="volumeStorageMax"
+                      :used="volumeStorageUsed"
+                      title="volume storage"
+                      suffix="GB"
+                    />
+                  </v-col>
+                </v-list-item>
+                <v-divider />
               </v-list>
 
               <!-- Networking & security -->
@@ -291,9 +311,12 @@ export default {
     },
     instanceRules() {
       return [
-        this.ramGbUsed < this.ramGbMax || "Ram exceeds maximum",
-        this.vcpuUsed < this.vcpuMax || "Cores exceeds maximum"
+        this.ramGbUsed <= this.ramGbMax || "Ram exceeds maximum",
+        this.vcpuUsed <= this.vcpuMax || "Cores exceeds maximum"
       ];
+    },
+    storageRules() {
+      return [this.volumeStorageUsed <= this.volumeStorageMax || "Volume storage exceeds maximum"];
     },
     ramGbUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
@@ -316,6 +339,23 @@ export default {
     },
     vcpuMax() {
       return this.quotas.vcpus.max;
+    },
+    volumeStorageUsed() {
+      if (!this.magicCastle || !this.resourceDetails) return 0;
+      const instances = Object.values(this.magicCastle.instances);
+
+      // storage required by nodes
+      let storage = instances.reduce(
+        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_storage"),
+        0
+      );
+      storage += this.magicCastle.storage.home_size;
+      storage += this.magicCastle.storage.project_size;
+      storage += this.magicCastle.storage.scratch_size;
+      return storage;
+    },
+    volumeStorageMax() {
+      return this.quotas.volume_storage.max;
     }
   },
   methods: {

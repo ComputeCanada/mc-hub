@@ -82,6 +82,7 @@ class MagicCastle:
             openstack_manager = OpenStackManager(
                 pre_allocated_ram=parser.get_used_ram(),
                 pre_allocated_cores=parser.get_used_cores(),
+                pre_allocated_volume_size=parser.get_used_volume_size(),
             )
         else:
             openstack_manager = OpenStackManager()

@@ -65,6 +65,27 @@ class TerraformStateParser:
         )
         return sum([ram.value for ram in parser.find(self.__tf_state)])
 
+    def get_used_volume_size(self) -> int:
+        """
+        Calculates the amount of volume storage used by the cluster.
+        This includes both the volumes associated with an instance
+        and the external volumes.
+        :return: The number of gibibytes used
+        """
+        root_storage_parser = parse(
+            "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
+        )
+        external_storage_parser = parse(
+            "resources[?type=openstack_blockstorage_volume_v2].instances[*].attributes.size"
+        )
+        return sum(
+            [
+                storage.value
+                for storage in root_storage_parser.find(self.__tf_state)
+                + external_storage_parser.find(self.__tf_state)
+            ]
+        )
+
     @default("")
     def __get_domain(self):
         parser = parse(
@@ -110,13 +131,16 @@ class TerraformStateParser:
 
     def __get_storage(self):
         @default(0)
-        def get_storage_size(space_name):
+        def get_external_storage_size(space_name):
             parser = parse(
                 f'resources[?type="openstack_blockstorage_volume_v2" & name="{space_name}"].instances[0].attributes.size'
             )
             return int(parser.find(self.__tf_state)[0].value)
 
-        storage = {f"{space}_size": get_storage_size(space) for space in STORAGE_SPACES}
+        storage = {
+            f"{space}_size": get_external_storage_size(space)
+            for space in STORAGE_SPACES
+        }
         storage["type"] = "nfs"
         return storage
 
