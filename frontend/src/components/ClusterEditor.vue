@@ -31,7 +31,12 @@
                   <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
                 </v-list-item>
                 <v-list-item>
-                  <v-text-field v-model.number="magicCastle.nb_users" type="number" label="Number of users" />
+                  <v-text-field
+                    v-model.number="magicCastle.nb_users"
+                    type="number"
+                    label="Number of users"
+                    :rules="[positiveNumberRule]"
+                  />
                 </v-list-item>
               </v-list>
               <v-divider />
@@ -59,7 +64,7 @@
                         v-model.number="magicCastle.instances[id].count"
                         type="number"
                         label="Count"
-                        :rules="instanceRules"
+                        :rules="[greaterThanZeroRule, ...instanceRules]"
                       />
                     </v-col>
                   </v-list-item>
@@ -96,7 +101,7 @@
                         v-model.number="magicCastle.storage[`${id}_size`]"
                         type="number"
                         suffix="GB"
-                        :rules="storageRules"
+                        :rules="[storageRule, greaterThanZeroRule]"
                       />
                     </v-col>
                   </v-list-item>
@@ -128,7 +133,7 @@
                   <v-select
                     :items="getPossibleValues('os_floating_ips')"
                     v-model="magicCastle.os_floating_ips[0]"
-                    :rules="floatingIpRules"
+                    :rules="[floatingIpRule]"
                     label="OpenStack floating IP (optional)"
                   />
                 </v-list-item>
@@ -280,7 +285,10 @@ export default {
       magicCastle: null,
       quotas: null,
       resourceDetails: null,
-      possibleResources: null
+      possibleResources: null,
+
+      greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
+      positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number"
     };
   },
   async created() {
@@ -320,11 +328,11 @@ export default {
         this.vcpuUsed <= this.vcpuMax || "Cores exceeds maximum"
       ];
     },
-    storageRules() {
-      return [this.volumeSizeUsed <= this.volumeSizeMax || "Volume storage exceeds maximum"];
+    storageRule() {
+      return this.volumeSizeUsed <= this.volumeSizeMax || "Volume storage exceeds maximum";
     },
-    floatingIpRules() {
-      return [this.magicCastle.os_floating_ips.length > 0 || "No OpenStack floating IP provided"];
+    floatingIpRule() {
+      return this.magicCastle.os_floating_ips.length > 0 || "No OpenStack floating IP provided";
     },
     ramGbUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;

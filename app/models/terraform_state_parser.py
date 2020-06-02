@@ -69,8 +69,8 @@ class TerraformStateParser:
         """
         Calculates the amount of volume storage used by the cluster.
         This includes both the volumes associated with an instance
-        and the external volumes.
-        :return: The number of gibibytes used
+        and the external volumes (NFS).
+        :return: The number of gibibytes used by all volumes in the cluster
         """
         root_storage_parser = parse(
             "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
