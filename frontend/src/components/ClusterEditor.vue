@@ -335,6 +335,7 @@ export default {
       );
     },
     ramGbMax() {
+      if (!this.quotas) return 0;
       return this.quotas.ram.max / MB_PER_GB;
     },
     vcpuUsed() {
@@ -346,6 +347,7 @@ export default {
       );
     },
     vcpuMax() {
+      if (!this.quotas) return 0;
       return this.quotas.vcpus.max;
     },
     volumeSizeUsed() {
@@ -363,6 +365,7 @@ export default {
       return storage;
     },
     volumeSizeMax() {
+      if (!this.quotas) return 0;
       return this.quotas.volume_size.max;
     }
   },
@@ -374,10 +377,15 @@ export default {
         return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
       }
     },
-    getInstanceDetail(instanceType, detailName) {
-      return this.resourceDetails.instance_types.filter(
+    getInstanceDetail(instanceType, detailName, defaultValue = 0) {
+      const matchingInstances = this.resourceDetails.instance_types.filter(
         instanceTypeDetails => instanceTypeDetails.name === instanceType
-      )[0][detailName];
+      );
+      if (matchingInstances.length > 0) {
+        return matchingInstances[0][detailName];
+      } else {
+        return defaultValue;
+      }
     },
     publicKeysUpdated(file) {
       const reader = new FileReader();

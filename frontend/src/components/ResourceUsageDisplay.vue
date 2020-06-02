@@ -22,7 +22,11 @@ export default {
   },
   computed: {
     usagePercentage() {
-      return Math.round((100 * this.used) / this.max);
+      if (this.max === 0) {
+        return 0;
+      } else {
+        return Math.round((100 * this.used) / this.max);
+      }
     },
     usageColor() {
       return this.usagePercentage < 100 ? "green" : "red";
