@@ -50,7 +50,7 @@ class OpenStackManager:
         return {
             "ram": {"max": self.__get_available_ram()},
             "vcpus": {"max": self.__get_available_vcpus()},
-            "volume_storage": {"max": self.__get_available_volume_size()},
+            "volume_size": {"max": self.__get_available_volume_size()},
         }
 
     def __get_possible_resources(self):
@@ -76,7 +76,7 @@ class OpenStackManager:
                     "name": flavor.name,
                     "vcpus": flavor.vcpus,
                     "ram": flavor.ram,
-                    "required_volume_storage": MINIMUM_ROOT_DISK_SIZE
+                    "required_volume_size": MINIMUM_ROOT_DISK_SIZE
                     if flavor.disk < MINIMUM_ROOT_DISK_SIZE
                     else 0,
                 }

@@ -80,9 +80,9 @@ class MagicCastle:
             parser = TerraformStateParser(self.__get_cluster_name(), state)
 
             openstack_manager = OpenStackManager(
-                pre_allocated_ram=parser.get_used_ram(),
-                pre_allocated_cores=parser.get_used_cores(),
-                pre_allocated_volume_size=parser.get_used_volume_size(),
+                pre_allocated_ram=parser.get_ram(),
+                pre_allocated_cores=parser.get_cores(),
+                pre_allocated_volume_size=parser.get_volume_size(),
                 pre_allocated_floating_ips=parser.get_os_floating_ips(),
             )
         else:

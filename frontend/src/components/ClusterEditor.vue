@@ -105,8 +105,8 @@
                 <v-list-item>
                   <v-col cols="12">
                     <resource-usage-display
-                      :max="volumeStorageMax"
-                      :used="volumeStorageUsed"
+                      :max="volumeSizeMax"
+                      :used="volumeSizeUsed"
                       title="volume storage"
                       suffix="GB"
                     />
@@ -321,7 +321,7 @@ export default {
       ];
     },
     storageRules() {
-      return [this.volumeStorageUsed <= this.volumeStorageMax || "Volume storage exceeds maximum"];
+      return [this.volumeSizeUsed <= this.volumeSizeMax || "Volume storage exceeds maximum"];
     },
     floatingIpRules() {
       return [this.magicCastle.os_floating_ips.length > 0 || "No OpenStack floating IP provided"];
@@ -348,13 +348,13 @@ export default {
     vcpuMax() {
       return this.quotas.vcpus.max;
     },
-    volumeStorageUsed() {
+    volumeSizeUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
       const instances = Object.values(this.magicCastle.instances);
 
       // storage required by nodes
       let storage = instances.reduce(
-        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_storage"),
+        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_size"),
         0
       );
       storage += this.magicCastle.storage.home_size;
@@ -362,8 +362,8 @@ export default {
       storage += this.magicCastle.storage.scratch_size;
       return storage;
     },
-    volumeStorageMax() {
-      return this.quotas.volume_storage.max;
+    volumeSizeMax() {
+      return this.quotas.volume_size.max;
     }
   },
   methods: {

@@ -174,7 +174,7 @@ def test_get_available_resources_valid():
         "quotas": {
             "ram": {"max": 115_360},
             "vcpus": {"max": 311},
-            "volume_storage": {"max": 510},
+            "volume_size": {"max": 510},
         },
         "resource_details": {
             "instance_types": [
@@ -182,25 +182,25 @@ def test_get_available_resources_valid():
                     "name": "p1-1.5gb",
                     "vcpus": 1,
                     "ram": 1_500,
-                    "required_volume_storage": 10,
+                    "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
                     "ram": 30_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
                     "ram": 90_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
                 {
                     "name": "g2-c24-112gb-500",
                     "vcpus": 24,
                     "ram": 112_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
             ]
         },
@@ -260,7 +260,7 @@ def test_get_available_resources_empty():
         "quotas": {
             "ram": {"max": 100_000},
             "vcpus": {"max": 301},
-            "volume_storage": {"max": 280},
+            "volume_size": {"max": 280},
         },
         "resource_details": {
             "instance_types": [
@@ -268,19 +268,19 @@ def test_get_available_resources_empty():
                     "name": "p1-1.5gb",
                     "vcpus": 1,
                     "ram": 1_500,
-                    "required_volume_storage": 10,
+                    "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
                     "ram": 30_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
                     "ram": 90_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
             ]
         },
@@ -327,7 +327,7 @@ def test_get_available_resources_missing_nodes():
         "quotas": {
             "ram": {"max": 100_000},
             "vcpus": {"max": 301},
-            "volume_storage": {"max": 480},
+            "volume_size": {"max": 480},
         },
         "resource_details": {
             "instance_types": [
@@ -335,19 +335,19 @@ def test_get_available_resources_missing_nodes():
                     "name": "p1-1.5gb",
                     "vcpus": 1,
                     "ram": 1_500,
-                    "required_volume_storage": 10,
+                    "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
                     "ram": 30_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
                     "ram": 90_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
             ]
         },
@@ -384,7 +384,7 @@ def test_get_available_resources_not_found():
         "quotas": {
             "ram": {"max": 100_000},
             "vcpus": {"max": 301},
-            "volume_storage": {"max": 280},
+            "volume_size": {"max": 280},
         },
         "resource_details": {
             "instance_types": [
@@ -392,19 +392,19 @@ def test_get_available_resources_not_found():
                     "name": "p1-1.5gb",
                     "vcpus": 1,
                     "ram": 1_500,
-                    "required_volume_storage": 10,
+                    "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
                     "ram": 30_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
                     "ram": 90_000,
-                    "required_volume_storage": 0,
+                    "required_volume_size": 0,
                 },
             ]
         },

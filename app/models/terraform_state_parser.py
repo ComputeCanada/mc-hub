@@ -53,19 +53,19 @@ class TerraformStateParser:
             "os_floating_ips": self.get_os_floating_ips(),
         }
 
-    def get_used_cores(self) -> int:
+    def get_cores(self) -> int:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.vcpus"
         )
         return sum([cores.value for cores in parser.find(self.__tf_state)])
 
-    def get_used_ram(self) -> int:
+    def get_ram(self) -> int:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.ram"
         )
         return sum([ram.value for ram in parser.find(self.__tf_state)])
 
-    def get_used_volume_size(self) -> int:
+    def get_volume_size(self) -> int:
         """
         Calculates the amount of volume storage used by the cluster.
         This includes both the volumes associated with an instance

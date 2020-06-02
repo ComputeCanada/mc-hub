@@ -30,32 +30,32 @@ def missing_nodes_state():
 
 def test_get_used_cores_valid(valid_state):
     parser = TerraformStateParser("valid-1", valid_state)
-    assert parser.get_used_cores() == 4 + 4 + 2
+    assert parser.get_cores() == 4 + 4 + 2
 
 
 def test_get_used_cores_empty(empty_state):
     parser = TerraformStateParser("empty", empty_state)
-    assert parser.get_used_cores() == 0
+    assert parser.get_cores() == 0
 
 
 def test_get_used_cores_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser("missing-nodes", missing_nodes_state)
-    assert parser.get_used_cores() == 0
+    assert parser.get_cores() == 0
 
 
 def test_get_used_ram_valid(valid_state):
     parser = TerraformStateParser("valid-1", valid_state)
-    assert parser.get_used_ram() == 6144 + 6144 + 3072
+    assert parser.get_ram() == 6144 + 6144 + 3072
 
 
 def test_get_used_ram_empty(empty_state):
     parser = TerraformStateParser("empty", empty_state)
-    assert parser.get_used_ram() == 0
+    assert parser.get_ram() == 0
 
 
 def test_get_used_ram_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser("missing-nodes", missing_nodes_state)
-    assert parser.get_used_ram() == 0
+    assert parser.get_ram() == 0
 
 
 def test_get_os_floating_ips_valid(valid_state):
