@@ -58,6 +58,21 @@ def test_get_used_ram_missing_nodes(missing_nodes_state):
     assert parser.get_used_ram() == 0
 
 
+def test_get_os_floating_ips_valid(valid_state):
+    parser = TerraformStateParser("valid-1", valid_state)
+    assert parser.get_os_floating_ips() == ["100.101.102.103"]
+
+
+def test_get_os_floating_ips_empty(empty_state):
+    parser = TerraformStateParser("empty", empty_state)
+    assert parser.get_os_floating_ips() == []
+
+
+def test_get_os_floating_ips_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser("missing-nodes", missing_nodes_state)
+    assert parser.get_os_floating_ips() == ["100.101.102.103"]
+
+
 def test_get_state_summary_valid(valid_state):
     parser = TerraformStateParser("valid-1", valid_state)
     assert parser.get_state_summary() == {

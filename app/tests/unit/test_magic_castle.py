@@ -42,6 +42,10 @@ def mock_openstack_manager(mocker):
         "models.openstack_manager.OpenStackManager._OpenStackManager__get_volume_quotas",
         return_value={"gigabytes": {"limit": 1000, "in_use": 720}},
     )
+    mocker.patch(
+        "models.openstack_manager.OpenStackManager._OpenStackManager__get_network_quotas",
+        return_value={"floatingip": {"limit": 5, "used": 3}},
+    )
     mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
 
 
@@ -229,6 +233,7 @@ def test_get_available_resources_valid():
                 },
             },
             "os_floating_ips": [
+                "100.101.102.103",
                 "2.1.1.1",
                 "2.1.1.2",
                 "2.1.1.3",
@@ -354,6 +359,7 @@ def test_get_available_resources_missing_nodes():
                 "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
             },
             "os_floating_ips": [
+                "100.101.102.103",
                 "2.1.1.1",
                 "2.1.1.2",
                 "2.1.1.3",

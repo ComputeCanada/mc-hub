@@ -126,9 +126,9 @@
                 </v-list-item>
                 <v-list-item>
                   <v-select
-                    :items="[...getPossibleValues('os_floating_ips'), ...magicCastle.os_floating_ips]"
+                    :items="getPossibleValues('os_floating_ips')"
                     v-model="magicCastle.os_floating_ips[0]"
-                    @change="osFloatingIpsUpdated"
+                    :rules="floatingIpRules"
                     label="OpenStack floating IP (optional)"
                   />
                 </v-list-item>
@@ -243,7 +243,7 @@ const DEFAULT_MAGIC_CASTLE = {
   },
   public_keys: [],
   guest_passwd: "",
-  os_floating_ips: ["Automatic allocation"]
+  os_floating_ips: []
 };
 
 const MB_PER_GB = 1024;
@@ -283,12 +283,17 @@ export default {
       possibleResources: null
     };
   },
-  created() {
+  async created() {
     if (this.existingCluster) {
       this.startStatusPolling();
     } else {
-      this.loadAvailableResources();
       this.magicCastle = DEFAULT_MAGIC_CASTLE;
+      await this.loadAvailableResources();
+      if (this.possibleResources.os_floating_ips.length === 0) {
+        this.showError("There is no floating IP available right now.");
+      } else {
+        this.magicCastle.os_floating_ips = [this.possibleResources.os_floating_ips[0]];
+      }
     }
   },
   beforeDestroy() {
@@ -317,6 +322,9 @@ export default {
     },
     storageRules() {
       return [this.volumeStorageUsed <= this.volumeStorageMax || "Volume storage exceeds maximum"];
+    },
+    floatingIpRules() {
+      return [this.magicCastle.os_floating_ips.length > 0 || "No OpenStack floating IP provided"];
     },
     ramGbUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
@@ -370,12 +378,6 @@ export default {
       return this.resourceDetails.instance_types.filter(
         instanceTypeDetails => instanceTypeDetails.name === instanceType
       )[0][detailName];
-    },
-    osFloatingIpsUpdated() {
-      // When the floating IP text field is empty, we need to empty the floating IPs array
-      if (this.magicCastle.os_floating_ips[0] === "") {
-        this.magicCastle.os_floating_ips = [];
-      }
     },
     publicKeysUpdated(file) {
       const reader = new FileReader();

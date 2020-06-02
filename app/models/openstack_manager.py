@@ -13,15 +13,23 @@ MINIMUM_ROOT_DISK_SIZE = 10
 
 class OpenStackManager:
     def __init__(
-        self, *, pre_allocated_cores=0, pre_allocated_ram=0, pre_allocated_volume_size=0
+        self,
+        *,
+        pre_allocated_cores=0,
+        pre_allocated_ram=0,
+        pre_allocated_volume_size=0,
+        pre_allocated_floating_ips=None,
     ):
         self.__connection = openstack.connect()
+
         self.__pre_allocated_cores = pre_allocated_cores
         self.__pre_allocated_ram = pre_allocated_ram
         self.__pre_allocated_volume_size = pre_allocated_volume_size
+        self.__pre_allocated_floating_ips = pre_allocated_floating_ips or []
 
         self.__volume_quotas = None
         self.__compute_quotas = None
+        self.__network_quotas = None
 
         self.__available_flavors = None
 
@@ -33,7 +41,7 @@ class OpenStackManager:
         }
 
     def get_available_floating_ips(self):
-        return [
+        return self.__pre_allocated_floating_ips + [
             ip.floating_ip_address
             for ip in self.__connection.network.ips(status="DOWN")
         ]
@@ -47,7 +55,11 @@ class OpenStackManager:
 
     def __get_possible_resources(self):
         flavors = list(map(lambda flavor: flavor.name, self.__get_available_flavors()))
-        floating_ips = self.get_available_floating_ips() + [AUTO_ALLOCATED_IP_LABEL]
+
+        floating_ips = self.get_available_floating_ips()
+        if self.__get_non_allocated_floating_ip_count() > 0:
+            floating_ips += [AUTO_ALLOCATED_IP_LABEL]
+
         return {
             "image": self.__get_images(),
             "instances": {
@@ -111,6 +123,12 @@ class OpenStackManager:
             - self.__get_volume_quotas()["gigabytes"]["in_use"]
         )
 
+    def __get_non_allocated_floating_ip_count(self):
+        return (
+            self.__get_network_quotas()["floatingip"]["limit"]
+            - self.__get_network_quotas()["floatingip"]["used"]
+        )
+
     def __get_volume_quotas(self):
         if self.__volume_quotas is None:
             # Normally, we should use self.__connection.get_volume_quotas(...) from openstack sdk.
@@ -138,3 +156,17 @@ class OpenStackManager:
                 f"/os-quota-sets/{environ['OS_PROJECT_ID']}/detail"
             ).json()["quota_set"]
         return self.__compute_quotas
+
+    def __get_network_quotas(self):
+        if self.__network_quotas is None:
+            # Normally, we should use self.__connection.get_network_quotas(...) from openstack sdk.
+            # However, this method executes the action
+            # identity:list_projects from the identity api which is forbidden
+            # to some users.
+            #
+            # API documentation:
+            # https://docs.openstack.org/api-ref/network/v2/?expanded=show-quota-details-for-a-tenant-detail#show-quota-details-for-a-tenant
+            self.__network_quotas = self.__connection.network.get(
+                f"/quotas/{environ['OS_PROJECT_ID']}/details.json"
+            ).json()["quota"]
+        return self.__network_quotas

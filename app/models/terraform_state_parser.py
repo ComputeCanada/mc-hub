@@ -50,7 +50,7 @@ class TerraformStateParser:
             "storage": self.__get_storage(),
             "public_keys": self.__get_public_keys(),
             "guest_passwd": self.__get_guest_passwd(),
-            "os_floating_ips": self.__get_os_floating_ips(),
+            "os_floating_ips": self.get_os_floating_ips(),
         }
 
     def get_used_cores(self) -> int:
@@ -85,6 +85,12 @@ class TerraformStateParser:
                 + external_storage_parser.find(self.__tf_state)
             ]
         )
+
+    def get_os_floating_ips(self):
+        parser = parse(
+            "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.floating_ip"
+        )
+        return [match.value for match in parser.find(self.__tf_state)]
 
     @default("")
     def __get_domain(self):
@@ -156,9 +162,3 @@ class TerraformStateParser:
             "resources[?name=hieradata].instances[0].attributes.vars.guest_passwd"
         )
         return parser.find(self.__tf_state)[0].value
-
-    def __get_os_floating_ips(self):
-        parser = parse(
-            "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.floating_ip"
-        )
-        return [match.value for match in parser.find(self.__tf_state)]
