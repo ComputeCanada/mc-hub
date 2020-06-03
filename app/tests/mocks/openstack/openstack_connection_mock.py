@@ -8,14 +8,14 @@ class OpenStackConnectionMock:
                 self.disk = disk
 
         def flavors(self):
-            # Here, rounded values are used to simplify the calculations
-            # with RAM quantities, but they don't exactly match the real values
             flavors = [
-                self.Flavor("p1-1.5gb", 1, 1_500, 0),
-                self.Flavor("c8-30gb-186", 8, 30_000, 20),
-                self.Flavor("c8-90gb-186", 8, 90_000, 20),
-                self.Flavor("g2-c24-112gb-500", 24, 112_000, 80),
-                self.Flavor("c16-120gb-392", 16, 120_000, 20),
+                self.Flavor("p1-1.5gb", 1, 1_536, 0),
+                self.Flavor("p2-3gb", 2, 3_072, 0),
+                self.Flavor("p4-6gb", 4, 6_144, 0),
+                self.Flavor("c8-30gb-186", 8, 30_720, 20),
+                self.Flavor("c8-90gb-186", 8, 92_160, 20),
+                self.Flavor("g2-c24-112gb-500", 24, 114_688, 80),
+                self.Flavor("c16-120gb-392", 16, 122_880, 20),
             ]
             return (flavor for flavor in flavors)
 

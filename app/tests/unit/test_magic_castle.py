@@ -35,7 +35,7 @@ def mock_openstack_manager(mocker):
         "models.openstack_manager.OpenStackManager._OpenStackManager__get_compute_quotas",
         return_value={
             "cores": {"limit": 500, "in_use": 199},
-            "ram": {"limit": 280_000, "in_use": 180_000},
+            "ram": {"limit": 286_720, "in_use": 184_320},  # 280 GiO limit, 180 GiO used
         },
     )
     mocker.patch(
@@ -155,24 +155,24 @@ def test_get_available_resources_valid():
 
     valid-1 cluster uses:
     4 + 4 + 2 = 10 vcpus
-    6144 + 6144 + 3072 = 15360 ram (15 gb)
+    6144 + 6144 + 3072 = 15360 ram (15 GiO)
     10 + 10 + 10 [root disks]
-    + 50 + 50 + 100 [external volumes] = 230 gb of volume storage
+    + 50 + 50 + 100 [external volumes] = 230 GiO of volume storage
 
     openstack's quotas says there currently remains:
     500 - 199 = 301 vcpus
-    280000 - 180000 = 100000 ram (100 gb)
-    1000 - 720 = 280 gb
+    286,720 - 184,320 = 102,400 ram (100 GiO)
+    1000 - 720 = 280 GiO of volume storage
 
     Therefore, valid-1 cluster can use a total of:
     10 + 301 = 311 vcpus
-    15360 + 100000 = 115360 ram (115 gb)
-    230 + 280 = 510 gb of volume storage
+    15,360 + 102,400 = 117,760 ram (115 GiO)
+    230 + 280 = 510 GiO of volume storage
     """
     magic_castle = MagicCastle("valid-1")
     assert magic_castle.get_available_resources() == {
         "quotas": {
-            "ram": {"max": 115_360},
+            "ram": {"max": 117_760},
             "vcpus": {"max": 311},
             "volume_size": {"max": 510},
         },
@@ -181,31 +181,43 @@ def test_get_available_resources_valid():
                 {
                     "name": "p1-1.5gb",
                     "vcpus": 1,
-                    "ram": 1_500,
+                    "ram": 1_536,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p2-3gb",
+                    "vcpus": 2,
+                    "ram": 3_072,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p4-6gb",
+                    "vcpus": 4,
+                    "ram": 6_144,
                     "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
-                    "ram": 30_000,
+                    "ram": 30_720,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
-                    "ram": 90_000,
+                    "ram": 92_160,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "g2-c24-112gb-500",
                     "vcpus": 24,
-                    "ram": 112_000,
+                    "ram": 114_688,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c16-120gb-392",
                     "vcpus": 16,
-                    "ram": 120_000,
+                    "ram": 122_880,
                     "required_volume_size": 0,
                 },
             ]
@@ -215,6 +227,7 @@ def test_get_available_resources_valid():
             "instances": {
                 "mgmt": {
                     "type": [
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -223,6 +236,8 @@ def test_get_available_resources_valid():
                 },
                 "login": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -231,6 +246,8 @@ def test_get_available_resources_valid():
                 },
                 "node": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -258,13 +275,13 @@ def test_get_available_resources_empty():
 
     openstack's quotas says there currently remains:
     500 - 199 = 301 vcpus
-    280000 - 180000 = 100000 ram (100 gb)
-    1000 - 720 = 280 gb
+    286,720 - 184,320 = 102,400 ram (100 GiO)
+    1000 - 720 = 280 GiO of volume storage
     """
     magic_castle = MagicCastle("empty")
     assert magic_castle.get_available_resources() == {
         "quotas": {
-            "ram": {"max": 100_000},
+            "ram": {"max": 102_400},
             "vcpus": {"max": 301},
             "volume_size": {"max": 280},
         },
@@ -273,31 +290,43 @@ def test_get_available_resources_empty():
                 {
                     "name": "p1-1.5gb",
                     "vcpus": 1,
-                    "ram": 1_500,
+                    "ram": 1_536,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p2-3gb",
+                    "vcpus": 2,
+                    "ram": 3_072,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p4-6gb",
+                    "vcpus": 4,
+                    "ram": 6_144,
                     "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
-                    "ram": 30_000,
+                    "ram": 30_720,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
-                    "ram": 90_000,
+                    "ram": 92_160,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "g2-c24-112gb-500",
                     "vcpus": 24,
-                    "ram": 112_000,
+                    "ram": 114_688,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c16-120gb-392",
                     "vcpus": 16,
-                    "ram": 120_000,
+                    "ram": 122_880,
                     "required_volume_size": 0,
                 },
             ]
@@ -307,6 +336,7 @@ def test_get_available_resources_empty():
             "instances": {
                 "mgmt": {
                     "type": [
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -315,6 +345,8 @@ def test_get_available_resources_empty():
                 },
                 "login": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -323,6 +355,8 @@ def test_get_available_resources_empty():
                 },
                 "node": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -349,22 +383,22 @@ def test_get_available_resources_missing_nodes():
     0 vcpus
     0 ram
     0 + 0 + 0 [root disks]
-    + 50 + 50 + 100 [external volumes] = 200 gb of volume storage
+    + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
 
     openstack's quotas says there currently remains:
     500 - 199 = 301 vcpus
-    280000 - 180000 = 100000 ram (100 gb)
-    1000 - 720 = 280 gb
+    286,720 - 184,320 = 102,400 ram (100 GiO)
+    1000 - 720 = 280 GiO of volume storage
 
     Therefore, missing-nodes cluster can use a total of:
     0 + 301 = 301 vcpus
-    0 + 100000 = 100000 ram (100 gb)
-    200 + 280 = 480 gb of volume storage
+    0 + 102,400 = 102,400 ram (100 GiO)
+    200 + 280 = 480 GiO of volume storage
     """
     magic_castle = MagicCastle("missing-nodes")
     assert magic_castle.get_available_resources() == {
         "quotas": {
-            "ram": {"max": 100_000},
+            "ram": {"max": 102_400},
             "vcpus": {"max": 301},
             "volume_size": {"max": 480},
         },
@@ -373,31 +407,43 @@ def test_get_available_resources_missing_nodes():
                 {
                     "name": "p1-1.5gb",
                     "vcpus": 1,
-                    "ram": 1_500,
+                    "ram": 1_536,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p2-3gb",
+                    "vcpus": 2,
+                    "ram": 3_072,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p4-6gb",
+                    "vcpus": 4,
+                    "ram": 6_144,
                     "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
-                    "ram": 30_000,
+                    "ram": 30_720,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
-                    "ram": 90_000,
+                    "ram": 92_160,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "g2-c24-112gb-500",
                     "vcpus": 24,
-                    "ram": 112_000,
+                    "ram": 114_688,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c16-120gb-392",
                     "vcpus": 16,
-                    "ram": 120_000,
+                    "ram": 122_880,
                     "required_volume_size": 0,
                 },
             ]
@@ -407,6 +453,7 @@ def test_get_available_resources_missing_nodes():
             "instances": {
                 "mgmt": {
                     "type": [
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -415,6 +462,8 @@ def test_get_available_resources_missing_nodes():
                 },
                 "login": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -423,6 +472,8 @@ def test_get_available_resources_missing_nodes():
                 },
                 "node": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -448,13 +499,13 @@ def test_get_available_resources_not_found():
 
     openstack's quotas says there currently remains:
     500 - 199 = 301 vcpus
-    280000 - 180000 = 100000 ram (100 gb)
-    1000 - 720 = 280 gb
+    286,720 - 184,320 = 102,400 ram (100 GiO)
+    1000 - 720 = 280 GiO of volume storage
     """
     magic_castle = MagicCastle()
     assert magic_castle.get_available_resources() == {
         "quotas": {
-            "ram": {"max": 100_000},
+            "ram": {"max": 102_400},
             "vcpus": {"max": 301},
             "volume_size": {"max": 280},
         },
@@ -463,31 +514,43 @@ def test_get_available_resources_not_found():
                 {
                     "name": "p1-1.5gb",
                     "vcpus": 1,
-                    "ram": 1_500,
+                    "ram": 1_536,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p2-3gb",
+                    "vcpus": 2,
+                    "ram": 3_072,
+                    "required_volume_size": 10,
+                },
+                {
+                    "name": "p4-6gb",
+                    "vcpus": 4,
+                    "ram": 6_144,
                     "required_volume_size": 10,
                 },
                 {
                     "name": "c8-30gb-186",
                     "vcpus": 8,
-                    "ram": 30_000,
+                    "ram": 30_720,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c8-90gb-186",
                     "vcpus": 8,
-                    "ram": 90_000,
+                    "ram": 92_160,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "g2-c24-112gb-500",
                     "vcpus": 24,
-                    "ram": 112_000,
+                    "ram": 114_688,
                     "required_volume_size": 0,
                 },
                 {
                     "name": "c16-120gb-392",
                     "vcpus": 16,
-                    "ram": 120_000,
+                    "ram": 122_880,
                     "required_volume_size": 0,
                 },
             ]
@@ -497,6 +560,7 @@ def test_get_available_resources_not_found():
             "instances": {
                 "mgmt": {
                     "type": [
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -505,6 +569,8 @@ def test_get_available_resources_not_found():
                 },
                 "login": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
@@ -513,6 +579,8 @@ def test_get_available_resources_not_found():
                 },
                 "node": {
                     "type": [
+                        "p2-3gb",
+                        "p4-6gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
