@@ -10,6 +10,13 @@ AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
 # Otherwise, it creates and mounts an external volume of 10 GB.
 MINIMUM_ROOT_DISK_SIZE = 10
 
+# Magic Castle requires the following specs for each instance category
+INSTANCE_MINIMUM_REQUIREMENTS = {
+    "mgmt": {"ram": 6144, "vcpus": 2},
+    "login": {"ram": 2048, "vcpus": 2},
+    "node": {"ram": 2048, "vcpus": 1},
+}
+
 
 class OpenStackManager:
     def __init__(
@@ -54,8 +61,6 @@ class OpenStackManager:
         }
 
     def __get_possible_resources(self):
-        flavors = list(map(lambda flavor: flavor.name, self.__get_available_flavors()))
-
         floating_ips = self.get_available_floating_ips()
         if self.__get_non_allocated_floating_ip_count() > 0:
             floating_ips += [AUTO_ALLOCATED_IP_LABEL]
@@ -63,7 +68,12 @@ class OpenStackManager:
         return {
             "image": self.__get_images(),
             "instances": {
-                category: {"type": flavors} for category in INSTANCE_CATEGORIES
+                category: {
+                    "type": [
+                        flavor.name for flavor in self.__get_available_flavors(category)
+                    ]
+                }
+                for category in INSTANCE_CATEGORIES
             },
             "os_floating_ips": floating_ips,
             "storage": {"type": ["nfs"]},
@@ -91,16 +101,21 @@ class OpenStackManager:
             if search(VALID_IMAGES, image.name, IGNORECASE)
         ]
 
-    def __get_available_flavors(self):
+    def __get_available_flavors(self, category=None):
         if self.__available_flavors is None:
-            self.__available_flavors = [
-                flavor
-                for flavor in self.__connection.compute.flavors()
-                if flavor.ram <= self.__get_available_ram()
-                and flavor.vcpus <= self.__get_available_vcpus()
-            ]
+            self.__available_flavors = list(self.__connection.compute.flavors())
             self.__available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
-        return self.__available_flavors
+
+        def validate_flavor_requirements(flavor):
+            return (
+                flavor.vcpus >= INSTANCE_MINIMUM_REQUIREMENTS[category]["vcpus"]
+                and flavor.ram >= INSTANCE_MINIMUM_REQUIREMENTS[category]["ram"]
+            )
+
+        if category is None:
+            return self.__available_flavors
+        else:
+            return list(filter(validate_flavor_requirements, self.__available_flavors))
 
     def __get_available_ram(self):
         return (

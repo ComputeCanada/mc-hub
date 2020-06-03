@@ -202,6 +202,12 @@ def test_get_available_resources_valid():
                     "ram": 112_000,
                     "required_volume_size": 0,
                 },
+                {
+                    "name": "c16-120gb-392",
+                    "vcpus": 16,
+                    "ram": 120_000,
+                    "required_volume_size": 0,
+                },
             ]
         },
         "possible_resources": {
@@ -209,26 +215,26 @@ def test_get_available_resources_valid():
             "instances": {
                 "mgmt": {
                     "type": [
-                        "p1-1.5gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
+                        "c16-120gb-392",
                     ]
                 },
                 "login": {
                     "type": [
-                        "p1-1.5gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
+                        "c16-120gb-392",
                     ]
                 },
                 "node": {
                     "type": [
-                        "p1-1.5gb",
                         "c8-30gb-186",
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
+                        "c16-120gb-392",
                     ]
                 },
             },
@@ -282,14 +288,47 @@ def test_get_available_resources_empty():
                     "ram": 90_000,
                     "required_volume_size": 0,
                 },
+                {
+                    "name": "g2-c24-112gb-500",
+                    "vcpus": 24,
+                    "ram": 112_000,
+                    "required_volume_size": 0,
+                },
+                {
+                    "name": "c16-120gb-392",
+                    "vcpus": 16,
+                    "ram": 120_000,
+                    "required_volume_size": 0,
+                },
             ]
         },
         "possible_resources": {
             "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
             "instances": {
-                "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-                "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-                "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "mgmt": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
+                "login": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
+                "node": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
             },
             "os_floating_ips": [
                 "2.1.1.1",
@@ -349,14 +388,47 @@ def test_get_available_resources_missing_nodes():
                     "ram": 90_000,
                     "required_volume_size": 0,
                 },
+                {
+                    "name": "g2-c24-112gb-500",
+                    "vcpus": 24,
+                    "ram": 112_000,
+                    "required_volume_size": 0,
+                },
+                {
+                    "name": "c16-120gb-392",
+                    "vcpus": 16,
+                    "ram": 120_000,
+                    "required_volume_size": 0,
+                },
             ]
         },
         "possible_resources": {
             "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
             "instances": {
-                "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-                "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-                "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "mgmt": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
+                "login": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
+                "node": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
             },
             "os_floating_ips": [
                 "100.101.102.103",
@@ -406,14 +478,47 @@ def test_get_available_resources_not_found():
                     "ram": 90_000,
                     "required_volume_size": 0,
                 },
+                {
+                    "name": "g2-c24-112gb-500",
+                    "vcpus": 24,
+                    "ram": 112_000,
+                    "required_volume_size": 0,
+                },
+                {
+                    "name": "c16-120gb-392",
+                    "vcpus": 16,
+                    "ram": 120_000,
+                    "required_volume_size": 0,
+                },
             ]
         },
         "possible_resources": {
             "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
             "instances": {
-                "mgmt": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-                "login": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
-                "node": {"type": ["p1-1.5gb", "c8-30gb-186", "c8-90gb-186",]},
+                "mgmt": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
+                "login": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
+                "node": {
+                    "type": [
+                        "c8-30gb-186",
+                        "c8-90gb-186",
+                        "g2-c24-112gb-500",
+                        "c16-120gb-392",
+                    ]
+                },
             },
             "os_floating_ips": [
                 "2.1.1.1",
