@@ -1,4 +1,13 @@
+import re
+
+
 class OpenStackConnectionMock:
+    """
+    OpenStackConnectionMock is a mock class for the openstack.connection.Connection class.
+    It is used to avoid making real calls to the OpenStack API while running unit and integration tests.
+    Right now, only a few OpenStack APIs are supported and return realistic values.
+    """
+
     class ComputeApi:
         class Flavor:
             def __init__(self, name, vcpus, ram, disk):
@@ -19,6 +28,25 @@ class OpenStackConnectionMock:
             ]
             return (flavor for flavor in flavors)
 
+        def get(self, url):
+            if re.search(r"\/os-quota-sets\/.*\/detail", url):
+                return OpenStackConnectionMock.OpenStackResponseMock(
+                    {
+                        "quota_set": {
+                            "cores": {"limit": 500, "in_use": 199},
+                            "ram": {
+                                # 280 GiO limit, 180 GiO used
+                                "limit": 286_720,
+                                "in_use": 184_320,
+                            },
+                        }
+                    }
+                )
+            else:
+                NotImplementedError(
+                    f"OpenStack connection mock not implemented for url {url}"
+                )
+
     class NetworkApi:
         class Ip:
             def __init__(self, floating_ip_address):
@@ -35,6 +63,16 @@ class OpenStackConnectionMock:
                 ips = [active_ips] + [down_ips]
             return (ip for ip in ips)
 
+        def get(self, url):
+            if re.search(r"\/quotas\/.*\/details.json", url):
+                return OpenStackConnectionMock.OpenStackResponseMock(
+                    {"quota": {"floatingip": {"limit": 5, "used": 3}}}
+                )
+            else:
+                raise NotImplementedError(
+                    f"OpenStack connection mock not implemented for url {url}"
+                )
+
     class ImageApi:
         class Image:
             def __init__(self, name):
@@ -48,7 +86,26 @@ class OpenStackConnectionMock:
             ]
             return (image for image in images)
 
+    class BlockStorageApi:
+        def get(self, url):
+            if re.search(r"\/os-quota-sets\/.*\?usage=true", url):
+                return OpenStackConnectionMock.OpenStackResponseMock(
+                    {"quota_set": {"gigabytes": {"limit": 1000, "in_use": 720}}}
+                )
+            else:
+                raise NotImplementedError(
+                    f"OpenStack connection mock not implemented for url {url}"
+                )
+
+    class OpenStackResponseMock:
+        def __init__(self, json_data: dict):
+            self.__json_data = json_data
+
+        def json(self) -> dict:
+            return self.__json_data
+
     def __init__(self):
         self.compute = self.ComputeApi()
         self.network = self.NetworkApi()
         self.image = self.ImageApi()
+        self.block_storage = self.BlockStorageApi()

@@ -31,21 +31,6 @@ def generate_test_clusters():
 
 @pytest.fixture(autouse=True)
 def mock_openstack_manager(mocker):
-    mocker.patch(
-        "models.openstack_manager.OpenStackManager._OpenStackManager__get_compute_quotas",
-        return_value={
-            "cores": {"limit": 500, "in_use": 199},
-            "ram": {"limit": 286_720, "in_use": 184_320},  # 280 GiO limit, 180 GiO used
-        },
-    )
-    mocker.patch(
-        "models.openstack_manager.OpenStackManager._OpenStackManager__get_volume_quotas",
-        return_value={"gigabytes": {"limit": 1000, "in_use": 720}},
-    )
-    mocker.patch(
-        "models.openstack_manager.OpenStackManager._OpenStackManager__get_network_quotas",
-        return_value={"floatingip": {"limit": 5, "used": 3}},
-    )
     mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
 
 

@@ -3,6 +3,7 @@ from os import path
 from shutil import rmtree, copytree
 from models.cluster_status_code import ClusterStatusCode
 from pathlib import Path
+from tests.mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 import pytest
 
 NON_EXISTING_CLUSTER_NAME = "non-existing"
@@ -77,13 +78,7 @@ def client(mocker):
         path.join(Path(__file__).parent.parent, "mock-clusters", "valid-1"),
         "/home/mcu/clusters/valid-1",
     )
-    mocker.patch(
-        "models.openstack_manager.OpenStackManager.__init__", return_value=None
-    )
-    mocker.patch(
-        "models.openstack_manager.OpenStackManager.get_available_floating_ips",
-        return_value=["1.2.3.4"],
-    )
+    mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
 
     with app.test_client() as client:
         yield client
