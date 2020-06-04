@@ -51,12 +51,17 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    ```
 
 ## Running Tests
-Make sure you have built an image of Magic Castle UI first, as shown in the previous step. Then, run the following command:
+Make sure you have built an image of Magic Castle UI first and that you have sourced the openrc file, 
+as shown in the previous step.
+Then, run the following command:
 ````shell script
 docker run --env-file ./env.list "magic_castle-ui" python -m pytest
 ````
 
 > **Check your existing clusters**: MC UI will overwrite the following cluster names when running tests: valid-1, missing-nodes, empty.
+
+> **Note**: The tests require the existence of OpenStack's environment variables
+> (achieved with `source _project_-openrc.sh`). However, no real API calls are made with these environment variables.
 
 ## Cluster storage & backup
 
