@@ -287,6 +287,8 @@ export default {
       resourceDetails: null,
       possibleResources: null,
 
+      forceLoading: false,
+
       greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
       positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number"
     };
@@ -313,7 +315,7 @@ export default {
         this.currentStatus
       );
       const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || clusterIsBusy);
-      return this.possibleResources === null || existingClusterIsLoading;
+      return this.forceLoading || this.possibleResources === null || existingClusterIsLoading;
     },
     formattedStatus() {
       if (this.currentStatus === null) {
@@ -418,6 +420,7 @@ export default {
 
         if (this.currentStatus !== status) {
           // The cluster status changed or was fetched for the first time
+          this.forceLoading = false;
           const clusterIsBusy = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(status);
           if (!clusterIsBusy) {
             this.loadAvailableResources();
@@ -459,6 +462,7 @@ export default {
       this.resourceDetails = availableResources.resource_details;
     },
     async createCluster() {
+      this.forceLoading = true;
       try {
         await MagicCastleRepository.create(this.magicCastle);
         await this.$router.push({ path: `/clusters/${this.magicCastle.cluster_name}` });
@@ -474,6 +478,7 @@ export default {
       }
     },
     async modifyCluster() {
+      this.forceLoading = true;
       try {
         await MagicCastleRepository.update(this.clusterName, this.magicCastle);
         this.unloadCluster();
@@ -482,6 +487,7 @@ export default {
       }
     },
     async deleteCluster() {
+      this.forceLoading = true;
       try {
         await MagicCastleRepository.delete(this.clusterName);
         this.unloadCluster();
