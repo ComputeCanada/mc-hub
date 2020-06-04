@@ -28,34 +28,64 @@ def missing_nodes_state():
     return load_state("missing-nodes")
 
 
-def test_get_used_cores_valid(valid_state):
+def test_get_cores_valid(valid_state):
     parser = TerraformStateParser("valid-1", valid_state)
     assert parser.get_cores() == 4 + 4 + 2
 
 
-def test_get_used_cores_empty(empty_state):
+def test_get_cores_empty(empty_state):
     parser = TerraformStateParser("empty", empty_state)
     assert parser.get_cores() == 0
 
 
-def test_get_used_cores_missing_nodes(missing_nodes_state):
+def test_get_cores_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser("missing-nodes", missing_nodes_state)
     assert parser.get_cores() == 0
 
 
-def test_get_used_ram_valid(valid_state):
+def test_get_ram_valid(valid_state):
     parser = TerraformStateParser("valid-1", valid_state)
     assert parser.get_ram() == 6144 + 6144 + 3072
 
 
-def test_get_used_ram_empty(empty_state):
+def test_get_ram_empty(empty_state):
     parser = TerraformStateParser("empty", empty_state)
     assert parser.get_ram() == 0
 
 
-def test_get_used_ram_missing_nodes(missing_nodes_state):
+def test_get_ram_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser("missing-nodes", missing_nodes_state)
     assert parser.get_ram() == 0
+
+
+def test_get_volume_count_valid(valid_state):
+    parser = TerraformStateParser("valid-1", valid_state)
+    assert parser.get_volume_count() == 6
+
+
+def test_get_volume_count_empty(empty_state):
+    parser = TerraformStateParser("empty", empty_state)
+    assert parser.get_volume_count() == 0
+
+
+def test_get_volume_count_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser("missing-nodes", missing_nodes_state)
+    assert parser.get_volume_count() == 3
+
+
+def test_get_volume_size_valid(valid_state):
+    parser = TerraformStateParser("valid-1", valid_state)
+    assert parser.get_volume_size() == 230
+
+
+def test_get_volume_size_empty(empty_state):
+    parser = TerraformStateParser("empty", empty_state)
+    assert parser.get_volume_size() == 0
+
+
+def test_get_volume_size_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser("missing-nodes", missing_nodes_state)
+    assert parser.get_volume_size() == 200
 
 
 def test_get_os_floating_ips_valid(valid_state):
