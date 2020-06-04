@@ -24,6 +24,7 @@ class OpenStackManager:
         *,
         pre_allocated_cores=0,
         pre_allocated_ram=0,
+        pre_allocated_volume_count=0,
         pre_allocated_volume_size=0,
         pre_allocated_floating_ips=None,
     ):
@@ -31,6 +32,7 @@ class OpenStackManager:
 
         self.__pre_allocated_cores = pre_allocated_cores
         self.__pre_allocated_ram = pre_allocated_ram
+        self.__pre_allocated_volume_count = pre_allocated_volume_count
         self.__pre_allocated_volume_size = pre_allocated_volume_size
         self.__pre_allocated_floating_ips = pre_allocated_floating_ips or []
 
@@ -57,6 +59,7 @@ class OpenStackManager:
         return {
             "ram": {"max": self.__get_available_ram()},
             "vcpus": {"max": self.__get_available_vcpus()},
+            "volume_count": {"max": self.__get_available_volume_count()},
             "volume_size": {"max": self.__get_available_volume_size()},
         }
 
@@ -86,6 +89,9 @@ class OpenStackManager:
                     "name": flavor.name,
                     "vcpus": flavor.vcpus,
                     "ram": flavor.ram,
+                    "required_volume_count": 1
+                    if flavor.disk < MINIMUM_ROOT_DISK_SIZE
+                    else 0,
                     "required_volume_size": MINIMUM_ROOT_DISK_SIZE
                     if flavor.disk < MINIMUM_ROOT_DISK_SIZE
                     else 0,
@@ -129,6 +135,13 @@ class OpenStackManager:
             self.__pre_allocated_cores
             + self.__get_compute_quotas()["cores"]["limit"]
             - self.__get_compute_quotas()["cores"]["in_use"]
+        )
+
+    def __get_available_volume_count(self):
+        return (
+            self.__pre_allocated_volume_count
+            + self.__get_volume_quotas()["volumes"]["limit"]
+            - self.__get_volume_quotas()["volumes"]["in_use"]
         )
 
     def __get_available_volume_size(self):

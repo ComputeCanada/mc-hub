@@ -101,14 +101,17 @@
                         v-model.number="magicCastle.storage[`${id}_size`]"
                         type="number"
                         suffix="GB"
-                        :rules="[storageRule, greaterThanZeroRule]"
+                        :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
                       />
                     </v-col>
                   </v-list-item>
                   <v-divider />
                 </div>
                 <v-list-item>
-                  <v-col cols="12">
+                  <v-col cols="12" sm="6">
+                    <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+                  </v-col>
+                  <v-col cols="12" sm="6">
                     <resource-usage-display
                       :max="volumeSizeMax"
                       :used="volumeSizeUsed"
@@ -219,8 +222,6 @@ const ClusterFormattedStatus = Object.freeze({
   not_found: { text: "Not found", color: "purple" }
 });
 
-const POLL_STATUS_INTERVAL = 1000;
-
 const DEFAULT_MAGIC_CASTLE = {
   cluster_name: "phoenix",
   domain: "calculquebec.cloud",
@@ -251,7 +252,9 @@ const DEFAULT_MAGIC_CASTLE = {
   os_floating_ips: []
 };
 
+const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
+const POLL_STATUS_INTERVAL = 1000;
 
 export default {
   name: "ClusterEditor",
@@ -330,7 +333,10 @@ export default {
         this.vcpuUsed <= this.vcpuMax || "Cores exceeds maximum"
       ];
     },
-    storageRule() {
+    volumeCountRule() {
+      return this.volumeCountUsed <= this.volumeCountMax || "Number of volumes exceeds maximum";
+    },
+    volumeSizeRule() {
       return this.volumeSizeUsed <= this.volumeSizeMax || "Volume storage exceeds maximum";
     },
     floatingIpRule() {
@@ -359,6 +365,20 @@ export default {
     vcpuMax() {
       if (!this.quotas) return 0;
       return this.quotas.vcpus.max;
+    },
+    volumeCountUsed() {
+      if (!this.magicCastle || !this.resourceDetails) return 0;
+      const instances = Object.values(this.magicCastle.instances);
+      return (
+        instances.reduce(
+          (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_count"),
+          0
+        ) + EXTERNAL_STORAGE_VOLUME_COUNT
+      );
+    },
+    volumeCountMax() {
+      if (!this.quotas) return 0;
+      return this.quotas.volume_count.max;
     },
     volumeSizeUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;

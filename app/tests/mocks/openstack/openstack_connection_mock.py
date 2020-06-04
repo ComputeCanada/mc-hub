@@ -90,7 +90,12 @@ class OpenStackConnectionMock:
         def get(self, url):
             if re.search(r"\/os-quota-sets\/.*\?usage=true", url):
                 return OpenStackConnectionMock.OpenStackResponseMock(
-                    {"quota_set": {"gigabytes": {"limit": 1000, "in_use": 720}}}
+                    {
+                        "quota_set": {
+                            "gigabytes": {"limit": 1000, "in_use": 720},
+                            "volumes": {"limit": 128, "in_use": 100},
+                        }
+                    }
                 )
             else:
                 raise NotImplementedError(

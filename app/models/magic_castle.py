@@ -21,7 +21,7 @@ MAGIC_CASTLE_RELEASE_PATH = path.join(
 
 class MagicCastle:
     """
-    Magic Castle is the class that manage the state of Magic Castle clusters.
+    Magic Castle is the class that manages the state of Magic Castle clusters.
     It is responsible for building, modifying and destroying clusters.
     It is also used to parse the state of existing clusters and return it in
     a simple dictionary format.
@@ -82,6 +82,7 @@ class MagicCastle:
             openstack_manager = OpenStackManager(
                 pre_allocated_ram=parser.get_ram(),
                 pre_allocated_cores=parser.get_cores(),
+                pre_allocated_volume_count=parser.get_volume_count(),
                 pre_allocated_volume_size=parser.get_volume_size(),
                 pre_allocated_floating_ips=parser.get_os_floating_ips(),
             )

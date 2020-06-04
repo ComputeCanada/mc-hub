@@ -65,6 +65,23 @@ class TerraformStateParser:
         )
         return sum([ram.value for ram in parser.find(self.__tf_state)])
 
+    def get_volume_count(self) -> int:
+        """
+        Calculates the number of volumes used by the cluster.
+        This includes both the volumes associated with an instance
+        and the external volumes (NFS).
+        :return: The number of volumes in the cluster
+        """
+        root_storage_parser = parse(
+            "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
+        )
+        external_storage_parser = parse(
+            "resources[?type=openstack_blockstorage_volume_v2].instances[*].attributes.size"
+        )
+        return len(root_storage_parser.find(self.__tf_state)) + len(
+            external_storage_parser.find(self.__tf_state)
+        )
+
     def get_volume_size(self) -> int:
         """
         Calculates the amount of volume storage used by the cluster.
