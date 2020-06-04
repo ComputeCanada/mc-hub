@@ -9,7 +9,7 @@
           Magic Castle Creation
         </v-card-title>
         <v-card-text>
-          <v-form ref="form" v-model="validForm">
+          <v-form v-model="validForm">
             <v-subheader>General configuration</v-subheader>
             <v-list class="pb-0">
               <v-list-item>
@@ -95,7 +95,7 @@
                 <v-divider />
                 <div :key="id" v-for="[id, label] in Object.entries(STORAGE_LABELS)">
                   <v-list-item>
-                    <v-col cols="12" sm="3" class="pl-0"> {{ label }} size</v-col>
+                    <v-col cols="12" sm="3" class="pl-0">{{ label }} size</v-col>
                     <v-col cols="12" sm="9">
                       <v-text-field
                         v-model.number="magicCastle.storage[`${id}_size`]"
@@ -127,7 +127,7 @@
               <v-subheader>Networking and security</v-subheader>
               <v-list>
                 <v-list-item>
-                  <v-file-input ref="a" @change="publicKeysUpdated" label="SSH public key file" />
+                  <v-file-input @change="publicKeysUpdated" label="SSH public key file (optional)" />
                 </v-list-item>
                 <v-list-item>
                   <v-text-field v-model="magicCastle.guest_passwd" label="Guest password (optional)" />
@@ -137,13 +137,13 @@
                     :items="getPossibleValues('os_floating_ips')"
                     v-model="magicCastle.os_floating_ips[0]"
                     :rules="[floatingIpRule]"
-                    label="OpenStack floating IP (optional)"
+                    label="OpenStack floating IP"
                   />
                 </v-list-item>
               </v-list>
               <div class="text-center">
                 <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
-                <template v-if="existingCluster === true">
+                <template v-if="existingCluster">
                   <v-btn @click="modifyCluster" color="primary" class="ma-2" :disabled="loading || !validForm" large>
                     Modify
                   </v-btn>
@@ -152,13 +152,8 @@
                   </v-btn>
                 </template>
                 <template v-else>
-                  <v-btn
-                    @click="createCluster"
-                    color="primary"
-                    class="text-right"
-                    :disabled="loading || !validForm"
-                    large
-                    >Spawn
+                  <v-btn @click="createCluster" color="primary" :disabled="loading || !validForm" large>
+                    Spawn
                   </v-btn>
                 </template>
               </div>
@@ -289,7 +284,6 @@ export default {
       quotas: null,
       resourceDetails: null,
       possibleResources: null,
-
       forceLoading: false,
 
       greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
@@ -437,23 +431,24 @@ export default {
     startStatusPolling() {
       let fetchStatus = async () => {
         const { status } = (await MagicCastleRepository.getStatus(this.clusterName)).data;
-
-        if (this.currentStatus !== status) {
-          // The cluster status changed or was fetched for the first time
+        const statusChanged = this.currentStatus !== status;
+        if (this.currentStatus && statusChanged) {
+          this.showStatusDialog(status);
+        }
+        this.currentStatus = status;
+        if (statusChanged) {
           this.forceLoading = false;
           const clusterIsBusy = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(status);
           if (!clusterIsBusy) {
-            this.loadAvailableResources();
-            this.loadCluster();
-          }
-          if (this.currentStatus !== null) {
-            this.showStatusDialog(status);
+            await Promise.all([this.loadAvailableResources(), this.loadCluster()]);
           }
         }
-        this.currentStatus = status;
       };
 
       this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
+    },
+    stopStatusPolling() {
+      clearInterval(this.statusPoller);
     },
     showStatusDialog(status) {
       switch (status) {
@@ -464,14 +459,11 @@ export default {
           this.showError("The server is still idle");
           break;
         case ClusterStatusCode.BUILD_ERROR:
-          this.showError("Terraform returned an error while creating the cluster.");
+          this.showError("An error occurred while creating the cluster.");
           break;
         case ClusterStatusCode.DESTROY_ERROR:
-          this.showError("Terraform returned an error while destroying the cluster.");
+          this.showError("An error occurred while destroying the cluster.");
       }
-    },
-    stopStatusPolling() {
-      clearInterval(this.statusPoller);
     },
     async loadAvailableResources() {
       const availableResources = this.existingCluster
