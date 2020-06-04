@@ -15,12 +15,17 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
     ```
     source _project_-openrc.sh
     ```
-2. Copy env.list from this repository to your current directory.
+2. Copy [env.list](https://github.com/ComputeCanada/magic_castle-ui/blob/master/env.list) from this repository to your current directory.
 3. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
    ```shell script   
-   docker run -d -p 5000:5000 --env-file ./env.list fredericfc/magic_castle-ui:latest
+   docker run -d -p 5000:5000 --env-file ./env.list \
+     --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
+     fredericfc/magic_castle-ui:latest
    ```
-4.  Navigate to `http://localhost:5000` and start building clusters!
+   > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see
+   > the section on _Cluster storage & backup_.
+
+4. Navigate to `http://localhost:5000` and start building clusters!
 5. Kill the container when you are done.
    ```
    docker kill <CONTAINER ID>
@@ -42,6 +47,8 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    cd magic-castle-ui
    ./start.sh
    ```
+   > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see the
+   > section on _Cluster storage & backup_.
    
 4. Navigate to `http://localhost:5000` and start building clusters!
 
@@ -50,7 +57,7 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    docker kill <CONTAINER ID>
    ```
 
-## Running Tests
+## Running tests
 Make sure you have built an image of Magic Castle UI first and that you have sourced the openrc file, 
 as shown in the previous step.
 Then, run the following command:
@@ -65,11 +72,13 @@ docker run --env-file ./env.list "magic_castle-ui" python -m pytest
 
 ## Cluster storage & backup
 
-Magic Castle clusters are built in the directory `/home/mcu/clusters/<cluster name>`.
+Magic Castle clusters are built in the directory `/home/mcu/clusters/<cluster name>` inside the
+docker container.
 This folder contains the logs from terraform commands and the `terraform.tfstate` file.
 
-If you ran the docker image with the start.sh script, a bind mount was created, which 
-makes the clusters folder accessible to the host machine: `<PROJECT ROOT>/clusters_backup`.
+By running the container according to the above instructions, a bind mount was created. This 
+makes the `/home/mcu/clusters/<cluster name>` directory accessible to the host machine in
+`<current directory>/clusters_backup`.
 If one container is destroyed or fails, a new container will recover all the previously 
 created clusters in the directory.
 
