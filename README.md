@@ -16,8 +16,13 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
     source _project_-openrc.sh
     ```
 2. Copy [env.list](https://github.com/ComputeCanada/magic_castle-ui/blob/master/env.list) from this repository to your current directory.
-3. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
-   ```shell script   
+3. Create a directory named `clusters_backup` and give it the proper owner and group.
+   ```
+   mkdir clusters_backup
+   sudo chown 1000:1000 clusters_backup
+   ```
+4. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
+   ```shell script
    docker run -d -p 5000:5000 --env-file ./env.list \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      fredericfc/magic_castle-ui:latest
@@ -25,8 +30,8 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see
    > the section on _Cluster storage & backup_.
 
-4. Navigate to `http://localhost:5000` and start building clusters!
-5. Kill the container when you are done.
+5. Navigate to `http://localhost:5000` and start building clusters!
+6. Kill the container when you are done.
    ```
    docker kill <CONTAINER ID>
    ```
@@ -36,23 +41,27 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
 1. Clone this repository.
    ```
    git clone https://github.com/ComputeCanada/magic_castle-ui.git
-   ```
-
-2. Source your project openrc file.
-    ```
-    source _project_-openrc.sh
-    ```
-3. Run start.sh. This will build and run the docker container for the Flask Server.
-   ```
    cd magic-castle-ui
+   ```
+2. Source your project openrc file.
+   ```
+   source _project_-openrc.sh
+   ```
+3. Create a directory named `clusters_backup` and give it the proper owner and group.
+   ```
+   mkdir clusters_backup
+   sudo chown 1000:1000 clusters_backup
+   ```
+4. Run start.sh. This will build and run the docker container for the Flask Server.
+   ```
    ./start.sh
    ```
    > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see the
    > section on _Cluster storage & backup_.
    
-4. Navigate to `http://localhost:5000` and start building clusters!
+5. Navigate to `http://localhost:5000` and start building clusters!
 
-5. Kill the container when you are done.
+6. Kill the container when you are done.
    ```
    docker kill <CONTAINER ID>
    ```
@@ -99,8 +108,6 @@ terraform show
 ```
 
 #### Option 2
-This option only works if you used the `--mount` option when running your docker instance
-(i.e. by running the start.sh script).
 Open the terminal on your host machine and access the `clusters_backup` directory.
 1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
 2. Delete the folder named `.terraform`.
