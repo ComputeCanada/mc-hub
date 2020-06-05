@@ -130,7 +130,11 @@
                   <v-file-input @change="publicKeysUpdated" label="SSH public key file (optional)" />
                 </v-list-item>
                 <v-list-item>
-                  <v-text-field v-model="magicCastle.guest_passwd" label="Guest password (optional)" />
+                  <v-text-field
+                    v-model="magicCastle.guest_passwd"
+                    label="Guest password (optional)"
+                    :rules="[passwordLengthRule]"
+                  />
                 </v-list-item>
                 <v-list-item>
                   <v-select
@@ -249,6 +253,7 @@ const DEFAULT_MAGIC_CASTLE = {
 
 const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
+const MINIMUM_PASSWORD_LENGTH = 8;
 const POLL_STATUS_INTERVAL = 1000;
 
 export default {
@@ -287,7 +292,10 @@ export default {
       forceLoading: false,
 
       greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
-      positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number"
+      positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number",
+      passwordLengthRule: value =>
+        value.length >= MINIMUM_PASSWORD_LENGTH ||
+        `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`
     };
   },
   async created() {
