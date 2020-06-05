@@ -294,6 +294,7 @@ export default {
       greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
       positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number",
       passwordLengthRule: value =>
+        value.length === 0 ||
         value.length >= MINIMUM_PASSWORD_LENGTH ||
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`
     };
