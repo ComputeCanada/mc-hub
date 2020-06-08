@@ -5,6 +5,9 @@ from models.magic_castle import MagicCastle
 
 
 class MagicCastleListResource(Resource):
+    def get(self):
+        return [magic_castle.get_cluster_name() for magic_castle in MagicCastle.all()]
+
     def post(self):
         magic_castle = MagicCastle()
         json_data = request.get_json()

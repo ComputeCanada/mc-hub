@@ -1,37 +1,21 @@
 from models.magic_castle import MagicCastle
 from models.cluster_status_code import ClusterStatusCode
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
-from tests.mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
-from pathlib import Path
-from os import path
-from shutil import rmtree, copytree
-import pytest
+from tests.test_helpers import *
 
 
-def setup_mock_clusters(cluster_names):
-    for cluster_name in cluster_names:
-        copytree(
-            path.join(Path(__file__).parent.parent, "mock-clusters", cluster_name),
-            f"/home/mcu/clusters/{cluster_name}",
-        )
-
-
-def teardown_mock_clusters(cluster_names):
-    for cluster_name in cluster_names:
-        rmtree(f"/home/mcu/clusters/{cluster_name}")
-
-
-@pytest.fixture(autouse=True)
-def generate_test_clusters():
-    mock_cluster_names = ["empty", "missing-nodes", "valid-1"]
-    setup_mock_clusters(mock_cluster_names)
-    yield
-    teardown_mock_clusters(mock_cluster_names)
-
-
-@pytest.fixture(autouse=True)
-def mock_openstack_manager(mocker):
-    mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
+def test_get_all_magic_castles():
+    all_magic_castles = MagicCastle.all()
+    assert [magic_castle.get_cluster_name() for magic_castle in all_magic_castles] == [
+        "missing-nodes",
+        "empty",
+        "valid-1",
+    ]
+    assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
+        ClusterStatusCode.BUILD_ERROR,
+        ClusterStatusCode.BUILD_ERROR,
+        ClusterStatusCode.BUILD_SUCCESS,
+    ]
 
 
 def test_get_status_valid():

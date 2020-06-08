@@ -1,4 +1,5 @@
-from os import path, environ, getcwd, mkdir
+from os import path, environ, getcwd, mkdir, listdir
+from os.path import isdir
 from flask import render_template
 from subprocess import run
 from shutil import rmtree
@@ -17,6 +18,8 @@ import json
 MAGIC_CASTLE_RELEASE_PATH = path.join(
     getcwd(), "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
 )
+CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
+STATUS_FILENAME = "status.txt"
 
 
 class MagicCastle:
@@ -31,6 +34,18 @@ class MagicCastle:
         self.__configuration = {}
         if cluster_name:
             self.__configuration["cluster_name"] = cluster_name
+
+    @classmethod
+    def all(cls):
+        """
+        Retrieve all the Magic Castles in the clusters folder.
+        :return: A list of MagicCastle objects
+        """
+        return [
+            cls(cluster_name)
+            for cluster_name in listdir(CLUSTERS_PATH)
+            if isdir(path.join(CLUSTERS_PATH, cluster_name))
+        ]
 
     def load_configuration(self, configuration: dict):
         try:
@@ -49,7 +64,7 @@ class MagicCastle:
             self.__configuration["os_floating_ips"] = []
 
     def get_status(self) -> ClusterStatusCode:
-        status_file_path = self.__get_cluster_path("status.txt")
+        status_file_path = self.__get_cluster_path(STATUS_FILENAME)
         if not status_file_path or not path.exists(status_file_path):
             return ClusterStatusCode.NOT_FOUND
         with open(status_file_path, "r") as status_file:
@@ -65,7 +80,7 @@ class MagicCastle:
             self.__get_cluster_path("terraform.tfstate"), "r"
         ) as terraform_state_file:
             state = json.load(terraform_state_file)
-        parser = TerraformStateParser(self.__get_cluster_name(), state)
+        parser = TerraformStateParser(self.get_cluster_name(), state)
         return MagicCastleSchema().dump(parser.get_state_summary())
 
     def get_available_resources(self):
@@ -77,7 +92,7 @@ class MagicCastle:
                 self.__get_cluster_path("terraform.tfstate"), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
-            parser = TerraformStateParser(self.__get_cluster_name(), state)
+            parser = TerraformStateParser(self.get_cluster_name(), state)
 
             openstack_manager = OpenStackManager(
                 pre_allocated_ram=parser.get_ram(),
@@ -104,14 +119,12 @@ class MagicCastle:
         return self.get_status() != ClusterStatusCode.NOT_FOUND
 
     def __get_cluster_path(self, sub_path=""):
-        if self.__get_cluster_name():
-            return path.join(
-                environ["HOME"], "clusters", self.__get_cluster_name(), sub_path
-            )
+        if self.get_cluster_name():
+            return path.join(CLUSTERS_PATH, self.get_cluster_name(), sub_path)
         else:
             return None
 
-    def __get_cluster_name(self):
+    def get_cluster_name(self):
         return self.__configuration.get("cluster_name")
 
     def apply_new(self):
@@ -207,5 +220,5 @@ class MagicCastle:
         destroy_cluster_thread.start()
 
     def __update_status(self, status: ClusterStatusCode):
-        with open(self.__get_cluster_path("status.txt"), "w") as status_file:
+        with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
             status_file.write(status.value)

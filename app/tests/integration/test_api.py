@@ -1,10 +1,6 @@
 from server import app
-from os import path
-from shutil import rmtree, copytree
 from models.cluster_status_code import ClusterStatusCode
-from pathlib import Path
-from tests.mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
-import pytest
+from tests.test_helpers import *
 
 NON_EXISTING_CLUSTER_NAME = "non-existing"
 EXISTING_CLUSTER_NAME = "valid-1"
@@ -74,16 +70,15 @@ EXISTING_CLUSTER_STATE = {
 @pytest.fixture
 def client(mocker):
     app.config["TESTING"] = True
-    copytree(
-        path.join(Path(__file__).parent.parent, "mock-clusters", "valid-1"),
-        "/home/mcu/clusters/valid-1",
-    )
-    mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
-
     with app.test_client() as client:
         yield client
 
-    rmtree("/home/mcu/clusters/valid-1")
+
+# GET /api/magic_castle
+def test_get_all_magic_castle_names(client):
+    res = client.get(f"/api/magic-castle")
+    assert res.get_json() == ["missing-nodes", "empty", "valid-1"]
+    assert res.status_code == 200
 
 
 # GET /api/magic-castle/<cluster_name>
