@@ -16,9 +16,7 @@
                 <div style="display: flex; align-items: center; width: 100%">
                   <v-text-field v-if="existingCluster" v-model="clusterName" label="Cluster name" disabled />
                   <v-text-field v-else v-model="magicCastle.cluster_name" label="Cluster name" />
-                  <v-chip class="ml-3" label :color="formattedStatus.color" dark v-if="currentStatus !== null"
-                    >{{ formattedStatus.text }}
-                  </v-chip>
+                  <status-chip :status="currentStatus" />
                 </div>
               </v-list-item>
             </v-list>
@@ -199,27 +197,9 @@
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
-import ResourceUsageDisplay from "./ResourceUsageDisplay";
-
-const ClusterStatusCode = Object.freeze({
-  IDLE: "idle",
-  BUILD_RUNNING: "build_running",
-  BUILD_SUCCESS: "build_success",
-  BUILD_ERROR: "build_error",
-  DESTROY_RUNNING: "destroy_running",
-  DESTROY_ERROR: "destroy_error",
-  NOT_FOUND: "not_found"
-});
-
-const ClusterFormattedStatus = Object.freeze({
-  idle: { text: "Idle", color: "blue" },
-  build_running: { text: "Build running", color: "orange" },
-  build_success: { text: "Build success", color: "green" },
-  build_error: { text: "Build error", color: "red" },
-  destroy_running: { text: "Destroy running", color: "orange" },
-  destroy_error: { text: "Destroy error", color: "red" },
-  not_found: { text: "Not found", color: "purple" }
-});
+import ResourceUsageDisplay from "@/components/ResourceUsageDisplay";
+import StatusChip from "@/components/StatusChip";
+import ClusterStatusCode from "@/models/ClusterStatusCode";
 
 const DEFAULT_MAGIC_CASTLE = {
   cluster_name: "phoenix",
@@ -258,7 +238,7 @@ const POLL_STATUS_INTERVAL = 1000;
 
 export default {
   name: "ClusterEditor",
-  components: { ResourceUsageDisplay },
+  components: { StatusChip, ResourceUsageDisplay },
   props: {
     clusterName: String,
     existingCluster: {
@@ -322,13 +302,6 @@ export default {
       );
       const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || clusterIsBusy);
       return this.forceLoading || this.possibleResources === null || existingClusterIsLoading;
-    },
-    formattedStatus() {
-      if (this.currentStatus === null) {
-        return ClusterFormattedStatus[ClusterStatusCode.IDLE];
-      } else {
-        return ClusterFormattedStatus[this.currentStatus];
-      }
     },
     instanceRules() {
       return [
