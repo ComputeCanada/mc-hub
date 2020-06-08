@@ -64,9 +64,10 @@ class OpenStackManager:
         }
 
     def __get_possible_resources(self):
-        floating_ips = self.get_available_floating_ips()
+        floating_ips = []
         if self.__get_non_allocated_floating_ip_count() > 0:
             floating_ips += [AUTO_ALLOCATED_IP_LABEL]
+        floating_ips += self.get_available_floating_ips()
 
         return {
             "image": self.__get_images(),
