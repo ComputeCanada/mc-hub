@@ -6,9 +6,9 @@ from tests.test_helpers import *
 
 def test_get_all_magic_castles():
     all_magic_castles = MagicCastle.all()
-    assert [magic_castle.get_cluster_name() for magic_castle in all_magic_castles] == [
-        "missing-nodes",
+    assert [magic_castle.get_name() for magic_castle in all_magic_castles] == [
         "empty",
+        "missing-nodes",
         "valid-1",
     ]
     assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [

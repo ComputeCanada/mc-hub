@@ -43,7 +43,7 @@ class MagicCastle:
         """
         return [
             cls(cluster_name)
-            for cluster_name in listdir(CLUSTERS_PATH)
+            for cluster_name in sorted(listdir(CLUSTERS_PATH))
             if isdir(path.join(CLUSTERS_PATH, cluster_name))
         ]
 
@@ -80,7 +80,7 @@ class MagicCastle:
             self.__get_cluster_path("terraform.tfstate"), "r"
         ) as terraform_state_file:
             state = json.load(terraform_state_file)
-        parser = TerraformStateParser(self.get_cluster_name(), state)
+        parser = TerraformStateParser(self.get_name(), state)
         return MagicCastleSchema().dump(parser.get_state_summary())
 
     def get_available_resources(self):
@@ -92,7 +92,7 @@ class MagicCastle:
                 self.__get_cluster_path("terraform.tfstate"), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
-            parser = TerraformStateParser(self.get_cluster_name(), state)
+            parser = TerraformStateParser(self.get_name(), state)
 
             openstack_manager = OpenStackManager(
                 pre_allocated_ram=parser.get_ram(),
@@ -119,12 +119,12 @@ class MagicCastle:
         return self.get_status() != ClusterStatusCode.NOT_FOUND
 
     def __get_cluster_path(self, sub_path=""):
-        if self.get_cluster_name():
-            return path.join(CLUSTERS_PATH, self.get_cluster_name(), sub_path)
+        if self.get_name():
+            return path.join(CLUSTERS_PATH, self.get_name(), sub_path)
         else:
             return None
 
-    def get_cluster_name(self):
+    def get_name(self):
         return self.__configuration.get("cluster_name")
 
     def apply_new(self):

@@ -77,7 +77,11 @@ def client(mocker):
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castle")
-    assert res.get_json() == ["missing-nodes", "empty", "valid-1"]
+    assert res.get_json() == [
+        {"name": "empty", "status": "build_error"},
+        {"name": "missing-nodes", "status": "build_error"},
+        {"name": "valid-1", "status": "build_success"},
+    ]
     assert res.status_code == 200
 
 
