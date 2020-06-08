@@ -1,0 +1,55 @@
+title Magic Castle UI - Cluster Creation Workflow
+
+participant User
+participant Bash script & Docker
+participant Browser
+participant Flask Server
+participant Terraform
+
+User->Bash script & Docker: Sets up OpenStack environment variables
+User->Bash script & Docker: Runs Magic Castle UI image
+Bash script & Docker->Flask Server: Starts Flask server
+activate Flask Server
+Flask Server-->Bash script & Docker: Web app URL (localhost:5000)
+deactivate Flask Server
+Bash script & Docker-->User: Web app URL (localhost:5000)
+User->Browser: Navigates to localhost:5000
+Browser->Flask Server: Requests homepage
+activate Flask Server
+Flask Server-->Browser: Cluster creation form
+deactivate Flask Server
+Browser-->User: Displays cluster creation form
+Browser->Flask Server: Get available OpenStack resources
+activate Flask Server
+Flask Server-->Browser: Available OpenStack resources
+deactivate Flask Server
+Browser-->User: Updates form with available resources
+User->Browser: Fills in the form
+User->Browser: Clicks on the "Spawn" button
+Browser-->User: Displays loading animation
+Browser->>Flask Server: Sends the form content
+activate Flask Server
+Flask Server->Flask Server: Creates a folder with the cluster name
+Flask Server->Flask Server: main.tf Jinja template is filled in with the form variables
+Flask Server->Terraform: terraform init
+activate Terraform
+Flask Server->Terraform: terraform apply
+Browser->Flask Server: Poll status
+activate Flask Server
+Flask Server-->Browser: Status: build_running
+deactivate Flask Server
+Terraform-->Flask Server: terraform apply return code
+deactivate Flask Server
+deactivate Terraform
+Browser->Flask Server: Poll status
+activate Flask Server
+Flask Server-->Browser: Status: build_success
+deactivate Flask Server
+Browser-->User: Displays success dialog
+Browser->Flask Server: Load cluster state
+activate Flask Server
+Browser->Flask Server: Get available OpenStack resources
+Flask Server-->Browser: Cluster state
+Flask Server-->Browser: Available OpenStack resources
+deactivate Flask Server
+Browser-->User: Displays cluster state and available resources

@@ -1,0 +1,52 @@
+title Magic Castle UI - Cluster Destruction Workflow
+
+participant User
+participant Bash script & Docker
+participant Browser
+participant Flask Server
+participant Terraform
+
+User->Bash script & Docker: Sets up OpenStack environment variables
+User->Bash script & Docker: Runs Magic Castle UI image
+Bash script & Docker->Flask Server: Starts Flask server
+activate Flask Server
+Flask Server-->Bash script & Docker: Web app URL (localhost:5000)
+deactivate Flask Server
+Bash script & Docker-->User: Web app URL (localhost:5000)
+User->Browser: Navigates to localhost:5000/clusters/cluster-name
+Browser->Flask Server: Requests cluster modification form
+activate Flask Server
+Flask Server-->Browser: Cluster modification form
+deactivate Flask Server
+Browser-->User: Displays cluster modification form
+
+Browser->Flask Server: Poll status
+activate Flask Server
+Flask Server-->Browser: Status: build_success
+deactivate Flask Server
+Browser->Flask Server: Load cluster state
+activate Flask Server
+Browser->Flask Server: Get available OpenStack resources
+Flask Server-->Browser: Cluster state
+Flask Server-->Browser: Available OpenStack resources
+deactivate Flask Server
+Browser-->User: Displays cluster state and available resources
+User->Browser: Clicks on the 'Destroy' button
+Browser-->User: Displays loading animation
+Browser->>Flask Server: Send DELETE request
+activate Flask Server
+Flask Server->Terraform: terraform destroy
+activate Terraform
+Browser->Flask Server: Poll status
+activate Flask Server
+Flask Server-->Browser: Status: destroy_running
+deactivate Flask Server
+Terraform-->Flask Server: terraform destroy return code
+Flask Server->Flask Server: On success, removes the cluster folder
+deactivate Flask Server
+deactivate Terraform
+Browser->Flask Server: Poll status
+activate Flask Server
+Flask Server-->Browser: Status: not_found
+deactivate Flask Server
+Browser-->User: Displays not found message
