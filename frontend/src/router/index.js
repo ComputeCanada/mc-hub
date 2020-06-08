@@ -1,6 +1,7 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
-import Home from "@/views/Home.vue";
+import Home from "@/views/Home";
+import CreateCluster from "@/views/CreateCluster";
 import NotFound from "@/views/NotFound";
 import ModifyCluster from "@/views/ModifyCluster";
 
@@ -11,6 +12,11 @@ const routes = [
     path: "/",
     name: "Home",
     component: Home
+  },
+  {
+    path: "/create-cluster",
+    name: "Create a Magic Castle",
+    component: CreateCluster
   },
   {
     path: "/clusters/:clusterName",

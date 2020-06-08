@@ -3,6 +3,9 @@ import Repository from "./Repository";
 const resource = "/magic-castle";
 
 export default {
+  getAll() {
+    return Repository.get(`${resource}`);
+  },
   getState(clusterName) {
     return Repository.get(`${resource}/${clusterName}`);
   },

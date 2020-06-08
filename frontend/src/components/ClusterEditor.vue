@@ -16,7 +16,7 @@
                 <div style="display: flex; align-items: center; width: 100%">
                   <v-text-field v-if="existingCluster" v-model="clusterName" label="Cluster name" disabled />
                   <v-text-field v-else v-model="magicCastle.cluster_name" label="Cluster name" />
-                  <status-chip :status="currentStatus" />
+                  <status-chip class="ml-3" :status="currentStatus" />
                 </div>
               </v-list-item>
             </v-list>
