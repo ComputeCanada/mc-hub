@@ -41,6 +41,8 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import MessageDialog from "@/components/ui/MessageDialog";
 
+const POLL_STATUS_INTERVAL = 5000;
+
 export default {
   name: "ClustersList",
   components: { StatusChip, ConfirmDialog, MessageDialog },
@@ -50,6 +52,8 @@ export default {
       clusterDestructionDialog: false,
       currentClusterName: null,
       errorDialog: false,
+      statusPoller: null,
+
       headers: [
         {
           text: "Name",
@@ -69,11 +73,18 @@ export default {
       magicCastles: []
     };
   },
-  async created() {
-    await this.loadMagicCastles();
+  created() {
+    this.startStatusPolling();
   },
   methods: {
-    async loadMagicCastles() {
+    startStatusPolling() {
+      let fetchStatus = () => {
+        this.loadMagicCastlesStatus();
+      };
+      this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
+      fetchStatus();
+    },
+    async loadMagicCastlesStatus() {
       this.loading = true;
       this.magicCastles = (await MagicCastleRepository.getAll()).data;
       this.loading = false;
@@ -87,10 +98,9 @@ export default {
       this.currentClusterName = clusterName;
     },
     async destroyCluster() {
-      this.forceLoading = true;
       try {
         await MagicCastleRepository.delete(this.currentClusterName);
-        await this.loadMagicCastles();
+        await this.loadMagicCastlesStatus();
       } catch (e) {
         this.showError(e.response.data.message);
       }
