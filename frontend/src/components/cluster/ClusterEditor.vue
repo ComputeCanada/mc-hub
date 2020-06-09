@@ -258,6 +258,8 @@ export default {
       },
 
       validForm: true,
+      dirtyForm: false,
+
       successDialog: false,
       errorDialog: false,
       clusterDestructionDialog: false,
@@ -374,6 +376,29 @@ export default {
       return this.quotas.volume_size.max;
     }
   },
+  watch: {
+    magicCastle: {
+      /**
+       * If the old Magic Castle was null, it means it just got initialized, not modified by the user
+       * If the new Magic Castle is null, it means it was unloaded, not modified by the user
+       * Otherwise, it was modified by the user, therefore is dirty
+       */
+      handler(newMagicCastle, oldMagicCastle) {
+        const userModified = oldMagicCastle !== null && newMagicCastle !== null;
+        if (userModified) {
+          this.dirtyForm = true;
+        }
+      },
+      deep: true
+    },
+    dirtyForm(dirty) {
+      if (dirty) {
+        this.$enableUnloadConfirmation();
+      } else {
+        this.$disableUnloadConfirmation();
+      }
+    }
+  },
   methods: {
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
@@ -459,6 +484,7 @@ export default {
       this.forceLoading = true;
       try {
         await MagicCastleRepository.create(this.magicCastle);
+        this.$disableUnloadConfirmation();
         await this.$router.push({ path: `/clusters/${this.magicCastle.cluster_name}` });
       } catch (e) {
         this.forceLoading = false;
@@ -496,6 +522,7 @@ export default {
     unloadCluster() {
       this.magicCastle = null;
       this.currentStatus = null;
+      this.dirtyForm = false;
     }
   }
 };

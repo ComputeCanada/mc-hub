@@ -52,6 +52,7 @@ export default {
       clusterDestructionDialog: false,
       currentClusterName: null,
       errorDialog: false,
+      errorMessage: "",
       statusPoller: null,
 
       headers: [
