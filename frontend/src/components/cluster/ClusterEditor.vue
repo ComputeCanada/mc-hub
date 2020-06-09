@@ -427,6 +427,7 @@ export default {
       };
 
       this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
+      fetchStatus();
     },
     stopStatusPolling() {
       clearInterval(this.statusPoller);
