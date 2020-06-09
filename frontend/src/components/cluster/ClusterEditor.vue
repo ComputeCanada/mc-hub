@@ -149,8 +149,15 @@
                   <v-btn @click="modifyCluster" color="primary" class="ma-2" :disabled="loading || !validForm" large>
                     Modify
                   </v-btn>
-                  <v-btn @click="deleteCluster" color="primary" class="ma-2" :disabled="loading" large outlined>
-                    Delete
+                  <v-btn
+                    @click="showClusterDestructionDialog"
+                    color="primary"
+                    class="ma-2"
+                    :disabled="loading"
+                    large
+                    outlined
+                  >
+                    Destroy
                   </v-btn>
                 </template>
                 <template v-else>
@@ -171,6 +178,9 @@
     <message-dialog v-model="errorDialog" type="error">
       {{ errorMessage }}
     </message-dialog>
+    <confirm-dialog alert title="Destruction confirmation" v-model="clusterDestructionDialog" @confirm="destroyCluster">
+      Are you sure you want to permanently destroy your cluster and all its data?
+    </confirm-dialog>
   </div>
 </template>
 
@@ -181,6 +191,7 @@ import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import StatusChip from "@/components/ui/StatusChip";
 import MessageDialog from "@/components/ui/MessageDialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const DEFAULT_MAGIC_CASTLE = {
   cluster_name: "phoenix",
@@ -219,7 +230,7 @@ const POLL_STATUS_INTERVAL = 1000;
 
 export default {
   name: "ClusterEditor",
-  components: { MessageDialog, StatusChip, ResourceUsageDisplay },
+  components: { ConfirmDialog, MessageDialog, StatusChip, ResourceUsageDisplay },
   props: {
     clusterName: String,
     existingCluster: {
@@ -243,6 +254,7 @@ export default {
       validForm: true,
       successDialog: false,
       errorDialog: false,
+      clusterDestructionDialog: false,
       errorMessage: "",
       statusPoller: null,
       currentStatus: null,
@@ -462,7 +474,10 @@ export default {
         this.showError(e.response.data.message);
       }
     },
-    async deleteCluster() {
+    showClusterDestructionDialog() {
+      this.clusterDestructionDialog = true;
+    },
+    async destroyCluster() {
       this.forceLoading = true;
       try {
         await MagicCastleRepository.delete(this.clusterName);
