@@ -76,6 +76,9 @@ export default {
   created() {
     this.startStatusPolling();
   },
+  beforeDestroy() {
+    this.stopStatusPolling();
+  },
   methods: {
     startStatusPolling() {
       let fetchStatus = () => {
@@ -83,6 +86,9 @@ export default {
       };
       this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
       fetchStatus();
+    },
+    stopStatusPolling() {
+      clearInterval(this.statusPoller);
     },
     async loadMagicCastlesStatus() {
       this.loading = true;
