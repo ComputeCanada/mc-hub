@@ -24,7 +24,8 @@
 
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
-import StatusChip from "@/components/StatusChip";
+import StatusChip from "@/components/ui/StatusChip";
+
 export default {
   name: "ClustersList",
   components: { StatusChip },

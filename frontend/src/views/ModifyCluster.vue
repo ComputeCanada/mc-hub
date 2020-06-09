@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import ClusterEditor from "@/components/ClusterEditor";
+import ClusterEditor from "@/components/cluster/ClusterEditor";
 
 export default {
   components: { ClusterEditor },

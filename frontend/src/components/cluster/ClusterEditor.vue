@@ -164,42 +164,23 @@
         </v-card-text>
       </v-card>
     </v-container>
-    <v-dialog v-model="successDialog" max-width="400">
-      <v-card>
-        <v-card-title>Success</v-card-title>
-        <v-card-text>
-          Your cluster was created successfully.<br /><br />
-          Don't forget to destroy it when you are done!
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="successDialog = false">Close</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog v-model="errorDialog" max-width="400">
-      <v-card>
-        <v-card-title>Error</v-card-title>
-        <v-card-text>
-          {{ errorMessage }}
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="errorDialog = false">Close</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <message-dialog v-model="successDialog" type="success">
+      Your cluster was created successfully.<br /><br />
+      Don't forget to destroy it when you are done!
+    </message-dialog>
+    <message-dialog v-model="errorDialog" type="error">
+      {{ errorMessage }}
+    </message-dialog>
   </div>
 </template>
 
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
-import ResourceUsageDisplay from "@/components/ResourceUsageDisplay";
-import StatusChip from "@/components/StatusChip";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
+import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
+import StatusChip from "@/components/ui/StatusChip";
+import MessageDialog from "@/components/ui/MessageDialog";
 
 const DEFAULT_MAGIC_CASTLE = {
   cluster_name: "phoenix",
@@ -238,7 +219,7 @@ const POLL_STATUS_INTERVAL = 1000;
 
 export default {
   name: "ClusterEditor",
-  components: { StatusChip, ResourceUsageDisplay },
+  components: { MessageDialog, StatusChip, ResourceUsageDisplay },
   props: {
     clusterName: String,
     existingCluster: {
@@ -461,6 +442,7 @@ export default {
         await MagicCastleRepository.create(this.magicCastle);
         await this.$router.push({ path: `/clusters/${this.magicCastle.cluster_name}` });
       } catch (e) {
+        this.forceLoading = false;
         this.showError(e.response.data.message);
       }
     },

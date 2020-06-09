@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import ClustersList from "../components/ClustersList";
+import ClustersList from "@/components/cluster/ClustersList";
 
 export default {
   components: { ClustersList }
