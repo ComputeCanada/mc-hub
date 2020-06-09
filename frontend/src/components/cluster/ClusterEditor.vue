@@ -178,7 +178,13 @@
     <message-dialog v-model="errorDialog" type="error">
       {{ errorMessage }}
     </message-dialog>
-    <confirm-dialog alert title="Destruction confirmation" v-model="clusterDestructionDialog" @confirm="destroyCluster">
+    <confirm-dialog
+      alert
+      encourage-cancel
+      title="Destruction confirmation"
+      v-model="clusterDestructionDialog"
+      @confirm="destroyCluster"
+    >
       Are you sure you want to permanently destroy your cluster and all its data?
     </confirm-dialog>
   </div>
