@@ -267,6 +267,7 @@ export default {
       statusPoller: null,
       currentStatus: null,
       magicCastle: null,
+      magicCastleInitialized: false,
       quotas: null,
       resourceDetails: null,
       possibleResources: null,
@@ -292,6 +293,10 @@ export default {
         this.magicCastle.os_floating_ips = [this.possibleResources.os_floating_ips[0]];
       }
     }
+    // Wait for magicCastle watcher to finish executing
+    setTimeout(() => {
+      this.magicCastleInitialized = true;
+    });
   },
   beforeDestroy() {
     this.stopStatusPolling();
@@ -378,14 +383,8 @@ export default {
   },
   watch: {
     magicCastle: {
-      /**
-       * If the old Magic Castle was null, it means it just got initialized, not modified by the user
-       * If the new Magic Castle is null, it means it was unloaded, not modified by the user
-       * Otherwise, it was modified by the user, therefore is dirty
-       */
-      handler(newMagicCastle, oldMagicCastle) {
-        const userModified = oldMagicCastle !== null && newMagicCastle !== null;
-        if (userModified) {
+      handler() {
+        if (this.magicCastleInitialized) {
           this.dirtyForm = true;
         }
       },
@@ -486,6 +485,7 @@ export default {
         await MagicCastleRepository.create(this.magicCastle);
         this.$disableUnloadConfirmation();
         await this.$router.push({ path: `/clusters/${this.magicCastle.cluster_name}` });
+        this.unloadCluster();
       } catch (e) {
         this.forceLoading = false;
         this.showError(e.response.data.message);
@@ -493,7 +493,13 @@ export default {
     },
     async loadCluster() {
       try {
+        this.magicCastleInitialized = false;
         this.magicCastle = (await MagicCastleRepository.getState(this.clusterName)).data;
+
+        // Wait for magicCastle watcher to finish executing
+        setTimeout(() => {
+          this.magicCastleInitialized = true;
+        });
       } catch (e) {
         console.log(e.response.data.message);
       }
@@ -523,6 +529,7 @@ export default {
       this.magicCastle = null;
       this.currentStatus = null;
       this.dirtyForm = false;
+      this.magicCastleInitialized = false;
     }
   }
 };
