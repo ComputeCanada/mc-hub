@@ -445,6 +445,7 @@ export default {
           this.forceLoading = false;
           const clusterIsBusy = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(status);
           if (!clusterIsBusy) {
+            this.stopStatusPolling();
             await Promise.all([this.loadAvailableResources(), this.loadCluster()]);
           }
         }
@@ -509,6 +510,7 @@ export default {
       try {
         await MagicCastleRepository.update(this.clusterName, this.magicCastle);
         this.unloadCluster();
+        this.startStatusPolling();
       } catch (e) {
         this.showError(e.response.data.message);
       }
@@ -521,6 +523,7 @@ export default {
       try {
         await MagicCastleRepository.delete(this.clusterName);
         this.unloadCluster();
+        this.startStatusPolling();
       } catch (e) {
         this.showError(e.response.data.message);
       }
