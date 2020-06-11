@@ -23,7 +23,8 @@
             <template v-if="magicCastle !== null">
               <v-list class="pt-0">
                 <v-list-item>
-                  <v-text-field v-model="magicCastle.domain" label="Domain" />
+                  <v-text-field v-if="existingCluster" v-model="magicCastle.domain" label="Domain" disabled />
+                  <v-text-field v-else v-model="magicCastle.domain" label="Domain" />
                 </v-list-item>
                 <v-list-item>
                   <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
