@@ -191,6 +191,7 @@
 </template>
 
 <script>
+import { cloneDeep } from "lodash";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
@@ -199,7 +200,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import MessageDialog from "@/components/ui/MessageDialog";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
-const DEFAULT_MAGIC_CASTLE = {
+const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "phoenix",
   domain: "calculquebec.cloud",
   image: "CentOS-7-x64-2019-07",
@@ -227,7 +228,7 @@ const DEFAULT_MAGIC_CASTLE = {
   public_keys: [],
   guest_passwd: "",
   os_floating_ips: []
-};
+});
 
 const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
@@ -285,7 +286,7 @@ export default {
     if (this.existingCluster) {
       this.startStatusPolling();
     } else {
-      this.magicCastle = DEFAULT_MAGIC_CASTLE;
+      this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       await this.loadAvailableResources();
       if (this.possibleResources.os_floating_ips.length === 0) {
         this.showError("There is no floating IP available right now.");
