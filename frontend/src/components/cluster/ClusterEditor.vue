@@ -303,7 +303,7 @@ export default {
       }
     }
     // Wait for magicCastle watcher to finish executing
-    setTimeout(() => {
+    this.$nextTick(() => {
       this.magicCastleInitialized = true;
     });
   },
@@ -507,7 +507,7 @@ export default {
         this.magicCastle = (await MagicCastleRepository.getState(this.clusterName)).data;
 
         // Wait for magicCastle watcher to finish executing
-        setTimeout(() => {
+        this.$nextTick(() => {
           this.magicCastleInitialized = true;
         });
       } catch (e) {
