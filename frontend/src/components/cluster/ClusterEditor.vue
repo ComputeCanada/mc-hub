@@ -15,7 +15,12 @@
               <v-list-item>
                 <div style="display: flex; align-items: center; width: 100%">
                   <v-text-field v-if="existingCluster" v-model="clusterName" label="Cluster name" disabled />
-                  <v-text-field v-else v-model="magicCastle.cluster_name" label="Cluster name" />
+                  <v-text-field
+                    v-else
+                    v-model="magicCastle.cluster_name"
+                    label="Cluster name"
+                    :rules="[clusterNameRegexRule]"
+                  />
                   <status-chip class="ml-3" :status="currentStatus" />
                 </div>
               </v-list-item>
@@ -23,8 +28,7 @@
             <template v-if="magicCastle !== null">
               <v-list class="pt-0">
                 <v-list-item>
-                  <v-text-field v-if="existingCluster" v-model="magicCastle.domain" label="Domain" disabled />
-                  <v-text-field v-else v-model="magicCastle.domain" label="Domain" />
+                  <v-text-field v-model="magicCastle.domain" label="Domain" :disabled="existingCluster" />
                 </v-list-item>
                 <v-list-item>
                   <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
@@ -275,6 +279,9 @@ export default {
       possibleResources: null,
       forceLoading: false,
 
+      clusterNameRegexRule: value =>
+        value.match(/^[a-z][a-z0-9]*$/) !== null ||
+        "The cluster name must have only lowercase alphanumeric characters and start with a letter",
       greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
       positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number",
       passwordLengthRule: value =>
