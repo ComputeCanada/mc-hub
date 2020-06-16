@@ -111,12 +111,12 @@ terraform show
 Open the terminal on your host machine and access the `clusters_backup` directory.
 1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
 2. Delete the folder named `.terraform`.
-3. Download [magic_castle-openstack-7.2.zip
-](https://github.com/ComputeCanada/magic_castle/releases/download/7.2/magic_castle-openstack-7.2.zip)
+3. Download [magic_castle-openstack-7.3.zip
+](https://github.com/ComputeCanada/magic_castle/releases/download/7.3/magic_castle-openstack-7.3.zip)
 4. Extract the folder and copy the `openstack` folder in `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
 5. Edit the following line in main.tf:
    ```
-   source = "/home/mcu/magic_castle-openstack-7.2/openstack"
+   source = "/home/mcu/magic_castle-openstack-7.3/openstack"
    ```
    And change it for:
    ```
