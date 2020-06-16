@@ -57,7 +57,7 @@ Make sure you have built an image of Magic Castle UI first and that you have sou
 as shown in the previous step.
 Then, run the following command:
 ````shell script
-docker run --env-file ./env.list "magic_castle-ui" python -m pytest
+docker run --rm --env-file ./env.list "magic_castle-ui" python -m pytest
 ````
 
 > **Note**: The tests require the existence of OpenStack's environment variables

@@ -23,7 +23,7 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
    ```
 4. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
    ```shell script
-   docker run -d -p 5000:5000 --env-file ./env.list \
+   docker run --rm -d -p 5000:5000 --env-file ./env.list \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      fredericfc/magic_castle-ui:latest
    ```
