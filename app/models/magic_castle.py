@@ -1,4 +1,4 @@
-from os import path, environ, getcwd, mkdir, listdir
+from os import path, environ, mkdir, listdir
 from os.path import isdir
 from flask import render_template
 from subprocess import run
@@ -17,7 +17,7 @@ from filelock import FileLock
 import json
 
 MAGIC_CASTLE_RELEASE_PATH = path.join(
-    getcwd(), "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
+    environ["HOME"], "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
 )
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 STATUS_LOCK_FILENAME = "status.txt.lock"
