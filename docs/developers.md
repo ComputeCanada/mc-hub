@@ -27,7 +27,7 @@ In order to contribute or modify the code of Magic Castle UI, it is highly recom
 4. Create a directory named `clusters_backup` and give it the proper owner and group.
    ```
    mkdir clusters_backup
-   sudo chown 1000:1000 clusters_backup
+   sudo chmod -R 777 clusters_backup
    ```
 
 ## Running and debugging the backend code

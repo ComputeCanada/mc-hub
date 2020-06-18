@@ -19,7 +19,7 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
 3. Create a directory named `clusters_backup` and give it the proper owner and group.
    ```
    mkdir clusters_backup
-   sudo chown 1000:1000 clusters_backup
+   sudo chmod -R 777 clusters_backup
    ```
 4. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
    ```shell script
