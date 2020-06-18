@@ -1,5 +1,6 @@
 frontend/node_modules
 app/.pytest_cache
+.vscode
 
 docs
 venv
