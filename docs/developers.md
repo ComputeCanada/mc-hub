@@ -1,12 +1,15 @@
 # Developer Documentation
 
+In order to contribute or modify the code of Magic Castle UI, it is highly recommended to use Visual Studio Code, as it allows debugging and running tests easily inside the container environment. The _developer documentation_ will assume you are using Visual Studio Code.
+
 ## Requirements
 
 - Docker Engine 19.03.0+
 - Docker Compose
 - Bash interpreter
+- Visual Studio Code
 
-## Steps to build and run the Docker container from source
+## Initial setup
 
 1. Clone this repository.
    ```
@@ -26,99 +29,52 @@
    mkdir clusters_backup
    sudo chown 1000:1000 clusters_backup
    ```
-5. Build the Docker Compose environment.
+
+## Running and debugging the backend code
+
+This is only available on Visual Studio Code right now.
+
+1. Install the [Remote Development extension pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack).
+
+2. Start VS Code and run `Remote-Containers: Open Folder in Container` command from the Command Pallette (`F1`).
+
+   This will perform the following commands for you :
    ```
    docker-compose build
-   ```
-6. Run the Docker Compose web container. This will start the web server and expose it on ``localhost:5000``.
-   ```
    docker-compose up
    ```
+
    > **Note:** When running this command, three bind mounts will be created:
    > 1. A bind mount between the project's `app` directory and the container's `/home/mcu/app` directory to ensure that modifications in the backend code are applied instantly. However, the container cannot modify this directory, it is readonly.
    > 2. A bind mount between the project's `clusters_backup` directory and the container's `/home/mcu/clusters` directory to ensure that Terraform state files and logs are backed up.
-   > 3. A bind mount between the project root directory and the container's `/workspace` directory.
+   > 3. A bind mount between the project root directory and the container's `/workspace` directory. This bind mount is necessary to have remote workspaces in VS Code.
 
-7. Navigate to `http://localhost:5000` to verify that the server is running and accessible locally.
+3. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension in the Dev Container.
 
-8. Kill the Docker Compose web service when you are done.
-   ```
-   docker-compose down
-   ```
+4. Go to the `Run` icon in the left pane of VS Code and run the Python Attach launch configuration.
+   
+   This will attach a debugging to the Flask server and make it reachable on `localhost:5000`.
 
-
-## Running tests
-
-Make sure you have built an image of Magic Castle UI first and that you have sourced the openrc file, 
-as shown in the previous step.
-Then, run the following command:
-````shell script
-docker run --rm --env-file ./env.list "magic_castle-ui" python -m pytest
-````
-
-> **Note**: The tests require the existence of OpenStack's environment variables
-> (achieved with `source _project_-openrc.sh`). However, no real API calls are made with these environment variables.
-
-## Debugging the backend code
-
-In order to setup debugging, the easiest way is to:
-
-1. Setup your IDE to use the Python interpreter from the ``magic_castle-ui:latest`` Docker image.
-
-2. Add the installation path of the python libraries to the interpreter configuration.
-The libraries specific to Magic Castle UI are installed in `/home/mcu/.local/lib/python3.8/site-packages`.
-
-3. Create a path mapping between the project's `app` directory and `/home/mcu/app`.
-
-4. Create a run configuration for `app/server.py` using the Python interpreter configured previously.
-Then, make sure the following additional arguments are included in the docker run command:
-   ````shell script
-   --entrypoint= \
-   --rm \
-   --env-file ./env.list \
-   --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
-   --mount "type=bind,source=$(pwd)/app,target=/home/mcu/app,readonly" \
-   --publish 5000:5000
-   ```` 
-
-5. Add the environment variables required by OpenStack to your run configuration. These can be found with:
-    ````shell script
-    printenv | grep "OS_"
-    ````
-6. Add breakpoints and start debugging with this run configuration.
-
-The same steps can be applied to debugging the unit and integration tests.
-Note that you need to use a pytest run configuration to debug the tests.
+   At this point, you can add your own breakpoints in the backend code and run tests.
 
 ## Modifying the backend code
 
 You can modify any file in the `app` directory
 without a rebuild, because of the bind mount created previously.
 
-If the changes are still not applied, kill the container and run it again:
-````shell script
-docker kill <CONTAINER ID>
-docker run \
-  --rm \
-  --env-file ./env.list \
-  --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
-  --mount "type=bind,source=$(pwd)/app,target=/home/mcu/app,readonly" \
-  --publish 5000:5000 \
-  "magic_castle-ui"
-````
-
 ## Modifying the frontend code
 
 By default, modifications to the frontend code do require a rebuild.
 
-However, you can easily run a node development server:
+However, you can easily run a node development server inside the development container:
 ````shell script
-cd frontend
-npm install
+cd /workspace/frontend
 npm run serve
 ````
 This will spawn a node server (most likely on `http://localhost:8080`) which will automatically reload the frontend code
 on any modification.
+
+> Please note that changes take around a minute right now to be applied in the node development server.
 
 
 ## Accessing clusters manually with Terraform
@@ -129,10 +85,6 @@ this section if for you.
 #### Option 1 (recommended)
 Start a shell within your running container.
 ```shell script
-docker ps  # Find the container id
-docker exec -it <CONTAINER ID> /bin/sh
-
-# Inside the container shell
 cd ~/clusters/<CLUSTER NAME>
 terraform show
 ```
