@@ -10,7 +10,7 @@ RUN npm run build
 
 ## PRODUCTION STAGE
 
-FROM python:3.8.2-alpine3.11 as production-stage
+FROM python:3.8.2-alpine3.11 as base-server
 
 ENV TERRAFORM_VERSION 0.12.24
 ENV MAGIC_CASTLE_VERSION 7.3
@@ -60,6 +60,32 @@ ADD app /home/mcu/app
 ## Vue Js frontend src
 COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
-EXPOSE 5000
+ENV FLASK_APP=app/server.py
+
+
+## DEVELOPMENT IMAGE - For debugging with vscode
+FROM base-server as development-server
+
+USER root
+
+RUN apk add git=2.24.3-r0 \
+            npm=12.15.0-r1
+RUN pip install ptvsd==4.3.2 \
+                pylint==2.5.3
+
+USER mcu
+
+RUN mkdir -p /home/mcu/.vscode-server/extensions
+
+# For flask hot reloading
+ENV FLASK_ENV=development
+
+# for npm serve hot reloading inside docker
+ENV CHOKIDAR_USEPOLLING=true
+
+CMD python -m ptvsd --host 0.0.0.0 --port 5678 --wait --multiprocess -m flask run -h 0.0.0 -p 5000
+
+## PRODUCTION IMAGE
+FROM base-server as production-server
 
 CMD python app/server.py

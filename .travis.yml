@@ -8,7 +8,7 @@ env:
     - IMAGE_NAME=fredericfc/magic_castle-ui
 
 install:
-  - docker build --tag "$IMAGE_NAME" .
+  - docker build --tag "$IMAGE_NAME" --target production-server .
 
 script:
   - docker run --rm --env-file ./env.list --publish 5000:5000 "$IMAGE_NAME" python -m pytest
