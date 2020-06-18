@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      target: development-server
+    env_file:
+      - ./openstack.env
+    ports:
+      - 5000:5000
+      - 8080:8080
+      - 5678:5678
+    volumes:
+      - type: bind
+        source: ./clusters_backup
+        target: /home/mcu/clusters
+      - type: bind
+        source: .
+        target: /workspace
+      - type: bind
+        source: ./app
+        target: /home/mcu/app
+        read_only: true
+      - type: volume
+        source: vscode-extensions
+        target: /home/mcu/.vscode-server/extensions
+    user: mcu
+
+volumes:
+  vscode-extensions: 

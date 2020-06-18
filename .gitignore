@@ -133,3 +133,5 @@ dmypy.json
 
 # Project specific (Magic Castle UI)
 clusters_backup/
+*.env
+*-openrc.sh

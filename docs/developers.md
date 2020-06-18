@@ -2,7 +2,8 @@
 
 ## Requirements
 
-- Docker
+- Docker Engine 19.03.0+
+- Docker Compose
 - Bash interpreter
 
 ## Steps to build and run the Docker container from source
@@ -16,38 +17,33 @@
    ```
    source _project_-openrc.sh
    ```
-3. Create a directory named `clusters_backup` and give it the proper owner and group.
+3. Write the OpenStack environment variables to `openstack.env`, at the root of the project.
+   ```
+   printenv | grep OS_ > openstack.env
+   ```
+4. Create a directory named `clusters_backup` and give it the proper owner and group.
    ```
    mkdir clusters_backup
    sudo chown 1000:1000 clusters_backup
    ```
-4. Build the docker image.
+5. Build the Docker Compose environment.
    ```
-   docker build --tag "magic_castle-ui:latest" .
+   docker-compose build
    ```
-5. Run the docker image. This will start the web server and expose it on ``localhost:5000``.
-   ```shell script
-   docker run \
-      --rm \
-      --env-file ./env.list \
-      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
-      --mount "type=bind,source=$(pwd)/app,target=/home/mcu/app,readonly" \
-      --publish 5000:5000 \
-      "magic_castle-ui"
+6. Run the Docker Compose web container. This will start the web server and expose it on ``localhost:5000``.
    ```
-   > **Note:** When running this command, two bind mounts will be created:
-   > 1. A bind mount between the project's `app` directory and the container's `/home/mcu/app` directory
-   to ensure that modifications in the backend code are applied instantly. However, the container
-   > cannot modify this directory, it is readonly.
-   > 2. A bind mount between the project's `clusters_backup` directory and
-   > the container's `/home/mcu/clusters` directory to ensure that Terraform state files
-   > and logs are backed up.
-   
-6. Navigate to `http://localhost:5000` to verify that the server is running and accessible locally.
+   docker-compose up
+   ```
+   > **Note:** When running this command, three bind mounts will be created:
+   > 1. A bind mount between the project's `app` directory and the container's `/home/mcu/app` directory to ensure that modifications in the backend code are applied instantly. However, the container cannot modify this directory, it is readonly.
+   > 2. A bind mount between the project's `clusters_backup` directory and the container's `/home/mcu/clusters` directory to ensure that Terraform state files and logs are backed up.
+   > 3. A bind mount between the project root directory and the container's `/workspace` directory.
 
-7. Kill the container when you are done.
+7. Navigate to `http://localhost:5000` to verify that the server is running and accessible locally.
+
+8. Kill the Docker Compose web service when you are done.
    ```
-   docker kill <CONTAINER ID>
+   docker-compose down
    ```
 
 
