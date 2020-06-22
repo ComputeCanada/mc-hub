@@ -1,6 +1,7 @@
 from server import app
 from models.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
+from os import path
 
 NON_EXISTING_CLUSTER_NAME = "non-existing"
 EXISTING_CLUSTER_NAME = "valid-1"
@@ -173,5 +174,7 @@ def test_modify_invalid_status(client):
 
 
 def modify_cluster_status(cluster_name, status: ClusterStatusCode):
-    with open(f"/home/mcu/clusters/{cluster_name}/status.txt", "w") as status_file:
+    with open(
+        path.join(MOCK_CLUSTERS_PATH, cluster_name, "status.txt"), "w"
+    ) as status_file:
         status_file.write(status.value)

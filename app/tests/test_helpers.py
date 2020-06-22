@@ -4,18 +4,25 @@ from os import path
 from shutil import rmtree, copytree
 import pytest
 
+MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
+
 
 def setup_mock_clusters(cluster_names):
     for cluster_name in cluster_names:
         copytree(
             path.join(Path(__file__).parent, "mock-clusters", cluster_name),
-            f"/home/mcu/clusters/{cluster_name}",
+            path.join(MOCK_CLUSTERS_PATH, cluster_name),
         )
 
 
 def teardown_mock_clusters(cluster_names):
     for cluster_name in cluster_names:
-        rmtree(f"/home/mcu/clusters/{cluster_name}")
+        rmtree(path.join(MOCK_CLUSTERS_PATH, cluster_name))
+
+
+@pytest.fixture(autouse=True)
+def mock_clusters_path(mocker):
+    mocker.patch("models.magic_castle.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
 
 
 @pytest.fixture(autouse=True)
