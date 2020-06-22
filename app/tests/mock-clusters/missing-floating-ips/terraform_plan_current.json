@@ -233,8 +233,8 @@
                             "fixed_ip_v4": "192.168.126.16",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:fc:0d:bd",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -249,7 +249,7 @@
                     "stop_before_destroy": false,
                     "tags": null,
                     "timeouts": null,
-                    "user_data": "4cde71db9bb1000f76f981efaec419aaceba88cd",
+                    "user_data": "FAKE",
                     "vendor_options": [],
                     "volume": []
                 },
@@ -292,8 +292,8 @@
                             "fixed_ip_v4": "192.168.126.16",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:fc:0d:bd",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -308,7 +308,7 @@
                     "stop_before_destroy": false,
                     "tags": null,
                     "timeouts": null,
-                    "user_data": "4cde71db9bb1000f76f981efaec419aaceba88cd",
+                    "user_data": "FAKE",
                     "vendor_options": [],
                     "volume": []
                 },
@@ -366,8 +366,8 @@
                             "fixed_ip_v4": "192.168.126.2",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:8e:ad:ba",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -425,8 +425,8 @@
                             "fixed_ip_v4": "192.168.126.2",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:8e:ad:ba",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -499,8 +499,8 @@
                             "fixed_ip_v4": "192.168.126.30",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:ee:46:72",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -558,8 +558,8 @@
                             "fixed_ip_v4": "192.168.126.30",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:ee:46:72",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -632,8 +632,8 @@
                             "fixed_ip_v4": "192.168.126.41",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:30:ef:0a",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "d1aa3abf-e1cf-4a30-928e-12202c540231",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -691,8 +691,8 @@
                             "fixed_ip_v4": "192.168.126.41",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:30:ef:0a",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "d1aa3abf-e1cf-4a30-928e-12202c540231",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -765,8 +765,8 @@
                             "fixed_ip_v4": "192.168.126.15",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:81:b4:1c",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "36098939-a9dc-4d17-9251-468aaccdeac4",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -824,8 +824,8 @@
                             "fixed_ip_v4": "192.168.126.15",
                             "fixed_ip_v6": "",
                             "floating_ip": "",
-                            "mac": "fa:16:3e:81:b4:1c",
-                            "name": "ipm-500-network",
+                            "mac": "FAKE",
+                            "name": "FAKE",
                             "port": "36098939-a9dc-4d17-9251-468aaccdeac4",
                             "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
                         }
@@ -1242,7 +1242,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-16.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-16",
                             "ip_address": "192.168.126.16"
                         }
@@ -1256,7 +1256,7 @@
                         }
                     ],
                     "id": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
-                    "mac_address": "fa:16:3e:fc:0d:bd",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-login1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1296,7 +1296,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-16.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-16",
                             "ip_address": "192.168.126.16"
                         }
@@ -1310,7 +1310,7 @@
                         }
                     ],
                     "id": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
-                    "mac_address": "fa:16:3e:fc:0d:bd",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-login1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1365,7 +1365,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-2.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-2",
                             "ip_address": "192.168.126.2"
                         }
@@ -1379,7 +1379,7 @@
                         }
                     ],
                     "id": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
-                    "mac_address": "fa:16:3e:8e:ad:ba",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-mgmt1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1419,7 +1419,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-2.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-2",
                             "ip_address": "192.168.126.2"
                         }
@@ -1433,7 +1433,7 @@
                         }
                     ],
                     "id": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
-                    "mac_address": "fa:16:3e:8e:ad:ba",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-mgmt1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1488,7 +1488,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-30.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-30",
                             "ip_address": "192.168.126.30"
                         }
@@ -1502,7 +1502,7 @@
                         }
                     ],
                     "id": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
-                    "mac_address": "fa:16:3e:ee:46:72",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-node1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1542,7 +1542,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-30.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-30",
                             "ip_address": "192.168.126.30"
                         }
@@ -1556,7 +1556,7 @@
                         }
                     ],
                     "id": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
-                    "mac_address": "fa:16:3e:ee:46:72",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-node1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1611,7 +1611,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-41.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-41",
                             "ip_address": "192.168.126.41"
                         }
@@ -1625,7 +1625,7 @@
                         }
                     ],
                     "id": "d1aa3abf-e1cf-4a30-928e-12202c540231",
-                    "mac_address": "fa:16:3e:30:ef:0a",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-node2",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1665,7 +1665,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-41.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-41",
                             "ip_address": "192.168.126.41"
                         }
@@ -1679,7 +1679,7 @@
                         }
                     ],
                     "id": "d1aa3abf-e1cf-4a30-928e-12202c540231",
-                    "mac_address": "fa:16:3e:30:ef:0a",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-node2",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1734,7 +1734,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-15.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-15",
                             "ip_address": "192.168.126.15"
                         }
@@ -1748,7 +1748,7 @@
                         }
                     ],
                     "id": "36098939-a9dc-4d17-9251-468aaccdeac4",
-                    "mac_address": "fa:16:3e:81:b4:1c",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-node3",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
@@ -1788,7 +1788,7 @@
                     "device_owner": "",
                     "dns_assignment": [
                         {
-                            "fqdn": "host-192-168-126-15.arbutus.",
+                            "fqdn": "FAKE.FAKE.",
                             "hostname": "host-192-168-126-15",
                             "ip_address": "192.168.126.15"
                         }
@@ -1802,7 +1802,7 @@
                         }
                     ],
                     "id": "36098939-a9dc-4d17-9251-468aaccdeac4",
-                    "mac_address": "fa:16:3e:81:b4:1c",
+                    "mac_address": "FAKE",
                     "name": "missing-floating-ips-port-node3",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
