@@ -1,0 +1,2047 @@
+{
+    "format_version": "0.1",
+    "terraform_version": "0.12.24",
+    "planned_values": {},
+    "resource_changes": [
+        {
+            "address": "module.openstack.openstack_blockstorage_volume_v2.home[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_blockstorage_volume_v2",
+            "name": "home",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "attachment": [],
+                    "availability_zone": "nova",
+                    "consistency_group_id": null,
+                    "description": "missing-floating-ips /home",
+                    "id": "6d878f7b-30b9-4002-8287-26d0c90f19de",
+                    "image_id": null,
+                    "metadata": {},
+                    "name": "missing-floating-ips-home",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "size": 50,
+                    "snapshot_id": "",
+                    "source_replica": null,
+                    "source_vol_id": "",
+                    "timeouts": null,
+                    "volume_type": "Default"
+                },
+                "after": {
+                    "attachment": [],
+                    "availability_zone": "nova",
+                    "consistency_group_id": null,
+                    "description": "missing-floating-ips /home",
+                    "id": "6d878f7b-30b9-4002-8287-26d0c90f19de",
+                    "image_id": null,
+                    "metadata": {},
+                    "name": "missing-floating-ips-home",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "size": 50,
+                    "snapshot_id": "",
+                    "source_replica": null,
+                    "source_vol_id": "",
+                    "timeouts": null,
+                    "volume_type": "Default"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_blockstorage_volume_v2.project[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_blockstorage_volume_v2",
+            "name": "project",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "attachment": [],
+                    "availability_zone": "nova",
+                    "consistency_group_id": null,
+                    "description": "missing-floating-ips /project",
+                    "id": "dc98dbcf-1f80-43ce-8f5b-abdddd0ef20e",
+                    "image_id": null,
+                    "metadata": {},
+                    "name": "missing-floating-ips-project",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "size": 1,
+                    "snapshot_id": "",
+                    "source_replica": null,
+                    "source_vol_id": "",
+                    "timeouts": null,
+                    "volume_type": "Default"
+                },
+                "after": {
+                    "attachment": [],
+                    "availability_zone": "nova",
+                    "consistency_group_id": null,
+                    "description": "missing-floating-ips /project",
+                    "id": "dc98dbcf-1f80-43ce-8f5b-abdddd0ef20e",
+                    "image_id": null,
+                    "metadata": {},
+                    "name": "missing-floating-ips-project",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "size": 1,
+                    "snapshot_id": "",
+                    "source_replica": null,
+                    "source_vol_id": "",
+                    "timeouts": null,
+                    "volume_type": "Default"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_blockstorage_volume_v2.scratch[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_blockstorage_volume_v2",
+            "name": "scratch",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "attachment": [],
+                    "availability_zone": "nova",
+                    "consistency_group_id": null,
+                    "description": "missing-floating-ips /scratch",
+                    "id": "d2ff1e9b-96c1-4acd-b273-cba8bd164f98",
+                    "image_id": null,
+                    "metadata": {},
+                    "name": "missing-floating-ips-scratch",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "size": 1,
+                    "snapshot_id": "",
+                    "source_replica": null,
+                    "source_vol_id": "",
+                    "timeouts": null,
+                    "volume_type": "Default"
+                },
+                "after": {
+                    "attachment": [],
+                    "availability_zone": "nova",
+                    "consistency_group_id": null,
+                    "description": "missing-floating-ips /scratch",
+                    "id": "d2ff1e9b-96c1-4acd-b273-cba8bd164f98",
+                    "image_id": null,
+                    "metadata": {},
+                    "name": "missing-floating-ips-scratch",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "size": 1,
+                    "snapshot_id": "",
+                    "source_replica": null,
+                    "source_vol_id": "",
+                    "timeouts": null,
+                    "volume_type": "Default"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_floatingip_associate_v2.fip[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_floatingip_associate_v2",
+            "name": "fip",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "create"
+                ],
+                "before": null,
+                "after": {
+                    "fixed_ip": null,
+                    "instance_id": "bf9b8f0f-36a1-40a0-95bc-2c399cf6516a",
+                    "timeouts": null,
+                    "wait_until_associated": null
+                },
+                "after_unknown": {
+                    "floating_ip": true,
+                    "id": true,
+                    "region": true
+                }
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_instance_v2.login[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_instance_v2",
+            "name": "login",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "access_ip_v4": "192.168.126.16",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "d2e0247d-3869-4f17-b9d0-9735f4f1b57a",
+                    "flavor_name": "p4-6gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "bf9b8f0f-36a1-40a0-95bc-2c399cf6516a",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-login1",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.16",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:fc:0d:bd",
+                            "name": "ipm-500-network",
+                            "port": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "4cde71db9bb1000f76f981efaec419aaceba88cd",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after": {
+                    "access_ip_v4": "192.168.126.16",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "d2e0247d-3869-4f17-b9d0-9735f4f1b57a",
+                    "flavor_name": "p4-6gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "bf9b8f0f-36a1-40a0-95bc-2c399cf6516a",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-login1",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.16",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:fc:0d:bd",
+                            "name": "ipm-500-network",
+                            "port": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "4cde71db9bb1000f76f981efaec419aaceba88cd",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_instance_v2.mgmt[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_instance_v2",
+            "name": "mgmt",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "access_ip_v4": "192.168.126.2",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "d2e0247d-3869-4f17-b9d0-9735f4f1b57a",
+                    "flavor_name": "p4-6gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-mgmt1",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.2",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:8e:ad:ba",
+                            "name": "ipm-500-network",
+                            "port": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "00fa59b7965f905230b1e437520b40d7ea8824ec",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after": {
+                    "access_ip_v4": "192.168.126.2",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "d2e0247d-3869-4f17-b9d0-9735f4f1b57a",
+                    "flavor_name": "p4-6gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-mgmt1",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.2",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:8e:ad:ba",
+                            "name": "ipm-500-network",
+                            "port": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "00fa59b7965f905230b1e437520b40d7ea8824ec",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_instance_v2.node[\"node1\"]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_instance_v2",
+            "name": "node",
+            "index": "node1",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "access_ip_v4": "192.168.126.30",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "6bc1a373-efc5-4234-a4ae-db70407cb594",
+                    "flavor_name": "p2-3gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "698581e7-4720-42b2-a9cc-7625d5edb9da",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-node1",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.30",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:ee:46:72",
+                            "name": "ipm-500-network",
+                            "port": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "0298db4d64456224df53ebd0555312ced081600b",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after": {
+                    "access_ip_v4": "192.168.126.30",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "6bc1a373-efc5-4234-a4ae-db70407cb594",
+                    "flavor_name": "p2-3gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "698581e7-4720-42b2-a9cc-7625d5edb9da",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-node1",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.30",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:ee:46:72",
+                            "name": "ipm-500-network",
+                            "port": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "0298db4d64456224df53ebd0555312ced081600b",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_instance_v2.node[\"node2\"]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_instance_v2",
+            "name": "node",
+            "index": "node2",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "access_ip_v4": "192.168.126.41",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "6bc1a373-efc5-4234-a4ae-db70407cb594",
+                    "flavor_name": "p2-3gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "17d840da-5ac8-443f-9874-ebb97d281baa",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-node2",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.41",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:30:ef:0a",
+                            "name": "ipm-500-network",
+                            "port": "d1aa3abf-e1cf-4a30-928e-12202c540231",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "1b83f79dea5e589f7c3eb1b642590c310a2986e7",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after": {
+                    "access_ip_v4": "192.168.126.41",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_02",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "6bc1a373-efc5-4234-a4ae-db70407cb594",
+                    "flavor_name": "p2-3gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "17d840da-5ac8-443f-9874-ebb97d281baa",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-node2",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.41",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:30:ef:0a",
+                            "name": "ipm-500-network",
+                            "port": "d1aa3abf-e1cf-4a30-928e-12202c540231",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "1b83f79dea5e589f7c3eb1b642590c310a2986e7",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_instance_v2.node[\"node3\"]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_instance_v2",
+            "name": "node",
+            "index": "node3",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "access_ip_v4": "192.168.126.15",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_01",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "6bc1a373-efc5-4234-a4ae-db70407cb594",
+                    "flavor_name": "p2-3gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "be974559-d691-49d0-bf53-876e7f6ea230",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-node3",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.15",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:81:b4:1c",
+                            "name": "ipm-500-network",
+                            "port": "36098939-a9dc-4d17-9251-468aaccdeac4",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "55517db7f2d1d5afe269245f500334905a1b4889",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after": {
+                    "access_ip_v4": "192.168.126.15",
+                    "access_ip_v6": "",
+                    "admin_pass": null,
+                    "all_metadata": {},
+                    "all_tags": [],
+                    "availability_zone": "Persistent_01",
+                    "availability_zone_hints": null,
+                    "block_device": [
+                        {
+                            "boot_index": 0,
+                            "delete_on_termination": true,
+                            "destination_type": "volume",
+                            "device_type": "",
+                            "disk_bus": "",
+                            "guest_format": "",
+                            "source_type": "image",
+                            "uuid": "3330f3a3-e52b-4f7d-80a8-57233c9259e7",
+                            "volume_size": 10,
+                            "volume_type": ""
+                        }
+                    ],
+                    "config_drive": null,
+                    "flavor_id": "6bc1a373-efc5-4234-a4ae-db70407cb594",
+                    "flavor_name": "p2-3gb",
+                    "floating_ip": null,
+                    "force_delete": false,
+                    "id": "be974559-d691-49d0-bf53-876e7f6ea230",
+                    "image_id": "Attempt to boot from volume - no image supplied",
+                    "image_name": null,
+                    "key_pair": "missing-floating-ips-key",
+                    "metadata": null,
+                    "name": "missing-floating-ips-node3",
+                    "network": [
+                        {
+                            "access_network": false,
+                            "fixed_ip_v4": "192.168.126.15",
+                            "fixed_ip_v6": "",
+                            "floating_ip": "",
+                            "mac": "fa:16:3e:81:b4:1c",
+                            "name": "ipm-500-network",
+                            "port": "36098939-a9dc-4d17-9251-468aaccdeac4",
+                            "uuid": "f2b11478-de5c-4610-8646-a39142a91f0a"
+                        }
+                    ],
+                    "personality": [],
+                    "power_state": "active",
+                    "region": "RegionOne",
+                    "scheduler_hints": [],
+                    "security_groups": [
+                        "missing-floating-ips-secgroup"
+                    ],
+                    "stop_before_destroy": false,
+                    "tags": null,
+                    "timeouts": null,
+                    "user_data": "55517db7f2d1d5afe269245f500334905a1b4889",
+                    "vendor_options": [],
+                    "volume": []
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_keypair_v2.keypair",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_keypair_v2",
+            "name": "keypair",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "fingerprint": "0f:5c:4c:fc:dd:86:f1:81:c6:d9:b9:67:6d:d8:e1:df",
+                    "id": "missing-floating-ips-key",
+                    "name": "missing-floating-ips-key",
+                    "private_key": "",
+                    "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC97xCZ/DxcJMGfQdow4qjfxV4gE6wC1g9R1fQjHlTIqbVg9uR7VKUM89Sy6NeGHiq0fsAknE1l/YsmvPKxpEGskFlbwSlW3aZtv/FqBUzadMAX7Ns+8yf18nOSx8hPbK7NhtIRUZQmJllz7z0HPUcbFD+oClpngG4WMOS4wHK92w8V977ybNe/j9aHA8puqVcFj8vwnbOVTMYje5VRaTbfxziozHo/NDq+E9h3X0h5A78+izbKO1R4ZIjw5p/Mrr90AQe4CmrtPiIwSqELY5uANLdZqfQ+AV7BpymFPri41W9CkIVvs2RdmgRBM28/wC/HWwSbuGA6Cc9ULyZTYB0Nh0B+y4kHPqapOn2N4IPhSIIJlQ6mbuzQc11eOCk0SW9s8y9+oUe3llRMXk9nfoUT4okfwYXSXdqgCLkIUgSqF9leqQaC0WCH3lPtaT0FJk5KUlsfUTxWsG5FmaIe62slGj3cGskB2PsNTq9HdTwGFXcR5lyTcr0sXpr3ZYyb5Uk= freud@DESKTOP-A3SM80E",
+                    "region": "RegionOne",
+                    "value_specs": null
+                },
+                "after": {
+                    "fingerprint": "0f:5c:4c:fc:dd:86:f1:81:c6:d9:b9:67:6d:d8:e1:df",
+                    "id": "missing-floating-ips-key",
+                    "name": "missing-floating-ips-key",
+                    "private_key": "",
+                    "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC97xCZ/DxcJMGfQdow4qjfxV4gE6wC1g9R1fQjHlTIqbVg9uR7VKUM89Sy6NeGHiq0fsAknE1l/YsmvPKxpEGskFlbwSlW3aZtv/FqBUzadMAX7Ns+8yf18nOSx8hPbK7NhtIRUZQmJllz7z0HPUcbFD+oClpngG4WMOS4wHK92w8V977ybNe/j9aHA8puqVcFj8vwnbOVTMYje5VRaTbfxziozHo/NDq+E9h3X0h5A78+izbKO1R4ZIjw5p/Mrr90AQe4CmrtPiIwSqELY5uANLdZqfQ+AV7BpymFPri41W9CkIVvs2RdmgRBM28/wC/HWwSbuGA6Cc9ULyZTYB0Nh0B+y4kHPqapOn2N4IPhSIIJlQ6mbuzQc11eOCk0SW9s8y9+oUe3llRMXk9nfoUT4okfwYXSXdqgCLkIUgSqF9leqQaC0WCH3lPtaT0FJk5KUlsfUTxWsG5FmaIe62slGj3cGskB2PsNTq9HdTwGFXcR5lyTcr0sXpr3ZYyb5Uk= freud@DESKTOP-A3SM80E",
+                    "region": "RegionOne",
+                    "value_specs": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_secgroup_v2.secgroup_1",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_secgroup_v2",
+            "name": "secgroup_1",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "description": "Slurm+JupyterHub security group",
+                    "id": "a16230c0-2d50-4b21-9afd-4601be78361b",
+                    "name": "missing-floating-ips-secgroup",
+                    "region": "RegionOne",
+                    "rule": [
+                        {
+                            "cidr": "",
+                            "from_group_id": "",
+                            "from_port": -1,
+                            "id": "f5df9381-e48a-4869-97fd-4ca7d64c8ace",
+                            "ip_protocol": "icmp",
+                            "self": true,
+                            "to_port": -1
+                        },
+                        {
+                            "cidr": "",
+                            "from_group_id": "",
+                            "from_port": 1,
+                            "id": "7d707808-f92a-4d46-b2b4-4dfb768dd277",
+                            "ip_protocol": "tcp",
+                            "self": true,
+                            "to_port": 65535
+                        },
+                        {
+                            "cidr": "",
+                            "from_group_id": "",
+                            "from_port": 1,
+                            "id": "f2144b47-9c10-4440-bd27-0def9121e208",
+                            "ip_protocol": "udp",
+                            "self": true,
+                            "to_port": 65535
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 22,
+                            "id": "d2e1a8b3-5095-4480-a5b3-32fdaa39ec4b",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 22
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 443,
+                            "id": "20924565-fd41-4e64-a7f8-e0d6b932dae0",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 443
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 50000,
+                            "id": "e0113145-7b3f-46bd-8b13-097ba44c8910",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 51000
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 7512,
+                            "id": "9866e05b-38b9-4d45-954d-18054362e311",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 7512
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 80,
+                            "id": "cc2dc908-c9fc-477d-85e0-5b0c7238751f",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 80
+                        },
+                        {
+                            "cidr": "54.237.254.192/29",
+                            "from_group_id": "",
+                            "from_port": 2811,
+                            "id": "ffa4cd00-63fd-4ebf-832f-6e88e1736b4b",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 2811
+                        }
+                    ],
+                    "timeouts": null
+                },
+                "after": {
+                    "description": "Slurm+JupyterHub security group",
+                    "id": "a16230c0-2d50-4b21-9afd-4601be78361b",
+                    "name": "missing-floating-ips-secgroup",
+                    "region": "RegionOne",
+                    "rule": [
+                        {
+                            "cidr": "",
+                            "from_group_id": "",
+                            "from_port": -1,
+                            "id": "f5df9381-e48a-4869-97fd-4ca7d64c8ace",
+                            "ip_protocol": "icmp",
+                            "self": true,
+                            "to_port": -1
+                        },
+                        {
+                            "cidr": "",
+                            "from_group_id": "",
+                            "from_port": 1,
+                            "id": "7d707808-f92a-4d46-b2b4-4dfb768dd277",
+                            "ip_protocol": "tcp",
+                            "self": true,
+                            "to_port": 65535
+                        },
+                        {
+                            "cidr": "",
+                            "from_group_id": "",
+                            "from_port": 1,
+                            "id": "f2144b47-9c10-4440-bd27-0def9121e208",
+                            "ip_protocol": "udp",
+                            "self": true,
+                            "to_port": 65535
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 22,
+                            "id": "d2e1a8b3-5095-4480-a5b3-32fdaa39ec4b",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 22
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 443,
+                            "id": "20924565-fd41-4e64-a7f8-e0d6b932dae0",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 443
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 50000,
+                            "id": "e0113145-7b3f-46bd-8b13-097ba44c8910",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 51000
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 7512,
+                            "id": "9866e05b-38b9-4d45-954d-18054362e311",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 7512
+                        },
+                        {
+                            "cidr": "0.0.0.0/0",
+                            "from_group_id": "",
+                            "from_port": 80,
+                            "id": "cc2dc908-c9fc-477d-85e0-5b0c7238751f",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 80
+                        },
+                        {
+                            "cidr": "54.237.254.192/29",
+                            "from_group_id": "",
+                            "from_port": 2811,
+                            "id": "ffa4cd00-63fd-4ebf-832f-6e88e1736b4b",
+                            "ip_protocol": "tcp",
+                            "self": false,
+                            "to_port": 2811
+                        }
+                    ],
+                    "timeouts": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_volume_attach_v2.va_home[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_volume_attach_v2",
+            "name": "va_home",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "device": "/dev/vdb",
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623/6d878f7b-30b9-4002-8287-26d0c90f19de",
+                    "instance_id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "multiattach": null,
+                    "region": "RegionOne",
+                    "timeouts": null,
+                    "volume_id": "6d878f7b-30b9-4002-8287-26d0c90f19de"
+                },
+                "after": {
+                    "device": "/dev/vdb",
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623/6d878f7b-30b9-4002-8287-26d0c90f19de",
+                    "instance_id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "multiattach": null,
+                    "region": "RegionOne",
+                    "timeouts": null,
+                    "volume_id": "6d878f7b-30b9-4002-8287-26d0c90f19de"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_volume_attach_v2.va_project[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_volume_attach_v2",
+            "name": "va_project",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "device": "/dev/vdd",
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623/dc98dbcf-1f80-43ce-8f5b-abdddd0ef20e",
+                    "instance_id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "multiattach": null,
+                    "region": "RegionOne",
+                    "timeouts": null,
+                    "volume_id": "dc98dbcf-1f80-43ce-8f5b-abdddd0ef20e"
+                },
+                "after": {
+                    "device": "/dev/vdd",
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623/dc98dbcf-1f80-43ce-8f5b-abdddd0ef20e",
+                    "instance_id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "multiattach": null,
+                    "region": "RegionOne",
+                    "timeouts": null,
+                    "volume_id": "dc98dbcf-1f80-43ce-8f5b-abdddd0ef20e"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_compute_volume_attach_v2.va_scratch[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_compute_volume_attach_v2",
+            "name": "va_scratch",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "device": "/dev/vdc",
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623/d2ff1e9b-96c1-4acd-b273-cba8bd164f98",
+                    "instance_id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "multiattach": null,
+                    "region": "RegionOne",
+                    "timeouts": null,
+                    "volume_id": "d2ff1e9b-96c1-4acd-b273-cba8bd164f98"
+                },
+                "after": {
+                    "device": "/dev/vdc",
+                    "id": "b40ce085-cc59-465b-8f75-1daf7fade623/d2ff1e9b-96c1-4acd-b273-cba8bd164f98",
+                    "instance_id": "b40ce085-cc59-465b-8f75-1daf7fade623",
+                    "multiattach": null,
+                    "region": "RegionOne",
+                    "timeouts": null,
+                    "volume_id": "d2ff1e9b-96c1-4acd-b273-cba8bd164f98"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_networking_floatingip_v2.fip[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_networking_floatingip_v2",
+            "name": "fip",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "create"
+                ],
+                "before": null,
+                "after": {
+                    "description": null,
+                    "pool": "Public-Network",
+                    "subnet_id": null,
+                    "tags": null,
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after_unknown": {
+                    "address": true,
+                    "all_tags": true,
+                    "dns_domain": true,
+                    "dns_name": true,
+                    "fixed_ip": true,
+                    "id": true,
+                    "port_id": true,
+                    "region": true,
+                    "tenant_id": true
+                }
+            }
+        },
+        {
+            "address": "module.openstack.openstack_networking_port_v2.port_login[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_networking_port_v2",
+            "name": "port_login",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.16"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-16.arbutus.",
+                            "hostname": "host-192-168-126-16",
+                            "ip_address": "192.168.126.16"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
+                    "mac_address": "fa:16:3e:fc:0d:bd",
+                    "name": "missing-floating-ips-port-login1",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.16"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-16.arbutus.",
+                            "hostname": "host-192-168-126-16",
+                            "ip_address": "192.168.126.16"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "5f16aee4-3298-4003-b147-f1c3106a0dbe",
+                    "mac_address": "fa:16:3e:fc:0d:bd",
+                    "name": "missing-floating-ips-port-login1",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_networking_port_v2.port_mgmt[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_networking_port_v2",
+            "name": "port_mgmt",
+            "index": 0,
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.2"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-2.arbutus.",
+                            "hostname": "host-192-168-126-2",
+                            "ip_address": "192.168.126.2"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
+                    "mac_address": "fa:16:3e:8e:ad:ba",
+                    "name": "missing-floating-ips-port-mgmt1",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.2"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-2.arbutus.",
+                            "hostname": "host-192-168-126-2",
+                            "ip_address": "192.168.126.2"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "3ad88c13-cdfb-4428-914a-a4addd9c9722",
+                    "mac_address": "fa:16:3e:8e:ad:ba",
+                    "name": "missing-floating-ips-port-mgmt1",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_networking_port_v2.port_node[\"node1\"]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_networking_port_v2",
+            "name": "port_node",
+            "index": "node1",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.30"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-30.arbutus.",
+                            "hostname": "host-192-168-126-30",
+                            "ip_address": "192.168.126.30"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
+                    "mac_address": "fa:16:3e:ee:46:72",
+                    "name": "missing-floating-ips-port-node1",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.30"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-30.arbutus.",
+                            "hostname": "host-192-168-126-30",
+                            "ip_address": "192.168.126.30"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "62fd0329-5571-49ff-ab2f-62e4ab8c4be5",
+                    "mac_address": "fa:16:3e:ee:46:72",
+                    "name": "missing-floating-ips-port-node1",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_networking_port_v2.port_node[\"node2\"]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_networking_port_v2",
+            "name": "port_node",
+            "index": "node2",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.41"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-41.arbutus.",
+                            "hostname": "host-192-168-126-41",
+                            "ip_address": "192.168.126.41"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "d1aa3abf-e1cf-4a30-928e-12202c540231",
+                    "mac_address": "fa:16:3e:30:ef:0a",
+                    "name": "missing-floating-ips-port-node2",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.41"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-41.arbutus.",
+                            "hostname": "host-192-168-126-41",
+                            "ip_address": "192.168.126.41"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "d1aa3abf-e1cf-4a30-928e-12202c540231",
+                    "mac_address": "fa:16:3e:30:ef:0a",
+                    "name": "missing-floating-ips-port-node2",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.openstack_networking_port_v2.port_node[\"node3\"]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "openstack_networking_port_v2",
+            "name": "port_node",
+            "index": "node3",
+            "provider_name": "openstack",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.15"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-15.arbutus.",
+                            "hostname": "host-192-168-126-15",
+                            "ip_address": "192.168.126.15"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "36098939-a9dc-4d17-9251-468aaccdeac4",
+                    "mac_address": "fa:16:3e:81:b4:1c",
+                    "name": "missing-floating-ips-port-node3",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after": {
+                    "admin_state_up": true,
+                    "all_fixed_ips": [
+                        "192.168.126.15"
+                    ],
+                    "all_security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "all_tags": [],
+                    "allowed_address_pairs": [],
+                    "binding": [
+                        {
+                            "host_id": "",
+                            "profile": "null",
+                            "vif_details": {},
+                            "vif_type": "",
+                            "vnic_type": "normal"
+                        }
+                    ],
+                    "description": "",
+                    "device_id": "",
+                    "device_owner": "",
+                    "dns_assignment": [
+                        {
+                            "fqdn": "host-192-168-126-15.arbutus.",
+                            "hostname": "host-192-168-126-15",
+                            "ip_address": "192.168.126.15"
+                        }
+                    ],
+                    "dns_name": "",
+                    "extra_dhcp_option": [],
+                    "fixed_ip": [
+                        {
+                            "ip_address": "",
+                            "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
+                        }
+                    ],
+                    "id": "36098939-a9dc-4d17-9251-468aaccdeac4",
+                    "mac_address": "fa:16:3e:81:b4:1c",
+                    "name": "missing-floating-ips-port-node3",
+                    "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
+                    "no_fixed_ip": null,
+                    "no_security_groups": null,
+                    "port_security_enabled": true,
+                    "qos_policy_id": "",
+                    "region": "RegionOne",
+                    "security_group_ids": [
+                        "a16230c0-2d50-4b21-9afd-4601be78361b"
+                    ],
+                    "tags": null,
+                    "tenant_id": "dde6409100e4490f935cf5bf7f3e75ed",
+                    "timeouts": null,
+                    "value_specs": null
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.random_pet.guest_passwd[0]",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "random_pet",
+            "name": "guest_passwd",
+            "index": 0,
+            "provider_name": "random",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "id": "gratefully.perfectly.enabling.grub",
+                    "keepers": null,
+                    "length": 4,
+                    "prefix": null,
+                    "separator": "."
+                },
+                "after": {
+                    "id": "gratefully.perfectly.enabling.grub",
+                    "keepers": null,
+                    "length": 4,
+                    "prefix": null,
+                    "separator": "."
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.random_string.freeipa_passwd",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "random_string",
+            "name": "freeipa_passwd",
+            "provider_name": "random",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "id": "8RX8qXVXgkpLomY2",
+                    "keepers": null,
+                    "length": 16,
+                    "lower": true,
+                    "min_lower": 0,
+                    "min_numeric": 0,
+                    "min_special": 0,
+                    "min_upper": 0,
+                    "number": true,
+                    "override_special": null,
+                    "result": "8RX8qXVXgkpLomY2",
+                    "special": false,
+                    "upper": true
+                },
+                "after": {
+                    "id": "8RX8qXVXgkpLomY2",
+                    "keepers": null,
+                    "length": 16,
+                    "lower": true,
+                    "min_lower": 0,
+                    "min_numeric": 0,
+                    "min_special": 0,
+                    "min_upper": 0,
+                    "number": true,
+                    "override_special": null,
+                    "result": "8RX8qXVXgkpLomY2",
+                    "special": false,
+                    "upper": true
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.random_string.munge_key",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "random_string",
+            "name": "munge_key",
+            "provider_name": "random",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "id": "9DNZVeNWdyTo3ox97sgyGclVVMfNEBME",
+                    "keepers": null,
+                    "length": 32,
+                    "lower": true,
+                    "min_lower": 0,
+                    "min_numeric": 0,
+                    "min_special": 0,
+                    "min_upper": 0,
+                    "number": true,
+                    "override_special": null,
+                    "result": "9DNZVeNWdyTo3ox97sgyGclVVMfNEBME",
+                    "special": false,
+                    "upper": true
+                },
+                "after": {
+                    "id": "9DNZVeNWdyTo3ox97sgyGclVVMfNEBME",
+                    "keepers": null,
+                    "length": 32,
+                    "lower": true,
+                    "min_lower": 0,
+                    "min_numeric": 0,
+                    "min_special": 0,
+                    "min_upper": 0,
+                    "number": true,
+                    "override_special": null,
+                    "result": "9DNZVeNWdyTo3ox97sgyGclVVMfNEBME",
+                    "special": false,
+                    "upper": true
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.random_string.puppetmaster_password",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "random_string",
+            "name": "puppetmaster_password",
+            "provider_name": "random",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "id": "N88v3KTRkkFr1fN48Bri7FylBehT7rrT",
+                    "keepers": null,
+                    "length": 32,
+                    "lower": true,
+                    "min_lower": 0,
+                    "min_numeric": 0,
+                    "min_special": 0,
+                    "min_upper": 0,
+                    "number": true,
+                    "override_special": null,
+                    "result": "N88v3KTRkkFr1fN48Bri7FylBehT7rrT",
+                    "special": false,
+                    "upper": true
+                },
+                "after": {
+                    "id": "N88v3KTRkkFr1fN48Bri7FylBehT7rrT",
+                    "keepers": null,
+                    "length": 32,
+                    "lower": true,
+                    "min_lower": 0,
+                    "min_numeric": 0,
+                    "min_special": 0,
+                    "min_upper": 0,
+                    "number": true,
+                    "override_special": null,
+                    "result": "N88v3KTRkkFr1fN48Bri7FylBehT7rrT",
+                    "special": false,
+                    "upper": true
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.random_uuid.consul_token",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "random_uuid",
+            "name": "consul_token",
+            "provider_name": "random",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "id": "b3aaf97b-cca9-9ca4-0d9c-f0c3842cb66d",
+                    "keepers": null,
+                    "result": "b3aaf97b-cca9-9ca4-0d9c-f0c3842cb66d"
+                },
+                "after": {
+                    "id": "b3aaf97b-cca9-9ca4-0d9c-f0c3842cb66d",
+                    "keepers": null,
+                    "result": "b3aaf97b-cca9-9ca4-0d9c-f0c3842cb66d"
+                },
+                "after_unknown": {}
+            }
+        },
+        {
+            "address": "module.openstack.tls_private_key.login_rsa",
+            "module_address": "module.openstack",
+            "mode": "managed",
+            "type": "tls_private_key",
+            "name": "login_rsa",
+            "provider_name": "tls",
+            "change": {
+                "actions": [
+                    "no-op"
+                ],
+                "before": {
+                    "algorithm": "RSA",
+                    "ecdsa_curve": "P224",
+                    "id": "2f2d1b506b0d099ae69845e6c1d677d50a73216c",
+                    "private_key_pem": "-----BEGIN RSA PRIVATE KEY-----\n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\n-----END RSA PRIVATE KEY-----\n",
+                    "public_key_fingerprint_md5": "2e:3a:60:55:cb:8c:7f:f1:13:36:7e:9e:a4:e1:92:80",
+                    "public_key_openssh": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDZtkEKqVI+ZiyiPnnOww5/1I37fRIN8N6pT8YlgtiWKp0nHiyFc6BRYJ1Z4f2olMc3FQ39O/c0kuZdXJCQb3q24nCtDmCL0VpXg8d28JTN0t8iR9u9lP/EeKe+nlq775pf6G6qAaDpY9uU5CZz4HB1D+j16LWPy33ACFrg1ULpXh9UVBWwjvfCCN9NYUuwy2OKLerBX4SZmdlupktAa3NCSdIGbhQN8xG5EHdgkoYy/7lotV84AxVa5ZGX2iGwhBFG9Syfrw1bFPJyOHKDxbSoRI+QNobL6QX5enPSApo/lJwdh7+xxl6/CItLO/h4bSg063ESlEnTGyFXoqaJdOeZnAWArna5KJCArClurhIvM0IhZksHiHw9TjJQ26WvrE+Oxwv1pIs9E/tXaIkwJgN9UK9bZ+CmcbCf+EJWClioLOyeJQPGcQ0XXDFDmZ1fyhUxbMLEyggKZnkhN4NN69yXFHWnkXA3nJqvYvC3MUvyUW0YNZeKl+UQ5OFQkE392N7o7iqHne/DueZoe2hc2bb3IV13LZyEq94xW+vfim8lEvVRdhZNetXnxmi5kqoKys8eR4m+Rcc8SJF0X6L1ja+e5OAQxRpX0E3oYkreFB018aXcQKMt8HlV4hbWmVhuLvmBo8caWhOWHBM/YeyR4UXp86K3J8qYNek8IT4zti/t4w==\n",
+                    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA2bZBCqlSPmYsoj55zsMO\nf9SN+30SDfDeqU/GJYLYliqdJx4shXOgUWCdWeH9qJTHNxUN/Tv3NJLmXVyQkG96\ntuJwrQ5gi9FaV4PHdvCUzdLfIkfbvZT/xHinvp5au++aX+huqgGg6WPblOQmc+Bw\ndQ/o9ei1j8t9wAha4NVC6V4fVFQVsI73wgjfTWFLsMtjii3qwV+EmZnZbqZLQGtz\nQknSBm4UDfMRuRB3YJKGMv+5aLVfOAMVWuWRl9ohsIQRRvUsn68NWxTycjhyg8W0\nqESPkDaGy+kF+Xpz0gKaP5ScHYe/scZevwiLSzv4eG0oNOtxEpRJ0xshV6KmiXTn\nmZwFgK52uSiQgKwpbq4SLzNCIWZLB4h8PU4yUNulr6xPjscL9aSLPRP7V2iJMCYD\nfVCvW2fgpnGwn/hCVgpYqCzsniUDxnENF1wxQ5mdX8oVMWzCxMoICmZ5ITeDTevc\nlxR1p5FwN5yar2LwtzFL8lFtGDWXipflEOThUJBN/dje6O4qh53vw7nmaHtoXNm2\n9yFddy2chKveMVvr34pvJRL1UXYWTXrV58ZouZKqCsrPHkeJvkXHPEiRdF+i9Y2v\nnuTgEMUaV9BN6GJK3hQdNfGl3ECjLfB5VeIW1plYbi75gaPHGloTlhwTP2HskeFF\n6fOityfKmDXpPCE+M7Yv7eMCAwEAAQ==\n-----END PUBLIC KEY-----\n",
+                    "rsa_bits": 4096
+                },
+                "after": {
+                    "algorithm": "RSA",
+                    "ecdsa_curve": "P224",
+                    "id": "2f2d1b506b0d099ae69845e6c1d677d50a73216c",
+                    "private_key_pem": "-----BEGIN RSA PRIVATE KEY-----\n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\n-----END RSA PRIVATE KEY-----\n",
+                    "public_key_fingerprint_md5": "2e:3a:60:55:cb:8c:7f:f1:13:36:7e:9e:a4:e1:92:80",
+                    "public_key_openssh": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDZtkEKqVI+ZiyiPnnOww5/1I37fRIN8N6pT8YlgtiWKp0nHiyFc6BRYJ1Z4f2olMc3FQ39O/c0kuZdXJCQb3q24nCtDmCL0VpXg8d28JTN0t8iR9u9lP/EeKe+nlq775pf6G6qAaDpY9uU5CZz4HB1D+j16LWPy33ACFrg1ULpXh9UVBWwjvfCCN9NYUuwy2OKLerBX4SZmdlupktAa3NCSdIGbhQN8xG5EHdgkoYy/7lotV84AxVa5ZGX2iGwhBFG9Syfrw1bFPJyOHKDxbSoRI+QNobL6QX5enPSApo/lJwdh7+xxl6/CItLO/h4bSg063ESlEnTGyFXoqaJdOeZnAWArna5KJCArClurhIvM0IhZksHiHw9TjJQ26WvrE+Oxwv1pIs9E/tXaIkwJgN9UK9bZ+CmcbCf+EJWClioLOyeJQPGcQ0XXDFDmZ1fyhUxbMLEyggKZnkhN4NN69yXFHWnkXA3nJqvYvC3MUvyUW0YNZeKl+UQ5OFQkE392N7o7iqHne/DueZoe2hc2bb3IV13LZyEq94xW+vfim8lEvVRdhZNetXnxmi5kqoKys8eR4m+Rcc8SJF0X6L1ja+e5OAQxRpX0E3oYkreFB018aXcQKMt8HlV4hbWmVhuLvmBo8caWhOWHBM/YeyR4UXp86K3J8qYNek8IT4zti/t4w==\n",
+                    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA2bZBCqlSPmYsoj55zsMO\nf9SN+30SDfDeqU/GJYLYliqdJx4shXOgUWCdWeH9qJTHNxUN/Tv3NJLmXVyQkG96\ntuJwrQ5gi9FaV4PHdvCUzdLfIkfbvZT/xHinvp5au++aX+huqgGg6WPblOQmc+Bw\ndQ/o9ei1j8t9wAha4NVC6V4fVFQVsI73wgjfTWFLsMtjii3qwV+EmZnZbqZLQGtz\nQknSBm4UDfMRuRB3YJKGMv+5aLVfOAMVWuWRl9ohsIQRRvUsn68NWxTycjhyg8W0\nqESPkDaGy+kF+Xpz0gKaP5ScHYe/scZevwiLSzv4eG0oNOtxEpRJ0xshV6KmiXTn\nmZwFgK52uSiQgKwpbq4SLzNCIWZLB4h8PU4yUNulr6xPjscL9aSLPRP7V2iJMCYD\nfVCvW2fgpnGwn/hCVgpYqCzsniUDxnENF1wxQ5mdX8oVMWzCxMoICmZ5ITeDTevc\nlxR1p5FwN5yar2LwtzFL8lFtGDWXipflEOThUJBN/dje6O4qh53vw7nmaHtoXNm2\n9yFddy2chKveMVvr34pvJRL1UXYWTXrV58ZouZKqCsrPHkeJvkXHPEiRdF+i9Y2v\nnuTgEMUaV9BN6GJK3hQdNfGl3ECjLfB5VeIW1plYbi75gaPHGloTlhwTP2HskeFF\n6fOityfKmDXpPCE+M7Yv7eMCAwEAAQ==\n-----END PUBLIC KEY-----\n",
+                    "rsa_bits": 4096
+                },
+                "after_unknown": {}
+            }
+        }
+    ],
+    "output_changes": {},
+    "prior_state": {},
+    "configuration": {}
+}

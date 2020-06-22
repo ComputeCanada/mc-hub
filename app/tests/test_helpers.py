@@ -20,7 +20,7 @@ def teardown_mock_clusters(cluster_names):
 
 @pytest.fixture(autouse=True)
 def generate_test_clusters():
-    mock_cluster_names = ["empty", "missing-nodes", "valid-1"]
+    mock_cluster_names = ["empty", "missing-nodes", "valid-1", "missing-floating-ips"]
     setup_mock_clusters(mock_cluster_names)
     yield
     teardown_mock_clusters(mock_cluster_names)

@@ -71,7 +71,8 @@ USER root
 RUN apk add git=2.24.3-r0 \
             npm=12.15.0-r1
 RUN pip install ptvsd==4.3.2 \
-                pylint==2.5.3
+                pylint==2.5.3 \
+                black
 
 USER mcu
 

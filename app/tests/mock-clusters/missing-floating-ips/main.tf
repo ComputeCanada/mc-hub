@@ -5,22 +5,22 @@ terraform {
 module "openstack" {
   source = "/home/mcu/magic_castle-openstack-7.3/openstack"
 
-  cluster_name = "missing-nodes"
+  cluster_name = "missing-floating-ips"
   domain       = "example.com"
   image        = "CentOS-7-x64-2019-07"
-  nb_users     = 10
+  nb_users     = 17
 
   instances = {
         mgmt = { type = "p4-6gb", count = 1 }
         login = { type = "p4-6gb", count = 1 }
-        node = [ { type = "p2-3gb", count = 1 } ]
+        node = [ { type = "p2-3gb", count = 3 } ]
   }
 
   storage = {
     type         = "nfs"
-    home_size    = 100
-    project_size = 50
-    scratch_size = 50
+    home_size    = 50
+    project_size = 1
+    scratch_size = 1
   }
 
   public_keys = []

@@ -8,11 +8,13 @@ def test_get_all_magic_castles():
     all_magic_castles = MagicCastle.all()
     assert [magic_castle.get_name() for magic_castle in all_magic_castles] == [
         "empty",
+        "missing-floating-ips",
         "missing-nodes",
         "valid-1",
     ]
     assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
         ClusterStatusCode.BUILD_ERROR,
+        ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_SUCCESS,
     ]
