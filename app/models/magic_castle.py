@@ -1,7 +1,7 @@
 from os import path, environ, mkdir, listdir
 from os.path import isdir
 from flask import render_template
-from subprocess import run
+from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
 from marshmallow import ValidationError
@@ -15,6 +15,7 @@ from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 from filelock import FileLock
+import logging
 import json
 
 MAGIC_CASTLE_RELEASE_PATH = path.join(
@@ -84,6 +85,8 @@ class MagicCastle:
 
         self.__generate_plan_file(plan_type="current", refresh=False)
         current_plan = self.__get_plan(plan_type="current")
+        if current_plan is None:
+            return None
 
         return TerraformPlanParser.get_done_changes(initial_plan, current_plan)
 
@@ -167,39 +170,45 @@ class MagicCastle:
                 render_template(
                     "main.tf",
                     **self.__configuration,
-                    magic_castle_release_path=MAGIC_CASTLE_RELEASE_PATH
+                    magic_castle_release_path=MAGIC_CASTLE_RELEASE_PATH,
                 )
             )
 
         def terraform_apply():
-            process = run(
-                [
-                    "terraform",
-                    "init",
-                    "-no-color",
-                    "-plugin-dir",
-                    environ["HOME"] + "/.terraform.d/plugin-cache/linux_amd64",
-                ],
-                cwd=self.__get_cluster_path(),
-                capture_output=True,
-            )
-            if process.returncode == 0:
+            try:
+                run(
+                    [
+                        "terraform",
+                        "init",
+                        "-no-color",
+                        "-plugin-dir",
+                        environ["HOME"] + "/.terraform.d/plugin-cache/linux_amd64",
+                    ],
+                    cwd=self.__get_cluster_path(),
+                    capture_output=True,
+                    check=True,
+                )
+            except CalledProcessError:
+                logging.error("terraform init returned an error")
+                return
+
+            try:
                 self.__generate_plan_file(plan_type="initial", refresh=True)
                 with open(
                     self.__get_cluster_path("terraform_apply.log"), "w"
                 ) as output_file:
-                    process = run(
+                    run(
                         ["terraform", "apply", "-no-color", "-auto-approve"],
                         cwd=self.__get_cluster_path(),
                         stdout=output_file,
                         stderr=output_file,
+                        check=True,
                     )
-            status = (
-                ClusterStatusCode.BUILD_SUCCESS
-                if process.returncode == 0
-                else ClusterStatusCode.BUILD_ERROR
-            )
-            self.__update_status(status)
+                self.__update_status(ClusterStatusCode.BUILD_SUCCESS)
+            except CalledProcessError:
+                logging.info("terraform apply returned an error")
+                self.__update_status(ClusterStatusCode.BUILD_ERROR)
+                return
 
         build_cluster_thread = Thread(target=terraform_apply)
         build_cluster_thread.start()
@@ -217,47 +226,54 @@ class MagicCastle:
             with open(
                 self.__get_cluster_path("terraform_destroy.log"), "w"
             ) as output_file:
-                process = run(
-                    ["terraform", "destroy", "-no-color", "-auto-approve",],
-                    cwd=self.__get_cluster_path(),
-                    stdout=output_file,
-                    stderr=output_file,
-                )
-
-            if process.returncode != 0:
-                self.__update_status(ClusterStatusCode.DESTROY_ERROR)
-            else:
-                rmtree(self.__get_cluster_path())
+                try:
+                    run(
+                        ["terraform", "destroy", "-no-color", "-auto-approve",],
+                        cwd=self.__get_cluster_path(),
+                        stdout=output_file,
+                        stderr=output_file,
+                        check=True,
+                    )
+                    rmtree(self.__get_cluster_path())
+                except CalledProcessError:
+                    logging.info("terraform destroy returned an error")
+                    self.__update_status(ClusterStatusCode.DESTROY_ERROR)
 
         destroy_cluster_thread = Thread(target=terraform_destroy)
         destroy_cluster_thread.start()
 
     def __generate_plan_file(self, *, plan_type, refresh, destroy=False):
-        with open(
-            self.__get_cluster_path(f"terraform_plan_{plan_type}.log"), "w"
-        ) as output_file:
-            run(
-                [
-                    "terraform",
-                    "plan",
-                    "-no-color",
-                    "-destroy=" + ("true" if destroy else "false"),
-                    "-refresh=" + ("true" if refresh else "false"),
-                    "-lock=" + ("true" if refresh else "false"),
-                    "-out=" + self.__get_cluster_path(f"terraform_plan_{plan_type}"),
-                ],
-                cwd=self.__get_cluster_path(),
-                stdout=output_file,
-                stderr=output_file,
-            )
-        with open(
-            self.__get_cluster_path(f"terraform_plan_{plan_type}.json"), "w"
-        ) as output_file:
-            run(
-                ["terraform", "show", "-json", f"terraform_plan_{plan_type}"],
-                cwd=self.__get_cluster_path(),
-                stdout=output_file,
-            )
+        try:
+            with open(
+                self.__get_cluster_path(f"terraform_plan_{plan_type}.log"), "w"
+            ) as output_file:
+                run(
+                    [
+                        "terraform",
+                        "plan",
+                        "-no-color",
+                        "-destroy=" + ("true" if destroy else "false"),
+                        "-refresh=" + ("true" if refresh else "false"),
+                        "-lock=" + ("true" if refresh else "false"),
+                        "-out="
+                        + self.__get_cluster_path(f"terraform_plan_{plan_type}"),
+                    ],
+                    cwd=self.__get_cluster_path(),
+                    stdout=output_file,
+                    stderr=output_file,
+                    check=True,
+                )
+            with open(
+                self.__get_cluster_path(f"terraform_plan_{plan_type}.json"), "w"
+            ) as output_file:
+                run(
+                    ["terraform", "show", "-json", f"terraform_plan_{plan_type}"],
+                    cwd=self.__get_cluster_path(),
+                    stdout=output_file,
+                    check=True,
+                )
+        except CalledProcessError:
+            logging.info("Could not generate plan file.")
 
     def __get_plan(self, *, plan_type):
         try:
