@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 from models.cluster_status_code import ClusterStatusCode
 from models.magic_castle_schema import MagicCastleSchema
 from models.terraform_state_parser import TerraformStateParser
+from models.terraform_plan_parser import TerraformPlanParser
 from models.openstack_manager import OpenStackManager
 from exceptions.invalid_usage_exception import InvalidUsageException
 from exceptions.busy_cluster_exception import BusyClusterException
@@ -72,6 +73,19 @@ class MagicCastle:
         with FileLock(self.__get_cluster_path(STATUS_LOCK_FILENAME)):
             with open(status_file_path, "r") as status_file:
                 return ClusterStatusCode(status_file.read())
+
+    def get_progress(self):
+        if self.__not_found():
+            raise ClusterNotFoundException
+
+        initial_plan = self.__get_plan(plan_type="initial")
+        if initial_plan is None:
+            return None
+
+        self.__generate_plan_file(plan_type="current", refresh=False)
+        current_plan = self.__get_plan(plan_type="current")
+
+        return TerraformPlanParser.get_done_changes(initial_plan, current_plan)
 
     def get_state(self):
         if self.__is_busy():
@@ -170,6 +184,7 @@ class MagicCastle:
                 capture_output=True,
             )
             if process.returncode == 0:
+                self.__generate_plan_file(plan_type="initial", refresh=True)
                 with open(
                     self.__get_cluster_path("terraform_apply.log"), "w"
                 ) as output_file:
@@ -198,17 +213,12 @@ class MagicCastle:
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 
         def terraform_destroy():
+            self.__generate_plan_file(plan_type="initial", refresh=True, destroy=True)
             with open(
                 self.__get_cluster_path("terraform_destroy.log"), "w"
             ) as output_file:
                 process = run(
-                    [
-                        "/usr/bin/env",
-                        "terraform",
-                        "destroy",
-                        "-no-color",
-                        "-auto-approve",
-                    ],
+                    ["terraform", "destroy", "-no-color", "-auto-approve",],
                     cwd=self.__get_cluster_path(),
                     stdout=output_file,
                     stderr=output_file,
@@ -221,6 +231,43 @@ class MagicCastle:
 
         destroy_cluster_thread = Thread(target=terraform_destroy)
         destroy_cluster_thread.start()
+
+    def __generate_plan_file(self, *, plan_type, refresh, destroy=False):
+        with open(
+            self.__get_cluster_path(f"terraform_plan_{plan_type}.log"), "w"
+        ) as output_file:
+            run(
+                [
+                    "terraform",
+                    "plan",
+                    "-no-color",
+                    "-destroy=" + ("true" if destroy else "false"),
+                    "-refresh=" + ("true" if refresh else "false"),
+                    "-lock=" + ("true" if refresh else "false"),
+                    "-out=" + self.__get_cluster_path(f"terraform_plan_{plan_type}"),
+                ],
+                cwd=self.__get_cluster_path(),
+                stdout=output_file,
+                stderr=output_file,
+            )
+        with open(
+            self.__get_cluster_path(f"terraform_plan_{plan_type}.json"), "w"
+        ) as output_file:
+            run(
+                ["terraform", "show", "-json", f"terraform_plan_{plan_type}"],
+                cwd=self.__get_cluster_path(),
+                stdout=output_file,
+            )
+
+    def __get_plan(self, *, plan_type):
+        try:
+            with open(
+                self.__get_cluster_path(f"terraform_plan_{plan_type}.json"), "r"
+            ) as plan_file:
+                plan_object = json.load(plan_file)
+            return plan_object
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
+            return None
 
     def __update_status(self, status: ClusterStatusCode):
         with FileLock(self.__get_cluster_path(STATUS_LOCK_FILENAME)):

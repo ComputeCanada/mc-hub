@@ -39,8 +39,9 @@ def missing_floating_ips_current_plan():
 def test_get_resources_changes_missing_floating_ips_intial(
     missing_floating_ips_initial_plan,
 ):
-    parser = TerraformPlanParser(missing_floating_ips_initial_plan)
-    assert parser.get_resources_changes() == [
+    assert TerraformPlanParser.get_resources_changes(
+        missing_floating_ips_initial_plan
+    ) == [
         {
             "address": "module.openstack.data.template_cloudinit_config.login_config[0]",
             "type": "template_cloudinit_config",
@@ -207,8 +208,9 @@ def test_get_resources_changes_missing_floating_ips_intial(
 def test_get_resources_changes_missing_floating_ips_current(
     missing_floating_ips_current_plan,
 ):
-    parser = TerraformPlanParser(missing_floating_ips_current_plan)
-    assert parser.get_resources_changes() == [
+    assert TerraformPlanParser.get_resources_changes(
+        missing_floating_ips_current_plan
+    ) == [
         {
             "address": "module.openstack.openstack_blockstorage_volume_v2.home[0]",
             "type": "openstack_blockstorage_volume_v2",
@@ -345,14 +347,9 @@ def test_get_resources_changes_missing_floating_ips_current(
 def test_get_done_changes(
     missing_floating_ips_initial_plan, missing_floating_ips_current_plan
 ):
-    initial = TerraformPlanParser(
-        missing_floating_ips_initial_plan
-    ).get_resources_changes()
-    current = TerraformPlanParser(
-        missing_floating_ips_current_plan
-    ).get_resources_changes()
-    done_changes = TerraformPlanParser.get_done_changes(initial, current)
-    assert done_changes == [
+    assert TerraformPlanParser.get_done_changes(
+        missing_floating_ips_initial_plan, missing_floating_ips_current_plan
+    ) == [
         {
             "address": "module.openstack.data.template_cloudinit_config.login_config[0]",
             "type": "template_cloudinit_config",

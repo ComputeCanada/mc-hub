@@ -101,33 +101,203 @@ def test_get_state_non_existing(client):
 
 
 # GET /api/magic-castle/<cluster_name>/status
-def test_get_status(client):
+def test_get_status(mocker, client):
+    mocker.patch("models.magic_castle.MagicCastle._MagicCastle__generate_plan_file")
+    res = client.get(f"/api/magic-castle/missing-floating-ips/status")
+    assert res.get_json() == {
+        "status": "build_running",
+        "progress": [
+            {
+                "address": "module.openstack.data.template_cloudinit_config.login_config[0]",
+                "type": "template_cloudinit_config",
+                "change": {"actions": ["read"], "done": True},
+            },
+            {
+                "address": "module.openstack.data.template_cloudinit_config.mgmt_config[0]",
+                "type": "template_cloudinit_config",
+                "change": {"actions": ["read"], "done": True},
+            },
+            {
+                "address": 'module.openstack.data.template_cloudinit_config.node_config["node1"]',
+                "type": "template_cloudinit_config",
+                "change": {"actions": ["read"], "done": True},
+            },
+            {
+                "address": 'module.openstack.data.template_cloudinit_config.node_config["node2"]',
+                "type": "template_cloudinit_config",
+                "change": {"actions": ["read"], "done": True},
+            },
+            {
+                "address": 'module.openstack.data.template_cloudinit_config.node_config["node3"]',
+                "type": "template_cloudinit_config",
+                "change": {"actions": ["read"], "done": True},
+            },
+            {
+                "address": "module.openstack.data.template_file.hieradata",
+                "type": "template_file",
+                "change": {"actions": ["read"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_blockstorage_volume_v2.home[0]",
+                "type": "openstack_blockstorage_volume_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_blockstorage_volume_v2.project[0]",
+                "type": "openstack_blockstorage_volume_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_blockstorage_volume_v2.scratch[0]",
+                "type": "openstack_blockstorage_volume_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_floatingip_associate_v2.fip[0]",
+                "type": "openstack_compute_floatingip_associate_v2",
+                "change": {"actions": ["create"], "done": False},
+            },
+            {
+                "address": "module.openstack.openstack_compute_instance_v2.login[0]",
+                "type": "openstack_compute_instance_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_instance_v2.mgmt[0]",
+                "type": "openstack_compute_instance_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": 'module.openstack.openstack_compute_instance_v2.node["node1"]',
+                "type": "openstack_compute_instance_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": 'module.openstack.openstack_compute_instance_v2.node["node2"]',
+                "type": "openstack_compute_instance_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": 'module.openstack.openstack_compute_instance_v2.node["node3"]',
+                "type": "openstack_compute_instance_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_keypair_v2.keypair",
+                "type": "openstack_compute_keypair_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_secgroup_v2.secgroup_1",
+                "type": "openstack_compute_secgroup_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_volume_attach_v2.va_home[0]",
+                "type": "openstack_compute_volume_attach_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_volume_attach_v2.va_project[0]",
+                "type": "openstack_compute_volume_attach_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_compute_volume_attach_v2.va_scratch[0]",
+                "type": "openstack_compute_volume_attach_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_networking_floatingip_v2.fip[0]",
+                "type": "openstack_networking_floatingip_v2",
+                "change": {"actions": ["create"], "done": False},
+            },
+            {
+                "address": "module.openstack.openstack_networking_port_v2.port_login[0]",
+                "type": "openstack_networking_port_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.openstack_networking_port_v2.port_mgmt[0]",
+                "type": "openstack_networking_port_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": 'module.openstack.openstack_networking_port_v2.port_node["node1"]',
+                "type": "openstack_networking_port_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": 'module.openstack.openstack_networking_port_v2.port_node["node2"]',
+                "type": "openstack_networking_port_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": 'module.openstack.openstack_networking_port_v2.port_node["node3"]',
+                "type": "openstack_networking_port_v2",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.random_pet.guest_passwd[0]",
+                "type": "random_pet",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.random_string.freeipa_passwd",
+                "type": "random_string",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.random_string.munge_key",
+                "type": "random_string",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.random_string.puppetmaster_password",
+                "type": "random_string",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.random_uuid.consul_token",
+                "type": "random_uuid",
+                "change": {"actions": ["create"], "done": True},
+            },
+            {
+                "address": "module.openstack.tls_private_key.login_rsa",
+                "type": "tls_private_key",
+                "change": {"actions": ["create"], "done": True},
+            },
+        ],
+    }
+
+
+def test_get_status_code(client):
     res = client.get(f"/api/magic-castle/{NON_EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "not_found"}
+    assert res.get_json()["status"] == "not_found"
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.BUILD_RUNNING)
     res = client.get(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "build_running"}
+    assert res.get_json()["status"] == "build_running"
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.BUILD_SUCCESS)
     res = client.get(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "build_success"}
+    assert res.get_json()["status"] == "build_success"
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.BUILD_ERROR)
     res = client.get(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "build_error"}
+    assert res.get_json()["status"] == "build_error"
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.DESTROY_RUNNING)
     res = client.get(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "destroy_running"}
+    assert res.get_json()["status"] == "destroy_running"
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.DESTROY_ERROR)
     res = client.get(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "destroy_error"}
+    assert res.get_json()["status"] == "destroy_error"
 
     modify_cluster_status(EXISTING_CLUSTER_NAME, ClusterStatusCode.IDLE)
     res = client.get(f"/api/magic-castle/{EXISTING_CLUSTER_NAME}/status")
-    assert res.get_json() == {"status": "idle"}
+    assert res.get_json()["status"] == "idle"
 
 
 # DELETE /api/magic-castle/<cluster_name>
