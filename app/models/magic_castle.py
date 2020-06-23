@@ -83,12 +83,14 @@ class MagicCastle:
         if initial_plan is None:
             return None
 
-        self.__generate_plan_file(plan_type="current", refresh=False)
-        current_plan = self.__get_plan(plan_type="current")
-        if current_plan is None:
-            return None
-
-        return TerraformPlanParser.get_done_changes(initial_plan, current_plan)
+        terraform_output_filename = (
+            "terraform_destroy.log"
+            if self.get_status() == ClusterStatusCode.DESTROY_RUNNING
+            else "terraform_apply.log"
+        )
+        with open(self.__get_cluster_path(terraform_output_filename), "r") as file:
+            terraform_output = file.read()
+        return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
     def get_state(self):
         if self.__is_busy():
