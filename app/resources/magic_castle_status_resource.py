@@ -5,10 +5,10 @@ from exceptions.cluster_not_found_exception import ClusterNotFoundException
 
 
 class MagicCastleStatusResource(Resource):
-    def get(self, cluster_name):
-        magic_castle = MagicCastle(cluster_name)
+    def get(self, hostname):
+        magic_castle = MagicCastle(hostname)
         status = magic_castle.get_status()
-        if status is ClusterStatusCode.NOT_FOUND:
+        if status in {ClusterStatusCode.NOT_FOUND, ClusterStatusCode.BUILD_SUCCESS}:
             return {
                 "status": status.value,
             }

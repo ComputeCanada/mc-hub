@@ -5,18 +5,15 @@ from models.magic_castle import MagicCastle
 
 
 class MagicCastleResource(Resource):
-    def __init__(self):
-        self.cluster_name = None
-
-    def get(self, cluster_name):
-        magic_castle = MagicCastle(cluster_name)
+    def get(self, hostname):
+        magic_castle = MagicCastle(hostname)
         try:
             return magic_castle.get_state()
         except InvalidUsageException as e:
             return e.get_response()
 
-    def put(self, cluster_name):
-        magic_castle = MagicCastle(cluster_name)
+    def put(self, hostname):
+        magic_castle = MagicCastle(hostname)
         json_data = request.get_json()
 
         if not json_data:
@@ -29,8 +26,8 @@ class MagicCastleResource(Resource):
         except InvalidUsageException as e:
             return e.get_response()
 
-    def delete(self, cluster_name):
-        magic_castle = MagicCastle(cluster_name)
+    def delete(self, hostname):
+        magic_castle = MagicCastle(hostname)
         try:
             magic_castle.destroy()
             return {}

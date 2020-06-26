@@ -13,7 +13,7 @@ activate Flask Server
 Flask Server-->Bash script & Docker: Web app URL (localhost:5000)
 deactivate Flask Server
 Bash script & Docker-->User: Web app URL (localhost:5000)
-User->Browser: Navigates to localhost:5000/clusters/cluster-name
+User->Browser: Navigates to localhost:5000/clusters/<cluster_name>.<domain>
 Browser->Flask Server: Requests cluster modification form
 activate Flask Server
 Flask Server-->Browser: Cluster modification form

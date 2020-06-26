@@ -15,6 +15,7 @@ from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 import logging
+import re
 import json
 
 MAGIC_CASTLE_RELEASE_PATH = path.join(
@@ -40,11 +41,13 @@ class MagicCastle:
     a simple dictionary format.
     """
 
-    def __init__(self, cluster_name=None):
+    def __init__(self, hostname=None):
         self.__configuration = {}
         self.__status = None
-        if cluster_name:
+        if self.validate_hostname(hostname):
+            [cluster_name, domain] = hostname.split(".", 1)
             self.__configuration["cluster_name"] = cluster_name
+            self.__configuration["domain"] = domain
 
     @classmethod
     def all(cls):
@@ -53,10 +56,30 @@ class MagicCastle:
         :return: A list of MagicCastle objects
         """
         return [
-            cls(cluster_name)
-            for cluster_name in sorted(listdir(CLUSTERS_PATH))
-            if isdir(path.join(CLUSTERS_PATH, cluster_name))
+            cls(hostname)
+            for hostname in sorted(listdir(CLUSTERS_PATH))
+            if isdir(path.join(CLUSTERS_PATH, hostname))
         ]
+
+    def validate_hostname(self, hostname):
+        return (
+            hostname
+            and re.search(r"^[a-z][a-z0-9]*(\.[a-z0-9]+)+$", hostname) is not None
+        )
+
+    def get_hostname(self):
+        cluster_name = self.__configuration.get("cluster_name")
+        domain = self.__configuration.get("domain")
+        if cluster_name and domain:
+            return f"{cluster_name}.{domain}"
+        else:
+            return None
+    
+    def get_cluster_name(self):
+        return self.__configuration.get("cluster_name")
+
+    def get_domain(self):
+        return self.__configuration.get("domain")
 
     def load_configuration(self, configuration: dict):
         try:
@@ -76,7 +99,6 @@ class MagicCastle:
 
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
-            logging.debug("Reading status")
             status_file_path = self.__get_cluster_path(STATUS_FILENAME)
             if not status_file_path or not path.exists(status_file_path):
                 self.__status = ClusterStatusCode.NOT_FOUND
@@ -112,7 +134,7 @@ class MagicCastle:
             self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
         ) as terraform_state_file:
             state = json.load(terraform_state_file)
-        parser = TerraformStateParser(self.get_name(), state)
+        parser = TerraformStateParser(state)
         return MagicCastleSchema().dump(parser.get_state_summary())
 
     def get_available_resources(self):
@@ -124,7 +146,7 @@ class MagicCastle:
                 self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
-            parser = TerraformStateParser(self.get_name(), state)
+            parser = TerraformStateParser(state)
 
             openstack_manager = OpenStackManager(
                 pre_allocated_ram=parser.get_ram(),
@@ -151,13 +173,10 @@ class MagicCastle:
         return self.get_status() != ClusterStatusCode.NOT_FOUND
 
     def __get_cluster_path(self, sub_path=""):
-        if self.get_name():
-            return path.join(CLUSTERS_PATH, self.get_name(), sub_path)
+        if self.get_hostname():
+            return path.join(CLUSTERS_PATH, self.get_hostname(), sub_path)
         else:
             return None
-
-    def get_name(self):
-        return self.__configuration.get("cluster_name")
 
     def apply_new(self):
         if self.__found():
@@ -231,7 +250,7 @@ class MagicCastle:
             raise BusyClusterException
         if self.__not_found():
             raise ClusterNotFoundException
-        
+
         self.__remove_existing_plan()
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 
@@ -309,7 +328,6 @@ class MagicCastle:
             return None
 
     def __update_status(self, status: ClusterStatusCode):
-        logging.debug("Updating status file")
         self.__status = status
         with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
             status_file.write(status.value)

@@ -7,22 +7,23 @@ import json
 from tests.test_helpers import *
 
 
-def load_plan(cluster_name):
+def load_plan(hostname):
     state_file_path = path.join(
         Path(__file__).parent.parent,
         "mock-clusters",
-        cluster_name,
+        hostname,
         f"terraform_plan.json",
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)
 
-def read_terraform_apply_log(cluster_name):
+
+def read_terraform_apply_log(hostname):
     terraform_apply_output_path = path.join(
-    Path(__file__).parent.parent,
-    "mock-clusters",
-    cluster_name,
-    f"terraform_apply.log",
+        Path(__file__).parent.parent,
+        "mock-clusters",
+        hostname,
+        f"terraform_apply.log",
     )
     with open(terraform_apply_output_path, "r") as terraform_apply_output_file:
         return terraform_apply_output_file.read()
@@ -30,7 +31,7 @@ def read_terraform_apply_log(cluster_name):
 
 @pytest.fixture
 def missing_floating_ips_initial_plan():
-    return load_plan("missing-floating-ips")
+    return load_plan("missingfloatingips.c3.ca")
 
 
 def test_get_resources_changes_missing_floating_ips_intial(
@@ -201,11 +202,11 @@ def test_get_resources_changes_missing_floating_ips_intial(
         },
     ]
 
-def test_get_done_changes(
-    missing_floating_ips_initial_plan
-):
+
+def test_get_done_changes(missing_floating_ips_initial_plan):
     assert TerraformPlanParser.get_done_changes(
-        missing_floating_ips_initial_plan, read_terraform_apply_log("missing-floating-ips")
+        missing_floating_ips_initial_plan,
+        read_terraform_apply_log("missingfloatingips.c3.ca"),
     ) == [
         {
             "address": "module.openstack.data.template_cloudinit_config.login_config[0]",

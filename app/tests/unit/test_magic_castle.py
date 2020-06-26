@@ -6,11 +6,11 @@ from tests.test_helpers import *
 
 def test_get_all_magic_castles():
     all_magic_castles = MagicCastle.all()
-    assert [magic_castle.get_name() for magic_castle in all_magic_castles] == [
-        "empty",
-        "missing-floating-ips",
-        "missing-nodes",
-        "valid-1",
+    assert [magic_castle.get_hostname() for magic_castle in all_magic_castles] == [
+        "empty.calculquebec.cloud",
+        "missingfloatingips.c3.ca",
+        "missingnodes.sub.example.com",
+        "valid1.calculquebec.cloud",
     ]
     assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
         ClusterStatusCode.BUILD_ERROR,
@@ -21,31 +21,31 @@ def test_get_all_magic_castles():
 
 
 def test_get_status_valid():
-    magic_castle = MagicCastle("valid-1")
+    magic_castle = MagicCastle("valid1.calculquebec.cloud")
     assert magic_castle.get_status() == ClusterStatusCode.BUILD_SUCCESS
 
 
 def test_get_status_empty():
-    magic_castle = MagicCastle("empty")
+    magic_castle = MagicCastle("empty.calculquebec.cloud")
     assert magic_castle.get_status() == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_missing_nodes():
-    magic_castle = MagicCastle("missing-nodes")
+    magic_castle = MagicCastle("missingnodes.sub.example.com")
     assert magic_castle.get_status() == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_not_found():
-    magic_castle1 = MagicCastle("non-existing")
+    magic_castle1 = MagicCastle("nonexisting")
     assert magic_castle1.get_status() == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
     assert magic_castle2.get_status() == ClusterStatusCode.NOT_FOUND
 
 
 def test_get_state_valid():
-    magic_castle = MagicCastle("valid-1")
+    magic_castle = MagicCastle("valid1.calculquebec.cloud")
     assert magic_castle.get_state() == {
-        "cluster_name": "valid-1",
+        "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
         "storage": {
@@ -59,7 +59,7 @@ def test_get_state_valid():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 1},
         },
-        "domain": "example.com",
+        "domain": "calculquebec.cloud",
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
@@ -67,9 +67,9 @@ def test_get_state_valid():
 
 
 def test_get_state_empty():
-    magic_castle = MagicCastle("empty")
+    magic_castle = MagicCastle("empty.calculquebec.cloud")
     assert magic_castle.get_state() == {
-        "cluster_name": "empty",
+        "cluster_name": "",
         "domain": "",
         "image": "",
         "nb_users": 0,
@@ -91,9 +91,9 @@ def test_get_state_empty():
 
 
 def test_get_state_missing_nodes():
-    magic_castle = MagicCastle("missing-nodes")
+    magic_castle = MagicCastle("missingnodes.sub.example.com")
     assert magic_castle.get_state() == {
-        "cluster_name": "missing-nodes",
+        "cluster_name": "missingnodes",
         "nb_users": 10,
         "guest_passwd": "password-123",
         "storage": {
@@ -107,7 +107,7 @@ def test_get_state_missing_nodes():
             "login": {"type": "", "count": 0},
             "node": {"type": "", "count": 0},
         },
-        "domain": "example.com",
+        "domain": "sub.example.com",
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
@@ -124,7 +124,7 @@ def test_get_available_resources_valid():
     """
     Mock context :
 
-    valid-1 cluster uses:
+    valid1 cluster uses:
     4 + 4 + 2 = 10 vcpus
     6144 + 6144 + 3072 = 15360 ram (15 GiO)
     3 [root disks] + 3 [external volumes] = 6 volumes
@@ -137,13 +137,13 @@ def test_get_available_resources_valid():
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
 
-    Therefore, valid-1 cluster can use a total of:
+    Therefore, valid1 cluster can use a total of:
     10 + 301 = 311 vcpus
     15,360 + 102,400 = 117,760 ram (115 GiO)
     6 + 28 = 34 volumes
     230 + 280 = 510 GiO of volume storage
     """
-    magic_castle = MagicCastle("valid-1")
+    magic_castle = MagicCastle("valid1.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "ram": {"max": 117_760},
@@ -261,7 +261,7 @@ def test_get_available_resources_empty():
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
     """
-    magic_castle = MagicCastle("empty")
+    magic_castle = MagicCastle("empty.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "ram": {"max": 102_400},
@@ -370,7 +370,7 @@ def test_get_available_resources_missing_nodes():
     """
     Mock context :
 
-    missing-nodes cluster uses
+    missingnodes cluster uses
     0 vcpus
     0 ram
     0 [root disks] + 3 [external volumes] = 3 volumes
@@ -383,13 +383,13 @@ def test_get_available_resources_missing_nodes():
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
 
-    Therefore, missing-nodes cluster can use a total of:
+    Therefore, missingnodes cluster can use a total of:
     0 + 301 = 301 vcpus
     0 + 102,400 = 102,400 ram (100 GiO)
     3 + 28 = 31 volumes
     200 + 280 = 480 GiO of volume storage
     """
-    magic_castle = MagicCastle("missing-nodes")
+    magic_castle = MagicCastle("missingnodes.sub.example.com")
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "ram": {"max": 102_400},

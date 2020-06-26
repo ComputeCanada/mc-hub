@@ -269,7 +269,7 @@
 </template>
 
 <script>
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEqual } from "lodash";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
@@ -322,7 +322,7 @@ export default {
     ResourceUsageDisplay
   },
   props: {
-    clusterName: String,
+    hostname: String,
     existingCluster: {
       type: Boolean,
       required: true
@@ -408,6 +408,9 @@ export default {
         existingClusterIsLoading
       );
     },
+    clusterName() {
+      return this.hostname.split(".")[0];
+    },
     instanceRules() {
       return [
         this.ramGbUsed <= this.ramGbMax || "Ram exceeds maximum",
@@ -451,7 +454,8 @@ export default {
       if (!this.magicCastle || !this.resourceDetails) return 0;
       const instances = Object.values(this.magicCastle.instances);
       return instances.reduce(
-        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
+        (acc, instance) =>
+          acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
         0
       );
     },
@@ -464,7 +468,10 @@ export default {
       const instances = Object.values(this.magicCastle.instances);
       return (
         instances.reduce(
-          (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_count"),
+          (acc, instance) =>
+            acc +
+            instance.count *
+              this.getInstanceDetail(instance.type, "required_volume_count"),
           0
         ) + EXTERNAL_STORAGE_VOLUME_COUNT
       );
@@ -479,7 +486,10 @@ export default {
 
       // storage required by nodes
       let storage = instances.reduce(
-        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_size"),
+        (acc, instance) =>
+          acc +
+          instance.count *
+            this.getInstanceDetail(instance.type, "required_volume_size"),
         0
       );
       storage += this.magicCastle.storage.home_size;
@@ -557,7 +567,7 @@ export default {
     startStatusPolling() {
       let fetchStatus = async () => {
         const { status, progress } = (
-          await MagicCastleRepository.getStatus(this.clusterName)
+          await MagicCastleRepository.getStatus(this.hostname)
         ).data;
         const statusChanged = this.currentStatus !== status;
         if (this.currentStatus && statusChanged) {
@@ -604,7 +614,7 @@ export default {
     },
     async loadAvailableResources() {
       const availableResources = this.existingCluster
-        ? (await AvailableResourcesRepository.get(this.clusterName)).data
+        ? (await AvailableResourcesRepository.get(this.hostname)).data
         : (await AvailableResourcesRepository.get()).data;
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
@@ -615,7 +625,9 @@ export default {
       try {
         await MagicCastleRepository.create(this.magicCastle);
         this.$disableUnloadConfirmation();
-        await this.$router.push({ path: `/clusters/${this.magicCastle.cluster_name}` });
+        await this.$router.push({
+          path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`
+        });
         this.unloadCluster();
       } catch (e) {
         this.forceLoading = false;
@@ -625,7 +637,9 @@ export default {
     async loadCluster() {
       try {
         this.magicCastleInitialized = false;
-        this.magicCastle = (await MagicCastleRepository.getState(this.clusterName)).data;
+        this.magicCastle = (
+          await MagicCastleRepository.getState(this.hostname)
+        ).data;
 
         // Wait for magicCastle watcher to finish executing
         this.$nextTick(() => {
@@ -638,7 +652,7 @@ export default {
     async modifyCluster() {
       this.forceLoading = true;
       try {
-        await MagicCastleRepository.update(this.clusterName, this.magicCastle);
+        await MagicCastleRepository.update(this.hostname, this.magicCastle);
         this.unloadCluster();
         this.startStatusPolling();
       } catch (e) {
@@ -651,7 +665,7 @@ export default {
     async destroyCluster() {
       this.forceLoading = true;
       try {
-        await MagicCastleRepository.delete(this.clusterName);
+        await MagicCastleRepository.delete(this.hostname);
         this.unloadCluster();
         this.startStatusPolling();
       } catch (e) {

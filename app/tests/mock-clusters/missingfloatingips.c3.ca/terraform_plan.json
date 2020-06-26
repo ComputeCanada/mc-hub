@@ -202,8 +202,8 @@
                     "filename": null,
                     "template": "FAKE",
                     "vars": {
-                        "cluster_name": "missing-floating-ips",
-                        "domain_name": "missing-floating-ips.calculquebec.cloud",
+                        "cluster_name": "missingfloatingips",
+                        "domain_name": "missingfloatingips.c3.ca",
                         "nb_users": "17",
                         "sudoer_username": "centos"
                     }
@@ -239,9 +239,9 @@
                 "before": null,
                 "after": {
                     "consistency_group_id": null,
-                    "description": "missing-floating-ips /home",
+                    "description": "missingfloatingips /home",
                     "image_id": null,
-                    "name": "missing-floating-ips-home",
+                    "name": "missingfloatingips-home",
                     "scheduler_hints": [],
                     "size": 50,
                     "snapshot_id": null,
@@ -275,9 +275,9 @@
                 "before": null,
                 "after": {
                     "consistency_group_id": null,
-                    "description": "missing-floating-ips /project",
+                    "description": "missingfloatingips /project",
                     "image_id": null,
-                    "name": "missing-floating-ips-project",
+                    "name": "missingfloatingips-project",
                     "scheduler_hints": [],
                     "size": 1,
                     "snapshot_id": null,
@@ -311,9 +311,9 @@
                 "before": null,
                 "after": {
                     "consistency_group_id": null,
-                    "description": "missing-floating-ips /scratch",
+                    "description": "missingfloatingips /scratch",
                     "image_id": null,
-                    "name": "missing-floating-ips-scratch",
+                    "name": "missingfloatingips-scratch",
                     "scheduler_hints": [],
                     "size": 1,
                     "snapshot_id": null,
@@ -392,9 +392,9 @@
                     "flavor_name": "p4-6gb",
                     "floating_ip": null,
                     "force_delete": false,
-                    "key_pair": "missing-floating-ips-key",
+                    "key_pair": "missingfloatingips-key",
                     "metadata": null,
-                    "name": "missing-floating-ips-login1",
+                    "name": "missingfloatingips-login1",
                     "network": [
                         {
                             "access_network": false
@@ -404,7 +404,7 @@
                     "power_state": "active",
                     "scheduler_hints": [],
                     "security_groups": [
-                        "missing-floating-ips-secgroup"
+                        "missingfloatingips-secgroup"
                     ],
                     "stop_before_destroy": false,
                     "tags": null,
@@ -482,9 +482,9 @@
                     "flavor_name": "p4-6gb",
                     "floating_ip": null,
                     "force_delete": false,
-                    "key_pair": "missing-floating-ips-key",
+                    "key_pair": "missingfloatingips-key",
                     "metadata": null,
-                    "name": "missing-floating-ips-mgmt1",
+                    "name": "missingfloatingips-mgmt1",
                     "network": [
                         {
                             "access_network": false
@@ -560,7 +560,7 @@
                     "config_drive": null,
                     "floating_ip": null,
                     "force_delete": false,
-                    "key_pair": "missing-floating-ips-key",
+                    "key_pair": "missingfloatingips-key",
                     "metadata": null,
                     "network": [
                         {
@@ -572,7 +572,7 @@
                     "power_state": "active",
                     "scheduler_hints": [],
                     "security_groups": [
-                        "missing-floating-ips-secgroup"
+                        "missingfloatingips-secgroup"
                     ],
                     "stop_before_destroy": false,
                     "tags": null,
@@ -662,7 +662,7 @@
                     "config_drive": null,
                     "floating_ip": null,
                     "force_delete": false,
-                    "key_pair": "missing-floating-ips-key",
+                    "key_pair": "missingfloatingips-key",
                     "metadata": null,
                     "network": [
                         {
@@ -674,7 +674,7 @@
                     "power_state": "active",
                     "scheduler_hints": [],
                     "security_groups": [
-                        "missing-floating-ips-secgroup"
+                        "missingfloatingips-secgroup"
                     ],
                     "stop_before_destroy": false,
                     "tags": null,
@@ -764,7 +764,7 @@
                     "config_drive": null,
                     "floating_ip": null,
                     "force_delete": false,
-                    "key_pair": "missing-floating-ips-key",
+                    "key_pair": "missingfloatingips-key",
                     "metadata": null,
                     "network": [
                         {
@@ -776,7 +776,7 @@
                     "power_state": "active",
                     "scheduler_hints": [],
                     "security_groups": [
-                        "missing-floating-ips-secgroup"
+                        "missingfloatingips-secgroup"
                     ],
                     "stop_before_destroy": false,
                     "tags": null,
@@ -852,7 +852,7 @@
                 ],
                 "before": null,
                 "after": {
-                    "name": "missing-floating-ips-key",
+                    "name": "missingfloatingips-key",
                     "public_key": "ssh-rsa FAKE FAKE",
                     "value_specs": null
                 },
@@ -878,7 +878,7 @@
                 "before": null,
                 "after": {
                     "description": "Slurm+JupyterHub security group",
-                    "name": "missing-floating-ips-secgroup",
+                    "name": "missingfloatingips-secgroup",
                     "rule": [
                         {
                             "cidr": "",
@@ -1125,7 +1125,7 @@
                             "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
                         }
                     ],
-                    "name": "missing-floating-ips-port-login1",
+                    "name": "missingfloatingips-port-login1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
                     "no_security_groups": null,
@@ -1181,7 +1181,7 @@
                             "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
                         }
                     ],
-                    "name": "missing-floating-ips-port-mgmt1",
+                    "name": "missingfloatingips-port-mgmt1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
                     "no_security_groups": null,
@@ -1237,7 +1237,7 @@
                             "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
                         }
                     ],
-                    "name": "missing-floating-ips-port-node1",
+                    "name": "missingfloatingips-port-node1",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
                     "no_security_groups": null,
@@ -1293,7 +1293,7 @@
                             "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
                         }
                     ],
-                    "name": "missing-floating-ips-port-node2",
+                    "name": "missingfloatingips-port-node2",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
                     "no_security_groups": null,
@@ -1349,7 +1349,7 @@
                             "subnet_id": "b70582fc-c0f6-45fa-a022-e45affb90106"
                         }
                     ],
-                    "name": "missing-floating-ips-port-node3",
+                    "name": "missingfloatingips-port-node3",
                     "network_id": "f2b11478-de5c-4610-8646-a39142a91f0a",
                     "no_fixed_ip": null,
                     "no_security_groups": null,

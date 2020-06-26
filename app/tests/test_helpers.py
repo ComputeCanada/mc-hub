@@ -27,7 +27,12 @@ def mock_clusters_path(mocker):
 
 @pytest.fixture(autouse=True)
 def generate_test_clusters():
-    mock_cluster_names = ["empty", "missing-nodes", "valid-1", "missing-floating-ips"]
+    mock_cluster_names = [
+        "empty.calculquebec.cloud",
+        "missingnodes.sub.example.com",
+        "valid1.calculquebec.cloud",
+        "missingfloatingips.c3.ca",
+    ]
     setup_mock_clusters(mock_cluster_names)
     yield
     teardown_mock_clusters(mock_cluster_names)

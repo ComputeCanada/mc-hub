@@ -85,17 +85,17 @@ this section if for you.
 #### Option 1 (recommended)
 Start a shell within your running container.
 ```shell script
-cd ~/clusters/<CLUSTER NAME>
+cd ~/clusters/<CLUSTER NAME>.<DOMAIN>
 terraform show
 ```
 
 #### Option 2
 Open the terminal on your host machine and access the `clusters_backup` directory.
-1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
+1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>.<DOMAIN>`.
 2. Delete the folder named `.terraform`.
 3. Download [magic_castle-openstack-7.3.zip
 ](https://github.com/ComputeCanada/magic_castle/releases/download/7.3/magic_castle-openstack-7.3.zip)
-4. Extract the folder and copy the `openstack` folder in `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>`.
+4. Extract the folder and copy the `openstack` folder in `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>.<DOMAIN>`.
 5. Edit the following line in main.tf:
    ```
    source = "/home/mcu/magic_castle-openstack-7.3/openstack"

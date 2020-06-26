@@ -1,0 +1,31 @@
+title Communication API
+
+Browser->API: POST /api/magic-castle {"cluster_name":"...", "storage": "..."}
+API->Thread 1: Handle request
+Thread 1->Thread 2: Start terraform
+activate Thread 2
+Thread 1->API: {}, status code 200
+API->Browser: {}, status code 200
+Thread 2->cluster_progress['chateau']: initialize with empty string
+Thread 2->terraform: terraform init
+Thread 2->terraform: terraform plan
+terraform-->Thread 2: terraform plan in JSON
+Thread 2->terraform_plan.json: Write terraform plan to file
+Thread 2->terraform: terraform apply
+terraform-->Thread 2: terraform apply stdout
+Thread 2->cluster_progress['chateau']: Append last line from terraform stdout
+terraform-->Thread 2: terraform apply stdout
+Thread 2->cluster_progress['chateau']: Append last line from terraform stdout
+Browser->API: GET /api/magic-castle/chateau/status
+API->Thread 3:Handle request
+Thread 3->cluster_progress['chateau']: Retrieve terraform output
+cluster_progress['chateau']-->Thread 3: Terraform output
+Thread 3->terraform_plan.json: Retrieve initial plan
+terraform_plan.json-->Thread 3: Initial plan
+Thread 3->Thread 3: Compute progress
+Thread 3-->API: Progress, status code 200
+API-->Browser: Progress, status code 200
+terraform-->Thread 2: terraform apply stdout
+Thread 2->cluster_progress['chateau']: Append last line from terraform stdout
+terraform-->Thread 2: return code 0
+deactivate Thread 2

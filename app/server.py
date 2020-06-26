@@ -15,13 +15,13 @@ CORS(app)
 
 api = Api(app, prefix="/api")
 api.add_resource(MagicCastleListResource, "/magic-castle")
-api.add_resource(MagicCastleResource, "/magic-castle/<string:cluster_name>")
+api.add_resource(MagicCastleResource, "/magic-castle/<string:hostname>")
 api.add_resource(
-    MagicCastleStatusResource, "/magic-castle/<string:cluster_name>/status"
+    MagicCastleStatusResource, "/magic-castle/<string:hostname>/status"
 )
 api.add_resource(AvailableResourcesListResource, "/available-resources")
 api.add_resource(
-    AvailableResourcesResource, "/available-resources/<string:cluster_name>"
+    AvailableResourcesResource, "/available-resources/<string:hostname>"
 )
 
 

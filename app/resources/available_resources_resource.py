@@ -4,9 +4,9 @@ from exceptions.invalid_usage_exception import InvalidUsageException
 
 
 class AvailableResourcesResource(Resource):
-    def get(self, cluster_name):
+    def get(self, hostname):
         try:
-            magic_castle = MagicCastle(cluster_name)
+            magic_castle = MagicCastle(hostname)
             return magic_castle.get_available_resources()
         except InvalidUsageException as e:
             return e.get_response()

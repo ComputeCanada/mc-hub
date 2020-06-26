@@ -19,7 +19,7 @@ const routes = [
     component: CreateCluster
   },
   {
-    path: "/clusters/:clusterName",
+    path: "/clusters/:hostname",
     name: "Edit an existing Magic Castle",
     component: ModifyCluster,
     props: true

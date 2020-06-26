@@ -3,17 +3,17 @@ terraform {
 }
 
 module "openstack" {
-  source = "/home/mcu/magic_castle-openstack-7.3/openstack"
+  source = "/home/mcu/magic_castle-openstack-6.4/openstack"
 
-  cluster_name = "missing-nodes"
-  domain       = "example.com"
+  cluster_name = "valid1"
+  domain       = "calculquebec.cloud"
   image        = "CentOS-7-x64-2019-07"
   nb_users     = 10
 
   instances = {
-        mgmt = { type = "p4-6gb", count = 1 }
-        login = { type = "p4-6gb", count = 1 }
-        node = [ { type = "p2-3gb", count = 1 } ]
+    mgmt  = { type = "p4-6gb", count = 1 }
+    login = { type = "p4-6gb", count = 1 }
+    node  = [{ type = "p2-3gb", count = 1 }]
   }
 
   storage = {

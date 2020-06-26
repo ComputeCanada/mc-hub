@@ -10,28 +10,30 @@
             <v-btn color="primary" big to="/create-cluster">Create cluster</v-btn>
           </v-toolbar>
         </template>
-        <template #item.name="{item}"
-          ><router-link :to="`/clusters/${item.name}`">{{ item.name }}</router-link></template
-        >
-        <template #item.status="{item}"><status-chip :status="item.status"/></template>
+        <template #item.cluster_name="{item}">
+          <router-link :to="`/clusters/${item.hostname}`">{{ item.cluster_name }}</router-link>
+        </template>
+        <template #item.status="{item}">
+          <status-chip :status="item.status" />
+        </template>
         <template #item.actions="{item}">
-          <v-btn icon :to="`/clusters/${item.name}`"><v-icon>mdi-pencil</v-icon></v-btn>
-          <v-btn icon @click="showClusterDestructionDialog(item.name)"><v-icon>mdi-delete</v-icon></v-btn>
+          <v-btn icon :to="`/clusters/${item.hostname}`">
+            <v-icon>mdi-pencil</v-icon>
+          </v-btn>
+          <v-btn icon @click="showClusterDestructionDialog(item.hostname)">
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
         </template>
       </v-data-table>
     </v-card>
-    <message-dialog v-model="errorDialog" type="error">
-      {{ errorMessage }}
-    </message-dialog>
+    <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <confirm-dialog
       alert
       encourage-cancel
       title="Destruction confirmation"
       v-model="clusterDestructionDialog"
       @confirm="destroyCluster"
-    >
-      Are you sure you want to permanently destroy this cluster and all its data?
-    </confirm-dialog>
+    >Are you sure you want to permanently destroy this cluster and all its data?</confirm-dialog>
   </v-container>
 </template>
 
@@ -50,15 +52,19 @@ export default {
     return {
       loading: true,
       clusterDestructionDialog: false,
-      currentClusterName: null,
+      currentHostname: null,
       errorDialog: false,
       errorMessage: "",
       statusPoller: null,
 
       headers: [
         {
-          text: "Name",
-          value: "name"
+          text: "Cluster name",
+          value: "cluster_name"
+        },
+        {
+          text: "Domain",
+          value: "domain"
         },
         {
           text: "Status",
@@ -100,13 +106,13 @@ export default {
       this.errorDialog = true;
       this.errorMessage = message;
     },
-    showClusterDestructionDialog(clusterName) {
+    showClusterDestructionDialog(hostname) {
       this.clusterDestructionDialog = true;
-      this.currentClusterName = clusterName;
+      this.currentHostname = hostname;
     },
     async destroyCluster() {
       try {
-        await MagicCastleRepository.delete(this.currentClusterName);
+        await MagicCastleRepository.delete(this.currentHostname);
         await this.loadMagicCastlesStatus();
       } catch (e) {
         this.showError(e.response.data.message);

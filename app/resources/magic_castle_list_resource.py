@@ -8,7 +8,9 @@ class MagicCastleListResource(Resource):
     def get(self):
         return [
             {
-                "name": magic_castle.get_name(),
+                "cluster_name": magic_castle.get_cluster_name(),
+                "domain": magic_castle.get_domain(),
+                "hostname": magic_castle.get_hostname(),
                 "status": magic_castle.get_status().value,
             }
             for magic_castle in MagicCastle.all()

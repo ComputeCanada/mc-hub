@@ -38,12 +38,12 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
 
 ## Cluster storage & backup
 
-Magic Castle clusters are built in the directory `/home/mcu/clusters/<cluster name>` inside the
+Magic Castle clusters are built in the directory `/home/mcu/clusters/<cluster name>.<domain>` inside the
 docker container.
 This folder contains the logs from terraform commands and the `terraform.tfstate` file.
 
 By running the container according to the above instructions, a bind mount was created. This 
-makes the `/home/mcu/clusters/<cluster name>` directory accessible to the host machine in
+makes the `/home/mcu/clusters/<cluster name>.<domain>` directory accessible to the host machine in
 `$(pwd)/clusters_backup`.
 If one container is destroyed or fails, a new container will recover all the previously 
 created clusters in the directory.
