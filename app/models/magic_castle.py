@@ -1,4 +1,4 @@
-from os import path, environ, mkdir, listdir
+from os import path, environ, mkdir, listdir, remove
 from os.path import isdir
 from flask import render_template
 from subprocess import run, CalledProcessError
@@ -42,6 +42,7 @@ class MagicCastle:
 
     def __init__(self, cluster_name=None):
         self.__configuration = {}
+        self.__status = None
         if cluster_name:
             self.__configuration["cluster_name"] = cluster_name
 
@@ -74,11 +75,14 @@ class MagicCastle:
             self.__configuration["os_floating_ips"] = []
 
     def get_status(self) -> ClusterStatusCode:
-        status_file_path = self.__get_cluster_path(STATUS_FILENAME)
-        if not status_file_path or not path.exists(status_file_path):
-            return ClusterStatusCode.NOT_FOUND
-        with open(status_file_path, "r") as status_file:
-            return ClusterStatusCode(status_file.read())
+        if self.__status is None:
+            logging.debug("Reading status")
+            status_file_path = self.__get_cluster_path(STATUS_FILENAME)
+            if not status_file_path or not path.exists(status_file_path):
+                self.__status = ClusterStatusCode.NOT_FOUND
+            with open(status_file_path, "r") as status_file:
+                self.__status = ClusterStatusCode(status_file.read())
+        return self.__status
 
     def get_progress(self):
         if self.__not_found():
@@ -226,7 +230,7 @@ class MagicCastle:
             raise BusyClusterException
         if self.__not_found():
             raise ClusterNotFoundException
-
+        
         self.__remove_existing_plan()
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 
