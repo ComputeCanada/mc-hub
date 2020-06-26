@@ -170,6 +170,7 @@ class MagicCastle:
         return self.__apply()
 
     def __apply(self):
+        self.__remove_existing_plan()
         self.__update_status(ClusterStatusCode.BUILD_RUNNING)
 
         with open(self.__get_cluster_path("main.tf"), "w") as cluster_config_file:
@@ -226,6 +227,7 @@ class MagicCastle:
         if self.__not_found():
             raise ClusterNotFoundException
 
+        self.__remove_existing_plan()
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 
         def terraform_destroy():
@@ -248,6 +250,15 @@ class MagicCastle:
 
         destroy_cluster_thread = Thread(target=terraform_destroy)
         destroy_cluster_thread.start()
+
+    def __remove_existing_plan(self):
+        try:
+            # Remove existing plan, if it exists
+            remove(self.__get_cluster_path(TERRAFORM_PLAN_BINARY_FILENAME))
+            remove(self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME))
+        except FileNotFoundError:
+            # Must be a new cluster, without existing plans
+            pass
 
     def __generate_plan_file(self, *, refresh, destroy=False):
         try:
@@ -293,5 +304,7 @@ class MagicCastle:
             return None
 
     def __update_status(self, status: ClusterStatusCode):
+        logging.debug("Updating status file")
+        self.__status = status
         with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
             status_file.write(status.value)
