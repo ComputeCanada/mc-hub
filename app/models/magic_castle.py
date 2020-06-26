@@ -23,6 +23,13 @@ MAGIC_CASTLE_RELEASE_PATH = path.join(
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 
 STATUS_FILENAME = "status.txt"
+TERRAFORM_STATE_FILENAME = "terraform.tfstate"
+TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
+TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
+
+TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
+TERRAFORM_DESTROY_LOG_FILENAME = "terraform_destroy.log"
+TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
 
 class MagicCastle:
@@ -70,21 +77,21 @@ class MagicCastle:
         status_file_path = self.__get_cluster_path(STATUS_FILENAME)
         if not status_file_path or not path.exists(status_file_path):
             return ClusterStatusCode.NOT_FOUND
-            with open(status_file_path, "r") as status_file:
-                return ClusterStatusCode(status_file.read())
+        with open(status_file_path, "r") as status_file:
+            return ClusterStatusCode(status_file.read())
 
     def get_progress(self):
         if self.__not_found():
             raise ClusterNotFoundException
 
-        initial_plan = self.__get_plan(plan_type="initial")
+        initial_plan = self.__get_plan()
         if initial_plan is None:
             return None
 
         terraform_output_filename = (
-            "terraform_destroy.log"
+            TERRAFORM_DESTROY_LOG_FILENAME
             if self.get_status() == ClusterStatusCode.DESTROY_RUNNING
-            else "terraform_apply.log"
+            else TERRAFORM_APPLY_LOG_FILENAME
         )
         with open(self.__get_cluster_path(terraform_output_filename), "r") as file:
             terraform_output = file.read()
@@ -97,7 +104,7 @@ class MagicCastle:
             raise ClusterNotFoundException
 
         with open(
-            self.__get_cluster_path("terraform.tfstate"), "r"
+            self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
         ) as terraform_state_file:
             state = json.load(terraform_state_file)
         parser = TerraformStateParser(self.get_name(), state)
@@ -109,7 +116,7 @@ class MagicCastle:
 
         if self.__found():
             with open(
-                self.__get_cluster_path("terraform.tfstate"), "r"
+                self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
             parser = TerraformStateParser(self.get_name(), state)
@@ -193,9 +200,9 @@ class MagicCastle:
                 return
 
             try:
-                self.__generate_plan_file(plan_type="initial", refresh=True)
+                self.__generate_plan_file(refresh=True)
                 with open(
-                    self.__get_cluster_path("terraform_apply.log"), "w"
+                    self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "w"
                 ) as output_file:
                     run(
                         ["terraform", "apply", "-no-color", "-auto-approve"],
@@ -222,9 +229,9 @@ class MagicCastle:
         self.__update_status(ClusterStatusCode.DESTROY_RUNNING)
 
         def terraform_destroy():
-            self.__generate_plan_file(plan_type="initial", refresh=True, destroy=True)
+            self.__generate_plan_file(refresh=True, destroy=True)
             with open(
-                self.__get_cluster_path("terraform_destroy.log"), "w"
+                self.__get_cluster_path(TERRAFORM_DESTROY_LOG_FILENAME), "w"
             ) as output_file:
                 try:
                     run(
@@ -242,10 +249,10 @@ class MagicCastle:
         destroy_cluster_thread = Thread(target=terraform_destroy)
         destroy_cluster_thread.start()
 
-    def __generate_plan_file(self, *, plan_type, refresh, destroy=False):
+    def __generate_plan_file(self, *, refresh, destroy=False):
         try:
             with open(
-                self.__get_cluster_path(f"terraform_plan_{plan_type}.log"), "w"
+                self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
             ) as output_file:
                 run(
                     [
@@ -256,7 +263,7 @@ class MagicCastle:
                         "-refresh=" + ("true" if refresh else "false"),
                         "-lock=" + ("true" if refresh else "false"),
                         "-out="
-                        + self.__get_cluster_path(f"terraform_plan_{plan_type}"),
+                        + self.__get_cluster_path(TERRAFORM_PLAN_BINARY_FILENAME),
                     ],
                     cwd=self.__get_cluster_path(),
                     stdout=output_file,
@@ -264,10 +271,10 @@ class MagicCastle:
                     check=True,
                 )
             with open(
-                self.__get_cluster_path(f"terraform_plan_{plan_type}.json"), "w"
+                self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
             ) as output_file:
                 run(
-                    ["terraform", "show", "-json", f"terraform_plan_{plan_type}"],
+                    ["terraform", "show", "-json", TERRAFORM_PLAN_BINARY_FILENAME],
                     cwd=self.__get_cluster_path(),
                     stdout=output_file,
                     check=True,
@@ -275,10 +282,10 @@ class MagicCastle:
         except CalledProcessError:
             logging.info("Could not generate plan file.")
 
-    def __get_plan(self, *, plan_type):
+    def __get_plan(self):
         try:
             with open(
-                self.__get_cluster_path(f"terraform_plan_{plan_type}.json"), "r"
+                self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "r"
             ) as plan_file:
                 plan_object = json.load(plan_file)
             return plan_object
@@ -286,5 +293,5 @@ class MagicCastle:
             return None
 
     def __update_status(self, status: ClusterStatusCode):
-            with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
-                status_file.write(status.value)
+        with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
+            status_file.write(status.value)
