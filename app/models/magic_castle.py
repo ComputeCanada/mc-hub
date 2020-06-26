@@ -80,6 +80,7 @@ class MagicCastle:
             status_file_path = self.__get_cluster_path(STATUS_FILENAME)
             if not status_file_path or not path.exists(status_file_path):
                 self.__status = ClusterStatusCode.NOT_FOUND
+                return self.__status
             with open(status_file_path, "r") as status_file:
                 self.__status = ClusterStatusCode(status_file.read())
         return self.__status
