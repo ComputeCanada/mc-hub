@@ -149,7 +149,7 @@
               <v-subheader>Networking and security</v-subheader>
               <v-list>
                 <v-list-item>
-                  <v-file-input @change="publicKeysUpdated" label="SSH public key file (optional)" />
+                  <public-key-input v-model="mainPublicKey" />
                 </v-list-item>
                 <v-list-item>
                   <v-text-field
@@ -275,6 +275,7 @@ import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepos
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import StatusChip from "@/components/ui/StatusChip";
+import PublicKeyInput from "@/components/ui/PublicKeyInput";
 import MessageDialog from "@/components/ui/MessageDialog";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
@@ -319,7 +320,8 @@ export default {
     ConfirmDialog,
     MessageDialog,
     StatusChip,
-    ResourceUsageDisplay
+    ResourceUsageDisplay,
+    PublicKeyInput
   },
   props: {
     hostname: String,
@@ -357,6 +359,7 @@ export default {
       resourceDetails: null,
       possibleResources: null,
       forceLoading: false,
+      mainPublicKey: "",
 
       clusterNameRegexRule: value =>
         value.match(/^[a-z][a-z0-9]*$/) !== null ||
@@ -380,11 +383,11 @@ export default {
       await this.loadAvailableResources();
       if (this.possibleResources.os_floating_ips.length === 0) {
         this.showError("There is no floating IP available right now.");
-      } else {
-        this.magicCastle.os_floating_ips = [
-          this.possibleResources.os_floating_ips[0]
-        ];
+        return;
       }
+      this.magicCastle.os_floating_ips = [
+        this.possibleResources.os_floating_ips[0]
+      ];
     }
     // Wait for magicCastle watcher to finish executing
     this.$nextTick(() => {
@@ -522,6 +525,13 @@ export default {
       } else {
         this.$disableUnloadConfirmation();
       }
+    },
+    mainPublicKey(mainPublicKey) {
+      if (mainPublicKey.length === 0) {
+        this.magicCastle.public_keys = [];
+      } else {
+        this.magicCastle.public_keys = [mainPublicKey];
+      }
     }
   },
   methods: {
@@ -546,16 +556,6 @@ export default {
       } else {
         return defaultValue;
       }
-    },
-    publicKeysUpdated(file) {
-      const reader = new FileReader();
-      reader.addEventListener("load", event => {
-        // The new lines (\n) at the end of ssh key files must be removed
-        const publicKey = event.target.result.replace(/(\n)+$/, "");
-        this.magicCastle.public_keys = [publicKey];
-      });
-      if (typeof file === "object") reader.readAsText(file);
-      else this.magicCastle.public_keys = [];
     },
     showSuccess() {
       this.successDialog = true;
@@ -640,6 +640,9 @@ export default {
         this.magicCastle = (
           await MagicCastleRepository.getState(this.hostname)
         ).data;
+
+        if (this.magicCastle.public_keys.length > 0)
+          this.mainPublicKey = this.magicCastle.public_keys[0];
 
         // Wait for magicCastle watcher to finish executing
         this.$nextTick(() => {
