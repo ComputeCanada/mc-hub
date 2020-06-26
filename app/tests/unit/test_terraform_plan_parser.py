@@ -7,12 +7,12 @@ import json
 from tests.test_helpers import *
 
 
-def load_plan(cluster_name, plan_type):
+def load_plan(cluster_name):
     state_file_path = path.join(
         Path(__file__).parent.parent,
         "mock-clusters",
         cluster_name,
-        f"terraform_plan_{plan_type}.json",
+        f"terraform_plan.json",
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)
@@ -27,13 +27,10 @@ def read_terraform_apply_log(cluster_name):
     with open(terraform_apply_output_path, "r") as terraform_apply_output_file:
         return terraform_apply_output_file.read()
 
-def load_initial_plan(cluster_name):
-    return load_plan(cluster_name, "initial")
-
 
 @pytest.fixture
 def missing_floating_ips_initial_plan():
-    return load_initial_plan("missing-floating-ips")
+    return load_plan("missing-floating-ips")
 
 
 def test_get_resources_changes_missing_floating_ips_intial(
