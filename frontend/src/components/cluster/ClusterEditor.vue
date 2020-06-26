@@ -1,13 +1,9 @@
 <template>
   <div>
     <v-container>
-      <v-card max-width="500" class="mx-auto" :loading="loading">
-        <v-card-title v-if="existingCluster" class="mx-auto pl-8">
-          Magic Castle Modification
-        </v-card-title>
-        <v-card-title v-else class="mx-auto pl-8">
-          Magic Castle Creation
-        </v-card-title>
+      <v-card max-width="600" class="mx-auto" :loading="loading">
+        <v-card-title v-if="existingCluster" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
+        <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
         <v-card-text>
           <v-form v-model="validForm">
             <v-subheader>General configuration</v-subheader>
@@ -172,6 +168,58 @@
                 </template>
               </div>
             </template>
+            <template v-else-if="currentProgress">
+              <v-divider />
+              <v-list two-line>
+                <v-list-item
+                  v-for="resourceProgress in relevantProgress"
+                  :key="resourceProgress.address"
+                  :loading="true"
+                >
+                  <v-list-item-avatar>
+                    <!-- https://www.terraform.io/docs/internals/json-format.html#change-representation -->
+                    <v-icon
+                      v-if="isEqual(resourceProgress.change.actions, ['no-op'])"
+                    >mdi-checkbox-blank-circle-outline</v-icon>
+                    <v-icon
+                      v-else-if="isEqual(resourceProgress.change.actions, ['create'])"
+                      color="green"
+                    >mdi-plus</v-icon>
+                    <v-icon v-else-if="isEqual(resourceProgress.change.actions, ['read'])">mdi-text</v-icon>
+                    <v-icon
+                      v-else-if="isEqual(resourceProgress.change.actions, ['update'])"
+                      color="blue"
+                    >mdi-pencil</v-icon>
+                    <div
+                      v-else-if="isEqual(resourceProgress.change.actions, ['delete', 'create'])"
+                      class="d-flex"
+                    >
+                      <v-icon color="red">mdi-minus</v-icon>
+                      <v-icon color="green">mdi-plus</v-icon>
+                    </div>
+                    <div
+                      v-else-if="isEqual(resourceProgress.change.actions, ['create', 'delete'])"
+                      class="d-flex"
+                    >
+                      <v-icon color="green">mdi-plus</v-icon>
+                      <v-icon color="red">mdi-minus</v-icon>
+                    </div>
+                    <v-icon
+                      v-else-if="isEqual(resourceProgress.change.actions, ['delete'])"
+                      color="red"
+                    >mdi-close</v-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>{{resourceProgress.type}}</v-list-item-title>
+                    <v-list-item-subtitle>{{resourceProgress.address}}</v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-action>
+                    <v-icon color="green" v-if="resourceProgress.change.done === true">mdi-check</v-icon>
+                    <v-icon color="grey" v-else>mdi-cloud-upload</v-icon>
+                  </v-list-item-action>
+                </v-list-item>
+              </v-list>
+            </template>
           </v-form>
         </v-card-text>
       </v-card>
@@ -272,6 +320,7 @@ export default {
       errorMessage: "",
       statusPoller: null,
       currentStatus: null,
+      currentProgress: null,
       magicCastle: null,
       magicCastleInitialized: false,
       quotas: null,
@@ -388,6 +437,11 @@ export default {
     volumeSizeMax() {
       if (!this.quotas) return 0;
       return this.quotas.volume_size.max;
+    },
+    relevantProgress() {
+      return this.currentProgress.filter(
+        resourceChanges => !isEqual(resourceChanges.change.actions, ["no-op"])
+      );
     }
   },
   watch: {
@@ -408,6 +462,9 @@ export default {
     }
   },
   methods: {
+    isEqual(a, b) {
+      return isEqual(a, b);
+    },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
         return [];
@@ -444,12 +501,15 @@ export default {
     },
     startStatusPolling() {
       let fetchStatus = async () => {
-        const { status } = (await MagicCastleRepository.getStatus(this.clusterName)).data;
+        const { status, progress } = (
+          await MagicCastleRepository.getStatus(this.clusterName)
+        ).data;
         const statusChanged = this.currentStatus !== status;
         if (this.currentStatus && statusChanged) {
           this.showStatusDialog(status);
         }
         this.currentStatus = status;
+        this.currentProgress = progress;
         if (statusChanged) {
           this.forceLoading = false;
           const clusterIsBusy = [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(status);
