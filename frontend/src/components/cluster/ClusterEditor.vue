@@ -83,7 +83,14 @@
                   <v-divider />
                 </div>
                 <v-list-item>
-                  <v-col cols="12" sm="6">
+                  <v-col cols="12" sm="4">
+                    <resource-usage-display
+                      :max="instanceCountMax"
+                      :used="instanceCountUsed"
+                      title="Instances"
+                    />
+                  </v-col>
+                  <v-col cols="12" sm="4">
                     <resource-usage-display
                       :max="ramGbMax"
                       :used="ramGbUsed"
@@ -91,7 +98,7 @@
                       suffix="GB"
                     />
                   </v-col>
-                  <v-col cols="12" sm="6">
+                  <v-col cols="12" sm="4">
                     <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
                   </v-col>
                 </v-list-item>
@@ -437,6 +444,15 @@ export default {
         this.magicCastle.os_floating_ips.length > 0 ||
         "No OpenStack floating IP provided"
       );
+    },
+    instanceCountUsed() {
+      if (!this.magicCastle || !this.resourceDetails) return 0;
+      const instances = Object.values(this.magicCastle.instances);
+      return instances.reduce((acc, instance) => acc + instance.count, 0);
+    },
+    instanceCountMax() {
+      if (!this.quotas) return 0;
+      return this.quotas.instance_count.max;
     },
     ramGbUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;

@@ -125,6 +125,7 @@ def test_get_available_resources_valid():
     Mock context :
 
     valid1 cluster uses:
+    1 + 1 + 1 = 3 instances
     4 + 4 + 2 = 10 vcpus
     6144 + 6144 + 3072 = 15360 ram (15 GiO)
     3 [root disks] + 3 [external volumes] = 6 volumes
@@ -132,12 +133,14 @@ def test_get_available_resources_valid():
     + 50 + 50 + 100 [external volumes] = 230 GiO of volume storage
 
     openstack's quotas says there currently remains:
+    128 - 28 = 100 instances
     500 - 199 = 301 vcpus
     286,720 - 184,320 = 102,400 ram (100 GiO)
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
 
     Therefore, valid1 cluster can use a total of:
+    3 + 100 = 103 instances
     10 + 301 = 311 vcpus
     15,360 + 102,400 = 117,760 ram (115 GiO)
     6 + 28 = 34 volumes
@@ -146,6 +149,7 @@ def test_get_available_resources_valid():
     magic_castle = MagicCastle("valid1.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
         "quotas": {
+            "instance_count": {"max": 103},
             "ram": {"max": 117_760},
             "vcpus": {"max": 311},
             "volume_count": {"max": 34},
@@ -256,6 +260,7 @@ def test_get_available_resources_empty():
     empty cluster uses 0 vcpus, 0 ram, 0 volume
 
     openstack's quotas says there currently remains:
+    128 - 28 = 100 instances
     500 - 199 = 301 vcpus
     286,720 - 184,320 = 102,400 ram (100 GiO)
     128 - 100 = 28 volumes
@@ -264,6 +269,7 @@ def test_get_available_resources_empty():
     magic_castle = MagicCastle("empty.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
         "quotas": {
+            "instance_count": {"max": 100},
             "ram": {"max": 102_400},
             "vcpus": {"max": 301},
             "volume_count": {"max": 28},
@@ -371,6 +377,7 @@ def test_get_available_resources_missing_nodes():
     Mock context :
 
     missingnodes cluster uses
+    0 instance
     0 vcpus
     0 ram
     0 [root disks] + 3 [external volumes] = 3 volumes
@@ -378,12 +385,14 @@ def test_get_available_resources_missing_nodes():
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
 
     openstack's quotas says there currently remains:
+    128 - 28 = 100 instances
     500 - 199 = 301 vcpus
     286,720 - 184,320 = 102,400 ram (100 GiO)
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
 
     Therefore, missingnodes cluster can use a total of:
+    0 + 100 = 0 instances
     0 + 301 = 301 vcpus
     0 + 102,400 = 102,400 ram (100 GiO)
     3 + 28 = 31 volumes
@@ -392,6 +401,7 @@ def test_get_available_resources_missing_nodes():
     magic_castle = MagicCastle("missingnodes.sub.example.com")
     assert magic_castle.get_available_resources() == {
         "quotas": {
+            "instance_count": {"max": 100},
             "ram": {"max": 102_400},
             "vcpus": {"max": 301},
             "volume_count": {"max": 31},
@@ -500,6 +510,7 @@ def test_get_available_resources_not_found():
     Mock context :
 
     openstack's quotas says there currently remains:
+    128 - 28 = 100 instances
     500 - 199 = 301 vcpus
     286,720 - 184,320 = 102,400 ram (100 GiO)
     128 - 100 = 28 volumes
@@ -508,6 +519,7 @@ def test_get_available_resources_not_found():
     magic_castle = MagicCastle()
     assert magic_castle.get_available_resources() == {
         "quotas": {
+            "instance_count": {"max": 100},
             "ram": {"max": 102_400},
             "vcpus": {"max": 301},
             "volume_count": {"max": 28},

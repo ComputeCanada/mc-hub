@@ -74,7 +74,7 @@ class MagicCastle:
             return f"{cluster_name}.{domain}"
         else:
             return None
-    
+
     def get_cluster_name(self):
         return self.__configuration.get("cluster_name")
 
@@ -149,6 +149,7 @@ class MagicCastle:
             parser = TerraformStateParser(state)
 
             openstack_manager = OpenStackManager(
+                pre_allocated_instance_count=parser.get_instance_count(),
                 pre_allocated_ram=parser.get_ram(),
                 pre_allocated_cores=parser.get_cores(),
                 pre_allocated_volume_count=parser.get_volume_count(),

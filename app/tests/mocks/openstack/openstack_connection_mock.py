@@ -33,6 +33,7 @@ class OpenStackConnectionMock:
                 return OpenStackConnectionMock.OpenStackResponseMock(
                     {
                         "quota_set": {
+                            "instances": {"limit": 128, "in_use": 28},
                             "cores": {"limit": 500, "in_use": 199},
                             "ram": {
                                 # 280 GiO limit, 180 GiO used

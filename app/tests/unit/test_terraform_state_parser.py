@@ -28,6 +28,21 @@ def missing_nodes_state():
     return load_state("missingnodes.sub.example.com")
 
 
+def test_get_instance_count_valid(valid_state):
+    parser = TerraformStateParser(valid_state)
+    assert parser.get_instance_count() == 3
+
+
+def test_get_instance_count_empty(empty_state):
+    parser = TerraformStateParser(empty_state)
+    assert parser.get_instance_count() == 0
+
+
+def test_get_instance_count_missing_nodes(missing_nodes_state):
+    parser = TerraformStateParser(missing_nodes_state)
+    assert parser.get_instance_count() == 0
+
+
 def test_get_cores_valid(valid_state):
     parser = TerraformStateParser(valid_state)
     assert parser.get_cores() == 4 + 4 + 2

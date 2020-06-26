@@ -44,6 +44,12 @@ class TerraformStateParser:
             "os_floating_ips": self.get_os_floating_ips(),
         }
 
+    def get_instance_count(self) -> int:
+        parser = parse(
+            "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.id"
+        )
+        return len(parser.find(self.__tf_state))
+
     def get_cores(self) -> int:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.vcpus"

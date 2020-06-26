@@ -22,6 +22,7 @@ class OpenStackManager:
     def __init__(
         self,
         *,
+        pre_allocated_instance_count=0,
         pre_allocated_cores=0,
         pre_allocated_ram=0,
         pre_allocated_volume_count=0,
@@ -30,6 +31,7 @@ class OpenStackManager:
     ):
         self.__connection = openstack.connect()
 
+        self.__pre_allocated_instance_count = pre_allocated_instance_count
         self.__pre_allocated_cores = pre_allocated_cores
         self.__pre_allocated_ram = pre_allocated_ram
         self.__pre_allocated_volume_count = pre_allocated_volume_count
@@ -57,6 +59,7 @@ class OpenStackManager:
 
     def __get_quotas(self):
         return {
+            "instance_count": {"max": self.__get_available_instance_count()},
             "ram": {"max": self.__get_available_ram()},
             "vcpus": {"max": self.__get_available_vcpus()},
             "volume_count": {"max": self.__get_available_volume_count()},
@@ -123,6 +126,13 @@ class OpenStackManager:
             return self.__available_flavors
         else:
             return list(filter(validate_flavor_requirements, self.__available_flavors))
+
+    def __get_available_instance_count(self):
+        return (
+            self.__pre_allocated_instance_count
+            + self.__get_compute_quotas()["instances"]["limit"]
+            - self.__get_compute_quotas()["instances"]["in_use"]
+        )
 
     def __get_available_ram(self):
         return (
