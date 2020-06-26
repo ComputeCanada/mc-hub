@@ -14,7 +14,6 @@ from exceptions.invalid_usage_exception import InvalidUsageException
 from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
-from filelock import FileLock
 import logging
 import json
 
@@ -22,7 +21,7 @@ MAGIC_CASTLE_RELEASE_PATH = path.join(
     environ["HOME"], "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
 )
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
-STATUS_LOCK_FILENAME = "status.txt.lock"
+
 STATUS_FILENAME = "status.txt"
 
 
@@ -71,7 +70,6 @@ class MagicCastle:
         status_file_path = self.__get_cluster_path(STATUS_FILENAME)
         if not status_file_path or not path.exists(status_file_path):
             return ClusterStatusCode.NOT_FOUND
-        with FileLock(self.__get_cluster_path(STATUS_LOCK_FILENAME)):
             with open(status_file_path, "r") as status_file:
                 return ClusterStatusCode(status_file.read())
 
@@ -288,6 +286,5 @@ class MagicCastle:
             return None
 
     def __update_status(self, status: ClusterStatusCode):
-        with FileLock(self.__get_cluster_path(STATUS_LOCK_FILENAME)):
             with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
                 status_file.write(status.value)
