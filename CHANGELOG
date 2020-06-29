@@ -1,0 +1,24 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## [3.0] UNRELEASED
+
+### Added
+- Added the list of existing clusters
+- Added a progress display for all cluster creation, modification and destruction
+- Added a confirmation box when destroying a cluster
+- Added a confirmation box when exiting the page with unsaved modifications
+- Added cluster name validation
+- Added a pie chart for the instances count quota
+- Added the developer documentation
+- Added Docker Compose file for development
+
+### Changed
+- Dockerfile can now produce two images: one for production and one for development
+- Domain name modification disabled on existing clusters
+- SSH public key can now be pasted as text or uploaded through a file
+
+### Removed
+- start.sh script
