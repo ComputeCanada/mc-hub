@@ -203,57 +203,9 @@
                 </template>
               </div>
             </template>
-            <template v-else-if="currentProgress">
+            <template v-else-if="resourcesChanges">
               <v-divider />
-              <v-list two-line>
-                <v-list-item
-                  v-for="resourceProgress in relevantProgress"
-                  :key="resourceProgress.address"
-                  :loading="true"
-                >
-                  <v-list-item-avatar>
-                    <!-- https://www.terraform.io/docs/internals/json-format.html#change-representation -->
-                    <v-icon
-                      v-if="isEqual(resourceProgress.change.actions, ['no-op'])"
-                    >mdi-checkbox-blank-circle-outline</v-icon>
-                    <v-icon
-                      v-else-if="isEqual(resourceProgress.change.actions, ['create'])"
-                      color="green"
-                    >mdi-plus</v-icon>
-                    <v-icon v-else-if="isEqual(resourceProgress.change.actions, ['read'])">mdi-text</v-icon>
-                    <v-icon
-                      v-else-if="isEqual(resourceProgress.change.actions, ['update'])"
-                      color="blue"
-                    >mdi-pencil</v-icon>
-                    <div
-                      v-else-if="isEqual(resourceProgress.change.actions, ['delete', 'create'])"
-                      class="d-flex"
-                    >
-                      <v-icon color="red">mdi-minus</v-icon>
-                      <v-icon color="green">mdi-plus</v-icon>
-                    </div>
-                    <div
-                      v-else-if="isEqual(resourceProgress.change.actions, ['create', 'delete'])"
-                      class="d-flex"
-                    >
-                      <v-icon color="green">mdi-plus</v-icon>
-                      <v-icon color="red">mdi-minus</v-icon>
-                    </div>
-                    <v-icon
-                      v-else-if="isEqual(resourceProgress.change.actions, ['delete'])"
-                      color="red"
-                    >mdi-close</v-icon>
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title>{{resourceProgress.type}}</v-list-item-title>
-                    <v-list-item-subtitle>{{resourceProgress.address}}</v-list-item-subtitle>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-icon color="green" v-if="resourceProgress.change.done === true">mdi-check</v-icon>
-                    <v-icon color="grey" v-else>mdi-cloud-upload</v-icon>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
+              <cluster-resources :resources-changes="resourcesChanges" show-progress />
             </template>
           </v-form>
         </v-card-text>
@@ -276,7 +228,7 @@
 </template>
 
 <script>
-import { cloneDeep, isEqual } from "lodash";
+import { cloneDeep } from "lodash";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
@@ -285,6 +237,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import PublicKeyInput from "@/components/ui/PublicKeyInput";
 import MessageDialog from "@/components/ui/MessageDialog";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import ClusterResources from "@/components/cluster/ClusterResources";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "phoenix",
@@ -328,7 +281,8 @@ export default {
     MessageDialog,
     StatusChip,
     ResourceUsageDisplay,
-    PublicKeyInput
+    PublicKeyInput,
+    ClusterResources
   },
   props: {
     hostname: String,
@@ -359,7 +313,7 @@ export default {
       errorMessage: "",
       statusPoller: null,
       currentStatus: null,
-      currentProgress: null,
+      resourcesChanges: null,
       magicCastle: null,
       magicCastleInitialized: false,
       quotas: null,
@@ -519,11 +473,6 @@ export default {
     volumeSizeMax() {
       if (!this.quotas) return 0;
       return this.quotas.volume_size.max;
-    },
-    relevantProgress() {
-      return this.currentProgress.filter(
-        resourceChanges => !isEqual(resourceChanges.change.actions, ["no-op"])
-      );
     }
   },
   watch: {
@@ -551,9 +500,6 @@ export default {
     }
   },
   methods: {
-    isEqual(a, b) {
-      return isEqual(a, b);
-    },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
         return [];
@@ -590,7 +536,7 @@ export default {
           this.showStatusDialog(status);
         }
         this.currentStatus = status;
-        this.currentProgress = progress;
+        this.resourcesChanges = progress;
         if (statusChanged) {
           this.forceLoading = false;
           const clusterIsBusy = [
