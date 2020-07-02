@@ -14,7 +14,7 @@ import ClusterStatusCode from "@/models/ClusterStatusCode";
 
 const ClusterFormattedStatus = Object.freeze({
   idle: { text: "Idle", color: "blue" },
-  created: { text: "Plan created", color: "blue" },
+  created: { text: "Build cancelled", color: "darkgrey" },
   plan_running: { text: "Creating plan", color: "orange" },
   build_running: { text: "Build running", color: "orange" },
   build_success: { text: "Build success", color: "green" },
