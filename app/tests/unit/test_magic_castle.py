@@ -1,5 +1,6 @@
 from models.magic_castle import MagicCastle
 from models.cluster_status_code import ClusterStatusCode
+from models.plan_type import PlanType
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from tests.test_helpers import *
 
