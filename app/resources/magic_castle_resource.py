@@ -21,7 +21,7 @@ class MagicCastleResource(Resource):
 
         try:
             magic_castle.load_configuration(json_data)
-            magic_castle.apply_existing()
+            magic_castle.plan_modification()
             return {}
         except InvalidUsageException as e:
             return e.get_response()
@@ -29,7 +29,7 @@ class MagicCastleResource(Resource):
     def delete(self, hostname):
         magic_castle = MagicCastle(hostname)
         try:
-            magic_castle.destroy()
+            magic_castle.plan_destruction()
             return {}
         except InvalidUsageException as e:
             return e.get_response()

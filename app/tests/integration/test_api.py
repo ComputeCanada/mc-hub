@@ -122,7 +122,6 @@ def test_get_state_non_existing(client):
 
 # GET /api/magic-castle/<hostname>/status
 def test_get_status(mocker, client):
-    mocker.patch("models.magic_castle.MagicCastle._MagicCastle__generate_plan_file")
     res = client.get(f"/api/magic-castle/missingfloatingips.c3.ca/status")
     assert res.get_json() == {
         "status": "build_running",

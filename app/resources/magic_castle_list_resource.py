@@ -24,7 +24,7 @@ class MagicCastleListResource(Resource):
 
         try:
             magic_castle.load_configuration(json_data)
-            magic_castle.apply_new()
+            magic_castle.plan_creation()
             return {}
         except InvalidUsageException as e:
             return e.get_response()

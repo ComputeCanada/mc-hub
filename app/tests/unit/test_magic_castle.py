@@ -42,6 +42,18 @@ def test_get_status_not_found():
     assert magic_castle2.get_status() == ClusterStatusCode.NOT_FOUND
 
 
+
+
+def test_get_plan_type_destroy():
+    magic_castle = MagicCastle("valid1.calculquebec.cloud")
+    assert magic_castle.get_plan_type() == PlanType.DESTROY
+
+
+def test_get_plan_type_none():
+    magic_castle = MagicCastle("missingfloatingips.c3.ca")
+    assert magic_castle.get_plan_type() == PlanType.NONE
+
+
 def test_get_state_valid():
     magic_castle = MagicCastle("valid1.calculquebec.cloud")
     assert magic_castle.get_state() == {

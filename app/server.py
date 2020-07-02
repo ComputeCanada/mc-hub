@@ -5,6 +5,7 @@ from resources.magic_castle_list_resource import MagicCastleListResource
 from resources.magic_castle_status_resource import MagicCastleStatusResource
 from resources.available_resources_resource import AvailableResourcesResource
 from resources.available_resources_list_resource import AvailableResourcesListResource
+from resources.magic_castle_apply_resource import MagicCastleApplyResource
 from flask_cors import CORS
 
 magic_castle_status = "idle"
@@ -16,13 +17,10 @@ CORS(app)
 api = Api(app, prefix="/api")
 api.add_resource(MagicCastleListResource, "/magic-castle")
 api.add_resource(MagicCastleResource, "/magic-castle/<string:hostname>")
-api.add_resource(
-    MagicCastleStatusResource, "/magic-castle/<string:hostname>/status"
-)
+api.add_resource(MagicCastleStatusResource, "/magic-castle/<string:hostname>/status")
+api.add_resource(MagicCastleApplyResource, "/magic-castle/<string:hostname>/apply")
 api.add_resource(AvailableResourcesListResource, "/available-resources")
-api.add_resource(
-    AvailableResourcesResource, "/available-resources/<string:hostname>"
-)
+api.add_resource(AvailableResourcesResource, "/available-resources/<string:hostname>")
 
 
 @app.route("/css/<path:path>")
