@@ -538,7 +538,7 @@ export default {
           this.showStatusDialog(status);
         }
         this.currentStatus = status;
-        this.resourcesChanges = progress;
+        this.resourcesChanges = progress || [];
         if (statusChanged) {
           this.forceLoading = false;
           const clusterIsBusy = [
