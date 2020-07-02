@@ -144,9 +144,10 @@ class MagicCastle:
                 self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "r"
             ) as file:
                 terraform_output = file.read()
-            return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
         except FileNotFoundError:
-            return None
+            # terraform apply was not launched yet, therefore the log file does not exist
+            terraform_output = ""
+        return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
     def get_state(self):
         if self.__is_busy():
