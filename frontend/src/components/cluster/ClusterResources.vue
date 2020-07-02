@@ -1,14 +1,12 @@
 <template>
   <div>
-    <p v-if="relevantResourcesChanges.length === 0" class="my-2">
-      <b>Nothing to change.</b>
-    </p>
+    <v-list v-if="relevantResourcesChanges.length === 0" class="my-2">
+      <v-list-item>
+        <b class="ma-auto">No resource to change.</b>
+      </v-list-item>
+    </v-list>
     <v-list v-else two-line>
-      <v-list-item
-        v-for="resource in relevantResourcesChanges"
-        :key="resource.address"
-        :loading="true"
-      >
+      <v-list-item v-for="resource in relevantResourcesChanges" :key="resource.address">
         <v-list-item-avatar>
           <!-- https://www.terraform.io/docs/internals/json-format.html#change-representation -->
           <v-icon
