@@ -639,9 +639,9 @@ export default {
           await MagicCastleRepository.getState(this.hostname)
         ).data;
       } catch (e) {
-        // Terraform state file could not be parsed or was not created
+        // Terraform state file could not be parsed or was not created.
+        // This happens for new clusters, which are not built yet.
         this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
-        console.error(e.response.data.message);
       } finally {
         if (this.magicCastle.public_keys.length > 0)
           this.mainPublicKey = this.magicCastle.public_keys[0];
