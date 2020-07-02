@@ -178,14 +178,14 @@
                 <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
                 <template v-if="existingCluster">
                   <v-btn
-                    @click="modifyCluster"
+                    @click="planModification"
                     color="primary"
                     class="ma-2"
                     :disabled="loading || !validForm"
                     large
                   >Modify</v-btn>
                   <v-btn
-                    @click="showClusterDestructionDialog"
+                    @click="planDestruction"
                     color="primary"
                     class="ma-2"
                     :disabled="loading"
@@ -195,7 +195,7 @@
                 </template>
                 <template v-else>
                   <v-btn
-                    @click="createCluster"
+                    @click="planCreation"
                     color="primary"
                     :disabled="loading || !validForm"
                     large
@@ -219,13 +219,41 @@
       <br />Don't forget to destroy it when you are done!
     </message-dialog>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
+    <message-dialog
+      v-model="clusterPlanRunningDialog"
+      type="loading"
+      no-close
+      persistent
+    >Generating resource plan... please wait.</message-dialog>
+    <confirm-dialog
+      encourage-confirm
+      :max-width="550"
+      title="Build confirmation"
+      v-model="clusterModificationDialog"
+      @confirm="applyCluster"
+    >
+      Are you sure you want to apply the following actions?
+      <cluster-resources
+        :resources-changes="resourcesChanges"
+        style="max-height: calc(80vh - 200px)"
+        class="overflow-y-auto"
+      />
+    </confirm-dialog>
     <confirm-dialog
       alert
       encourage-cancel
+      :max-width="550"
       title="Destruction confirmation"
       v-model="clusterDestructionDialog"
-      @confirm="destroyCluster"
-    >Are you sure you want to permanently destroy your cluster and all its data?</confirm-dialog>
+      @confirm="applyCluster"
+    >
+      Are you sure you want to permanently destroy your cluster and all its data?
+      <cluster-resources
+        :resources-changes="resourcesChanges"
+        style="max-height: calc(80vh - 200px)"
+        class="overflow-y-auto"
+      />
+    </confirm-dialog>
   </div>
 </template>
 
@@ -291,6 +319,14 @@ export default {
     existingCluster: {
       type: Boolean,
       required: true
+    },
+    showPlanConfirmation: {
+      type: Boolean,
+      default: false
+    },
+    destroy: {
+      type: Boolean,
+      default: false
     }
   },
   data: function() {
@@ -312,10 +348,12 @@ export default {
       successDialog: false,
       errorDialog: false,
       clusterDestructionDialog: false,
+      clusterPlanRunningDialog: false,
+      clusterModificationDialog: false,
       errorMessage: "",
       statusPoller: null,
       currentStatus: null,
-      resourcesChanges: null,
+      resourcesChanges: [],
       magicCastle: null,
       magicCastleInitialized: false,
       quotas: null,
@@ -341,6 +379,13 @@ export default {
   async created() {
     if (this.existingCluster) {
       this.startStatusPolling();
+      if (this.showPlanConfirmation) {
+        this.clusterPlanRunningDialog = true;
+        this.showPlanConfirmationDialog();
+        this.clusterPlanRunningDialog = false;
+      } else if (this.destroy) {
+        this.planDestruction();
+      }
     } else {
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       await this.loadAvailableResources();
@@ -547,10 +592,15 @@ export default {
           ].includes(status);
           if (!clusterIsBusy) {
             this.stopStatusPolling();
-            await Promise.all([
-              this.loadAvailableResources(),
-              this.loadCluster()
-            ]);
+            if (status == ClusterStatusCode.NOT_FOUND) {
+              this.unloadCluster();
+              this.$router.push("/");
+            } else {
+              await Promise.all([
+                this.loadAvailableResources(),
+                this.loadCluster()
+              ]);
+            }
           }
         }
       };
@@ -577,26 +627,17 @@ export default {
       }
     },
     async loadAvailableResources() {
-      const availableResources = this.existingCluster
-        ? (await AvailableResourcesRepository.get(this.hostname)).data
-        : (await AvailableResourcesRepository.get()).data;
+      let availableResources = undefined;
+      try {
+        availableResources = this.existingCluster
+          ? (await AvailableResourcesRepository.get(this.hostname)).data
+          : (await AvailableResourcesRepository.get()).data;
+      } catch (e) {
+        availableResources = (await AvailableResourcesRepository.get()).data;
+      }
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
       this.resourceDetails = availableResources.resource_details;
-    },
-    async createCluster() {
-      this.forceLoading = true;
-      try {
-        await MagicCastleRepository.create(this.magicCastle);
-        this.$disableUnloadConfirmation();
-        await this.$router.push({
-          path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`
-        });
-        this.unloadCluster();
-      } catch (e) {
-        this.forceLoading = false;
-        this.showError(e.response.data.message);
-      }
     },
     async loadCluster() {
       try {
@@ -604,7 +645,11 @@ export default {
         this.magicCastle = (
           await MagicCastleRepository.getState(this.hostname)
         ).data;
-
+      } catch (e) {
+        // Terraform state file could not be parsed or was not created
+        this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
+        console.log(e.response.data.message);
+      } finally {
         if (this.magicCastle.public_keys.length > 0)
           this.mainPublicKey = this.magicCastle.public_keys[0];
 
@@ -612,31 +657,69 @@ export default {
         this.$nextTick(() => {
           this.magicCastleInitialized = true;
         });
-      } catch (e) {
-        console.log(e.response.data.message);
       }
     },
-    async modifyCluster() {
-      this.forceLoading = true;
+    async planCreation() {
       try {
+        this.clusterPlanRunningDialog = true;
+        await MagicCastleRepository.create(this.magicCastle);
+        this.$disableUnloadConfirmation();
+        await this.$router.push({
+          path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
+          query: { showPlanConfirmation: "1" }
+        });
+        this.unloadCluster();
+      } catch (e) {
+        this.showError(e.response.data.message);
+      } finally {
+        this.clusterPlanRunningDialog = false;
+      }
+    },
+    async planModification() {
+      try {
+        this.clusterPlanRunningDialog = true;
+        this.resourcesChanges = [];
         await MagicCastleRepository.update(this.hostname, this.magicCastle);
+        this.showPlanConfirmationDialog();
+      } catch (e) {
+        this.showError(e.response.data.message);
+      } finally {
+        this.clusterPlanRunningDialog = false;
+      }
+    },
+    async planDestruction() {
+      this.forceLoading = true;
+      try {
+        this.clusterPlanRunningDialog = true;
+        this.resourcesChanges = [];
+        await MagicCastleRepository.delete(this.hostname);
+        this.showPlanConfirmationDialog({ destroy: true });
+        this.unloadCluster();
+        this.startStatusPolling();
+      } catch (e) {
+        this.showError(e.response.data.message);
+      } finally {
+        this.clusterPlanRunningDialog = false;
+      }
+    },
+    async applyCluster() {
+      try {
+        await MagicCastleRepository.apply(this.hostname);
         this.unloadCluster();
         this.startStatusPolling();
       } catch (e) {
         this.showError(e.response.data.message);
       }
     },
-    showClusterDestructionDialog() {
-      this.clusterDestructionDialog = true;
-    },
-    async destroyCluster() {
-      this.forceLoading = true;
-      try {
-        await MagicCastleRepository.delete(this.hostname);
-        this.unloadCluster();
-        this.startStatusPolling();
-      } catch (e) {
-        this.showError(e.response.data.message);
+    async showPlanConfirmationDialog(options = { destroy: false }) {
+      const { progress } = (
+        await MagicCastleRepository.getStatus(this.hostname)
+      ).data;
+      this.resourcesChanges = progress || [];
+      if (options.destroy === true) {
+        this.clusterDestructionDialog = true;
+      } else {
+        this.clusterModificationDialog = true;
       }
     },
     unloadCluster() {

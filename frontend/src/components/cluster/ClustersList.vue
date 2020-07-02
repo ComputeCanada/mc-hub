@@ -20,41 +20,28 @@
           <v-btn icon :to="`/clusters/${item.hostname}`">
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
-          <v-btn icon @click="showClusterDestructionDialog(item.hostname)">
+          <v-btn icon @click="destroyCluster(item.hostname)">
             <v-icon>mdi-delete</v-icon>
           </v-btn>
         </template>
       </v-data-table>
     </v-card>
-    <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
-    <confirm-dialog
-      alert
-      encourage-cancel
-      title="Destruction confirmation"
-      v-model="clusterDestructionDialog"
-      @confirm="destroyCluster"
-    >Are you sure you want to permanently destroy this cluster and all its data?</confirm-dialog>
   </v-container>
 </template>
 
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import StatusChip from "@/components/ui/StatusChip";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import MessageDialog from "@/components/ui/MessageDialog";
 
 const POLL_STATUS_INTERVAL = 5000;
 
 export default {
   name: "ClustersList",
-  components: { StatusChip, ConfirmDialog, MessageDialog },
+  components: { StatusChip },
   data() {
     return {
       loading: true,
-      clusterDestructionDialog: false,
       currentHostname: null,
-      errorDialog: false,
-      errorMessage: "",
       statusPoller: null,
 
       headers: [
@@ -102,21 +89,11 @@ export default {
       this.magicCastles = (await MagicCastleRepository.getAll()).data;
       this.loading = false;
     },
-    showError(message) {
-      this.errorDialog = true;
-      this.errorMessage = message;
-    },
-    showClusterDestructionDialog(hostname) {
-      this.clusterDestructionDialog = true;
-      this.currentHostname = hostname;
-    },
-    async destroyCluster() {
-      try {
-        await MagicCastleRepository.delete(this.currentHostname);
-        await this.loadMagicCastlesStatus();
-      } catch (e) {
-        this.showError(e.response.data.message);
-      }
+    async destroyCluster(hostname) {
+      await this.$router.push({
+        path: `/clusters/${hostname}`,
+        query: { destroy: "1" }
+      });
     }
   }
 };

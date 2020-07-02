@@ -1,6 +1,11 @@
 <template>
   <div>
-    <v-chip label :color="formattedStatus.color" dark v-if="status !== null">{{ formattedStatus.text }}</v-chip>
+    <v-chip
+      label
+      :color="formattedStatus.color"
+      dark
+      v-if="status !== null"
+    >{{ formattedStatus.text }}</v-chip>
   </div>
 </template>
 
@@ -9,6 +14,8 @@ import ClusterStatusCode from "@/models/ClusterStatusCode";
 
 const ClusterFormattedStatus = Object.freeze({
   idle: { text: "Idle", color: "blue" },
+  created: { text: "Plan created", color: "blue" },
+  plan_running: { text: "Creating plan", color: "orange" },
   build_running: { text: "Build running", color: "orange" },
   build_success: { text: "Build success", color: "green" },
   build_error: { text: "Build error", color: "red" },

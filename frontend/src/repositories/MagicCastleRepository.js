@@ -20,5 +20,8 @@ export default {
   },
   delete(hostname) {
     return Repository.delete(`${resource}/${hostname}`);
+  },
+  apply(hostname) {
+    return Repository.post(`${resource}/${hostname}/apply`);
   }
 };

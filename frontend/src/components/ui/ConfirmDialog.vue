@@ -1,7 +1,10 @@
 <template>
-  <v-dialog v-model="value" max-width="400">
+  <v-dialog v-model="value" :max-width="maxWidth">
     <v-card>
-      <v-card-title><v-icon v-if="alert" class="mr-2" color="red">mdi-alert</v-icon>{{ title }}</v-card-title>
+      <v-card-title>
+        <v-icon v-if="alert" class="mr-2" color="red">mdi-alert</v-icon>
+        {{ title }}
+      </v-card-title>
       <v-card-text>
         <slot></slot>
       </v-card-text>
@@ -38,6 +41,10 @@ export default {
     encourageCancel: {
       type: Boolean,
       default: false
+    },
+    maxWidth: {
+      type: Number,
+      default: 400
     }
   },
   methods: {

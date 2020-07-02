@@ -1,5 +1,10 @@
 <template>
-  <cluster-editor :existing-cluster="true" :hostname="hostname" />
+  <cluster-editor
+    :existing-cluster="true"
+    :hostname="hostname"
+    :show-plan-confirmation="showPlanConfirmation"
+    :destroy="destroy"
+  />
 </template>
 
 <script>
@@ -11,6 +16,14 @@ export default {
     hostname: {
       type: String,
       required: true
+    },
+    showPlanConfirmation: {
+      type: Boolean,
+      default: false
+    },
+    destroy: {
+      type: Boolean,
+      default: false
     }
   }
 };

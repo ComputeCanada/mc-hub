@@ -22,7 +22,7 @@ const routes = [
     path: "/clusters/:hostname",
     name: "Edit an existing Magic Castle",
     component: ModifyCluster,
-    props: true
+    props: route => ({ "showPlanConfirmation": route.query.showPlanConfirmation === "1", "destroy": route.query.destroy === "1", ...route.params })
   },
   {
     path: "*",
