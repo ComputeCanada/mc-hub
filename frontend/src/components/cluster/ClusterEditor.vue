@@ -203,7 +203,9 @@
                 </template>
               </div>
             </template>
-            <template v-else-if="resourcesChanges">
+            <template
+              v-else-if="resourcesChanges && (currentStatus == 'build_running' || currentStatus == 'destroy_running')"
+            >
               <v-divider />
               <cluster-resources :resources-changes="resourcesChanges" show-progress />
             </template>
