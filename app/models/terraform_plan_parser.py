@@ -18,14 +18,18 @@ class TerraformPlanParser:
             ...
         ]
         """
-        return [
-            {
-                "address": resource["address"],
-                "type": resource["type"],
-                "change": {"actions": resource["change"]["actions"]},
-            }
-            for resource in plan["resource_changes"]
-        ]
+        raw_resource_changes = plan.get("resource_changes")
+        if raw_resource_changes:
+            return [
+                {
+                    "address": resource["address"],
+                    "type": resource["type"],
+                    "change": {"actions": resource["change"]["actions"]},
+                }
+                for resource in raw_resource_changes
+            ]
+        else:
+            return []
 
     @staticmethod
     def get_done_changes(initial_plan, terraform_apply_output: str):
