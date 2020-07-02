@@ -80,6 +80,18 @@ def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castle")
     assert res.get_json() == [
         {
+            "cluster_name": "buildplanning",
+            "domain": "calculquebec.cloud",
+            "hostname": "buildplanning.calculquebec.cloud",
+            "status": "plan_running"
+        },
+        {
+            "cluster_name": "created",
+            "domain": "calculquebec.cloud",
+            "hostname": "created.calculquebec.cloud",
+            "status": "created"
+        },
+        {
             "cluster_name": "empty",
             "domain": "calculquebec.cloud",
             "hostname": "empty.calculquebec.cloud",

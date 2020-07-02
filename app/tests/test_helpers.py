@@ -28,6 +28,8 @@ def mock_clusters_path(mocker):
 @pytest.fixture(autouse=True)
 def generate_test_clusters():
     mock_cluster_names = [
+        "buildplanning.calculquebec.cloud",
+        "created.calculquebec.cloud",
         "empty.calculquebec.cloud",
         "missingnodes.sub.example.com",
         "valid1.calculquebec.cloud",

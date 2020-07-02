@@ -8,12 +8,16 @@ from tests.test_helpers import *
 def test_get_all_magic_castles():
     all_magic_castles = MagicCastle.all()
     assert [magic_castle.get_hostname() for magic_castle in all_magic_castles] == [
+        "buildplanning.calculquebec.cloud",
+        "created.calculquebec.cloud",
         "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.sub.example.com",
         "valid1.calculquebec.cloud",
     ]
     assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
+        ClusterStatusCode.PLAN_RUNNING,
+        ClusterStatusCode.CREATED,
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.BUILD_ERROR,
@@ -22,18 +26,19 @@ def test_get_all_magic_castles():
 
 
 def test_get_status_valid():
-    magic_castle = MagicCastle("valid1.calculquebec.cloud")
-    assert magic_castle.get_status() == ClusterStatusCode.BUILD_SUCCESS
+    created = MagicCastle("created.calculquebec.cloud")
+    assert created.get_status() == ClusterStatusCode.CREATED
+    buildplanning = MagicCastle("buildplanning.calculquebec.cloud")
+    assert buildplanning.get_status() == ClusterStatusCode.PLAN_RUNNING
+    valid1 = MagicCastle("valid1.calculquebec.cloud")
+    assert valid1.get_status() == ClusterStatusCode.BUILD_SUCCESS
 
 
-def test_get_status_empty():
-    magic_castle = MagicCastle("empty.calculquebec.cloud")
-    assert magic_castle.get_status() == ClusterStatusCode.BUILD_ERROR
-
-
-def test_get_status_missing_nodes():
-    magic_castle = MagicCastle("missingnodes.sub.example.com")
-    assert magic_castle.get_status() == ClusterStatusCode.BUILD_ERROR
+def test_get_status_errors():
+    empty = MagicCastle("empty.calculquebec.cloud")
+    assert empty.get_status() == ClusterStatusCode.BUILD_ERROR
+    missingnodes = MagicCastle("missingnodes.sub.example.com")
+    assert missingnodes.get_status() == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_not_found():
@@ -43,6 +48,11 @@ def test_get_status_not_found():
     assert magic_castle2.get_status() == ClusterStatusCode.NOT_FOUND
 
 
+def test_get_plan_type_build():
+    build_planning = MagicCastle("buildplanning.calculquebec.cloud")
+    assert build_planning.get_plan_type() == PlanType.BUILD
+    created = MagicCastle("created.calculquebec.cloud")
+    assert created.get_plan_type() == PlanType.BUILD
 
 
 def test_get_plan_type_destroy():
