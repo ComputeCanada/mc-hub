@@ -8,7 +8,7 @@ class MagicCastleStatusResource(Resource):
     def get(self, hostname):
         magic_castle = MagicCastle(hostname)
         status = magic_castle.get_status()
-        if status in {ClusterStatusCode.NOT_FOUND, ClusterStatusCode.BUILD_SUCCESS}:
+        if status == ClusterStatusCode.NOT_FOUND:
             return {
                 "status": status.value,
             }
