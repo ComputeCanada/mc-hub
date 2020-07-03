@@ -2,6 +2,14 @@ from jsonpath_ng.ext import parse
 
 
 class TerraformPlanParser:
+    """
+    Class in charge of parsing the json representation outputted by terraform plan
+    and parsing the progress outputted by terraform apply. 
+
+    Relevant Terraform documentation:
+    https://www.terraform.io/docs/internals/json-format.html#change-representation
+    """
+
     @staticmethod
     def get_resources_changes(plan):
         """
@@ -34,8 +42,8 @@ class TerraformPlanParser:
     @staticmethod
     def get_done_changes(initial_plan, terraform_apply_output: str):
         """ 
-        Computes the difference between an initial Terraform plan and a current plan and determines
-        which resource changes are "done", meaning they have been applied by terraform. 
+        Computes the difference between an initial Terraform plan and the output from terraform apply and determines
+        which resource changes are "queued", "running" or "done". 
 
         Note:
         When the initial change action is ["read"] for a resource, Terraform removes the resource change from
@@ -43,12 +51,12 @@ class TerraformPlanParser:
 
         :param initial_plan: The initial Terraform plan.
         :param terraform_apply_output: The output of terraform apply or terraform destroy.
-        :return: The resource changes, with a "done" boolean attribute, for instance:
+        :return: The resource changes, with a "progress" attribute (either "queued", "running" or "done"), for instance:
         [
             {
                 "address": "module.openstack.openstack_networking_floatingip_v2.fip[0]",
                 "type": "openstack_networking_floatingip_v2",
-                "change": {"actions": ["create"], "done": True},
+                "change": {"actions": ["create"], "progress": "queued"},
             },
             ...
         ]
@@ -57,41 +65,65 @@ class TerraformPlanParser:
         for done_resource_change in done_resources_changes:
             resource_address = done_resource_change["address"]
 
-            creation_index = terraform_apply_output.find(
+            creation_running_index = terraform_apply_output.find(
+                f"{resource_address}: Creating..."
+            )
+            destruction_running_index = terraform_apply_output.find(
+                f"{resource_address}: Destroying..."
+            )
+            modification_running_index = terraform_apply_output.find(
+                f"{resource_address}: Modifying..."
+            )
+
+            creation_complete_index = terraform_apply_output.find(
                 f"{resource_address}: Creation complete"
             )
-            destruction_index = terraform_apply_output.find(
+            destruction_complete_index = terraform_apply_output.find(
                 f"{resource_address}: Destruction complete"
             )
-            modifications_index = terraform_apply_output.find(
+            modifications_complete_index = terraform_apply_output.find(
                 f"{resource_address}: Modifications complete"
             )
-            done = False
+            progress = "queued"
 
-            # https://www.terraform.io/docs/internals/json-format.html#change-representation
             if done_resource_change["change"]["actions"] == ["no-op"]:
-                done = True
+                progress = "done"
             elif done_resource_change["change"]["actions"] == ["create"]:
-                done = creation_index != -1
+                if creation_complete_index != -1:
+                    progress = "done"
+                elif creation_running_index != -1:
+                    progress = "running"
             elif done_resource_change["change"]["actions"] == ["read"]:
-                done = True
+                progress = "done"
             elif done_resource_change["change"]["actions"] == ["update"]:
-                done = modifications_index != -1
+                if modifications_complete_index != -1:
+                    progress = "done"
+                elif modification_running_index != -1:
+                    progress = "running"
             elif done_resource_change["change"]["actions"] == ["delete", "create"]:
-                done = (
-                    creation_index != -1
-                    and destruction_index != -1
-                    and destruction_index < creation_index
-                )
+                if (
+                    creation_complete_index != -1
+                    and destruction_complete_index != -1
+                    and destruction_complete_index < creation_complete_index
+                ):
+                    progress = "done"
+                elif destruction_running_index != -1:
+                    progress = "running"
             elif done_resource_change["change"]["actions"] == ["create", "delete"]:
-                done = (
-                    creation_index != -1
-                    and destruction_index != -1
-                    and destruction_index > creation_index
-                )
+                if (
+                    creation_complete_index != -1
+                    and destruction_complete_index != -1
+                    and destruction_complete_index > creation_complete_index
+                ):
+                    progress = "done"
+                elif creation_running_index != -1:
+                    progress = "running"
             elif done_resource_change["change"]["actions"] == ["delete"]:
-                done = destruction_index != -1
+                if destruction_complete_index != -1:
+                    progress = "done"
+                elif destruction_running_index != -1:
+                    progress = "running"
 
-            done_resource_change["change"]["done"] = done
+            done_resource_change["change"]["progress"] = progress
         return done_resources_changes
 
