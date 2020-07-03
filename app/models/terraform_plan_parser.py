@@ -65,63 +65,59 @@ class TerraformPlanParser:
         for done_resource_change in done_resources_changes:
             resource_address = done_resource_change["address"]
 
-            creation_running_index = terraform_apply_output.find(
-                f"{resource_address}: Creating..."
-            )
-            destruction_running_index = terraform_apply_output.find(
-                f"{resource_address}: Destroying..."
-            )
-            modification_running_index = terraform_apply_output.find(
-                f"{resource_address}: Modifying..."
-            )
+            search_queries = {
+                "creation_running": f"{resource_address}: Creating...",
+                "destruction_running": f"{resource_address}: Destroying...",
+                "modification_running": f"{resource_address}: Modifying...",
+                "creation_complete": f"{resource_address}: Creation complete",
+                "destruction_complete": f"{resource_address}: Destruction complete",
+                "modification_complete": f"{resource_address}: Modifications complete",
+            }
+            search_results = {
+                query_name: terraform_apply_output.find(query_text)
+                for (query_name, query_text) in search_queries.items()
+            }
 
-            creation_complete_index = terraform_apply_output.find(
-                f"{resource_address}: Creation complete"
-            )
-            destruction_complete_index = terraform_apply_output.find(
-                f"{resource_address}: Destruction complete"
-            )
-            modifications_complete_index = terraform_apply_output.find(
-                f"{resource_address}: Modifications complete"
-            )
             progress = "queued"
 
             if done_resource_change["change"]["actions"] == ["no-op"]:
                 progress = "done"
             elif done_resource_change["change"]["actions"] == ["create"]:
-                if creation_complete_index != -1:
+                if search_results["creation_complete"] != -1:
                     progress = "done"
-                elif creation_running_index != -1:
+                elif search_results["creation_running"] != -1:
                     progress = "running"
             elif done_resource_change["change"]["actions"] == ["read"]:
                 progress = "done"
             elif done_resource_change["change"]["actions"] == ["update"]:
-                if modifications_complete_index != -1:
+                if search_results["modifications_complete"] != -1:
                     progress = "done"
-                elif modification_running_index != -1:
+                elif search_results["modification_running"] != -1:
                     progress = "running"
             elif done_resource_change["change"]["actions"] == ["delete", "create"]:
                 if (
-                    creation_complete_index != -1
-                    and destruction_complete_index != -1
-                    and destruction_complete_index < creation_complete_index
+                    search_results["creation_complete"] != -1
+                    and search_results["destruction_complete"] != -1
+                    and search_results["destruction_complete"]
+                    < search_results["creation_complete"]
                 ):
                     progress = "done"
-                elif destruction_running_index != -1:
+                elif search_results["destruction_running"] != -1:
                     progress = "running"
             elif done_resource_change["change"]["actions"] == ["create", "delete"]:
                 if (
-                    creation_complete_index != -1
-                    and destruction_complete_index != -1
-                    and destruction_complete_index > creation_complete_index
+                    search_results["creation_complete"] != -1
+                    and search_results["destruction_complete"] != -1
+                    and search_results["destruction_complete"]
+                    > search_results["creation_complete"]
                 ):
                     progress = "done"
-                elif creation_running_index != -1:
+                elif search_results["creation_running"] != -1:
                     progress = "running"
             elif done_resource_change["change"]["actions"] == ["delete"]:
-                if destruction_complete_index != -1:
+                if search_results["destruction_complete"] != -1:
                     progress = "done"
-                elif destruction_running_index != -1:
+                elif search_results["destruction_running"] != -1:
                     progress = "running"
 
             done_resource_change["change"]["progress"] = progress
