@@ -164,7 +164,7 @@
                 <v-list-item>
                   <v-text-field
                     v-model="magicCastle.guest_passwd"
-                    label="Guest password (optional)"
+                    label="Guest password"
                     :rules="[passwordLengthRule]"
                   />
                 </v-list-item>
@@ -266,6 +266,7 @@
 
 <script>
 import { cloneDeep } from "lodash";
+import { generatePassword } from "@/models/utils";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
@@ -378,7 +379,6 @@ export default {
         (typeof value === "number" && value >= 0) ||
         "Must be a positive number",
       passwordLengthRule: value =>
-        value.length === 0 ||
         value.length >= MINIMUM_PASSWORD_LENGTH ||
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`
     };
@@ -393,6 +393,7 @@ export default {
       this.startStatusPolling();
     } else {
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
+      this.magicCastle.guest_passwd = generatePassword();
       await this.loadAvailableResources();
       if (this.possibleResources.os_floating_ips.length === 0) {
         this.showError("There is no floating IP available right now.");
