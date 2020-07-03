@@ -30,8 +30,18 @@
           <v-list-item-subtitle>{{resource.address}}</v-list-item-subtitle>
         </v-list-item-content>
         <v-list-item-action v-if="showProgress">
-          <v-icon color="green" v-if="resource.change.done === true">mdi-check</v-icon>
-          <v-icon color="grey" v-else>mdi-cloud-upload</v-icon>
+          <template v-if="resource.change.progress === 'done'">
+            <v-icon color="green">mdi-check</v-icon>
+            <div class="green--text mt-1">done</div>
+          </template>
+          <template v-else-if="resource.change.progress === 'running'">
+            <v-progress-circular color="blue" indeterminate width="2" size="20" />
+            <div class="blue--text mt-1">running</div>
+          </template>
+          <template v-else-if="resource.change.progress === 'queued'">
+            <v-icon color="grey">mdi-cloud-upload</v-icon>
+            <div class="grey--text mt-1">queued</div>
+          </template>
         </v-list-item-action>
       </v-list-item>
     </v-list>
@@ -51,11 +61,46 @@ export default {
       default: false
     }
   },
+  watch: {
+    relevantResourcesChanges(relevantResourcesChanges) {
+      /**
+       * Computes the percentage (from  0 to 100) of resource changes
+       * labelled as "done" or "running" (counts for half a resource).
+       * The result is emitted to be consumed by other components.
+       */
+      const total =
+        relevantResourcesChanges.length === 0
+          ? 1
+          : relevantResourcesChanges.length;
+      const doneResourceChanges = relevantResourcesChanges.filter(
+        resource => resource.change.progress === "done"
+      ).length;
+      const runningResourceChanges = relevantResourcesChanges.filter(
+        resource => resource.change.progress === "running"
+      ).length;
+      this.$emit(
+        "updateProgress",
+        (100 * (doneResourceChanges + 0.5 * runningResourceChanges)) / total
+      );
+    }
+  },
   computed: {
     relevantResourcesChanges() {
-      return this.resourcesChanges.filter(
-        resource => !isEqual(resource.change.actions, ["no-op"])
-      );
+      /**
+       * Resource changes are sorted and displayed in the following order:
+       * "done", "running", "queued".
+       * "no-op" resource changes are not displayed.
+       */
+      let resourceChangesComparator = (firstResource, secondResource) => {
+        const progressOrder = { done: 0, running: 1, queued: 2 };
+        return (
+          progressOrder[firstResource.change.progress] -
+          progressOrder[secondResource.change.progress]
+        );
+      };
+      return this.resourcesChanges
+        .filter(resource => !isEqual(resource.change.actions, ["no-op"]))
+        .sort(resourceChangesComparator);
     }
   },
   methods: {

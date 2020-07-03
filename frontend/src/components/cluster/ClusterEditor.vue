@@ -2,6 +2,9 @@
   <div>
     <v-container>
       <v-card max-width="600" class="mx-auto" :loading="loading">
+        <template #progress>
+          <v-progress-linear :indeterminate="progress === 0" :value="progress" />
+        </template>
         <v-card-title v-if="existingCluster" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
         <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
         <v-card-text>
@@ -207,7 +210,11 @@
               v-else-if="resourcesChanges && (currentStatus == 'build_running' || currentStatus == 'destroy_running')"
             >
               <v-divider />
-              <cluster-resources :resources-changes="resourcesChanges" show-progress />
+              <cluster-resources
+                :resources-changes="resourcesChanges"
+                @updateProgress="updateProgress"
+                show-progress
+              />
             </template>
           </v-form>
         </v-card-text>
@@ -345,6 +352,7 @@ export default {
       validForm: true,
       dirtyForm: false,
 
+      progress: 0,
       successDialog: false,
       errorDialog: false,
       clusterDestructionDialog: false,
@@ -540,6 +548,9 @@ export default {
     }
   },
   methods: {
+    updateProgress(progress) {
+      this.progress = progress;
+    },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
         return [];
