@@ -11,12 +11,12 @@ module "openstack" {
   nb_users     = {{ nb_users }}
 
   instances = {
-    {% for category, instance in instances.items() %}
-      {% if category == 'node' %}
-        {{ category }} = [ { type = "{{ instance.type }}", count = {{ instance.count }} } ]
-      {% else %}
-        {{ category }} = { type = "{{ instance.type }}", count = {{ instance.count }} }
-      {% endif %}
+    {% for category, instance in instances.items() -%}
+    {% if category == 'node' -%}
+    {{ category }} = [ { type = "{{ instance.type }}", count = {{ instance.count }} } ]
+    {% else -%}
+    {{ category }} = { type = "{{ instance.type }}", count = {{ instance.count }} }
+    {% endif -%}
     {% endfor %}
   }
 
