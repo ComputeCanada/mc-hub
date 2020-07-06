@@ -1,11 +1,6 @@
 from flask import Flask, send_file, send_from_directory
-from flask_restful import Api
-from resources.magic_castle_resource import MagicCastleResource
-from resources.magic_castle_list_resource import MagicCastleListResource
-from resources.magic_castle_status_resource import MagicCastleStatusResource
-from resources.available_resources_resource import AvailableResourcesResource
-from resources.available_resources_list_resource import AvailableResourcesListResource
-from resources.magic_castle_apply_resource import MagicCastleApplyResource
+from resources.magic_castle_api import MagicCastleAPI
+from resources.available_resources_api import AvailableResourcesApi
 from flask_cors import CORS
 
 magic_castle_status = "idle"
@@ -14,13 +9,43 @@ app = Flask(__name__)
 # Allows all origins on all routes (not safe for production)
 CORS(app)
 
-api = Api(app, prefix="/api")
-api.add_resource(MagicCastleListResource, "/magic-castle")
-api.add_resource(MagicCastleResource, "/magic-castle/<string:hostname>")
-api.add_resource(MagicCastleStatusResource, "/magic-castle/<string:hostname>/status")
-api.add_resource(MagicCastleApplyResource, "/magic-castle/<string:hostname>/apply")
-api.add_resource(AvailableResourcesListResource, "/available-resources")
-api.add_resource(AvailableResourcesResource, "/available-resources/<string:hostname>")
+magic_castle_view = MagicCastleAPI.as_view("magic-castle")
+app.add_url_rule(
+    "/api/magic-castle",
+    view_func=magic_castle_view,
+    defaults={"hostname": None},
+    methods=["HEAD", "GET", "POST"],
+)
+app.add_url_rule(
+    "/api/magic-castle/<string:hostname>",
+    view_func=magic_castle_view,
+    methods=["GET", "DELETE", "PUT"],
+)
+app.add_url_rule(
+    "/api/magic-castle/<string:hostname>/status",
+    view_func=magic_castle_view,
+    defaults={"status": True},
+    methods=["GET"],
+)
+app.add_url_rule(
+    "/api/magic-castle/<string:hostname>/apply",
+    view_func=magic_castle_view,
+    defaults={"apply": True},
+    methods=["POST"],
+)
+
+available_resources_view = AvailableResourcesApi.as_view("available_resources")
+app.add_url_rule(
+    "/api/available-resources",
+    view_func=available_resources_view,
+    defaults={"hostname": None},
+    methods=["GET"],
+)
+app.add_url_rule(
+    "/api/available-resources/<string:hostname>",
+    view_func=available_resources_view,
+    methods=["GET"],
+)
 
 
 @app.route("/css/<path:path>")
