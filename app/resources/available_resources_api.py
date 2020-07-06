@@ -1,4 +1,3 @@
-from flask_restful import Api
 from resources.api_view import ApiView
 from models.magic_castle import MagicCastle
 from exceptions.invalid_usage_exception import InvalidUsageException
