@@ -1,6 +1,6 @@
 from os import path, environ, mkdir, listdir, remove
 from os.path import isdir
-from flask import render_template
+from models.hcl_templating import render_hcl_template
 from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
@@ -28,6 +28,7 @@ MAGIC_CASTLE_RELEASE_PATH = path.join(
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 
 MAIN_TERRAFORM_FILENAME = "main.tf.json"
+HUMAN_READABLE_TERRAFORM_FILENAME = "main.tf.backup"
 STATUS_FILENAME = "status.txt"
 PLAN_TYPE_FILENAME = "plan_type.txt"
 TERRAFORM_STATE_FILENAME = "terraform.tfstate"
@@ -257,6 +258,18 @@ class MagicCastle:
             ) as main_terraform_file:
                 json.dump(
                     self.get_main_terraform_configuration(), main_terraform_file,
+                )
+
+            openstack_module_source = path.join(MAGIC_CASTLE_RELEASE_PATH, "openstack")
+            with open(
+                self.__get_cluster_path(HUMAN_READABLE_TERRAFORM_FILENAME), "w"
+            ) as cluster_config_file:
+                cluster_config_file.write(
+                    render_hcl_template(
+                        HUMAN_READABLE_TERRAFORM_FILENAME,
+                        **self.__configuration,
+                        openstack_module_source=openstack_module_source,
+                    )
                 )
 
         try:
