@@ -17,6 +17,7 @@ from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 from exceptions.plan_not_created_exception import PlanNotCreatedException
 from exceptions.state_not_found_exception import StateNotFoundException
+from copy import deepcopy
 import logging
 import re
 import json
@@ -26,6 +27,7 @@ MAGIC_CASTLE_RELEASE_PATH = path.join(
 )
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 
+MAIN_TERRAFORM_FILENAME = "main.tf.json"
 STATUS_FILENAME = "status.txt"
 PLAN_TYPE_FILENAME = "plan_type.txt"
 TERRAFORM_STATE_FILENAME = "terraform.tfstate"
@@ -250,13 +252,11 @@ class MagicCastle:
         self.__update_plan_type(PlanType.DESTROY if destroy else PlanType.BUILD)
 
         if not destroy:
-            with open(self.__get_cluster_path("main.tf"), "w") as cluster_config_file:
-                cluster_config_file.write(
-                    render_template(
-                        "main.tf",
-                        **self.__configuration,
-                        magic_castle_release_path=MAGIC_CASTLE_RELEASE_PATH,
-                    )
+            with open(
+                self.__get_cluster_path(MAIN_TERRAFORM_FILENAME), "w"
+            ) as main_terraform_file:
+                json.dump(
+                    self.get_main_terraform_configuration(), main_terraform_file,
                 )
 
         try:
@@ -302,6 +302,30 @@ class MagicCastle:
             logging.error("Could not generate plan.")
         finally:
             self.__update_status(previous_status)
+
+    def get_main_terraform_configuration(self):
+        """
+        Generates a dictionnary structure for the main terraform configuration file from the configuration
+        stored in self.__configuration.
+        
+        This dictionnary can be dumped in json format and consumed by terraform plan or terraform apply.
+        """
+        modified_configuration = deepcopy(self.__configuration)
+
+        # "node" is the only instance category that needs to be encapsulated in a list
+        modified_configuration["instances"]["node"] = [
+            modified_configuration["instances"]["node"]
+        ]
+        openstack_module_source = path.join(MAGIC_CASTLE_RELEASE_PATH, "openstack")
+        return {
+            "terraform": {"required_version": ">= 0.12.21"},
+            "module": {
+                "openstack": {
+                    "source": openstack_module_source,
+                    **modified_configuration,
+                }
+            },
+        }
 
     def apply(self):
         if self.__not_found():
