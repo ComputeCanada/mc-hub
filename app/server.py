@@ -1,5 +1,6 @@
 from flask import Flask, send_file, send_from_directory
 from resources.magic_castle_api import MagicCastleAPI
+from resources.progress_api import ProgressAPI
 from resources.available_resources_api import AvailableResourcesApi
 from flask_cors import CORS
 
@@ -9,7 +10,7 @@ app = Flask(__name__)
 # Allows all origins on all routes (not safe for production)
 CORS(app)
 
-magic_castle_view = MagicCastleAPI.as_view("magic-castle")
+magic_castle_view = MagicCastleAPI.as_view("magic_castle")
 app.add_url_rule(
     "/api/magic-castle",
     view_func=magic_castle_view,
@@ -22,16 +23,17 @@ app.add_url_rule(
     methods=["GET", "DELETE", "PUT"],
 )
 app.add_url_rule(
-    "/api/magic-castle/<string:hostname>/status",
-    view_func=magic_castle_view,
-    defaults={"status": True},
-    methods=["GET"],
-)
-app.add_url_rule(
     "/api/magic-castle/<string:hostname>/apply",
     view_func=magic_castle_view,
     defaults={"apply": True},
     methods=["POST"],
+)
+
+progress_view = ProgressAPI.as_view("progress")
+app.add_url_rule(
+    "/api/magic-castle/<string:hostname>/status",
+    view_func=progress_view,
+    methods=["GET"],
 )
 
 available_resources_view = AvailableResourcesApi.as_view("available_resources")

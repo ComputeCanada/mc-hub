@@ -6,26 +6,13 @@ from models.cluster_status_code import ClusterStatusCode
 
 
 class MagicCastleAPI(ApiView):
-    def get(self, hostname, status=False):
+    def get(self, hostname):
         if hostname:
-            magic_castle = MagicCastle(hostname)
-            if status:
-                status = magic_castle.get_status()
-                if status == ClusterStatusCode.NOT_FOUND:
-                    return {
-                        "status": status.value,
-                    }
-                else:
-                    progress = magic_castle.get_progress()
-                    if progress is None:
-                        return {"status": status.value}
-                    else:
-                        return {"status": status.value, "progress": progress}
-            else:
-                try:
-                    return magic_castle.get_state()
-                except InvalidUsageException as e:
-                    return e.get_response()
+            try:
+                magic_castle = MagicCastle(hostname)
+                return magic_castle.get_state()
+            except InvalidUsageException as e:
+                return e.get_response()
         else:
             return [
                 {
