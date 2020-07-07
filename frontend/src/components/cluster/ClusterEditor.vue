@@ -538,7 +538,7 @@ export default {
       } else {
         this.$disableUnloadConfirmation();
       }
-      }
+    }
   },
   methods: {
     updateProgress(progress) {
@@ -572,16 +572,19 @@ export default {
     },
     startStatusPolling() {
       let fetchStatus = async () => {
+        const statusAlreadyInitialized = this.currentStatus !== null;
+
         const { status, progress } = (
           await MagicCastleRepository.getStatus(this.hostname)
         ).data;
-        const statusChanged = this.currentStatus !== status;
-        if (this.currentStatus && statusChanged) {
-          this.showStatusDialog(status);
-        }
+        const statusChanged = status !== this.currentStatus; 
         this.currentStatus = status;
         this.resourcesChanges = progress || [];
+
         if (statusChanged) {
+          if (statusAlreadyInitialized) {
+            this.showStatusDialog(this.currentStatus);
+          }
           const clusterIsBusy = [
             ClusterStatusCode.PLAN_RUNNING,
             ClusterStatusCode.DESTROY_RUNNING,
@@ -670,12 +673,12 @@ export default {
       }
     },
     async planModification() {
-      let planCreator = () =>
+      let planCreator = async () =>
         MagicCastleRepository.update(this.hostname, this.magicCastle);
       await this.showPlanConfirmationDialog({ planCreator });
     },
     async planDestruction() {
-      let planCreator = () => MagicCastleRepository.delete(this.hostname);
+      let planCreator = async () => MagicCastleRepository.delete(this.hostname);
       await this.showPlanConfirmationDialog({ planCreator, destroy: true });
     },
     async applyCluster() {
