@@ -1,5 +1,6 @@
 from marshmallow import Schema, fields, validate
 from models.constants import INSTANCE_CATEGORIES
+import re
 
 
 class StorageSchema(Schema):
@@ -9,8 +10,12 @@ class StorageSchema(Schema):
     scratch_size = fields.Int(required=True)
 
 
+def validate_cluster_name(cluster_name):
+    return re.search(r"^[a-z][a-z0-9]*$", cluster_name) is not None
+
+
 class MagicCastleSchema(Schema):
-    cluster_name = fields.Str(required=True)
+    cluster_name = fields.Str(required=True, validate=validate_cluster_name)
     domain = fields.Str(required=True)
     image = fields.Str(required=True)
     nb_users = fields.Int(required=True)
