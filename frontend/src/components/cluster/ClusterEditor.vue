@@ -29,7 +29,7 @@
                 </div>
               </v-list-item>
             </v-list>
-            <template v-if="magicCastle !== null">
+            <template v-if="magicCastle !== null && !applyRunning">
               <v-list class="pt-0">
                 <v-list-item>
                   <v-text-field
@@ -206,9 +206,7 @@
                 </template>
               </div>
             </template>
-            <template
-              v-else-if="resourcesChanges && (currentStatus == 'build_running' || currentStatus == 'destroy_running')"
-            >
+            <template v-else-if="resourcesChanges && applyRunning">
               <v-divider />
               <cluster-resources
                 :resources-changes="resourcesChanges"
@@ -420,6 +418,12 @@ export default {
         this.existingCluster && (this.currentStatus === null || clusterIsBusy);
       return this.possibleResources === null || existingClusterIsLoading;
     },
+    applyRunning() {
+      return (
+        this.currentStatus == "build_running" ||
+        this.currentStatus == "destroy_running"
+      );
+    },
     clusterName() {
       return this.hostname.split(".")[0];
     },
@@ -577,7 +581,7 @@ export default {
         const { status, progress } = (
           await MagicCastleRepository.getStatus(this.hostname)
         ).data;
-        const statusChanged = status !== this.currentStatus; 
+        const statusChanged = status !== this.currentStatus;
         this.currentStatus = status;
         this.resourcesChanges = progress || [];
 
