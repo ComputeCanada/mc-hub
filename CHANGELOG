@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added the list of existing clusters
 - Added a progress display for all cluster creation, modification and destruction
-- Added a confirmation box when destroying a cluster
+- Added a confirmation box of terraform plan before creating, modifying or destroying a cluster 
 - Added a confirmation box when exiting the page with unsaved modifications
 - Added cluster name validation
 - Added a pie chart for the instances count quota
@@ -19,6 +19,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Dockerfile can now produce two images: one for production and one for development
 - Domain name modification disabled on existing clusters
 - SSH public key can now be pasted as text or uploaded through a file
+- Now generating a main.tf.json instead of main.tf
+- Backend API now uses Method Views instead of Flask Restful
 
 ### Removed
 - start.sh script
+
+### Security
+- Added string sanitization to main.tf.json
