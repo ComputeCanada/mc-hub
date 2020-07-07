@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="value" :max-width="maxWidth">
+  <v-dialog :value="value" @input="input" :max-width="maxWidth">
     <v-card>
       <v-card-title>
         <v-icon v-if="alert" class="mr-2" color="red">mdi-alert</v-icon>
@@ -54,6 +54,9 @@ export default {
     },
     cancel() {
       this.$emit("input", false);
+    },
+    input(value) {
+      this.$emit("input", value);
     }
   }
 };
