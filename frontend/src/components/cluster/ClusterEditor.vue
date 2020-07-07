@@ -159,7 +159,7 @@
               <v-subheader>Networking and security</v-subheader>
               <v-list>
                 <v-list-item>
-                  <public-key-input v-model="mainPublicKey" />
+                  <public-key-input v-model="magicCastle.public_keys[0]" />
                 </v-list-item>
                 <v-list-item>
                   <v-text-field
@@ -302,7 +302,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
     project_size: 50,
     scratch_size: 50
   },
-  public_keys: [],
+  public_keys: [""],
   guest_passwd: "",
   os_floating_ips: []
 });
@@ -368,7 +368,6 @@ export default {
       quotas: null,
       resourceDetails: null,
       possibleResources: null,
-      mainPublicKey: "",
 
       clusterNameRegexRule: value =>
         value.match(/^[a-z][a-z0-9]*$/) !== null ||
@@ -539,14 +538,7 @@ export default {
       } else {
         this.$disableUnloadConfirmation();
       }
-    },
-    mainPublicKey(mainPublicKey) {
-      if (mainPublicKey.length === 0) {
-        this.magicCastle.public_keys = [];
-      } else {
-        this.magicCastle.public_keys = [mainPublicKey];
       }
-    }
   },
   methods: {
     updateProgress(progress) {
@@ -655,9 +647,6 @@ export default {
         // This happens for new clusters, which are not built yet.
         this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       } finally {
-        if (this.magicCastle.public_keys.length > 0)
-          this.mainPublicKey = this.magicCastle.public_keys[0];
-
         // Wait for magicCastle watcher to finish executing
         this.$nextTick(() => {
           this.magicCastleInitialized = true;
