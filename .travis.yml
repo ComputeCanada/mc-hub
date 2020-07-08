@@ -14,12 +14,7 @@ install:
   - docker build --tag "$IMAGE_NAME" --target production-server .
 
 script:
-  - |
-    if [ -z $TRAVIS_TAG ]; then
-      docker run --rm --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest
-    else
-      docker run --rm --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster
-    fi
+  - docker run --rm --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster
 
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
