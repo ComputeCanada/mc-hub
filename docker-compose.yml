@@ -11,4 +11,8 @@ services:
       - type: bind
         source: ./clusters_backup
         target: /home/mcu/clusters
+      - type: bind
+        source: ./clouds.yaml
+        target: /home/mcu/.config/openstack/clouds.yaml
+        read_only: true
     user: mcu

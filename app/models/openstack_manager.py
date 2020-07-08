@@ -1,10 +1,12 @@
-from os import environ
+from os import environ, path
 from models.constants import INSTANCE_CATEGORIES
 from re import search, IGNORECASE
 import openstack
 
 VALID_IMAGES = r"centos"
 AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
+OPENSTACK_CONFIG_FILENAME = "clouds.yaml"
+OPENSTACK_CONFIG_PATH = path.join(environ["HOME"], ".config", "openstack", OPENSTACK_CONFIG_FILENAME)
 
 # Magic Castle requires 10 GB on the root disk for each node.
 # Otherwise, it creates and mounts an external volume of 10 GB.
@@ -30,6 +32,7 @@ class OpenStackManager:
         pre_allocated_floating_ips=None,
     ):
         self.__connection = openstack.connect()
+        self.__project_id = self.__connection.current_project_id
 
         self.__pre_allocated_instance_count = pre_allocated_instance_count
         self.__pre_allocated_cores = pre_allocated_cores
@@ -178,7 +181,7 @@ class OpenStackManager:
             # API documentation:
             # https://docs.openstack.org/api-ref/block-storage/v3/index.html?expanded=show-quotas-for-a-project-detail#show-quotas-for-a-project
             self.__volume_quotas = self.__connection.block_storage.get(
-                f"/os-quota-sets/{environ['OS_PROJECT_ID']}?usage=true"
+                f"/os-quota-sets/{self.__project_id}?usage=true"
             ).json()["quota_set"]
         return self.__volume_quotas
 
@@ -192,7 +195,7 @@ class OpenStackManager:
             # API documentation:
             # https://docs.openstack.org/api-ref/compute/?expanded=show-a-quota-detail#show-a-quota
             self.__compute_quotas = self.__connection.compute.get(
-                f"/os-quota-sets/{environ['OS_PROJECT_ID']}/detail"
+                f"/os-quota-sets/{self.__project_id}/detail"
             ).json()["quota_set"]
         return self.__compute_quotas
 
@@ -206,6 +209,6 @@ class OpenStackManager:
             # API documentation:
             # https://docs.openstack.org/api-ref/network/v2/?expanded=show-quota-details-for-a-tenant-detail#show-quota-details-for-a-tenant
             self.__network_quotas = self.__connection.network.get(
-                f"/quotas/{environ['OS_PROJECT_ID']}/details.json"
+                f"/quotas/{self.__project_id}/details.json"
             ).json()["quota"]
         return self.__network_quotas

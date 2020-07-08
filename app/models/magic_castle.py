@@ -28,6 +28,8 @@ MAGIC_CASTLE_RELEASE_PATH = path.join(
 )
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 
+DEFAULT_CLOUD = "openstack"
+
 MAIN_TERRAFORM_FILENAME = "main.tf.json"
 STATUS_FILENAME = "status.txt"
 PLAN_TYPE_FILENAME = "plan_type.txt"
@@ -286,6 +288,8 @@ class MagicCastle:
             with open(
                 self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
             ) as output_file:
+                environment_variables = environ.copy()
+                environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
                 run(
                     [
                         "terraform",
@@ -296,6 +300,7 @@ class MagicCastle:
                         + self.__get_cluster_path(TERRAFORM_PLAN_BINARY_FILENAME),
                     ],
                     cwd=self.__get_cluster_path(),
+                    env=environment_variables,
                     stdout=output_file,
                     stderr=output_file,
                     check=True,
@@ -359,6 +364,7 @@ class MagicCastle:
                     self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "w"
                 ) as output_file:
                     environment_variables = environ.copy()
+                    environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
                     if destroy:
                         environment_variables["TF_WARN_OUTPUT_ERRORS"] = "1"
                     run(

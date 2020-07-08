@@ -115,3 +115,4 @@ class OpenStackConnectionMock:
         self.network = self.NetworkApi()
         self.image = self.ImageApi()
         self.block_storage = self.BlockStorageApi()
+        self.current_project_id = "MOCK_PROJECT_ID_f6b8437ac74893"
