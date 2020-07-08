@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      target: development-server
+    ports:
+      - 5000:5000
+      - 5678:5678
+    volumes:
+      - type: bind
+        source: .
+        target: /workspace
+      - type: bind
+        source: ./app
+        target: /home/mcu/app
+        read_only: true
+      - type: volume
+        source: vscode-extensions
+        target: /home/mcu/.vscode-server/extensions
+    user: mcu
+
+volumes:
+  vscode-extensions: 
