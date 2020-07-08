@@ -11,7 +11,7 @@ install:
   - docker build --tag "$IMAGE_NAME" --target production-server .
 
 script:
-  - docker run --rm --env-file ./env.list --publish 5000:5000 "$IMAGE_NAME" python -m pytest --build-live-cluster
+  - docker run --rm --env-file ./env.list --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster
 
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
