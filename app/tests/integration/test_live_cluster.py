@@ -1,0 +1,205 @@
+import pytest
+from server import app
+from time import time
+
+"""
+This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
+using the OpenStack environment variables provided to the container.
+
+These tests are marked as slow. To run these tests, the cli argument --build-live-cluster needs to be added.
+
+They also need to be run in the right order, otherwise they will fail.
+
+If some tests fail, you may need to manually destroy the cluster created in OpenStack.
+
+References:
+https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option
+"""
+
+HOSTNAME = "trulygreatcluster1.calculquebec.cloud"
+
+
+@pytest.fixture
+def client(mocker):
+
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        yield client
+
+
+@pytest.mark.build_live_cluster
+def test_plan_creation(client):
+    res = client.post(
+        f"/api/magic-castle",
+        json={
+            "cluster_name": "trulygreatcluster1",
+            "nb_users": 10,
+            "guest_passwd": 'A great password "57435"!',
+            "storage": {
+                "type": "nfs",
+                "home_size": 50,
+                "scratch_size": 5,
+                "project_size": 5,
+            },
+            "instances": {
+                "mgmt": {"type": "p4-6gb", "count": 1},
+                "login": {"type": "p4-6gb", "count": 1},
+                "node": {"type": "p2-3gb", "count": 1},
+            },
+            "domain": "calculquebec.cloud",
+            "public_keys": [
+                "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
+            ],
+            "image": "CentOS-7-x64-2019-07",
+            "os_floating_ips": ["Automatic allocation"],
+        },
+    )
+    assert res.get_json() == {}
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_apply_creation_plan(client):
+    res = client.post(f"/api/magic-castle/{HOSTNAME}/apply")
+    assert res.get_json() == {}
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_creation_running(client):
+    res = client.get(f"/api/magic-castle/{HOSTNAME}/status")
+    assert res.get_json()["status"] == "build_running"
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_create_success(client):
+    max_timeout_seconds = 360  # 6 minutes.
+    start_time = time()
+    status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    while status == "build_running" and time() - start_time <= max_timeout_seconds:
+        status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    assert status == "build_success"
+    state = client.get(f"/api/magic-castle/{HOSTNAME}").get_json()
+
+    # os_floating_ips key is omitted, as we don't know the value yet
+    assert {
+        "cluster_name": "trulygreatcluster1",
+        "nb_users": 10,
+        "guest_passwd": 'A great password "57435"!',
+        "storage": {
+            "type": "nfs",
+            "home_size": 50,
+            "scratch_size": 5,
+            "project_size": 5,
+        },
+        "instances": {
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "p2-3gb", "count": 1},
+        },
+        "domain": "calculquebec.cloud",
+        "public_keys": [
+            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
+        ],
+        "image": "CentOS-7-x64-2019-07",
+    }.items() < state.items()
+
+
+@pytest.mark.build_live_cluster
+def test_plan_modify(client):
+    """
+    Modifying the node instance type and count.
+    """
+    res = client.put(
+        f"/api/magic-castle/{HOSTNAME}",
+        json={
+            "cluster_name": "trulygreatcluster1",
+            "nb_users": 10,
+            "guest_passwd": 'A great password "57435"!',
+            "storage": {
+                "type": "nfs",
+                "home_size": 50,
+                "scratch_size": 5,
+                "project_size": 5,
+            },
+            "instances": {
+                "mgmt": {"type": "p4-6gb", "count": 1},
+                "login": {"type": "p4-6gb", "count": 1},
+                "node": {"type": "c2-7.5gb-31", "count": 3},
+            },
+            "domain": "calculquebec.cloud",
+            "public_keys": [
+                "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
+            ],
+            "image": "CentOS-7-x64-2019-07",
+            "os_floating_ips": [],
+        },
+    )
+    assert res.get_json() == {}
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_apply_modification_plan(client):
+    res = client.post(f"/api/magic-castle/{HOSTNAME}/apply")
+    assert res.get_json() == {}
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_modify_success(client):
+    max_timeout_seconds = 360  # 6 minutes.
+    start_time = time()
+    status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    while status == "build_running" and time() - start_time <= max_timeout_seconds:
+        status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    assert status == "build_success"
+    state = client.get(f"/api/magic-castle/{HOSTNAME}").get_json()
+
+    # os_floating_ips key is omitted, as we don't know the value yet
+    assert {
+        "cluster_name": "trulygreatcluster1",
+        "nb_users": 10,
+        "guest_passwd": 'A great password "57435"!',
+        "storage": {
+            "type": "nfs",
+            "home_size": 50,
+            "scratch_size": 5,
+            "project_size": 5,
+        },
+        "instances": {
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "c2-7.5gb-31", "count": 3},
+        },
+        "domain": "calculquebec.cloud",
+        "public_keys": [
+            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
+        ],
+        "image": "CentOS-7-x64-2019-07",
+    }.items() < state.items()
+
+
+@pytest.mark.build_live_cluster
+def test_plan_destroy(client):
+    res = client.delete(f"/api/magic-castle/{HOSTNAME}")
+    assert res.get_json() == {}
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_apply_destruction_plan(client):
+    res = client.post(f"/api/magic-castle/{HOSTNAME}/apply")
+    assert res.get_json() == {}
+    assert res.status_code == 200
+
+
+@pytest.mark.build_live_cluster
+def test_destroy_success(client):
+    max_timeout_seconds = 180  # 3 minutes.
+    start_time = time()
+    status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    while status == "destroy_running" and time() - start_time <= max_timeout_seconds:
+        status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    assert status == "not_found"
