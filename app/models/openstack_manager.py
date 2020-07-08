@@ -47,6 +47,12 @@ class OpenStackManager:
 
         self.__available_flavors = None
 
+    @staticmethod
+    def test_connection():
+        if not path.isfile(OPENSTACK_CONFIG_PATH):
+            raise FileNotFoundError(f"The {OPENSTACK_CONFIG_FILENAME} was not found.")
+        openstack.connect()
+
     def get_available_resources(self):
         return {
             "quotas": self.__get_quotas(),

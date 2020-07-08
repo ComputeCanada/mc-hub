@@ -3,8 +3,9 @@ from resources.magic_castle_api import MagicCastleAPI
 from resources.progress_api import ProgressAPI
 from resources.available_resources_api import AvailableResourcesApi
 from flask_cors import CORS
+from models.openstack_manager import OpenStackManager
 
-magic_castle_status = "idle"
+OpenStackManager.test_connection()
 
 app = Flask(__name__)
 # Allows all origins on all routes (not safe for production)
