@@ -4,6 +4,8 @@
 
 Web interface to launch Magic Castles without knowing anything about Terraform.
 
+![Magic Castle UI demo](./demo/demo.gif)
+
 ## Requirements
 
 - Docker
