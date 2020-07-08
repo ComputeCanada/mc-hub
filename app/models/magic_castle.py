@@ -376,7 +376,8 @@ class MagicCastle:
                         env=environment_variables,
                     )
                 if destroy:
-                    rmtree(self.__get_cluster_path())
+                    # Removes the content of the cluster's folder, even if not empty
+                    rmtree(self.__get_cluster_path(), ignore_errors=True)
                 else:
                     self.__update_status(ClusterStatusCode.BUILD_SUCCESS)
             except CalledProcessError:
