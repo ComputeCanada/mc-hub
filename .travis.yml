@@ -16,9 +16,9 @@ install:
 script:
   - |
     if [ -z $TRAVIS_TAG ]; then
-      docker run --rm --env-file ./env.list --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest
+      docker run --rm --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest
     else
-      docker run --rm --env-file ./env.list --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster
+      docker run --rm --publish 5000:5000 -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster
     fi
 
 before_deploy:
