@@ -1,6 +1,7 @@
 import pytest
 from server import app
-from time import time
+from time import time, sleep
+from os import path
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
@@ -203,3 +204,9 @@ def test_destroy_success(client):
     while status == "destroy_running" and time() - start_time <= max_timeout_seconds:
         status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
     assert status == "not_found"
+
+
+@pytest.mark.build_live_cluster
+def test_cluster_folder_deleted():
+    sleep(1)  # Status is "not_found" before the cluster folder is deleted
+    assert not path.exists(f"/home/mcu/clusters/{HOSTNAME}")
