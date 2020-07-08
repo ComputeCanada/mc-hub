@@ -17,6 +17,7 @@ from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 from exceptions.plan_not_created_exception import PlanNotCreatedException
 from exceptions.state_not_found_exception import StateNotFoundException
+from models.filelock import FileLock
 from copy import deepcopy
 import logging
 import re
@@ -106,7 +107,9 @@ class MagicCastle:
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
             try:
-                with open(self.__get_cluster_path(STATUS_FILENAME), "r") as status_file:
+                with FileLock(
+                    self.__get_cluster_path(STATUS_FILENAME), "r"
+                ) as status_file:
                     self.__status = ClusterStatusCode(status_file.read())
             except FileNotFoundError:
                 self.__status = ClusterStatusCode.NOT_FOUND
@@ -117,13 +120,13 @@ class MagicCastle:
             f"Updating status for {self.get_cluster_name()} with {status.value}"
         )
         self.__status = status
-        with open(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
+        with FileLock(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
             status_file.write(status.value)
 
     def get_plan_type(self) -> PlanType:
         if self.__plan_type is None:
             try:
-                with open(
+                with FileLock(
                     self.__get_cluster_path(PLAN_TYPE_FILENAME), "r"
                 ) as plan_type_file:
                     self.__plan_type = PlanType(plan_type_file.read())
@@ -133,7 +136,9 @@ class MagicCastle:
 
     def __update_plan_type(self, plan_type: PlanType):
         self.__plan_type = plan_type
-        with open(self.__get_cluster_path(PLAN_TYPE_FILENAME), "w") as plan_type_file:
+        with FileLock(
+            self.__get_cluster_path(PLAN_TYPE_FILENAME), "w"
+        ) as plan_type_file:
             plan_type_file.write(plan_type.value)
 
     def get_progress(self):
@@ -348,8 +353,8 @@ class MagicCastle:
         )
 
         def terraform_apply():
+            destroy = self.get_plan_type() == PlanType.DESTROY
             try:
-                destroy = self.get_plan_type() == PlanType.DESTROY
                 with open(
                     self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "w"
                 ) as output_file:
