@@ -105,12 +105,11 @@ class MagicCastle:
 
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
-            status_file_path = self.__get_cluster_path(STATUS_FILENAME)
-            if not status_file_path or not path.exists(status_file_path):
+            try:
+                with open(self.__get_cluster_path(STATUS_FILENAME), "r") as status_file:
+                    self.__status = ClusterStatusCode(status_file.read())
+            except FileNotFoundError:
                 self.__status = ClusterStatusCode.NOT_FOUND
-                return self.__status
-            with open(status_file_path, "r") as status_file:
-                self.__status = ClusterStatusCode(status_file.read())
         return self.__status
 
     def __update_status(self, status: ClusterStatusCode):
@@ -123,10 +122,13 @@ class MagicCastle:
 
     def get_plan_type(self) -> PlanType:
         if self.__plan_type is None:
-            with open(
-                self.__get_cluster_path(PLAN_TYPE_FILENAME), "r"
-            ) as plan_type_file:
-                self.__plan_type = PlanType(plan_type_file.read())
+            try:
+                with open(
+                    self.__get_cluster_path(PLAN_TYPE_FILENAME), "r"
+                ) as plan_type_file:
+                    self.__plan_type = PlanType(plan_type_file.read())
+            except FileNotFoundError:
+                self.__plan_type = PlanType.NONE
         return self.__plan_type
 
     def __update_plan_type(self, plan_type: PlanType):
@@ -213,10 +215,14 @@ class MagicCastle:
         return self.get_status() != ClusterStatusCode.NOT_FOUND
 
     def __get_cluster_path(self, sub_path=""):
+        """
+        Returns the absolute path of the current cluster folder.
+        If sub_path is specified, it is appended to the cluster path.
+        """
         if self.get_hostname():
             return path.join(CLUSTERS_PATH, self.get_hostname(), sub_path)
         else:
-            return None
+            raise FileNotFoundError
 
     def plan_creation(self):
         if self.__found():
