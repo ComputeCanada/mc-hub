@@ -7,6 +7,9 @@ env:
   global:
     - IMAGE_NAME=fredericfc/magic_castle-ui
 
+before_install:
+  - openssl aes-256-cbc -K $encrypted_8da6df925ffa_key -iv $encrypted_8da6df925ffa_iv -in clouds.yaml.enc -out clouds.yaml -d
+
 install:
   - docker build --tag "$IMAGE_NAME" --target production-server .
 
