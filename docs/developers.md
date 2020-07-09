@@ -1,6 +1,6 @@
 # Developer Documentation
 
-In order to contribute or modify the code of Magic Castle UI, it is highly recommended to use Visual Studio Code, as it allows debugging and running tests easily inside the container environment. The _developer documentation_ will assume you are using Visual Studio Code.
+In order to contribute or modify the code of Magic Castle UI, it is recommended to use Visual Studio Code, as it allows debugging and running tests easily inside the container environment. The _developer documentation_ will assume you are using Visual Studio Code.
 
 ## Requirements
 
@@ -9,38 +9,22 @@ In order to contribute or modify the code of Magic Castle UI, it is highly recom
 - Bash interpreter
 - Visual Studio Code
 
-## Initial setup
-
-1. Clone this repository.
-   ```
-   git clone https://github.com/ComputeCanada/magic_castle-ui.git
-   cd magic-castle-ui
-   ```
-2. Source your project openrc file. This will initialize the environment variables required to connect to the OpenStack API.
-   ```
-   source _project_-openrc.sh
-   ```
-3. Write the OpenStack environment variables to `openstack.env`, at the root of the project.
-   ```
-   printenv | grep OS_ > openstack.env
-   ```
-4. Create a directory named `clusters_backup` and give it the proper owner and group.
-   ```
-   mkdir clusters_backup
-   sudo chmod -R 777 clusters_backup
-   ```
-
 ## Running and debugging the backend code
 
 This is only available on Visual Studio Code right now.
 
-1. Install the [Remote Development extension pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack).
+1. Clone this repository.
+   ```shell script
+   git clone https://github.com/ComputeCanada/magic_castle-ui.git
+   ```
 
-2. Start VS Code and run `Remote-Containers: Open Folder in Container` command from the Command Pallette (`F1`).
+3. Install the [Remote Development extension pack](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack).
+
+4. Start VS Code and run `Remote-Containers: Open Folder in Container` command from the Command Pallette (`F1`). Then, select the repository folder.
 
    This will perform the following commands for you :
    ```
-   docker-compose build
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
    docker-compose up
    ```
 
@@ -49,13 +33,13 @@ This is only available on Visual Studio Code right now.
    > 2. A bind mount between the project's `clusters_backup` directory and the container's `/home/mcu/clusters` directory to ensure that Terraform state files and logs are backed up.
    > 3. A bind mount between the project root directory and the container's `/workspace` directory. This bind mount is necessary to have remote workspaces in VS Code.
 
-3. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension in the Dev Container.
+5. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension in the Dev Container.
 
-4. Go to the `Run` icon in the left pane of VS Code and run the Python Attach launch configuration.
+6. Go to the `Run` icon in the left pane of VS Code and run the Python Attach launch configuration.
    
    This will attach a debugging to the Flask server and make it reachable on `localhost:5000`.
 
-   At this point, you can add your own breakpoints in the backend code and run tests.
+   At this point, you can add your own breakpoints in the backend code.
 
 ## Modifying the backend code
 
@@ -83,13 +67,16 @@ If there was a problem when destroying a cluster using the UI or you want to acc
 this section if for you.
 
 #### Option 1 (recommended)
-Start a shell within your running container.
-```shell script
-cd ~/clusters/<CLUSTER NAME>.<DOMAIN>
-terraform show
-```
+
+1. Start a shell within your running container.
+2. Go to the directory of the target cluster.
+   ```shell script
+   cd ~/clusters/<CLUSTER NAME>.<DOMAIN>
+   ```
+3. Then, you can run any terraform command.
 
 #### Option 2
+
 Open the terminal on your host machine and access the `clusters_backup` directory.
 1. Navigate to `<PROJECT DIR>/clusters_backup/<CLUSTER_NAME>.<DOMAIN>`.
 2. Delete the folder named `.terraform`.
