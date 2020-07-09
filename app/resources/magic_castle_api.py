@@ -10,7 +10,7 @@ class MagicCastleAPI(ApiView):
         if hostname:
             try:
                 magic_castle = MagicCastle(hostname)
-                return magic_castle.get_state()
+                return magic_castle.dump_configuration()
             except InvalidUsageException as e:
                 return e.get_response()
         else:

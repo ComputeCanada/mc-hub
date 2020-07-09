@@ -23,6 +23,9 @@ def teardown_mock_clusters(cluster_names):
 @pytest.fixture(autouse=True)
 def mock_clusters_path(mocker):
     mocker.patch("models.magic_castle.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
+    mocker.patch(
+        "models.magic_castle_configuration.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH
+    )
 
 
 @pytest.fixture(autouse=True)

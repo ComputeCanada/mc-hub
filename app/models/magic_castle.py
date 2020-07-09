@@ -1,13 +1,12 @@
 from os import path, environ, mkdir, listdir, remove
 from os.path import isdir
-from flask import render_template
 from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
 from marshmallow import ValidationError
+from models.magic_castle_configuration import MagicCastleConfiguration
 from models.cluster_status_code import ClusterStatusCode
 from models.plan_type import PlanType
-from models.magic_castle_schema import MagicCastleSchema
 from models.terraform_state_parser import TerraformStateParser
 from models.terraform_plan_parser import TerraformPlanParser
 from models.openstack_manager import OpenStackManager
@@ -16,24 +15,17 @@ from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 from exceptions.plan_not_created_exception import PlanNotCreatedException
-from exceptions.state_not_found_exception import StateNotFoundException
 from models.filelock import FileLock
-from copy import deepcopy
+from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
 import logging
 import re
 import json
 
-MAGIC_CASTLE_RELEASE_PATH = path.join(
-    environ["HOME"], "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
-)
-CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 
 DEFAULT_CLOUD = "openstack"
 
-MAIN_TERRAFORM_FILENAME = "main.tf.json"
 STATUS_FILENAME = "status.txt"
 PLAN_TYPE_FILENAME = "plan_type.txt"
-TERRAFORM_STATE_FILENAME = "terraform.tfstate"
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
 
@@ -50,13 +42,10 @@ class MagicCastle:
     """
 
     def __init__(self, hostname=None):
-        self.__configuration = {}
+        self.__hostname = hostname
+        self.__configuration = None
         self.__status = None
         self.__plan_type = None
-        if self.validate_hostname(hostname):
-            [cluster_name, domain] = hostname.split(".", 1)
-            self.__configuration["cluster_name"] = cluster_name
-            self.__configuration["domain"] = domain
 
     @classmethod
     def all(cls):
@@ -77,34 +66,34 @@ class MagicCastle:
         )
 
     def get_hostname(self):
-        cluster_name = self.__configuration.get("cluster_name")
-        domain = self.__configuration.get("domain")
-        if cluster_name and domain:
-            return f"{cluster_name}.{domain}"
-        else:
-            return None
+        return self.__hostname
 
     def get_cluster_name(self):
-        return self.__configuration.get("cluster_name")
+        return self.__hostname.split(".", 1)[0]
 
     def get_domain(self):
-        return self.__configuration.get("domain")
+        return self.__hostname.split(".", 1)[1]
 
     def load_configuration(self, configuration: dict):
         try:
-            self.__configuration = MagicCastleSchema().load(configuration)
+            self.__configuration = MagicCastleConfiguration.get_configuration_by_dict(
+                configuration
+            )
+            self.__hostname = self.__configuration.get_hostname()
         except ValidationError:
             raise InvalidUsageException(
                 "The magic castle configuration could not be parsed"
             )
 
-        # When modifying a cluster, the existing floating ip must be excluded
-        # from the configuration, as it does not look available to Open Stack.
-        available_floating_ips = set(OpenStackManager().get_available_floating_ips())
-        if not set(self.__configuration["os_floating_ips"]).issubset(
-            available_floating_ips
-        ):
-            self.__configuration["os_floating_ips"] = []
+    def load_configuration_from_main_tf_json_file(self):
+        self.__configuration = MagicCastleConfiguration.get_from_main_tf_json_file(
+            self.get_hostname()
+        )
+
+    def load_configuration_from_state_file(self):
+        self.__configuration = MagicCastleConfiguration.get_from_state_file(
+            self.get_hostname()
+        )
 
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
@@ -118,9 +107,7 @@ class MagicCastle:
         return self.__status
 
     def __update_status(self, status: ClusterStatusCode):
-        logging.debug(
-            f"Updating status for {self.get_cluster_name()} with {status.value}"
-        )
+        logging.debug(f"Updating status for {self.get_hostname()} with {status.value}")
         self.__status = status
         with FileLock(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
             status_file.write(status.value)
@@ -160,11 +147,22 @@ class MagicCastle:
             terraform_output = ""
         return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
-    def get_state(self):
+    def dump_configuration(self):
         if self.__is_busy():
             raise BusyClusterException
         if self.__not_found():
             raise ClusterNotFoundException
+
+        if not self.__configuration:
+            try:
+                self.load_configuration_from_state_file()
+            except FileNotFoundError:
+                self.load_configuration_from_main_tf_json_file()
+        return self.__configuration.dump()
+
+    def get_available_resources(self):
+        if self.__is_busy():
+            raise BusyClusterException
 
         try:
             with open(
@@ -172,36 +170,19 @@ class MagicCastle:
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
             parser = TerraformStateParser(state)
-            return MagicCastleSchema().dump(parser.get_state_summary())
+
+            openstack_manager = OpenStackManager(
+                pre_allocated_instance_count=parser.get_instance_count(),
+                pre_allocated_ram=parser.get_ram(),
+                pre_allocated_cores=parser.get_cores(),
+                pre_allocated_volume_count=parser.get_volume_count(),
+                pre_allocated_volume_size=parser.get_volume_size(),
+                pre_allocated_floating_ips=parser.get_os_floating_ips(),
+            )
         except FileNotFoundError:
-            raise StateNotFoundException
+            openstack_manager = OpenStackManager()
 
-    def get_available_resources(self):
-        if self.__is_busy():
-            raise BusyClusterException
-
-        try:
-            if self.__found():
-                with open(
-                    self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
-                ) as terraform_state_file:
-                    state = json.load(terraform_state_file)
-                parser = TerraformStateParser(state)
-
-                openstack_manager = OpenStackManager(
-                    pre_allocated_instance_count=parser.get_instance_count(),
-                    pre_allocated_ram=parser.get_ram(),
-                    pre_allocated_cores=parser.get_cores(),
-                    pre_allocated_volume_count=parser.get_volume_count(),
-                    pre_allocated_volume_size=parser.get_volume_size(),
-                    pre_allocated_floating_ips=parser.get_os_floating_ips(),
-                )
-            else:
-                openstack_manager = OpenStackManager()
-
-            return openstack_manager.get_available_resources()
-        except FileNotFoundError:
-            raise StateNotFoundException
+        return openstack_manager.get_available_resources()
 
     def __is_busy(self):
         return self.get_status() in [
@@ -265,12 +246,7 @@ class MagicCastle:
         self.__update_plan_type(PlanType.DESTROY if destroy else PlanType.BUILD)
 
         if not destroy:
-            with open(
-                self.__get_cluster_path(MAIN_TERRAFORM_FILENAME), "w"
-            ) as main_terraform_file:
-                json.dump(
-                    self.get_main_terraform_configuration(), main_terraform_file,
-                )
+            self.__configuration.update_main_tf_json_file()
 
         try:
             run(
@@ -318,30 +294,6 @@ class MagicCastle:
             logging.error("Could not generate plan.")
         finally:
             self.__update_status(previous_status)
-
-    def get_main_terraform_configuration(self):
-        """
-        Generates a dictionnary structure for the main terraform configuration file from the configuration
-        stored in self.__configuration.
-        
-        This dictionnary can be dumped in json format and consumed by terraform plan or terraform apply.
-        """
-        modified_configuration = deepcopy(self.__configuration)
-
-        # "node" is the only instance category that needs to be encapsulated in a list
-        modified_configuration["instances"]["node"] = [
-            modified_configuration["instances"]["node"]
-        ]
-        openstack_module_source = path.join(MAGIC_CASTLE_RELEASE_PATH, "openstack")
-        return {
-            "terraform": {"required_version": ">= 0.12.21"},
-            "module": {
-                "openstack": {
-                    "source": openstack_module_source,
-                    **modified_configuration,
-                }
-            },
-        }
 
     def apply(self):
         if self.__not_found():

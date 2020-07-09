@@ -118,9 +118,9 @@ def test_get_os_floating_ips_missing_nodes(missing_nodes_state):
     assert parser.get_os_floating_ips() == ["100.101.102.103"]
 
 
-def test_get_state_summary_valid(valid_state):
+def test_get_configuration_valid(valid_state):
     parser = TerraformStateParser(valid_state)
-    assert parser.get_state_summary() == {
+    assert parser.get_configuration() == {
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -142,9 +142,9 @@ def test_get_state_summary_valid(valid_state):
     }
 
 
-def test_get_state_summary_empty(empty_state):
+def test_get_configuration_empty(empty_state):
     parser = TerraformStateParser(empty_state)
-    assert parser.get_state_summary() == {
+    assert parser.get_configuration() == {
         "cluster_name": "",
         "domain": "",
         "image": "",
@@ -166,9 +166,9 @@ def test_get_state_summary_empty(empty_state):
     }
 
 
-def test_get_state_summary_missing_nodes(missing_nodes_state):
+def test_get_configuration_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
-    assert parser.get_state_summary() == {
+    assert parser.get_configuration() == {
         "cluster_name": "missingnodes",
         "nb_users": 10,
         "guest_passwd": "password-123",

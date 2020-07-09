@@ -3,6 +3,7 @@ from models.cluster_status_code import ClusterStatusCode
 from models.plan_type import PlanType
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from tests.test_helpers import *
+from marshmallow.exceptions import ValidationError
 
 
 def test_get_all_magic_castles():
@@ -65,9 +66,9 @@ def test_get_plan_type_none():
     assert magic_castle.get_plan_type() == PlanType.NONE
 
 
-def test_get_state_valid():
+def test_dump_configuration_valid():
     magic_castle = MagicCastle("valid1.calculquebec.cloud")
-    assert magic_castle.get_state() == {
+    assert magic_castle.dump_configuration() == {
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -88,34 +89,16 @@ def test_get_state_valid():
         "os_floating_ips": ["100.101.102.103"],
     }
 
-
-def test_get_state_empty():
+def test_dump_configuration_empty():
     magic_castle = MagicCastle("empty.calculquebec.cloud")
-    assert magic_castle.get_state() == {
-        "cluster_name": "",
-        "domain": "",
-        "image": "",
-        "nb_users": 0,
-        "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
-        },
-        "storage": {
-            "type": "nfs",
-            "home_size": 0,
-            "project_size": 0,
-            "scratch_size": 0,
-        },
-        "public_keys": [],
-        "guest_passwd": "",
-        "os_floating_ips": [],
-    }
+
+    with pytest.raises(ValidationError):
+        magic_castle.dump_configuration()
 
 
-def test_get_state_missing_nodes():
+def test_dump_configuration_missing_nodes():
     magic_castle = MagicCastle("missingnodes.sub.example.com")
-    assert magic_castle.get_state() == {
+    assert magic_castle.dump_configuration() == {
         "cluster_name": "missingnodes",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -137,10 +120,10 @@ def test_get_state_missing_nodes():
     }
 
 
-def test_get_state_not_found():
+def test_dump_configuration_not_found():
     magic_castle = MagicCastle()
     with pytest.raises(ClusterNotFoundException):
-        magic_castle.get_state()
+        magic_castle.dump_configuration()
 
 
 def test_get_available_resources_valid():

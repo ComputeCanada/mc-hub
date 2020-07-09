@@ -25,13 +25,13 @@ class TerraformStateParser:
     """
     TerraformStateParser handles the parsing of the state file of a cluster, i.e. the terraform.tfstate file.
     It makes it easy to get access to the important variables in the state (intance types, guest password, ...)
-    through the get_state_summary method.
+    through the get_configuration method.
     """
 
     def __init__(self, tf_state: object):
         self.__tf_state = tf_state
 
-    def get_state_summary(self):
+    def get_configuration(self):
         return {
             "cluster_name": self.__get_cluster_name(),
             "domain": self.__get_domain(),
