@@ -62,6 +62,8 @@ COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
 ENV FLASK_APP=app/server.py
 
+# For storing clouds.yaml configuration
+RUN mkdir -p /home/mcu/.config/openstack
 
 ## DEVELOPMENT IMAGE - For debugging with vscode
 FROM base-server as development-server
