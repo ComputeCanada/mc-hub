@@ -175,7 +175,12 @@ class TerraformStateParser:
         parser = parse(
             "resources[?type=openstack_compute_keypair_v2].instances[*].attributes.public_key"
         )
-        return [match.value for match in parser.find(self.__tf_state)]
+        public_keys = [match.value for match in parser.find(self.__tf_state)]
+        if len(public_keys) > 0:
+            return public_keys
+        else:
+            # Frontend requires at least one public key, even if empty
+            return [""]
 
     @default("")
     def __get_guest_passwd(self):

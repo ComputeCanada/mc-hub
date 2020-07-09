@@ -160,7 +160,7 @@ def test_get_configuration_empty(empty_state):
             "project_size": 0,
             "scratch_size": 0,
         },
-        "public_keys": [],
+        "public_keys": [""],
         "guest_passwd": "",
         "os_floating_ips": [],
     }
