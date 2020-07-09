@@ -14,8 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added a pie chart for the instances count quota
 - Added the developer documentation
 - Added Docker Compose file for development
+- Added optional integration tests that tests the creation, modification and destruction of a live cluster
+- Added a demo gif in the README
+- Added automated OpenStack api connection testing on server startup
 
 ### Changed
+- Using clouds.yaml instead of openrc file
 - Dockerfile can now produce two images: one for production and one for development
 - Domain name modification disabled on existing clusters
 - SSH public key can now be pasted as text or uploaded through a file
