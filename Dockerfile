@@ -52,14 +52,6 @@ RUN terraform init magic_castle-openstack-${MAGIC_CASTLE_VERSION}
 ADD app/requirements.txt ./app
 RUN pip install -r app/requirements.txt --user
 
-## APPLICATION CODE
-
-## Python backend src
-ADD app /home/mcu/app
-
-## Vue Js frontend src
-COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
-
 ENV FLASK_APP=app/server.py
 
 # For storing clouds.yaml configuration
@@ -86,9 +78,24 @@ ENV FLASK_ENV=development
 # for npm serve hot reloading inside docker
 ENV CHOKIDAR_USEPOLLING=true
 
+## APPLICATION CODE
+
+## Python backend src
+ADD app /home/mcu/app
+## Vue Js frontend src
+COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
+
 CMD python -m ptvsd --host 0.0.0.0 --port 5678 --wait --multiprocess -m flask run -h 0.0.0 -p 5000
 
 ## PRODUCTION IMAGE
 FROM base-server as production-server
+
+
+## APPLICATION CODE
+
+## Python backend src
+ADD app /home/mcu/app
+## Vue Js frontend src
+COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
 CMD python app/server.py
