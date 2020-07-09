@@ -35,7 +35,7 @@ def test_plan_creation(client):
         json={
             "cluster_name": "trulygreatcluster1",
             "nb_users": 10,
-            "guest_passwd": 'A great password "57435"!',
+            "guest_passwd": '',
             "storage": {
                 "type": "nfs",
                 "home_size": 50,
@@ -87,7 +87,6 @@ def test_create_success(client):
     assert {
         "cluster_name": "trulygreatcluster1",
         "nb_users": 10,
-        "guest_passwd": 'A great password "57435"!',
         "storage": {
             "type": "nfs",
             "home_size": 50,
@@ -117,7 +116,7 @@ def test_plan_modify(client):
         json={
             "cluster_name": "trulygreatcluster1",
             "nb_users": 10,
-            "guest_passwd": 'A great password "57435"!',
+            "guest_passwd": '',
             "storage": {
                 "type": "nfs",
                 "home_size": 50,
@@ -162,7 +161,6 @@ def test_modify_success(client):
     assert {
         "cluster_name": "trulygreatcluster1",
         "nb_users": 10,
-        "guest_passwd": 'A great password "57435"!',
         "storage": {
             "type": "nfs",
             "home_size": 50,
