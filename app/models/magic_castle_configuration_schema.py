@@ -14,7 +14,7 @@ def validate_cluster_name(cluster_name):
     return re.search(r"^[a-z][a-z0-9]*$", cluster_name) is not None
 
 
-class MagicCastleSchema(Schema):
+class MagicCastleConfigurationSchema(Schema):
     cluster_name = fields.Str(required=True, validate=validate_cluster_name)
     domain = fields.Str(required=True)
     image = fields.Str(required=True)

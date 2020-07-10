@@ -1,5 +1,5 @@
 from models.openstack_manager import OpenStackManager
-from models.magic_castle_schema import MagicCastleSchema
+from models.magic_castle_configuration_schema import MagicCastleConfigurationSchema
 from models.terraform_state_parser import TerraformStateParser
 from models.constants import (
     MAGIC_CASTLE_RELEASE_PATH,
@@ -25,7 +25,7 @@ class MagicCastleConfiguration:
         """
         self.__configuration = {}
         if configuration:
-            self.__configuration = MagicCastleSchema().load(configuration)
+            self.__configuration = MagicCastleConfigurationSchema().load(configuration)
 
     @classmethod
     def get_from_dict(cls, configuration_dict):
@@ -98,7 +98,7 @@ class MagicCastleConfiguration:
         """
         Dumps the configuration dictionnary.
         """
-        return MagicCastleSchema().dump(self.__configuration)
+        return MagicCastleConfigurationSchema().dump(self.__configuration)
 
     def get_hostname(self):
         return (
