@@ -5,7 +5,7 @@ from os import path
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
-using the OpenStack environment variables provided to the container.
+using the OpenStack clouds.yaml provided to the container.
 
 These tests are marked as slow. To run these tests, the cli argument --build-live-cluster needs to be added.
 
