@@ -28,7 +28,7 @@ class MagicCastleConfiguration:
             self.__configuration = MagicCastleSchema().load(configuration)
 
     @classmethod
-    def get_configuration_by_dict(cls, configuration_dict):
+    def get_from_dict(cls, configuration_dict):
         """
         Returns a new MagicCastleConfiguration object with the configuration given as a parameter.
         """

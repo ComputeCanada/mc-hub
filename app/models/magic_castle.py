@@ -76,9 +76,7 @@ class MagicCastle:
 
     def load_configuration(self, configuration: dict):
         try:
-            self.__configuration = MagicCastleConfiguration.get_configuration_by_dict(
-                configuration
-            )
+            self.__configuration = MagicCastleConfiguration.get_from_dict(configuration)
             self.__hostname = self.__configuration.get_hostname()
         except ValidationError:
             raise InvalidUsageException(
