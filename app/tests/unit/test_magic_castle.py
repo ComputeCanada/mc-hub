@@ -2,6 +2,7 @@ from models.magic_castle import MagicCastle
 from models.cluster_status_code import ClusterStatusCode
 from models.plan_type import PlanType
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
+from exceptions.busy_cluster_exception import BusyClusterException
 from tests.test_helpers import *
 from marshmallow.exceptions import ValidationError
 
@@ -89,6 +90,7 @@ def test_dump_configuration_valid():
         "os_floating_ips": ["100.101.102.103"],
     }
 
+
 def test_dump_configuration_empty():
     magic_castle = MagicCastle("empty.calculquebec.cloud")
 
@@ -118,6 +120,12 @@ def test_dump_configuration_missing_nodes():
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
     }
+
+
+def test_dump_configuration_busy():
+    magic_castle = MagicCastle("missingfloatingips.c3.ca")
+    with pytest.raises(BusyClusterException):
+        magic_castle.dump_configuration()
 
 
 def test_dump_configuration_not_found():
