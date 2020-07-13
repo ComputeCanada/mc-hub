@@ -25,16 +25,16 @@ Before running the Magic Castle UI Docker container, you need to setup a few thi
 
 ## Running the pre-built Docker image
 
-1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI.
+1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port.
    ```shell script
-   docker run --rm -p 5000:5000 \
+   docker run --rm -p 80:5000 \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
      fredericfc/magic_castle-ui:latest
    ```
    > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see the section on _Cluster storage & backup_.
 
-2. Navigate to `http://localhost:5000` and start building clusters!
+2. Navigate to `http://localhost:80` and start building clusters!
 3. Kill the container when you are done.
    ```
    docker kill <CONTAINER ID>
