@@ -50,9 +50,13 @@ without a rebuild, because of the bind mount created previously.
 
 By default, modifications to the frontend code do require a rebuild.
 
-However, you can easily run a node development server inside the development container:
+However, you can easily run a node development server inside the development container. First, you will need to explicitly specify the `VUE_APP_API_URL` environment variable, because the development server runs on a different port (8080) from the Flask server. Here is an example with the Flask server running on port 5000.
 ````shell script
 cd /workspace/frontend
+echo "VUE_APP_API_URL=http://localhost:5000/api" > .env.development.local
+````
+Then, you can start the Node development server.
+````shell script
 npm run serve
 ````
 This will spawn a node server (most likely on `http://localhost:8080`) which will automatically reload the frontend code
