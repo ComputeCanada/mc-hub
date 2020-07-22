@@ -17,7 +17,7 @@ Before running the Magic Castle UI Docker container, you need to setup a few thi
 
 1. Download or create a `clouds.yaml` file with your OpenStack cloud credentials. The cloud entry you want to use needs to be named `openstack`.
 2. Copy the `clouds.yaml` file in the current directory.
-3. Create a directory named `clusters_backup` and give it the proper owner and group.
+3. Create a directory named `clusters_backup` and give it the proper permissions.
    ```
    mkdir clusters_backup
    sudo chmod -R 777 clusters_backup
