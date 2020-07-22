@@ -74,3 +74,7 @@ created clusters in the directory.
 ## Debugging, contributing and advanced usage
 
 Refer to the [Developer Documentation](./docs/developers.md).
+
+## Adding SAML Authentication and HTTPS to Magic Castle UI
+
+Check out the [wiki page](https://github.com/ComputeCanada/magic_castle-ui/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
