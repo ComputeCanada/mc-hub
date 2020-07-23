@@ -2,7 +2,12 @@ from tests.mocks.openstack.openstack_connection_mock import OpenStackConnectionM
 from pathlib import Path
 from os import path
 from shutil import rmtree, copytree
+from subprocess import run
+from database.schema_manager import SchemaManager
+from database.database_manager import DatabaseManager
+import logging
 import pytest
+import sqlite3
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -19,6 +24,84 @@ def setup_mock_clusters(cluster_names):
 def teardown_mock_clusters(cluster_names):
     for cluster_name in cluster_names:
         rmtree(path.join(MOCK_CLUSTERS_PATH, cluster_name))
+
+
+@pytest.fixture(autouse=True)
+def database_connection(mocker):
+    # Using an in-memory database for faster unit tests with less disk IO
+    mocker.patch("database.database_manager.DATABASE_PATH", new=":memory:")
+
+    with DatabaseManager.connect() as database_connection:
+        # The database :memory: only exist within a single connection.
+        # Therefore, the DatabaseConnection object is mocked to always return the same connection.
+        class MockDatabaseConnection:
+            def __init__(self):
+                self.__connection = None
+
+            def __enter__(self) -> sqlite3.Connection:
+                return database_connection
+
+            def __exit__(self, type, value, traceback):
+                pass
+        mocker.patch(
+            "database.database_manager.DatabaseManager.connect",
+            return_value=MockDatabaseConnection(),
+        )
+
+        # Creating the DB schema
+        SchemaManager(database_connection).update_schema()
+
+        # Seeding test data
+        test_magic_castle_rows = [
+            (
+                "buildplanning.calculquebec.cloud",
+                "buildplanning",
+                "calculquebec.cloud",
+                "plan_running",
+                "build",
+            ),
+            (
+                "created.calculquebec.cloud",
+                "created",
+                "calculquebec.cloud",
+                "created",
+                "build",
+            ),
+            (
+                "empty.calculquebec.cloud",
+                "empty",
+                "calculquebec.cloud",
+                "build_error",
+                "none",
+            ),
+            (
+                "missingfloatingips.c3.ca",
+                "missingfloatingips",
+                "c3.ca",
+                "build_running",
+                "none",
+            ),
+            (
+                "missingnodes.sub.example.com",
+                "missingnodes",
+                "sub.example.com",
+                "build_error",
+                "none",
+            ),
+            (
+                "valid1.calculquebec.cloud",
+                "valid1",
+                "calculquebec.cloud",
+                "build_success",
+                "destroy",
+            ),
+        ]
+        database_connection.executemany(
+            "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type) values (?, ?, ?, ?, ?)",
+            test_magic_castle_rows,
+        )
+        database_connection.commit()
+        yield database_connection
 
 
 @pytest.fixture(autouse=True)

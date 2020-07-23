@@ -1,4 +1,5 @@
 from models.magic_castle import MagicCastle
+from models.magic_castle_manager import MagicCastleManager
 from models.cluster_status_code import ClusterStatusCode
 from models.plan_type import PlanType
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
@@ -7,8 +8,8 @@ from tests.test_helpers import *
 from marshmallow.exceptions import ValidationError
 
 
-def test_get_all_magic_castles():
-    all_magic_castles = MagicCastle.all()
+def test_get_all_magic_castles(database_connection):
+    all_magic_castles = MagicCastleManager(database_connection).all()
     assert [magic_castle.get_hostname() for magic_castle in all_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
@@ -27,48 +28,50 @@ def test_get_all_magic_castles():
     ]
 
 
-def test_get_status_valid():
-    created = MagicCastle("created.calculquebec.cloud")
+def test_get_status_valid(database_connection):
+    created = MagicCastle(database_connection, "created.calculquebec.cloud")
     assert created.get_status() == ClusterStatusCode.CREATED
-    buildplanning = MagicCastle("buildplanning.calculquebec.cloud")
+    buildplanning = MagicCastle(database_connection, "buildplanning.calculquebec.cloud")
     assert buildplanning.get_status() == ClusterStatusCode.PLAN_RUNNING
-    valid1 = MagicCastle("valid1.calculquebec.cloud")
+    valid1 = MagicCastle(database_connection, "valid1.calculquebec.cloud")
     assert valid1.get_status() == ClusterStatusCode.BUILD_SUCCESS
 
 
-def test_get_status_errors():
-    empty = MagicCastle("empty.calculquebec.cloud")
+def test_get_status_errors(database_connection):
+    empty = MagicCastle(database_connection, "empty.calculquebec.cloud")
     assert empty.get_status() == ClusterStatusCode.BUILD_ERROR
-    missingnodes = MagicCastle("missingnodes.sub.example.com")
+    missingnodes = MagicCastle(database_connection, "missingnodes.sub.example.com")
     assert missingnodes.get_status() == ClusterStatusCode.BUILD_ERROR
 
 
-def test_get_status_not_found():
-    magic_castle1 = MagicCastle("nonexisting")
+def test_get_status_not_found(database_connection):
+    magic_castle1 = MagicCastle(database_connection, "nonexisting")
     assert magic_castle1.get_status() == ClusterStatusCode.NOT_FOUND
-    magic_castle2 = MagicCastle()
+    magic_castle2 = MagicCastle(database_connection)
     assert magic_castle2.get_status() == ClusterStatusCode.NOT_FOUND
 
 
-def test_get_plan_type_build():
-    build_planning = MagicCastle("buildplanning.calculquebec.cloud")
+def test_get_plan_type_build(database_connection):
+    build_planning = MagicCastle(
+        database_connection, "buildplanning.calculquebec.cloud"
+    )
     assert build_planning.get_plan_type() == PlanType.BUILD
-    created = MagicCastle("created.calculquebec.cloud")
+    created = MagicCastle(database_connection, "created.calculquebec.cloud")
     assert created.get_plan_type() == PlanType.BUILD
 
 
-def test_get_plan_type_destroy():
-    magic_castle = MagicCastle("valid1.calculquebec.cloud")
+def test_get_plan_type_destroy(database_connection):
+    magic_castle = MagicCastle(database_connection, "valid1.calculquebec.cloud")
     assert magic_castle.get_plan_type() == PlanType.DESTROY
 
 
-def test_get_plan_type_none():
-    magic_castle = MagicCastle("missingfloatingips.c3.ca")
+def test_get_plan_type_none(database_connection):
+    magic_castle = MagicCastle(database_connection, "missingfloatingips.c3.ca")
     assert magic_castle.get_plan_type() == PlanType.NONE
 
 
-def test_dump_configuration_valid():
-    magic_castle = MagicCastle("valid1.calculquebec.cloud")
+def test_dump_configuration_valid(database_connection):
+    magic_castle = MagicCastle(database_connection, "valid1.calculquebec.cloud")
     assert magic_castle.dump_configuration() == {
         "cluster_name": "valid1",
         "nb_users": 10,
@@ -91,15 +94,15 @@ def test_dump_configuration_valid():
     }
 
 
-def test_dump_configuration_empty():
-    magic_castle = MagicCastle("empty.calculquebec.cloud")
+def test_dump_configuration_empty(database_connection):
+    magic_castle = MagicCastle(database_connection, "empty.calculquebec.cloud")
 
     with pytest.raises(ValidationError):
         magic_castle.dump_configuration()
 
 
-def test_dump_configuration_missing_nodes():
-    magic_castle = MagicCastle("missingnodes.sub.example.com")
+def test_dump_configuration_missing_nodes(database_connection):
+    magic_castle = MagicCastle(database_connection, "missingnodes.sub.example.com")
     assert magic_castle.dump_configuration() == {
         "cluster_name": "missingnodes",
         "nb_users": 10,
@@ -122,19 +125,19 @@ def test_dump_configuration_missing_nodes():
     }
 
 
-def test_dump_configuration_busy():
-    magic_castle = MagicCastle("missingfloatingips.c3.ca")
+def test_dump_configuration_busy(database_connection):
+    magic_castle = MagicCastle(database_connection, "missingfloatingips.c3.ca")
     with pytest.raises(BusyClusterException):
         magic_castle.dump_configuration()
 
 
-def test_dump_configuration_not_found():
-    magic_castle = MagicCastle()
+def test_dump_configuration_not_found(database_connection):
+    magic_castle = MagicCastle(database_connection)
     with pytest.raises(ClusterNotFoundException):
         magic_castle.dump_configuration()
 
 
-def test_get_available_resources_valid():
+def test_get_available_resources_valid(database_connection):
     """
     Mock context :
 
@@ -160,7 +163,7 @@ def test_get_available_resources_valid():
     6 + 28 = 34 volumes
     230 + 280 = 510 GiO of volume storage
     """
-    magic_castle = MagicCastle("valid1.calculquebec.cloud")
+    magic_castle = MagicCastle(database_connection, "valid1.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "instance_count": {"max": 103},
@@ -267,7 +270,7 @@ def test_get_available_resources_valid():
     }
 
 
-def test_get_available_resources_empty():
+def test_get_available_resources_empty(database_connection):
     """
     Mock context :
 
@@ -280,7 +283,7 @@ def test_get_available_resources_empty():
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
     """
-    magic_castle = MagicCastle("empty.calculquebec.cloud")
+    magic_castle = MagicCastle(database_connection, "empty.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "instance_count": {"max": 100},
@@ -386,7 +389,7 @@ def test_get_available_resources_empty():
     }
 
 
-def test_get_available_resources_missing_nodes():
+def test_get_available_resources_missing_nodes(database_connection):
     """
     Mock context :
 
@@ -412,7 +415,7 @@ def test_get_available_resources_missing_nodes():
     3 + 28 = 31 volumes
     200 + 280 = 480 GiO of volume storage
     """
-    magic_castle = MagicCastle("missingnodes.sub.example.com")
+    magic_castle = MagicCastle(database_connection, "missingnodes.sub.example.com")
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "instance_count": {"max": 100},
@@ -519,7 +522,7 @@ def test_get_available_resources_missing_nodes():
     }
 
 
-def test_get_available_resources_not_found():
+def test_get_available_resources_not_found(database_connection):
     """
     Mock context :
 
@@ -530,7 +533,7 @@ def test_get_available_resources_not_found():
     128 - 100 = 28 volumes
     1000 - 720 = 280 GiO of volume storage
     """
-    magic_castle = MagicCastle()
+    magic_castle = MagicCastle(database_connection)
     assert magic_castle.get_available_resources() == {
         "quotas": {
             "instance_count": {"max": 100},

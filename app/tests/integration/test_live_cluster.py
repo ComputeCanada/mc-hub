@@ -35,7 +35,7 @@ def test_plan_creation(client):
         json={
             "cluster_name": "trulygreatcluster1",
             "nb_users": 10,
-            "guest_passwd": '',
+            "guest_passwd": "",
             "storage": {
                 "type": "nfs",
                 "home_size": 50,
@@ -116,7 +116,7 @@ def test_plan_modify(client):
         json={
             "cluster_name": "trulygreatcluster1",
             "nb_users": 10,
-            "guest_passwd": '',
+            "guest_passwd": "",
             "storage": {
                 "type": "nfs",
                 "home_size": 50,
