@@ -1,7 +1,7 @@
 CREATE TABLE magic_castles(
-    hostname TEXT,
-    cluster_name TEXT,
-    domain TEXT,
-    status TEXT,
-    plan_type TEXT
+    hostname TEXT PRIMARY KEY NOT NULL,
+    cluster_name TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    status TEXT NOT NULL,
+    plan_type TEXT NOT NULL
 )
