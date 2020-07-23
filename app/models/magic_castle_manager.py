@@ -19,5 +19,8 @@ class MagicCastleManager:
             MagicCastle(self.__database_connection, result[0]) for result in results
         ]
 
-    def create_empty_magic_castle(self):
+    def create_empty(self):
         return MagicCastle(self.__database_connection)
+
+    def get_by_hostname(self, hostname):
+        return MagicCastle(self.__database_connection, hostname)
