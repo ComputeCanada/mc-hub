@@ -6,8 +6,8 @@ from models.cluster_status_code import ClusterStatusCode
 
 
 class ProgressAPI(ApiView):
-    def get(self, hostname):
-        magic_castle = MagicCastle(hostname)
+    def get(self, database_connection, hostname):
+        magic_castle = MagicCastle(database_connection, hostname)
         status = magic_castle.get_status()
         if status == ClusterStatusCode.NOT_FOUND:
             return {

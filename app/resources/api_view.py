@@ -1,6 +1,7 @@
 from flask import request
 from flask.views import MethodView
 from flask import make_response
+from database.database_manager import DatabaseManager
 import json
 
 DEFAULT_RESPONSE_CODE = 200
@@ -19,5 +20,13 @@ def output_json(route_handler):
     return decorator
 
 
+def open_database_connection(route_handler):
+    def decorator(*args, **kwargs):
+        with DatabaseManager.connect() as database_connection:
+            return route_handler(database_connection, *args, **kwargs)
+
+    return decorator
+
+
 class ApiView(MethodView):
-    decorators = [output_json]
+    decorators = [open_database_connection, output_json]

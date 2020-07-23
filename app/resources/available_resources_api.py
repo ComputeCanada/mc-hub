@@ -4,13 +4,13 @@ from exceptions.invalid_usage_exception import InvalidUsageException
 
 
 class AvailableResourcesApi(ApiView):
-    def get(self, hostname):
+    def get(self, database_connection, hostname):
         if hostname:
             try:
-                magic_castle = MagicCastle(hostname)
+                magic_castle = MagicCastle(database_connection, hostname)
                 return magic_castle.get_available_resources()
             except InvalidUsageException as e:
                 return e.get_response()
         else:
-            magic_castle = MagicCastle()
+            magic_castle = MagicCastle(database_connection)
             return magic_castle.get_available_resources()

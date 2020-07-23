@@ -17,6 +17,8 @@ from exceptions.cluster_exists_exception import ClusterExistsException
 from exceptions.plan_not_created_exception import PlanNotCreatedException
 from models.filelock import FileLock
 from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
+from database.database_manager import DatabaseManager
+import sqlite3
 import logging
 import re
 import json
@@ -24,8 +26,6 @@ import json
 
 DEFAULT_CLOUD = "openstack"
 
-STATUS_FILENAME = "status.txt"
-PLAN_TYPE_FILENAME = "plan_type.txt"
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
 
@@ -41,23 +41,12 @@ class MagicCastle:
     a simple dictionary format.
     """
 
-    def __init__(self, hostname=None):
+    def __init__(self, database_connection: sqlite3.Connection, hostname=None):
+        self.__database_connection = database_connection
         self.__hostname = hostname
         self.__configuration = None
         self.__status = None
         self.__plan_type = None
-
-    @classmethod
-    def all(cls):
-        """
-        Retrieve all the Magic Castles in the clusters folder.
-        :return: A list of MagicCastle objects
-        """
-        return [
-            cls(hostname)
-            for hostname in sorted(listdir(CLUSTERS_PATH))
-            if isdir(path.join(CLUSTERS_PATH, hostname))
-        ]
 
     def validate_hostname(self, hostname):
         return (
@@ -95,38 +84,44 @@ class MagicCastle:
 
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
-            try:
-                with FileLock(
-                    self.__get_cluster_path(STATUS_FILENAME), "r"
-                ) as status_file:
-                    self.__status = ClusterStatusCode(status_file.read())
-            except FileNotFoundError:
+            result = self.__database_connection.execute(
+                "SELECT status FROM magic_castles WHERE hostname = ?",
+                (self.get_hostname(),),
+            ).fetchone()
+            if result:
+                self.__status = ClusterStatusCode(result[0])
+            else:
                 self.__status = ClusterStatusCode.NOT_FOUND
         return self.__status
 
     def __update_status(self, status: ClusterStatusCode):
         logging.debug(f"Updating status for {self.get_hostname()} with {status.value}")
         self.__status = status
-        with FileLock(self.__get_cluster_path(STATUS_FILENAME), "w") as status_file:
-            status_file.write(status.value)
+        self.__database_connection.execute(
+            "UPDATE magic_castles SET status = ? WHERE hostname = ?",
+            (self.__status.value, self.__hostname),
+        )
+        self.__database_connection.commit()
 
     def get_plan_type(self) -> PlanType:
         if self.__plan_type is None:
-            try:
-                with FileLock(
-                    self.__get_cluster_path(PLAN_TYPE_FILENAME), "r"
-                ) as plan_type_file:
-                    self.__plan_type = PlanType(plan_type_file.read())
-            except FileNotFoundError:
+            result = self.__database_connection.execute(
+                "SELECT plan_type FROM magic_castles WHERE hostname = ?",
+                (self.get_hostname(),),
+            ).fetchone()
+            if result:
+                self.__plan_type = PlanType(result[0])
+            else:
                 self.__plan_type = PlanType.NONE
         return self.__plan_type
 
     def __update_plan_type(self, plan_type: PlanType):
         self.__plan_type = plan_type
-        with FileLock(
-            self.__get_cluster_path(PLAN_TYPE_FILENAME), "w"
-        ) as plan_type_file:
-            plan_type_file.write(plan_type.value)
+        self.__database_connection.execute(
+            "UPDATE magic_castles SET plan_type = ? WHERE hostname = ?",
+            (self.__plan_type.value, self.__hostname),
+        )
+        self.__database_connection.commit()
 
     def get_progress(self):
         if self.__not_found():
@@ -233,15 +228,26 @@ class MagicCastle:
         self.__plan(destroy=True, existing_cluster=True)
 
     def __plan(self, *, destroy, existing_cluster):
+        plan_type = PlanType.DESTROY if destroy else PlanType.BUILD
         if existing_cluster:
             self.__remove_existing_plan()
             previous_status = self.get_status()
         else:
+            self.__database_connection.execute(
+                "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type) VALUES (?, ?, ?, ?, ?)",
+                (
+                    self.get_hostname(),
+                    self.get_cluster_name(),
+                    self.get_domain(),
+                    ClusterStatusCode.CREATED.value,
+                    plan_type.value,
+                ),
+            )
             mkdir(self.__get_cluster_path())
             previous_status = ClusterStatusCode.CREATED
 
         self.__update_status(ClusterStatusCode.PLAN_RUNNING)
-        self.__update_plan_type(PlanType.DESTROY if destroy else PlanType.BUILD)
+        self.__update_plan_type(plan_type)
 
         if not destroy:
             self.__configuration.update_main_tf_json_file()
@@ -307,8 +313,7 @@ class MagicCastle:
             else ClusterStatusCode.DESTROY_RUNNING
         )
 
-        def terraform_apply():
-            destroy = self.get_plan_type() == PlanType.DESTROY
+        def terraform_apply(destroy: bool):
             try:
                 with open(
                     self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "w"
@@ -331,22 +336,32 @@ class MagicCastle:
                         check=True,
                         env=environment_variables,
                     )
-                if destroy:
-                    # Removes the content of the cluster's folder, even if not empty
-                    rmtree(self.__get_cluster_path(), ignore_errors=True)
-                else:
-                    self.__update_status(ClusterStatusCode.BUILD_SUCCESS)
+                with DatabaseManager.connect() as database_connection:
+                    self.__database_connection = database_connection
+                    if destroy:
+                        # Removes the content of the cluster's folder, even if not empty
+                        rmtree(self.__get_cluster_path(), ignore_errors=True)
+                        self.__database_connection.execute(
+                            "DELETE FROM magic_castles WHERE hostname = ?",
+                            (self.get_hostname(),),
+                        )
+                        self.__database_connection.commit()
+                    else:
+                        self.__update_status(ClusterStatusCode.BUILD_SUCCESS)
             except CalledProcessError:
                 logging.info("terraform apply returned an error")
-                self.__update_status(
-                    ClusterStatusCode.DESTROY_ERROR
-                    if destroy
-                    else ClusterStatusCode.BUILD_ERROR
-                )
+                with DatabaseManager.connect() as database_connection:
+                    self.__database_connection = database_connection
+                    self.__update_status(
+                        ClusterStatusCode.DESTROY_ERROR
+                        if destroy
+                        else ClusterStatusCode.BUILD_ERROR
+                    )
             finally:
                 self.__remove_existing_plan()
 
-        terraform_apply_thread = Thread(target=terraform_apply)
+        destroy = self.get_plan_type() == PlanType.DESTROY
+        terraform_apply_thread = Thread(target=terraform_apply, args=(destroy,))
         terraform_apply_thread.start()
 
     def __remove_existing_plan(self):
