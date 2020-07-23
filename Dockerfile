@@ -31,6 +31,10 @@ RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
 
 ## Magic Castle User
 RUN adduser -D mcu
+
+# For storing the SQLite database
+RUN mkdir -p /home/mcu/database && chown -R mcu:mcu /home/mcu/database
+
 USER mcu
 WORKDIR /home/mcu
 ADD .terraformrc /home/mcu
@@ -63,7 +67,8 @@ FROM base-server as development-server
 USER root
 
 RUN apk add git=2.24.3-r0 \
-            npm=12.15.0-r1
+    npm=12.15.0-r1 \
+    sqlite=3.30.1-r2
 RUN pip install ptvsd==4.3.2 \
                 pylint==2.5.3 \
                 black
