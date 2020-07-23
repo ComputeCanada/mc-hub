@@ -90,7 +90,7 @@ class TerraformPlanParser:
             elif done_resource_change["change"]["actions"] == ["read"]:
                 progress = "done"
             elif done_resource_change["change"]["actions"] == ["update"]:
-                if search_results["modifications_complete"] != -1:
+                if search_results["modification_complete"] != -1:
                     progress = "done"
                 elif search_results["modification_running"] != -1:
                     progress = "running"
