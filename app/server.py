@@ -4,10 +4,18 @@ from resources.progress_api import ProgressAPI
 from resources.available_resources_api import AvailableResourcesApi
 from flask_cors import CORS
 from models.openstack_manager import OpenStackManager
+from database.schema_manager import SchemaManager
+from database.database_manager import DatabaseManager
 
+# Exit with an error if the clouds.yaml is not found or the OpenStack API can't be reached
 OpenStackManager.test_connection()
 
+# Update the database schema to the latest version
+with DatabaseManager.connect() as database_connection:
+    SchemaManager(database_connection).update_schema()
+
 app = Flask(__name__)
+
 # Allows all origins on all routes (not safe for production)
 CORS(app)
 
