@@ -16,11 +16,15 @@ install:
 script:
   - |
     if [ -z $TRAVIS_TAG ]; then
-      docker run --rm --publish 5000:5000 --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
-      -w /home/mcu/app "$IMAGE_NAME" python -m pytest;
+      docker run --rm --publish 5000:5000 \
+        --mount "type=volume,source=database,target=/home/mcu/database" \
+        --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+        -w /home/mcu/app "$IMAGE_NAME" python -m pytest;
     else
-      docker run --rm --publish 5000:5000 --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
-      -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster;
+      docker run --rm --publish 5000:5000 \
+        --mount "type=volume,source=database,target=/home/mcu/database" \
+        --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+        -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster;
     fi
 
 before_deploy:
