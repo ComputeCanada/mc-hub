@@ -9,7 +9,11 @@ class User:
 
     @property
     def full_name(self):
-        raise NotImplementedError
+        return None
+    
+    @property
+    def username(self):
+        return None
 
     def get_all_magic_castles(self) -> List[MagicCastle]:
         raise NotImplementedError

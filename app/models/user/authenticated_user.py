@@ -23,6 +23,10 @@ class AuthenticatedUser(User):
     def full_name(self):
         return f"{self.given_name} {self.surname}"
 
+    @property
+    def username(self):
+        return self.edu_person_principal_name.split("@")[0]
+
     def get_all_magic_castles(self):
         """
         Retrieve all the Magic Castles retrieved in the database.

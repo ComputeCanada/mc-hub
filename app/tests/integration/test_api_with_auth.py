@@ -78,7 +78,7 @@ ALICE_HEADERS = {
 }
 
 BOB_HEADERS = {
-    "eduPersonPrincipalName": "bob@computecanada.ca",
+    "eduPersonPrincipalName": "bob12.bobby@computecanada.ca",
     "givenName": "Bob",
     "surname": "Rodriguez",
     "mail": "bob-rodriguez435@example.com",
@@ -100,9 +100,12 @@ def client(mocker):
 # GET /api/users/me
 def test_get_current_user_authentified(client):
     res = client.get(f"/api/users/me", headers=ALICE_HEADERS)
-    assert res.get_json() == {"full_name": "Alice Tremblay"}
+    assert res.get_json() == {"full_name": "Alice Tremblay", "username": "alice"}
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
-    assert res.get_json() == {"full_name": "Bob Rodriguez"}
+    assert res.get_json() == {
+        "full_name": "Bob Rodriguez",
+        "username": "bob12.bobby",
+    }
 
 
 # GET /api/users/me

@@ -85,7 +85,7 @@ def client(mocker):
 # GET /api/users/me
 def test_get_current_user(client):
     res = client.get(f"/api/users/me")
-    assert res.get_json() == {"full_name": None}
+    assert res.get_json() == {"full_name": None, "username": None}
 
 
 # GET /api/magic_castle

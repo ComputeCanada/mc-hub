@@ -42,6 +42,8 @@ def compute_current_user(route_handler):
         with DatabaseManager.connect() as database_connection:
             if auth_type == AuthType.SAML:
                 try:
+                    # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
+                    # Therefore, special characters and accents in givenName and surname are not correctly decoded. 
                     user = AuthenticatedUser(
                         database_connection,
                         edu_person_principal_name=request.headers[

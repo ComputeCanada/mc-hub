@@ -51,7 +51,7 @@ def test_get_plan_type_none(database_connection):
 
 def test_get_owner_valid(database_connection):
     magic_castle = MagicCastle(database_connection, "missingfloatingips.c3.ca")
-    assert magic_castle.get_owner() == "bob@computecanada.ca"
+    assert magic_castle.get_owner() == "bob12.bobby@computecanada.ca"
 
 
 def test_get_owner_no_owner(database_connection):

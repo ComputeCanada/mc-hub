@@ -78,7 +78,7 @@ def database_connection(mocker):
                 "calculquebec.cloud",
                 "build_error",
                 "none",
-                "bob@computecanada.ca",
+                "bob12.bobby@computecanada.ca",
             ),
             (
                 "missingfloatingips.c3.ca",
@@ -86,7 +86,7 @@ def database_connection(mocker):
                 "c3.ca",
                 "build_running",
                 "none",
-                "bob@computecanada.ca",
+                "bob12.bobby@computecanada.ca",
             ),
             (
                 "missingnodes.sub.example.com",
@@ -94,7 +94,7 @@ def database_connection(mocker):
                 "sub.example.com",
                 "build_error",
                 "none",
-                "bob@computecanada.ca",
+                "bob12.bobby@computecanada.ca",
             ),
             (
                 "valid1.calculquebec.cloud",
@@ -142,7 +142,7 @@ def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
     return lambda database_connection: AuthenticatedUser(
         database_connection,
-        edu_person_principal_name="bob@computecanada.ca",
+        edu_person_principal_name="bob12.bobby@computecanada.ca",
         given_name="Bob",
         surname="Rodriguez",
         mail="bob-rodriguez435@example.com",
@@ -151,9 +151,12 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture(autouse=True)
 def mock_clusters_path(mocker):
-    mocker.patch("models.magic_castle.magic_castle.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
     mocker.patch(
-        "models.magic_castle.magic_castle_configuration.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH
+        "models.magic_castle.magic_castle.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH
+    )
+    mocker.patch(
+        "models.magic_castle.magic_castle_configuration.CLUSTERS_PATH",
+        new=MOCK_CLUSTERS_PATH,
     )
 
 

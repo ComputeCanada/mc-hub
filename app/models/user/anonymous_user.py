@@ -6,10 +6,6 @@ class AnonymousUser(User):
     def __init__(self, database_connection):
         super().__init__(database_connection)
 
-    @property
-    def full_name(self):
-        return None
-
     def get_all_magic_castles(self):
         """
         Retrieve all the Magic Castles retrieved in the database.
