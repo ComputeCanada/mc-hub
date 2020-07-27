@@ -3,6 +3,8 @@
     <v-app style="background: #eef3f3">
       <v-app-bar dense color="primary" dark>
         <v-btn text to="/" exact>Magic Castle UI</v-btn>
+        <v-spacer />
+        <account-dropdown />
       </v-app-bar>
       <v-container style="height: 100%">
         <router-view />
@@ -10,3 +12,10 @@
     </v-app>
   </div>
 </template>
+<script>
+import AccountDropdown from "@/components/ui/AccountDropdown";
+
+export default {
+  components: { AccountDropdown }
+};
+</script>

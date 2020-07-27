@@ -1,0 +1,36 @@
+<template>
+  <v-menu offset-y v-if="currentUser.username">
+    <template #activator="{ on, attrs }">
+      <v-btn v-bind="attrs" v-on="on" text>
+        <v-icon class="mr-4">mdi-account</v-icon>
+        {{currentUser.username}}
+      </v-btn>
+    </template>
+    <v-list>
+      <v-list-item @click="logout">
+        <v-list-item-title>
+          <v-icon class="mr-4">mdi-logout</v-icon>Logout
+        </v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-menu>
+</template>
+
+<script>
+import UserRepository from "@/repositories/UserRepository";
+export default {
+  data() {
+    return {
+      currentUser: { full_name: null, username: null }
+    };
+  },
+  async created() {
+    this.currentUser = (await UserRepository.getCurrent()).data;
+  },
+  methods: {
+    logout() {
+      location.href = "/Shibboleth.sso/Logout";
+    }
+  }
+};
+</script>
