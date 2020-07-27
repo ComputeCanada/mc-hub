@@ -1,4 +1,4 @@
-from models.terraform_state_parser import TerraformStateParser
+from models.terraform.terraform_state_parser import TerraformStateParser
 from pathlib import Path
 from os import path
 import pytest

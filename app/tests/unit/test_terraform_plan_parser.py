@@ -1,5 +1,5 @@
 from models.magic_castle.magic_castle import MagicCastle
-from models.terraform_plan_parser import TerraformPlanParser
+from models.terraform.terraform_plan_parser import TerraformPlanParser
 from pathlib import Path
 from os import path
 import pytest
