@@ -16,7 +16,7 @@ terraform-->Thread 2: terraform apply stdout
 Thread 2->cluster_progress['chateau']: Append last line from terraform stdout
 terraform-->Thread 2: terraform apply stdout
 Thread 2->cluster_progress['chateau']: Append last line from terraform stdout
-Browser->API: GET /api/magic-castle/chateau/status
+Browser->API: GET /api/magic-castles/chateau/status
 API->Thread 3:Handle request
 Thread 3->cluster_progress['chateau']: Retrieve terraform output
 cluster_progress['chateau']-->Thread 3: Terraform output

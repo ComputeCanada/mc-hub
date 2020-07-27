@@ -1,6 +1,6 @@
 import Repository from "./Repository";
 
-const resource = "/magic-castle";
+const resource = "/magic-castles";
 
 export default {
   getAll() {

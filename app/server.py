@@ -22,18 +22,18 @@ CORS(app)
 
 magic_castle_view = MagicCastleAPI.as_view("magic_castle")
 app.add_url_rule(
-    "/api/magic-castle",
+    "/api/magic-castles",
     view_func=magic_castle_view,
     defaults={"hostname": None},
     methods=["HEAD", "GET", "POST"],
 )
 app.add_url_rule(
-    "/api/magic-castle/<string:hostname>",
+    "/api/magic-castles/<string:hostname>",
     view_func=magic_castle_view,
     methods=["GET", "DELETE", "PUT"],
 )
 app.add_url_rule(
-    "/api/magic-castle/<string:hostname>/apply",
+    "/api/magic-castles/<string:hostname>/apply",
     view_func=magic_castle_view,
     defaults={"apply": True},
     methods=["POST"],
@@ -41,7 +41,7 @@ app.add_url_rule(
 
 progress_view = ProgressAPI.as_view("progress")
 app.add_url_rule(
-    "/api/magic-castle/<string:hostname>/status",
+    "/api/magic-castles/<string:hostname>/status",
     view_func=progress_view,
     methods=["GET"],
 )

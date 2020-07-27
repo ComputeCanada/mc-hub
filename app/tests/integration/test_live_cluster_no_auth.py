@@ -35,7 +35,7 @@ def disable_saml_auth(monkeypatch):
 @pytest.mark.build_live_cluster
 def test_plan_creation(client):
     res = client.post(
-        f"/api/magic-castle",
+        f"/api/magic-castles",
         json={
             "cluster_name": "trulygreatcluster1",
             "nb_users": 10,
@@ -65,14 +65,14 @@ def test_plan_creation(client):
 
 @pytest.mark.build_live_cluster
 def test_apply_creation_plan(client):
-    res = client.post(f"/api/magic-castle/{HOSTNAME}/apply")
+    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply")
     assert res.get_json() == {}
     assert res.status_code == 200
 
 
 @pytest.mark.build_live_cluster
 def test_creation_running(client):
-    res = client.get(f"/api/magic-castle/{HOSTNAME}/status")
+    res = client.get(f"/api/magic-castles/{HOSTNAME}/status")
     assert res.get_json()["status"] == "build_running"
     assert res.status_code == 200
 
@@ -81,11 +81,13 @@ def test_creation_running(client):
 def test_create_success(client):
     max_timeout_seconds = 360  # 6 minutes.
     start_time = time()
-    status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()["status"]
     while status == "build_running" and time() - start_time <= max_timeout_seconds:
-        status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+        status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()[
+            "status"
+        ]
     assert status == "build_success"
-    state = client.get(f"/api/magic-castle/{HOSTNAME}").get_json()
+    state = client.get(f"/api/magic-castles/{HOSTNAME}").get_json()
 
     # os_floating_ips key is omitted, as we don't know the value yet
     assert {
@@ -116,7 +118,7 @@ def test_plan_modify(client):
     Modifying the node instance type and count.
     """
     res = client.put(
-        f"/api/magic-castle/{HOSTNAME}",
+        f"/api/magic-castles/{HOSTNAME}",
         json={
             "cluster_name": "trulygreatcluster1",
             "nb_users": 10,
@@ -146,7 +148,7 @@ def test_plan_modify(client):
 
 @pytest.mark.build_live_cluster
 def test_apply_modification_plan(client):
-    res = client.post(f"/api/magic-castle/{HOSTNAME}/apply")
+    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply")
     assert res.get_json() == {}
     assert res.status_code == 200
 
@@ -155,11 +157,13 @@ def test_apply_modification_plan(client):
 def test_modify_success(client):
     max_timeout_seconds = 360  # 6 minutes.
     start_time = time()
-    status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()["status"]
     while status == "build_running" and time() - start_time <= max_timeout_seconds:
-        status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+        status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()[
+            "status"
+        ]
     assert status == "build_success"
-    state = client.get(f"/api/magic-castle/{HOSTNAME}").get_json()
+    state = client.get(f"/api/magic-castles/{HOSTNAME}").get_json()
 
     # os_floating_ips key is omitted, as we don't know the value yet
     assert {
@@ -186,14 +190,14 @@ def test_modify_success(client):
 
 @pytest.mark.build_live_cluster
 def test_plan_destroy(client):
-    res = client.delete(f"/api/magic-castle/{HOSTNAME}")
+    res = client.delete(f"/api/magic-castles/{HOSTNAME}")
     assert res.get_json() == {}
     assert res.status_code == 200
 
 
 @pytest.mark.build_live_cluster
 def test_apply_destruction_plan(client):
-    res = client.post(f"/api/magic-castle/{HOSTNAME}/apply")
+    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply")
     assert res.get_json() == {}
     assert res.status_code == 200
 
@@ -202,9 +206,11 @@ def test_apply_destruction_plan(client):
 def test_destroy_success(client):
     max_timeout_seconds = 180  # 3 minutes.
     start_time = time()
-    status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+    status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()["status"]
     while status == "destroy_running" and time() - start_time <= max_timeout_seconds:
-        status = client.get(f"/api/magic-castle/{HOSTNAME}/status").get_json()["status"]
+        status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()[
+            "status"
+        ]
     assert status == "not_found"
 
 
