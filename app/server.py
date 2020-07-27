@@ -2,6 +2,7 @@ from flask import Flask, send_file, send_from_directory
 from resources.magic_castle_api import MagicCastleAPI
 from resources.progress_api import ProgressAPI
 from resources.available_resources_api import AvailableResourcesApi
+from resources.user_api import UserAPI
 from flask_cors import CORS
 from models.openstack_manager import OpenStackManager
 from database.schema_manager import SchemaManager
@@ -57,6 +58,9 @@ app.add_url_rule(
     view_func=available_resources_view,
     methods=["GET"],
 )
+
+user_view = UserAPI.as_view("user")
+app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
 
 
 @app.route("/css/<path:path>")
