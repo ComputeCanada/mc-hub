@@ -1,6 +1,6 @@
 from models.user.user import User
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
-from models.magic_castle import MagicCastle
+from models.magic_castle.magic_castle import MagicCastle
 
 
 class AuthenticatedUser(User):

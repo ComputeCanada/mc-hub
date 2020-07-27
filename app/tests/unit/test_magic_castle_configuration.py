@@ -1,4 +1,4 @@
-from models.magic_castle_configuration import MagicCastleConfiguration
+from models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
 from tests.test_helpers import *
 from marshmallow.exceptions import ValidationError
 

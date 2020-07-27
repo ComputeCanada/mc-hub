@@ -1,5 +1,5 @@
 from models.openstack_manager import OpenStackManager
-from models.magic_castle_configuration_schema import MagicCastleConfigurationSchema
+from models.magic_castle.magic_castle_configuration_schema import MagicCastleConfigurationSchema
 from models.terraform_state_parser import TerraformStateParser
 from models.constants import (
     MAGIC_CASTLE_RELEASE_PATH,

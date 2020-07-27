@@ -1,5 +1,5 @@
 from typing import List
-from models.magic_castle import MagicCastle
+from models.magic_castle.magic_castle import MagicCastle
 import sqlite3
 
 

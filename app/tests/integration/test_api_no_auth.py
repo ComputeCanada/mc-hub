@@ -1,5 +1,5 @@
 from server import app
-from models.cluster_status_code import ClusterStatusCode
+from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
 from os import path
 import sqlite3

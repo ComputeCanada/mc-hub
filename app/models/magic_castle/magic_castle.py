@@ -4,9 +4,9 @@ from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
 from marshmallow import ValidationError
-from models.magic_castle_configuration import MagicCastleConfiguration
-from models.cluster_status_code import ClusterStatusCode
-from models.plan_type import PlanType
+from models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+from models.magic_castle.cluster_status_code import ClusterStatusCode
+from models.magic_castle.plan_type import PlanType
 from models.terraform_state_parser import TerraformStateParser
 from models.terraform_plan_parser import TerraformPlanParser
 from models.openstack_manager import OpenStackManager
@@ -15,7 +15,6 @@ from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 from exceptions.plan_not_created_exception import PlanNotCreatedException
-from models.filelock import FileLock
 from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
 from database.database_manager import DatabaseManager
 import sqlite3
