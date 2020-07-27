@@ -167,6 +167,14 @@
                     label="Guest password"
                     :rules="[passwordLengthRule]"
                   />
+                  <v-tooltip bottom>
+                    <template #activator="{ on, attrs }">
+                      <v-btn icon v-bind="attrs" v-on="on" @click="generateGuestPassword()">
+                        <v-icon>mdi-refresh</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>Generate new password</span>
+                  </v-tooltip>
                 </v-list-item>
                 <v-list-item>
                   <v-select
@@ -390,7 +398,7 @@ export default {
       this.startStatusPolling();
     } else {
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
-      this.magicCastle.guest_passwd = generatePassword();
+      this.generateGuestPassword();
       await this.loadAvailableResources();
       if (this.possibleResources.os_floating_ips.length === 0) {
         this.showError("There is no floating IP available right now.");
@@ -675,6 +683,9 @@ export default {
       } finally {
         this.clusterPlanRunningDialog = false;
       }
+    },
+    generateGuestPassword() {
+      this.magicCastle.guest_passwd = generatePassword();
     },
     async planModification() {
       let planCreator = async () =>
