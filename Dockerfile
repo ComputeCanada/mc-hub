@@ -17,6 +17,8 @@ ENV MAGIC_CASTLE_VERSION 7.3
 ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ENV MAGIC_CASTLE_URL https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip
 
+ENV AUTH_TYPE NONE
+
 ## EXTERNAL DEPENDENCIES
 
 RUN apk --no-cache add curl=7.67.0-r0 \
@@ -32,7 +34,7 @@ RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
 ## Magic Castle User
 RUN adduser -D mcu
 
-# For storing the SQLite database
+# Set mcu as the owner of the SQLite database volume
 RUN mkdir -p /home/mcu/database && chown -R mcu:mcu /home/mcu/database
 
 USER mcu

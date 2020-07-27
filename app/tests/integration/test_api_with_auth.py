@@ -3,6 +3,7 @@ from models.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
 from os import path
 import sqlite3
+import pytest
 
 
 NON_EXISTING_HOSTNAME = "nonexisting"
@@ -69,6 +70,25 @@ EXISTING_CLUSTER_STATE = {
     "os_floating_ips": ["100.101.102.103"],
 }
 
+ALICE_HEADERS = {
+    "eduPersonPrincipalName": "alice@computecanada.ca",
+    "givenName": "Alice",
+    "surname": "Tremblay",
+    "mail": "alice.tremblay@example.com",
+}
+
+BOB_HEADERS = {
+    "eduPersonPrincipalName": "bob@computecanada.ca",
+    "givenName": "Bob",
+    "surname": "Rodriguez",
+    "mail": "bob-rodriguez435@example.com",
+}
+
+
+@pytest.fixture(autouse=True)
+def enable_saml_auth(monkeypatch):
+    monkeypatch.setenv("AUTH_TYPE", "SAML")
+
 
 @pytest.fixture
 def client(mocker):
@@ -77,9 +97,23 @@ def client(mocker):
         yield client
 
 
+# GET /api/users/me
+def test_get_current_user_authentified(client):
+    res = client.get(f"/api/users/me", headers=ALICE_HEADERS)
+    assert res.get_json() == {"full_name": "Alice Tremblay"}
+    res = client.get(f"/api/users/me", headers=BOB_HEADERS)
+    assert res.get_json() == {"full_name": "Bob Rodriguez"}
+
+
+# GET /api/users/me
+def test_get_current_user_non_authentified(client):
+    res = client.get(f"/api/users/me")
+    assert res.get_json() == {"message": "You need to be authenticated"}
+
+
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
-    res = client.get(f"/api/magic-castle")
+    res = client.get(f"/api/magic-castle", headers=ALICE_HEADERS)
     assert res.get_json() == [
         {
             "cluster_name": "buildplanning",
@@ -94,24 +128,6 @@ def test_get_all_magic_castle_names(client):
             "status": "created",
         },
         {
-            "cluster_name": "empty",
-            "domain": "calculquebec.cloud",
-            "hostname": "empty.calculquebec.cloud",
-            "status": "build_error",
-        },
-        {
-            "cluster_name": "missingfloatingips",
-            "domain": "c3.ca",
-            "hostname": "missingfloatingips.c3.ca",
-            "status": "build_running",
-        },
-        {
-            "cluster_name": "missingnodes",
-            "domain": "sub.example.com",
-            "hostname": "missingnodes.sub.example.com",
-            "status": "build_error",
-        },
-        {
             "cluster_name": "valid1",
             "domain": "calculquebec.cloud",
             "hostname": "valid1.calculquebec.cloud",
@@ -121,22 +137,49 @@ def test_get_all_magic_castle_names(client):
     assert res.status_code == 200
 
 
+def test_get_all_magic_castles_unauthenticated(client):
+    # No authentication header at all
+    res = client.get(f"/api/magic-castle")
+    assert res.get_json() == {"message": "You need to be authenticated"}
+    assert res.status_code != 200
+
+    # Missing some authentication headers
+    res = client.get(
+        f"/api/magic-castle",
+        headers={"eduPersonPrincipalName": "alice@computecanada.ca"},
+    )
+    assert res.get_json() == {"message": "You need to be authenticated"}
+    assert res.status_code != 200
+
+
 # GET /api/magic-castle/<hostname>
 def test_get_state_existing(client):
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}")
+    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     assert res.get_json() == EXISTING_CLUSTER_STATE
     assert res.status_code == 200
 
 
 def test_get_state_non_existing(client):
-    res = client.get(f"/api/magic-castle/{NON_EXISTING_HOSTNAME}")
+    res = client.get(
+        f"/api/magic-castle/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
+    )
+    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.status_code != 200
+
+
+def test_get_state_not_owned(client):
+    res = client.get(
+        f"/api/magic-castle/missingfloatingips.c3.ca", headers=ALICE_HEADERS
+    )
     assert res.get_json() == {"message": "This cluster does not exist"}
     assert res.status_code != 200
 
 
 # GET /api/magic-castle/<hostname>/status
 def test_get_status(mocker, client):
-    res = client.get(f"/api/magic-castle/missingfloatingips.c3.ca/status")
+    res = client.get(
+        f"/api/magic-castle/missingfloatingips.c3.ca/status", headers=BOB_HEADERS
+    )
     assert res.get_json() == {
         "status": "build_running",
         "progress": [
@@ -305,63 +348,79 @@ def test_get_status(mocker, client):
 
 
 def test_get_status_code(client, database_connection):
-    res = client.get(f"/api/magic-castle/{NON_EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{NON_EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "not_found"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "build_running"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_SUCCESS
     )
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "build_success"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_ERROR
     )
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "build_error"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "destroy_running"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_ERROR
     )
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "destroy_error"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.IDLE
     )
-    res = client.get(f"/api/magic-castle/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castle/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "idle"
 
 
 # DELETE /api/magic-castle/<hostname>
 def test_delete_invalid_status(database_connection, client):
-    res = client.delete(f"/api/magic-castle/{NON_EXISTING_HOSTNAME}")
+    res = client.delete(
+        f"/api/magic-castle/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
+    )
     assert res.get_json() == {"message": "This cluster does not exist"}
     assert res.status_code != 200
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
-    res = client.delete(f"/api/magic-castle/{EXISTING_HOSTNAME}")
+    res = client.delete(f"/api/magic-castle/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
-    res = client.delete(f"/api/magic-castle/{EXISTING_HOSTNAME}")
+    res = client.delete(f"/api/magic-castle/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
 
@@ -371,6 +430,7 @@ def test_modify_invalid_status(database_connection, client):
     res = client.put(
         f"/api/magic-castle/{NON_EXISTING_HOSTNAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,
+        headers=ALICE_HEADERS,
     )
     assert res.get_json() == {"message": "This cluster does not exist"}
     assert res.status_code != 200
@@ -379,7 +439,9 @@ def test_modify_invalid_status(database_connection, client):
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
     res = client.put(
-        f"/api/magic-castle/{EXISTING_HOSTNAME}", json=EXISTING_CLUSTER_CONFIGURATION,
+        f"/api/magic-castle/{EXISTING_HOSTNAME}",
+        json=EXISTING_CLUSTER_CONFIGURATION,
+        headers=ALICE_HEADERS,
     )
     assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200
@@ -388,7 +450,9 @@ def test_modify_invalid_status(database_connection, client):
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
     res = client.put(
-        f"/api/magic-castle/{EXISTING_HOSTNAME}", json=EXISTING_CLUSTER_CONFIGURATION,
+        f"/api/magic-castle/{EXISTING_HOSTNAME}",
+        json=EXISTING_CLUSTER_CONFIGURATION,
+        headers=ALICE_HEADERS,
     )
     assert res.get_json() == {"message": "This cluster is busy"}
     assert res.status_code != 200

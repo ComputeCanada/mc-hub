@@ -22,10 +22,14 @@ HOSTNAME = "trulygreatcluster1.calculquebec.cloud"
 
 @pytest.fixture
 def client(mocker):
-
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
+
+
+@pytest.fixture(autouse=True)
+def disable_saml_auth(monkeypatch):
+    monkeypatch.setenv("AUTH_TYPE", "NONE")
 
 
 @pytest.mark.build_live_cluster

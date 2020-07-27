@@ -1,31 +1,10 @@
 from models.magic_castle import MagicCastle
-from models.magic_castle_manager import MagicCastleManager
 from models.cluster_status_code import ClusterStatusCode
 from models.plan_type import PlanType
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.busy_cluster_exception import BusyClusterException
 from tests.test_helpers import *
 from marshmallow.exceptions import ValidationError
-
-
-def test_get_all_magic_castles(database_connection):
-    all_magic_castles = MagicCastleManager(database_connection).all()
-    assert [magic_castle.get_hostname() for magic_castle in all_magic_castles] == [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "empty.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-        "missingnodes.sub.example.com",
-        "valid1.calculquebec.cloud",
-    ]
-    assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
-        ClusterStatusCode.PLAN_RUNNING,
-        ClusterStatusCode.CREATED,
-        ClusterStatusCode.BUILD_ERROR,
-        ClusterStatusCode.BUILD_RUNNING,
-        ClusterStatusCode.BUILD_ERROR,
-        ClusterStatusCode.BUILD_SUCCESS,
-    ]
 
 
 def test_get_status_valid(database_connection):
@@ -68,6 +47,16 @@ def test_get_plan_type_destroy(database_connection):
 def test_get_plan_type_none(database_connection):
     magic_castle = MagicCastle(database_connection, "missingfloatingips.c3.ca")
     assert magic_castle.get_plan_type() == PlanType.NONE
+
+
+def test_get_owner_valid(database_connection):
+    magic_castle = MagicCastle(database_connection, "missingfloatingips.c3.ca")
+    assert magic_castle.get_owner() == "bob@computecanada.ca"
+
+
+def test_get_owner_no_owner(database_connection):
+    magic_castle = MagicCastle(database_connection, "noowner.calculquebec.cloud")
+    assert magic_castle.get_owner() == None
 
 
 def test_dump_configuration_valid(database_connection):

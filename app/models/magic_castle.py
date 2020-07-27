@@ -41,9 +41,12 @@ class MagicCastle:
     a simple dictionary format.
     """
 
-    def __init__(self, database_connection: sqlite3.Connection, hostname=None):
+    def __init__(
+        self, database_connection: sqlite3.Connection, hostname=None, owner=None
+    ):
         self.__database_connection = database_connection
         self.__hostname = hostname
+        self.__owner = owner
         self.__configuration = None
         self.__status = None
         self.__plan_type = None
@@ -62,6 +65,18 @@ class MagicCastle:
 
     def get_domain(self):
         return self.__hostname.split(".", 1)[1]
+
+    def get_owner(self):
+        if self.__owner is None:
+            result = self.__database_connection.execute(
+                "SELECT owner FROM magic_castles WHERE hostname = ?",
+                (self.get_hostname(),),
+            ).fetchone()
+            if result:
+                self.__owner = result[0]
+            else:
+                self.__owner = None
+        return self.__owner
 
     def load_configuration(self, configuration: dict):
         try:
@@ -95,7 +110,6 @@ class MagicCastle:
         return self.__status
 
     def __update_status(self, status: ClusterStatusCode):
-        logging.debug(f"Updating status for {self.get_hostname()} with {status.value}")
         self.__status = status
         self.__database_connection.execute(
             "UPDATE magic_castles SET status = ? WHERE hostname = ?",
@@ -234,13 +248,14 @@ class MagicCastle:
             previous_status = self.get_status()
         else:
             self.__database_connection.execute(
-                "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type, owner) VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     self.get_hostname(),
                     self.get_cluster_name(),
                     self.get_domain(),
                     ClusterStatusCode.CREATED.value,
                     plan_type.value,
+                    self.get_owner(),
                 ),
             )
             mkdir(self.__get_cluster_path())
