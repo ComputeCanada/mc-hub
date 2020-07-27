@@ -76,7 +76,14 @@ def send_js_file(path):
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def catch_all(path):
-    return send_file("../dist/index.html")
+    # Single page application
+    response = send_file("../dist/index.html")
+
+    # Avoid caching SPA to avoid showing the page when the user is logged out
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 if __name__ == "__main__":
