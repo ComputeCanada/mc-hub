@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added automatic schema migration on server start to update the database schema to the latest version
 - Added database volume to persist the SQLite database file
+- Added magic_castles table for storing information about each Magic Castle cluster
+- Added AUTH_TYPE environment variable (either SAML or NONE) to make MC-UI compatible with a local environment and an online deployment
+- Added username display and logout button in the frontend when using SAML authentication
 
 ### Changed
 - Cluster's status and plan_type are now stored in a SQLite database instead of regular files
