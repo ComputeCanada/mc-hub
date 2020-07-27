@@ -5,6 +5,8 @@ from shutil import rmtree, copytree
 from subprocess import run
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
+from models.user.authenticated_user import AuthenticatedUser
+from typing import Callable
 import logging
 import pytest
 import sqlite3
@@ -43,6 +45,7 @@ def database_connection(mocker):
 
             def __exit__(self, type, value, traceback):
                 pass
+
         mocker.patch(
             "database.database_manager.DatabaseManager.connect",
             return_value=MockDatabaseConnection(),
@@ -52,13 +55,14 @@ def database_connection(mocker):
         SchemaManager(database_connection).update_schema()
 
         # Seeding test data
-        test_magic_castle_rows = [
+        test_magic_castle_rows_with_owner = [
             (
                 "buildplanning.calculquebec.cloud",
                 "buildplanning",
                 "calculquebec.cloud",
                 "plan_running",
                 "build",
+                "alice@computecanada.ca",
             ),
             (
                 "created.calculquebec.cloud",
@@ -66,6 +70,7 @@ def database_connection(mocker):
                 "calculquebec.cloud",
                 "created",
                 "build",
+                "alice@computecanada.ca",
             ),
             (
                 "empty.calculquebec.cloud",
@@ -73,6 +78,7 @@ def database_connection(mocker):
                 "calculquebec.cloud",
                 "build_error",
                 "none",
+                "bob@computecanada.ca",
             ),
             (
                 "missingfloatingips.c3.ca",
@@ -80,6 +86,7 @@ def database_connection(mocker):
                 "c3.ca",
                 "build_running",
                 "none",
+                "bob@computecanada.ca",
             ),
             (
                 "missingnodes.sub.example.com",
@@ -87,6 +94,7 @@ def database_connection(mocker):
                 "sub.example.com",
                 "build_error",
                 "none",
+                "bob@computecanada.ca",
             ),
             (
                 "valid1.calculquebec.cloud",
@@ -94,14 +102,51 @@ def database_connection(mocker):
                 "calculquebec.cloud",
                 "build_success",
                 "destroy",
+                "alice@computecanada.ca",
+            ),
+        ]
+        test_magic_castle_rows_without_owner = [
+            (
+                "noowner.calculquebec.cloud",
+                "noowner",
+                "calculquebec.cloud",
+                "build_success",
+                "destroy",
             ),
         ]
         database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type) values (?, ?, ?, ?, ?)",
-            test_magic_castle_rows,
+            "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type, owner) values (?, ?, ?, ?, ?, ?)",
+            test_magic_castle_rows_with_owner,
         )
+        database_connection.executemany(
+            "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type) values (?, ?, ?, ?, ?)",
+            test_magic_castle_rows_without_owner,
+        )
+
         database_connection.commit()
         yield database_connection
+
+
+@pytest.fixture
+def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
+    return lambda database_connection: AuthenticatedUser(
+        database_connection,
+        edu_person_principal_name="alice@computecanada.ca",
+        given_name="Alice",
+        surname="Tremblay",
+        mail="alice.tremblay@example.com",
+    )
+
+
+@pytest.fixture
+def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
+    return lambda database_connection: AuthenticatedUser(
+        database_connection,
+        edu_person_principal_name="bob@computecanada.ca",
+        given_name="Bob",
+        surname="Rodriguez",
+        mail="bob-rodriguez435@example.com",
+    )
 
 
 @pytest.fixture(autouse=True)

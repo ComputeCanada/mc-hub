@@ -1,0 +1,97 @@
+from models.user.authenticated_user import AuthenticatedUser
+from models.cluster_status_code import ClusterStatusCode
+from exceptions.cluster_not_found_exception import ClusterNotFoundException
+from tests.test_helpers import *
+import pytest
+from typing import Callable
+
+
+def test_full_name(database_connection, alice, bob):
+    assert alice(database_connection).full_name == "Alice Tremblay"
+    assert bob(database_connection).full_name == "Bob Rodriguez"
+
+
+def test_get_all_magic_castles(database_connection, alice, bob):
+    # Alice
+    alice_magic_castles = alice(database_connection).get_all_magic_castles()
+    assert [magic_castle.get_hostname() for magic_castle in alice_magic_castles] == [
+        "buildplanning.calculquebec.cloud",
+        "created.calculquebec.cloud",
+        "valid1.calculquebec.cloud",
+    ]
+    assert [magic_castle.get_status() for magic_castle in alice_magic_castles] == [
+        ClusterStatusCode.PLAN_RUNNING,
+        ClusterStatusCode.CREATED,
+        ClusterStatusCode.BUILD_SUCCESS,
+    ]
+
+    # Bob
+    bob_magic_castles = bob(database_connection).get_all_magic_castles()
+    assert [magic_castle.get_hostname() for magic_castle in bob_magic_castles] == [
+        "empty.calculquebec.cloud",
+        "missingfloatingips.c3.ca",
+        "missingnodes.sub.example.com",
+    ]
+    assert [magic_castle.get_status() for magic_castle in bob_magic_castles] == [
+        ClusterStatusCode.BUILD_ERROR,
+        ClusterStatusCode.BUILD_RUNNING,
+        ClusterStatusCode.BUILD_ERROR,
+    ]
+
+
+def test_create_empty_magic_castle(database_connection, alice):
+    user = alice(database_connection)
+    magic_castle = user.create_empty_magic_castle()
+    magic_castle.load_configuration(
+        {
+            "cluster_name": "alice123",
+            "domain": "example.com",
+            "image": "CentOS-7-x64-2019-07",
+            "nb_users": 10,
+            "instances": {
+                "mgmt": {"type": "p4-6gb", "count": 1},
+                "login": {"type": "p4-6gb", "count": 1},
+                "node": {"type": "p2-3gb", "count": 1},
+            },
+            "storage": {
+                "type": "nfs",
+                "home_size": 100,
+                "project_size": 50,
+                "scratch_size": 50,
+            },
+            "public_keys": [],
+            "guest_passwd": "",
+            "os_floating_ips": [],
+        }
+    )
+    magic_castle.plan_creation()
+    result = database_connection.execute(
+        "SELECT hostname, cluster_name, domain, status, plan_type, owner FROM magic_castles WHERE hostname=?",
+        ("alice123.example.com",),
+    ).fetchall()
+    assert result == [
+        (
+            "alice123.example.com",
+            "alice123",
+            "example.com",
+            "created",
+            "build",
+            "alice@computecanada.ca",
+        )
+    ]
+
+
+def test_get_magic_castle_by_hostname(database_connection, alice):
+    user = alice(database_connection)
+    magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
+    assert magic_castle.get_hostname() == "valid1.calculquebec.cloud"
+    assert magic_castle.get_owner() == "alice@computecanada.ca"
+    assert magic_castle.get_status() == ClusterStatusCode.BUILD_SUCCESS
+
+
+def test_get_magic_castle_by_hostname_other_user(database_connection, bob):
+    user = bob(database_connection)
+    with pytest.raises(ClusterNotFoundException):
+        user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
+    with pytest.raises(ClusterNotFoundException):
+        user.get_magic_castle_by_hostname("noowner.calculquebec.cloud")
