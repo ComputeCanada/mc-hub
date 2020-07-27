@@ -11,9 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added magic_castles table for storing information about each Magic Castle cluster
 - Added AUTH_TYPE environment variable (either SAML or NONE) to make MC-UI compatible with a local environment and an online deployment
 - Added username display and logout button in the frontend when using SAML authentication
+- Added guest password generation button to the cluster editor
 
 ### Changed
 - Cluster's status and plan_type are now stored in a SQLite database instead of regular files
+- Changed API resource /api/magic-castle for /api/magic-castles
+
+### Fixed
+- Fixed single page application shown even when the user is logged out (due to page caching)
 
 ## [v3.0.3] 2020-07-23
 
