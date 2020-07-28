@@ -28,11 +28,12 @@ Before running the Magic Castle UI Docker container, you need to setup a few thi
 1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port.
    ```shell script
    docker run --rm -p 80:5000 \
+     --mount "type=volume,source=database,target=/home/mcu/database" \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
      fredericfc/magic_castle-ui:latest
    ```
-   > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see the section on _Cluster storage & backup_.
+   > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see the section on _Cluster storage & backup_.   
 
 2. Navigate to `http://localhost:80` and start building clusters!
 3. Kill the container when you are done.
@@ -63,12 +64,15 @@ This requires installing Docker Compose.
 
 Magic Castle clusters are built in the directory `/home/mcu/clusters/<cluster name>.<domain>` inside the
 docker container.
-This folder contains the logs from terraform commands, the status file, the plans and the state file.
+This folder contains the logs from terraform commands, the plans and the state file.
 
 By running the container according to the above instructions, a bind mount was created. This 
 makes the `/home/mcu/clusters/<cluster name>.<domain>` directory accessible to the host machine in
 `$(pwd)/clusters_backup`.
-If one Magic Castle UI container is destroyed or fails, a new container will recover all the previously 
+
+Also, a volume named `database` was created and will persist the database even if the container fails or is destroyed. However, the `database` volume can only be accessed from within a running container, not by the host machine.
+
+In the end, if one Magic Castle UI container is destroyed or fails, a new container will recover all the previously 
 created clusters in the directory.
 
 ## Debugging, contributing and advanced usage
