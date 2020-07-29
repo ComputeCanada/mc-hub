@@ -1,6 +1,7 @@
 from models.user.user import User
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from models.magic_castle.magic_castle import MagicCastle
+from models.configuration import configuration
 
 
 class AuthenticatedUser(User):
@@ -27,22 +28,31 @@ class AuthenticatedUser(User):
     def username(self):
         return self.edu_person_principal_name.split("@")[0]
 
+    def is_admin(self):
+        try:
+            return self.edu_person_principal_name in configuration["admins"]
+        except KeyError:
+            return False
+
     def get_all_magic_castles(self):
         """
         Retrieve all the Magic Castles retrieved in the database.
+        If the user is admin, it will retrieve all the clusters,
+        otherwise, only the clusters owned by the user.
         :return: A list of MagicCastle objects
         """
-        results = self._database_connection.execute(
-            "SELECT hostname FROM magic_castles WHERE owner = ?",
-            (self.edu_person_principal_name,),
-        ).fetchall()
-        return [
-            MagicCastle(
-                self._database_connection,
-                result[0],
-                owner=self.edu_person_principal_name,
+        if self.is_admin():
+            results = self._database_connection.execute(
+                "SELECT hostname, owner FROM magic_castles"
             )
-            for result in results
+        else:
+            results = self._database_connection.execute(
+                "SELECT hostname, owner FROM magic_castles WHERE owner = ?",
+                (self.edu_person_principal_name,),
+            )
+        return [
+            MagicCastle(self._database_connection, hostname=result[0], owner=result[1],)
+            for result in results.fetchall()
         ]
 
     def create_empty_magic_castle(self):
@@ -51,14 +61,20 @@ class AuthenticatedUser(User):
         )
 
     def get_magic_castle_by_hostname(self, hostname):
-        if self._database_connection.execute(
-            "SELECT * FROM magic_castles WHERE owner = ? AND hostname = ?",
-            (self.edu_person_principal_name, hostname),
-        ).fetchone():
+        if self.is_admin():
+            results = self._database_connection.execute(
+                "SELECT hostname, owner FROM magic_castles WHERE hostname = ?",
+                (hostname,),
+            )
+        else:
+            results = self._database_connection.execute(
+                "SELECT hostname, owner FROM magic_castles WHERE owner = ? AND hostname = ?",
+                (self.edu_person_principal_name, hostname),
+            )
+        row = results.fetchone()
+        if row:
             return MagicCastle(
-                self._database_connection,
-                hostname,
-                owner=self.edu_person_principal_name,
+                self._database_connection, hostname=row[0], owner=row[1],
             )
         else:
             raise ClusterNotFoundException

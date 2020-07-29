@@ -10,3 +10,4 @@ APP_PATH = path.join(environ["HOME"], "app")
 DATABASE_PATH = path.join(environ["HOME"], "database", "database.db")
 SCHEMA_MIGRATIONS_DIRECTORY = path.join(APP_PATH, "database", "migrations")
 TERRAFORM_STATE_FILENAME = "terraform.tfstate"
+CONFIGURATION_FILE_PATH = path.join(environ["HOME"], "configuration.json")
