@@ -150,6 +150,25 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 
 @pytest.fixture(autouse=True)
+def mock_configuration(mocker):
+    mocker.patch(
+        "models.user.authenticated_user.configuration",
+        new={"admins": ["the-admin@computecanada.ca"]},
+    )
+
+
+@pytest.fixture
+def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
+    return lambda database_connection: AuthenticatedUser(
+        database_connection,
+        edu_person_principal_name="the-admin@computecanada.ca",
+        given_name="Admin",
+        surname="Istrator",
+        mail="administrator@example.com",
+    )
+
+
+@pytest.fixture(autouse=True)
 def mock_clusters_path(mocker):
     mocker.patch(
         "models.magic_castle.magic_castle.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH

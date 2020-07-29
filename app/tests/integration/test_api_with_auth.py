@@ -123,18 +123,21 @@ def test_get_all_magic_castle_names(client):
             "domain": "calculquebec.cloud",
             "hostname": "buildplanning.calculquebec.cloud",
             "status": "plan_running",
+            "owner": "alice",
         },
         {
             "cluster_name": "created",
             "domain": "calculquebec.cloud",
             "hostname": "created.calculquebec.cloud",
             "status": "created",
+            "owner": "alice",
         },
         {
             "cluster_name": "valid1",
             "domain": "calculquebec.cloud",
             "hostname": "valid1.calculquebec.cloud",
             "status": "build_success",
+            "owner": "alice",
         },
     ]
     assert res.status_code == 200
