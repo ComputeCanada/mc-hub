@@ -422,8 +422,10 @@ export default {
         ClusterStatusCode.DESTROY_RUNNING,
         ClusterStatusCode.BUILD_RUNNING
       ].includes(this.currentStatus);
+
       const existingClusterIsLoading =
         this.existingCluster && (this.currentStatus === null || clusterIsBusy);
+
       return this.possibleResources === null || existingClusterIsLoading;
     },
     applyRunning() {
@@ -454,8 +456,15 @@ export default {
       );
     },
     floatingIpRule() {
+      const floatingIpProvided = this.magicCastle.os_floating_ips.length > 0;
+      const availableFloatingIp =
+        this.possibleResources &&
+        this.possibleResources.os_floating_ips.includes(
+          this.magicCastle.os_floating_ips[0]
+        );
+
       return (
-        this.magicCastle.os_floating_ips.length > 0 ||
+        (floatingIpProvided && availableFloatingIp) ||
         "No OpenStack floating IP provided"
       );
     },

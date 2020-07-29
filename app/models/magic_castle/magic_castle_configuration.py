@@ -7,6 +7,7 @@ from models.constants import (
     MAGIC_CASTLE_RELEASE_PATH,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
+    AUTO_ALLOCATED_IP_LABEL,
 )
 from copy import deepcopy
 from os import path
@@ -68,6 +69,10 @@ class MagicCastleConfiguration:
 
         # "node" is the only instance category that is encapsulated in a list
         configuration["instances"]["node"] = configuration["instances"]["node"][0]
+
+        if len(configuration["os_floating_ips"]) == 0:
+            # When the floating ips is an empty list, it means it will be automatically allocated
+            configuration["os_floating_ips"] = [AUTO_ALLOCATED_IP_LABEL]
 
         return cls(configuration)
 
