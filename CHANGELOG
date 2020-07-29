@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [v4.0.0] UNRELEASED
+## [v4.0.0] 2020-07-29
 
 ### Added
 - Added automatic schema migration on server start to update the database schema to the latest version
@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added magic_castles table for storing information about each Magic Castle cluster
 - Added AUTH_TYPE environment variable (either SAML or NONE) to make MC-UI compatible with a local environment and an online deployment
 - Added username display and logout button in the frontend when using SAML authentication
+- Added admin accounts based on the configuration file
 - Added guest password generation button to the cluster editor
 
 ### Changed

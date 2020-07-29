@@ -31,14 +31,14 @@ Before running the Magic Castle UI Docker container, you need to setup a few thi
    ````
    If needed, change `~/.config/openstack/clouds.yaml` for the path containing your `clouds.yaml` file.
    > **Note:** Make sure your `clouds.yaml` file contains a clouds entry named `openstack`. Magic Castle UI will only take into account the cloud with this specific name, as of now.
-   
+
 2. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port.
    ```shell script
    docker run --rm -p 80:5000 \
      --mount "type=volume,source=database,target=/home/mcu/database" \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$CLOUDS_YAML_PATH,target=/home/mcu/.config/openstack/clouds.yaml" \
-     fredericfc/magic_castle-ui:v3.0.3
+     fredericfc/magic_castle-ui:v4.0.0
    ```
    > **Note:** This will create a bind mount in the `clusters_backup` directory. For more information, see the section on _Cluster storage & backup_.   
 
