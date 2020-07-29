@@ -240,7 +240,7 @@
     >Generating resource plan... please wait.</message-dialog>
     <confirm-dialog
       encourage-confirm
-      :max-width="550"
+      :max-width="650"
       title="Build confirmation"
       v-model="clusterModificationDialog"
       @confirm="applyCluster"
@@ -255,7 +255,7 @@
     <confirm-dialog
       alert
       encourage-cancel
-      :max-width="550"
+      :max-width="650"
       title="Destruction confirmation"
       v-model="clusterDestructionDialog"
       @confirm="applyCluster"
