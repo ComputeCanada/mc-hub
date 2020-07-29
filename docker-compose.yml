@@ -11,6 +11,9 @@ services:
       - type: bind
         source: ./clusters_backup
         target: /home/mcu/clusters
+      - type: bind
+        source: ./configuration.json
+        target: /home/mcu/configuration.json
       - type: volume
         source: database
         target: /home/mcu/database

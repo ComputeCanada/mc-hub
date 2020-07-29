@@ -135,3 +135,4 @@ clusters_backup/
 *.env
 *-openrc.sh
 clouds.yaml
+configuration.json
