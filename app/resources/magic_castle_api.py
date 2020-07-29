@@ -4,6 +4,7 @@ from exceptions.invalid_usage_exception import InvalidUsageException
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from database.database_manager import DatabaseManager
 from models.user.user import User
+from models.user.authenticated_user import AuthenticatedUser
 
 
 class MagicCastleAPI(ApiView):
@@ -12,15 +13,27 @@ class MagicCastleAPI(ApiView):
             magic_castle = user.get_magic_castle_by_hostname(hostname)
             return magic_castle.dump_configuration()
         else:
-            return [
-                {
-                    "cluster_name": magic_castle.get_cluster_name(),
-                    "domain": magic_castle.get_domain(),
-                    "hostname": magic_castle.get_hostname(),
-                    "status": magic_castle.get_status().value,
-                }
-                for magic_castle in user.get_all_magic_castles()
-            ]
+            if type(user) == AuthenticatedUser:
+                return [
+                    {
+                        "cluster_name": magic_castle.get_cluster_name(),
+                        "domain": magic_castle.get_domain(),
+                        "hostname": magic_castle.get_hostname(),
+                        "status": magic_castle.get_status().value,
+                        "owner": magic_castle.get_owner_username(),
+                    }
+                    for magic_castle in user.get_all_magic_castles()
+                ]
+            else:
+                return [
+                    {
+                        "cluster_name": magic_castle.get_cluster_name(),
+                        "domain": magic_castle.get_domain(),
+                        "hostname": magic_castle.get_hostname(),
+                        "status": magic_castle.get_status().value,
+                    }
+                    for magic_castle in user.get_all_magic_castles()
+                ]
 
     def post(self, user: User, hostname, apply=False):
         if apply:

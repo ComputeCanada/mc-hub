@@ -44,26 +44,6 @@ export default {
       currentHostname: null,
       statusPoller: null,
 
-      headers: [
-        {
-          text: "Cluster name",
-          value: "cluster_name"
-        },
-        {
-          text: "Domain",
-          value: "domain"
-        },
-        {
-          text: "Status",
-          value: "status"
-        },
-        {
-          text: "Actions",
-          value: "actions",
-          sortable: false,
-          align: "right"
-        }
-      ],
       magicCastles: []
     };
   },
@@ -72,6 +52,57 @@ export default {
   },
   beforeDestroy() {
     this.stopStatusPolling();
+  },
+  computed: {
+    headers() {
+      if (this.magicCastles.some(magicCastle => "owner" in magicCastle)) {
+        return [
+          {
+            text: "Cluster name",
+            value: "cluster_name"
+          },
+          {
+            text: "Domain",
+            value: "domain"
+          },
+          {
+            text: "Status",
+            value: "status"
+          },
+          {
+            text: "Owner",
+            value: "owner"
+          },
+          {
+            text: "Actions",
+            value: "actions",
+            sortable: false,
+            align: "right"
+          }
+        ];
+      } else {
+        return [
+          {
+            text: "Cluster name",
+            value: "cluster_name"
+          },
+          {
+            text: "Domain",
+            value: "domain"
+          },
+          {
+            text: "Status",
+            value: "status"
+          },
+          {
+            text: "Actions",
+            value: "actions",
+            sortable: false,
+            align: "right"
+          }
+        ];
+      }
+    }
   },
   methods: {
     startStatusPolling() {

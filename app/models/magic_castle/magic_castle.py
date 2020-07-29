@@ -76,6 +76,12 @@ class MagicCastle:
             else:
                 self.__owner = None
         return self.__owner
+    
+    def get_owner_username(self):
+        owner = self.get_owner()
+        if owner:
+            return owner.split("@")[0]
+        return None
 
     def load_configuration(self, configuration: dict):
         try:
