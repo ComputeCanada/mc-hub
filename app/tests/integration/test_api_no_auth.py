@@ -5,12 +5,12 @@ from os import path
 import sqlite3
 
 
-NON_EXISTING_HOSTNAME = "nonexisting"
+NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
 EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
 
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
-    "domain": "example.com",
+    "domain": "calculquebec.cloud",
     "image": "CentOS-7-x64-2019-07",
     "nb_users": 10,
     "instances": {

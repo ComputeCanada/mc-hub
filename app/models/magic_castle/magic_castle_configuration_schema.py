@@ -1,5 +1,6 @@
 from marshmallow import Schema, fields, validate
 from models.constants import INSTANCE_CATEGORIES
+from models.cloud.dns_manager import DnsManager
 import re
 
 
@@ -14,9 +15,13 @@ def validate_cluster_name(cluster_name):
     return re.search(r"^[a-z][a-z0-9]*$", cluster_name) is not None
 
 
+def validate_domain(domain):
+    return domain in DnsManager.get_available_domains()
+
+
 class MagicCastleConfigurationSchema(Schema):
     cluster_name = fields.Str(required=True, validate=validate_cluster_name)
-    domain = fields.Str(required=True)
+    domain = fields.Str(required=True, validate=validate_domain)
     image = fields.Str(required=True)
     nb_users = fields.Int(required=True)
     instances = fields.Dict(

@@ -12,7 +12,7 @@ def test_constructor_valid():
     config = MagicCastleConfiguration(
         {
             "cluster_name": "foo",
-            "domain": "bar.com",
+            "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 17,
             "instances": {
@@ -33,7 +33,7 @@ def test_constructor_valid():
     )
     assert config.dump() == {
         "cluster_name": "foo",
-        "domain": "bar.com",
+        "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2019-07",
         "nb_users": 17,
         "instances": {
@@ -53,13 +53,38 @@ def test_constructor_valid():
     }
 
 
-def test_constructor_invalid():
+def test_constructor_invalid_cluster_name():
     with pytest.raises(ValidationError):
-        # Invalid cluster_name
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo!",
-                "domain": "bar.com",
+                "domain": "calculquebec.cloud",
+                "image": "CentOS-7-x64-2019-07",
+                "nb_users": 17,
+                "instances": {
+                    "mgmt": {"type": "p4-6gb", "count": 1},
+                    "login": {"type": "p4-6gb", "count": 1},
+                    "node": {"type": "p2-3gb", "count": 3},
+                },
+                "storage": {
+                    "type": "nfs",
+                    "home_size": 50,
+                    "project_size": 1,
+                    "scratch_size": 1,
+                },
+                "public_keys": [""],
+                "guest_passwd": '1234\\56789\t "',
+                "os_floating_ips": [],
+            }
+        )
+
+
+def test_constructor_invalid_domain():
+    with pytest.raises(ValidationError):
+        MagicCastleConfiguration(
+            {
+                "cluster_name": "foo",
+                "domain": "invalid.cloud",
                 "image": "CentOS-7-x64-2019-07",
                 "nb_users": 17,
                 "instances": {
@@ -84,7 +109,7 @@ def test_get_from_dict_valid():
     config = MagicCastleConfiguration.get_from_dict(
         {
             "cluster_name": "foo",
-            "domain": "bar.com",
+            "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 17,
             "instances": {
@@ -105,7 +130,7 @@ def test_get_from_dict_valid():
     )
     assert config.dump() == {
         "cluster_name": "foo",
-        "domain": "bar.com",
+        "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2019-07",
         "nb_users": 17,
         "instances": {
@@ -129,7 +154,7 @@ def test_get_from_dict_automatic_floating_ip():
     config = MagicCastleConfiguration.get_from_dict(
         {
             "cluster_name": "foo",
-            "domain": "bar.com",
+            "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 17,
             "instances": {
@@ -150,7 +175,7 @@ def test_get_from_dict_automatic_floating_ip():
     )
     assert config.dump() == {
         "cluster_name": "foo",
-        "domain": "bar.com",
+        "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2019-07",
         "nb_users": 17,
         "instances": {
@@ -174,7 +199,7 @@ def test_get_from_dict_invalid_floating_ip():
     config = MagicCastleConfiguration.get_from_dict(
         {
             "cluster_name": "foo",
-            "domain": "bar.com",
+            "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 17,
             "instances": {
@@ -195,7 +220,7 @@ def test_get_from_dict_invalid_floating_ip():
     )
     assert config.dump() == {
         "cluster_name": "foo",
-        "domain": "bar.com",
+        "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2019-07",
         "nb_users": 17,
         "instances": {
@@ -330,7 +355,7 @@ def test_get_hostname():
     config = MagicCastleConfiguration(
         {
             "cluster_name": "foo",
-            "domain": "bar.com",
+            "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 17,
             "instances": {
@@ -349,4 +374,4 @@ def test_get_hostname():
             "os_floating_ips": [],
         }
     )
-    assert config.get_hostname() == "foo.bar.com"
+    assert config.get_hostname() == "foo.calculquebec.cloud"
