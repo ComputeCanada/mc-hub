@@ -32,8 +32,9 @@
             <template v-if="magicCastle !== null && !applyRunning">
               <v-list class="pt-0">
                 <v-list-item>
-                  <v-text-field
+                  <v-select
                     v-model="magicCastle.domain"
+                    :items="getPossibleValues('domain')"
                     label="Domain"
                     :disabled="existingCluster"
                   />
@@ -210,7 +211,7 @@
                     color="primary"
                     :disabled="loading || !validForm"
                     large
-                  >Spawn</v-btn>
+                  >Create plan</v-btn>
                 </template>
               </div>
             </template>
