@@ -9,7 +9,7 @@ from models.magic_castle.cluster_status_code import ClusterStatusCode
 from models.magic_castle.plan_type import PlanType
 from models.terraform.terraform_state_parser import TerraformStateParser
 from models.terraform.terraform_plan_parser import TerraformPlanParser
-from models.cloud.openstack_manager import OpenStackManager
+from models.cloud.cloud_manager import CloudManager
 from models.cloud.dns_manager import DnsManager
 from exceptions.invalid_usage_exception import InvalidUsageException
 from exceptions.busy_cluster_exception import BusyClusterException
@@ -184,7 +184,7 @@ class MagicCastle:
                 state = json.load(terraform_state_file)
             parser = TerraformStateParser(state)
 
-            openstack_manager = OpenStackManager(
+            cloud_manager = CloudManager(
                 pre_allocated_instance_count=parser.get_instance_count(),
                 pre_allocated_ram=parser.get_ram(),
                 pre_allocated_cores=parser.get_cores(),
@@ -193,13 +193,9 @@ class MagicCastle:
                 pre_allocated_floating_ips=parser.get_os_floating_ips(),
             )
         except FileNotFoundError:
-            openstack_manager = OpenStackManager()
+            cloud_manager = CloudManager()
 
-        available_resources = openstack_manager.get_available_resources()
-        available_resources["possible_resources"][
-            "domain"
-        ] = DnsManager.get_available_domains()
-        return available_resources
+        return cloud_manager.get_available_resources()
 
     def __is_busy(self):
         return self.get_status() in [
