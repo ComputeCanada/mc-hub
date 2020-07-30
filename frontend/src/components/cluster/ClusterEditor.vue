@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-container>
-      <v-card max-width="600" class="mx-auto" :loading="loading">
+      <v-card max-width="650" class="mx-auto" :loading="loading">
         <template #progress>
           <v-progress-linear :indeterminate="progress === 0" :value="progress" />
         </template>
