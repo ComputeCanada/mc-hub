@@ -4,7 +4,7 @@ from resources.progress_api import ProgressAPI
 from resources.available_resources_api import AvailableResourcesApi
 from resources.user_api import UserAPI
 from flask_cors import CORS
-from models.openstack_manager import OpenStackManager
+from models.cloud.openstack_manager import OpenStackManager
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
 
