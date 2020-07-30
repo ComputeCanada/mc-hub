@@ -1,7 +1,6 @@
 from os import environ, path
 from models.constants import INSTANCE_CATEGORIES, AUTO_ALLOCATED_IP_LABEL
 from re import search, IGNORECASE
-from models.cloud.dns_manager import DnsManager
 import openstack
 
 VALID_IMAGES = r"centos"
@@ -95,7 +94,6 @@ class OpenStackManager:
             },
             "os_floating_ips": floating_ips,
             "storage": {"type": ["nfs"]},
-            "domain": DnsManager.get_available_domains(),
         }
 
     def __get_resource_details(self):

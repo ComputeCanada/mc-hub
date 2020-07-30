@@ -1,4 +1,4 @@
-from models.openstack_manager import OpenStackManager
+from models.cloud.openstack_manager import OpenStackManager
 from models.cloud.dns_manager import DnsManager
 from models.magic_castle.magic_castle_configuration_schema import (
     MagicCastleConfigurationSchema,

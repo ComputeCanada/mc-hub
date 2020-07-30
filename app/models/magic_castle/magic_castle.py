@@ -9,7 +9,7 @@ from models.magic_castle.cluster_status_code import ClusterStatusCode
 from models.magic_castle.plan_type import PlanType
 from models.terraform.terraform_state_parser import TerraformStateParser
 from models.terraform.terraform_plan_parser import TerraformPlanParser
-from models.openstack_manager import OpenStackManager
+from models.cloud.openstack_manager import OpenStackManager
 from models.cloud.dns_manager import DnsManager
 from exceptions.invalid_usage_exception import InvalidUsageException
 from exceptions.busy_cluster_exception import BusyClusterException
@@ -195,7 +195,11 @@ class MagicCastle:
         except FileNotFoundError:
             openstack_manager = OpenStackManager()
 
-        return openstack_manager.get_available_resources()
+        available_resources = openstack_manager.get_available_resources()
+        available_resources["possible_resources"][
+            "domain"
+        ] = DnsManager.get_available_domains()
+        return available_resources
 
     def __is_busy(self):
         return self.get_status() in [
@@ -343,7 +347,9 @@ class MagicCastle:
                 ) as output_file:
                     environment_variables = environ.copy()
                     dns_manager = DnsManager(self.get_domain())
-                    environment_variables.update(dns_manager.get_environment_variables())
+                    environment_variables.update(
+                        dns_manager.get_environment_variables()
+                    )
                     environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
                     if destroy:
                         environment_variables["TF_WARN_OUTPUT_ERRORS"] = "1"

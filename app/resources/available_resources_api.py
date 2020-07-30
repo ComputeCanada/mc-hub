@@ -1,6 +1,6 @@
 from resources.api_view import ApiView
 from exceptions.invalid_usage_exception import InvalidUsageException
-from models.openstack_manager import OpenStackManager
+from models.cloud.openstack_manager import OpenStackManager
 from models.user.user import User
 
 
