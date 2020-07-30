@@ -268,7 +268,7 @@ def test_get_from_main_tf_json_file_valid():
         },
         "public_keys": [],
         "guest_passwd": "",
-        "os_floating_ips": [],
+        "os_floating_ips": ["Automatic allocation"],
     }
 
 
@@ -322,7 +322,7 @@ def test_update_main_tf_json_file():
         },
         "public_keys": ["ssh-rsa FOOBAR"],
         "guest_passwd": "",
-        "os_floating_ips": [],
+        "os_floating_ips": ["Automatic allocation"],
     }
 
 
