@@ -3,6 +3,6 @@ import json
 
 try:
     with open(CONFIGURATION_FILE_PATH) as configuration_file:
-        configuration = json.load(configuration_file)
+        config = json.load(configuration_file)
 except FileNotFoundError:
-    configuration = dict()
+    config = dict()

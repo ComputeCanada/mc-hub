@@ -1,7 +1,7 @@
 from models.user.user import User
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from models.magic_castle.magic_castle import MagicCastle
-from models.configuration import configuration
+from models.configuration import config
 
 
 class AuthenticatedUser(User):
@@ -30,7 +30,7 @@ class AuthenticatedUser(User):
 
     def is_admin(self):
         try:
-            return self.edu_person_principal_name in configuration["admins"]
+            return self.edu_person_principal_name in config["admins"]
         except KeyError:
             return False
 

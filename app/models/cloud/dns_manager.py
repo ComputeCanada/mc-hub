@@ -1,29 +1,27 @@
-from models.configuration import configuration
+from models.configuration import config
 
 
 class DnsManager:
     def __init__(self, domain):
         self.__domain = domain
-        self.__dns_provider = configuration["domains"][domain].get("dns_provider")
+        self.__dns_provider = config["domains"][domain].get("dns_provider")
 
     @staticmethod
     def get_available_domains():
-        return list(configuration["domains"].keys())
+        return list(config["domains"].keys())
 
     def get_dns_provider(self):
         return self.__dns_provider
 
     def get_environment_variables(self):
         if self.__dns_provider:
-            return configuration["dns_providers"][self.__dns_provider][
-                "environment_variables"
-            ]
+            return config["dns_providers"][self.__dns_provider]["environment_variables"]
         else:
             return {}
 
     def get_magic_castle_configuration(self):
         if self.__dns_provider:
-            dns_configuration = {
+            magic_castle_configuration = {
                 "dns": {
                     "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/{self.__dns_provider}",
                     "name": "${module.openstack.cluster_name}",
@@ -35,11 +33,11 @@ class DnsManager:
                     "sudoer_username": "${module.openstack.sudoer_username}",
                 }
             }
-            dns_configuration["dns"].update(
-                configuration["dns_providers"][self.__dns_provider][
+            magic_castle_configuration["dns"].update(
+                config["dns_providers"][self.__dns_provider][
                     "magic_castle_configuration"
                 ]
             )
-            return dns_configuration
+            return magic_castle_configuration
         else:
             return {}

@@ -170,10 +170,10 @@ def mock_configuration(mocker):
         },
     }
     mocker.patch(
-        "models.user.authenticated_user.configuration", new=configuration,
+        "models.user.authenticated_user.config", new=configuration,
     )
     mocker.patch(
-        "models.cloud.dns_manager.configuration", new=configuration,
+        "models.cloud.dns_manager.config", new=configuration,
     )
 
 
