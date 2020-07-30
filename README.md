@@ -16,7 +16,10 @@ Web interface to launch Magic Castles without knowing anything about Terraform.
 Before running the Magic Castle UI Docker container, you need to setup a few things.
 
 1. Download or create a `clouds.yaml` file with your OpenStack cloud credentials. The cloud entry you want to use needs to be named `openstack`.
-2. Copy the `clouds.yaml` file in the current directory.
+2. Move the `clouds.yaml` file in the location of your choice. A good practice is to store it in `~/.config/openstack/clouds.yaml`.
+   ````
+   mv clouds.yaml ~/.config/openstack
+   ````
 3. Create a directory named `clusters_backup` and give it the proper permissions.
    ```
    mkdir clusters_backup
