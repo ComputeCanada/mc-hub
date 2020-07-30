@@ -10,6 +10,7 @@ from models.magic_castle.plan_type import PlanType
 from models.terraform.terraform_state_parser import TerraformStateParser
 from models.terraform.terraform_plan_parser import TerraformPlanParser
 from models.openstack_manager import OpenStackManager
+from models.cloud.dns_manager import DnsManager
 from exceptions.invalid_usage_exception import InvalidUsageException
 from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
@@ -76,7 +77,7 @@ class MagicCastle:
             else:
                 self.__owner = None
         return self.__owner
-    
+
     def get_owner_username(self):
         owner = self.get_owner()
         if owner:
@@ -289,6 +290,8 @@ class MagicCastle:
                 self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
             ) as output_file:
                 environment_variables = environ.copy()
+                dns_manager = DnsManager(self.get_domain())
+                environment_variables.update(dns_manager.get_environment_variables())
                 environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
                 run(
                     [
@@ -339,6 +342,8 @@ class MagicCastle:
                     self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "w"
                 ) as output_file:
                     environment_variables = environ.copy()
+                    dns_manager = DnsManager(self.get_domain())
+                    environment_variables.update(dns_manager.get_environment_variables())
                     environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
                     if destroy:
                         environment_variables["TF_WARN_OUTPUT_ERRORS"] = "1"

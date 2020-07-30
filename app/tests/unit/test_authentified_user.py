@@ -67,7 +67,7 @@ def test_create_empty_magic_castle(database_connection, alice):
     magic_castle.load_configuration(
         {
             "cluster_name": "alice123",
-            "domain": "example.com",
+            "domain": "sub.example.com",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 10,
             "instances": {
@@ -89,13 +89,13 @@ def test_create_empty_magic_castle(database_connection, alice):
     magic_castle.plan_creation()
     result = database_connection.execute(
         "SELECT hostname, cluster_name, domain, status, plan_type, owner FROM magic_castles WHERE hostname=?",
-        ("alice123.example.com",),
+        ("alice123.sub.example.com",),
     ).fetchall()
     assert result == [
         (
-            "alice123.example.com",
+            "alice123.sub.example.com",
             "alice123",
-            "example.com",
+            "sub.example.com",
             "created",
             "build",
             "alice@computecanada.ca",

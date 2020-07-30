@@ -151,9 +151,29 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture(autouse=True)
 def mock_configuration(mocker):
+    configuration = {
+        "admins": ["the-admin@computecanada.ca"],
+        "domains": {
+            "calculquebec.cloud": {"dns_provider": "cloudflare"},
+            "c3.ca": {},
+            "sub.example.com": {},
+        },
+        "dns_providers": {
+            "cloudflare": {
+                "magic_castle_configuration": {"email": "you@example.com"},
+                "environment_variables": {
+                    "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
+                    "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
+                    "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN",
+                },
+            },
+        },
+    }
     mocker.patch(
-        "models.user.authenticated_user.configuration",
-        new={"admins": ["the-admin@computecanada.ca"]},
+        "models.user.authenticated_user.configuration", new=configuration,
+    )
+    mocker.patch(
+        "models.cloud.dns_manager.configuration", new=configuration,
     )
 
 

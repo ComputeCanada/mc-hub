@@ -1,4 +1,5 @@
 from models.openstack_manager import OpenStackManager
+from models.cloud.dns_manager import DnsManager
 from models.magic_castle.magic_castle_configuration_schema import (
     MagicCastleConfigurationSchema,
 )
@@ -93,6 +94,9 @@ class MagicCastleConfiguration:
                 }
             },
         }
+        main_tf_configuration["module"].update(
+            DnsManager(self.__configuration["domain"]).get_magic_castle_configuration()
+        )
 
         # "node" is the only instance category that needs to be encapsulated in a list
         main_tf_configuration["module"]["openstack"]["instances"]["node"] = [

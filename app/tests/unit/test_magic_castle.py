@@ -255,6 +255,7 @@ def test_get_available_resources_valid(database_connection):
                 "2.1.1.3",
             ],
             "storage": {"type": ["nfs"]},
+            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
 
@@ -374,6 +375,7 @@ def test_get_available_resources_empty(database_connection):
                 "2.1.1.3",
             ],
             "storage": {"type": ["nfs"]},
+            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
 
@@ -507,6 +509,7 @@ def test_get_available_resources_missing_nodes(database_connection):
                 "2.1.1.3",
             ],
             "storage": {"type": ["nfs"]},
+            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
 
@@ -624,5 +627,6 @@ def test_get_available_resources_not_found(database_connection):
                 "2.1.1.3",
             ],
             "storage": {"type": ["nfs"]},
+            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }

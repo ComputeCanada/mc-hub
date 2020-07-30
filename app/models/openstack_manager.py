@@ -1,11 +1,14 @@
 from os import environ, path
 from models.constants import INSTANCE_CATEGORIES, AUTO_ALLOCATED_IP_LABEL
 from re import search, IGNORECASE
+from models.cloud.dns_manager import DnsManager
 import openstack
 
 VALID_IMAGES = r"centos"
 OPENSTACK_CONFIG_FILENAME = "clouds.yaml"
-OPENSTACK_CONFIG_PATH = path.join(environ["HOME"], ".config", "openstack", OPENSTACK_CONFIG_FILENAME)
+OPENSTACK_CONFIG_PATH = path.join(
+    environ["HOME"], ".config", "openstack", OPENSTACK_CONFIG_FILENAME
+)
 
 # Magic Castle requires 10 GB on the root disk for each node.
 # Otherwise, it creates and mounts an external volume of 10 GB.
@@ -92,6 +95,7 @@ class OpenStackManager:
             },
             "os_floating_ips": floating_ips,
             "storage": {"type": ["nfs"]},
+            "domain": DnsManager.get_available_domains(),
         }
 
     def __get_resource_details(self):
