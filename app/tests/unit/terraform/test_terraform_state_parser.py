@@ -3,11 +3,12 @@ from pathlib import Path
 from os import path
 import pytest
 import json
+import tests
 
 
 def load_state(hostname):
     state_file_path = path.join(
-        Path(__file__).parent.parent, "mock-clusters", hostname, "terraform.tfstate"
+        path.dirname(tests.__file__), "mock-clusters", hostname, "terraform.tfstate"
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)

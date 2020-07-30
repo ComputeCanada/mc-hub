@@ -3,13 +3,14 @@ from models.terraform.terraform_plan_parser import TerraformPlanParser
 from pathlib import Path
 from os import path
 import pytest
+import tests
 import json
 from tests.test_helpers import *
 
 
 def load_plan(hostname):
     state_file_path = path.join(
-        Path(__file__).parent.parent, "mock-clusters", hostname, f"terraform_plan.json",
+        path.dirname(tests.__file__), "mock-clusters", hostname, f"terraform_plan.json",
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)
@@ -17,7 +18,7 @@ def load_plan(hostname):
 
 def read_terraform_apply_log(hostname):
     terraform_apply_output_path = path.join(
-        Path(__file__).parent.parent, "mock-clusters", hostname, f"terraform_apply.log",
+        path.dirname(tests.__file__), "mock-clusters", hostname, f"terraform_apply.log",
     )
     with open(terraform_apply_output_path, "r") as terraform_apply_output_file:
         return terraform_apply_output_file.read()
