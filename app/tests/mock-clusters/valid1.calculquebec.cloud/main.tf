@@ -3,7 +3,8 @@ terraform {
 }
 
 module "openstack" {
-  source = "/home/mcu/magic_castle-openstack-6.4/openstack"
+  source = "/home/mcu/magic_castle-openstack-8.1/openstack"
+  generate_ssh_key = true
 
   cluster_name = "valid1"
   domain       = "calculquebec.cloud"

@@ -66,6 +66,7 @@ class MagicCastleConfiguration:
             main_tf_configuration = json.load(main_tf)
         configuration = main_tf_configuration["module"]["openstack"]
         del configuration["source"]
+        del configuration["generate_ssh_key"]
 
         # "node" is the only instance category that is encapsulated in a list
         configuration["instances"]["node"] = configuration["instances"]["node"][0]
@@ -87,6 +88,7 @@ class MagicCastleConfiguration:
             "module": {
                 "openstack": {
                     "source": openstack_module_source,
+                    "generate_ssh_key": True,
                     **deepcopy(self.__configuration),
                 }
             },

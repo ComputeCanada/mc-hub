@@ -4,7 +4,8 @@
     },
     "module": {
         "openstack": {
-            "source": "/home/mcu/magic_castle-openstack-7.3/openstack",
+            "source": "/home/mcu/magic_castle-openstack-8.1/openstack",
+            "generate_ssh_key": true,
             "cluster_name": "missingnodes",
             "domain": "sub.example.com",
             "image": "CentOS-7-x64-2019-07",

@@ -13,7 +13,7 @@ RUN npm run build
 FROM python:3.8.2-alpine3.11 as base-server
 
 ENV TERRAFORM_VERSION 0.12.24
-ENV MAGIC_CASTLE_VERSION 7.3
+ENV MAGIC_CASTLE_VERSION 8.1
 ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ENV MAGIC_CASTLE_URL https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip
 
