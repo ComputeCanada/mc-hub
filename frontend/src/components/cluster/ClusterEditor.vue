@@ -36,6 +36,7 @@
                     v-model="magicCastle.domain"
                     :items="getPossibleValues('domain')"
                     label="Domain"
+                    :rules="[domainRule]"
                     :disabled="existingCluster"
                   />
                 </v-list-item>
@@ -437,6 +438,13 @@ export default {
     },
     clusterName() {
       return this.hostname.split(".")[0];
+    },
+    domainRule() {
+      return (
+        (this.possibleResources &&
+          this.possibleResources.domain.includes(this.magicCastle.domain)) ||
+        "Invalid domain provided"
+      );
     },
     instanceRules() {
       return [
