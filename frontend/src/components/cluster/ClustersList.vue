@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-card :max-width="800" class="mx-auto">
-      <v-data-table :headers="headers" :items="magicCastles" :loading="loading">
+      <v-data-table :headers="headers" :items="magicCastles">
         <template #top>
           <v-toolbar flat>
             <v-toolbar-title>Your Magic Castles</v-toolbar-title>
@@ -40,7 +40,6 @@ export default {
   components: { StatusChip },
   data() {
     return {
-      loading: true,
       currentHostname: null,
       statusPoller: null,
 
@@ -116,9 +115,7 @@ export default {
       clearInterval(this.statusPoller);
     },
     async loadMagicCastlesStatus() {
-      this.loading = true;
       this.magicCastles = (await MagicCastleRepository.getAll()).data;
-      this.loading = false;
     },
     async destroyCluster(hostname) {
       await this.$router.push({
