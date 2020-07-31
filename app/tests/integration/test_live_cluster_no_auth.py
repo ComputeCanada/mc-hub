@@ -2,6 +2,7 @@ import pytest
 from server import app
 from time import time, sleep
 from os import path
+from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster

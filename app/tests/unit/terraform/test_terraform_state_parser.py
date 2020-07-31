@@ -4,6 +4,7 @@ from os import path
 import pytest
 import json
 import tests
+from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 
 def load_state(hostname):

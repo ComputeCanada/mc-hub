@@ -1,6 +1,7 @@
 from models.user.anonymous_user import AnonymousUser
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
+from tests.mocks.configuration.config_mock import config_auth_saml_mock
 
 
 def test_full_name(database_connection):

@@ -4,10 +4,10 @@ from flask import make_response
 from database.database_manager import DatabaseManager
 from models.auth_type import AuthType
 from models.user.anonymous_user import AnonymousUser
+from models.configuration import config
 from models.user.authenticated_user import AuthenticatedUser
 from exceptions.unauthenticated_exception import UnauthenticatedException
 from exceptions.invalid_usage_exception import InvalidUsageException
-from os import environ
 import json
 
 DEFAULT_RESPONSE_CODE = 200
@@ -38,12 +38,12 @@ def handle_invalid_usage(route_handler):
 
 def compute_current_user(route_handler):
     def decorator(*args, **kwargs):
-        auth_type = AuthType(environ.get("AUTH_TYPE"))
+        auth_type = AuthType(config.get("auth_type") or "NONE")
         with DatabaseManager.connect() as database_connection:
             if auth_type == AuthType.SAML:
                 try:
                     # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
-                    # Therefore, special characters and accents in givenName and surname are not correctly decoded. 
+                    # Therefore, special characters and accents in givenName and surname are not correctly decoded.
                     user = AuthenticatedUser(
                         database_connection,
                         edu_person_principal_name=request.headers[

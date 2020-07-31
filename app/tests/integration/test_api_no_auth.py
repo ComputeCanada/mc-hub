@@ -1,6 +1,7 @@
 from server import app
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
+from tests.mocks.configuration.config_mock import config_auth_none_mock
 from os import path
 import sqlite3
 
@@ -68,11 +69,6 @@ EXISTING_CLUSTER_STATE = {
     "image": "CentOS-7-x64-2019-07",
     "os_floating_ips": ["100.101.102.103"],
 }
-
-
-@pytest.fixture(autouse=True)
-def disable_saml_auth(monkeypatch):
-    monkeypatch.setenv("AUTH_TYPE", "NONE")
 
 
 @pytest.fixture

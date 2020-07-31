@@ -6,6 +6,7 @@ import pytest
 import tests
 import json
 from tests.test_helpers import *
+from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 
 def load_plan(hostname):

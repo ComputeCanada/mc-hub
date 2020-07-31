@@ -5,8 +5,6 @@ services:
     build:
       context: .
       target: development-server
-    environment:
-      - AUTH_TYPE=SAML
     ports:
       - 5000:5000
       - 5678:5678

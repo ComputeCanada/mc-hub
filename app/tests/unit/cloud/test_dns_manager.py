@@ -1,6 +1,7 @@
 from tests.test_helpers import *
 from models.cloud.dns_manager import DnsManager
 import pytest
+from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 
 def test_initialize_disallowed_domain():

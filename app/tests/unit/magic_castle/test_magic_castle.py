@@ -5,6 +5,7 @@ from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.busy_cluster_exception import BusyClusterException
 from tests.test_helpers import *
 from marshmallow.exceptions import ValidationError
+from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 
 def test_get_status_valid(database_connection):

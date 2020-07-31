@@ -4,6 +4,7 @@ from tests.test_helpers import *
 from os import path
 import sqlite3
 import pytest
+from tests.mocks.configuration.config_mock import config_auth_saml_mock
 
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
@@ -83,11 +84,6 @@ BOB_HEADERS = {
     "surname": "Rodriguez",
     "mail": "bob-rodriguez435@example.com",
 }
-
-
-@pytest.fixture(autouse=True)
-def enable_saml_auth(monkeypatch):
-    monkeypatch.setenv("AUTH_TYPE", "SAML")
 
 
 @pytest.fixture

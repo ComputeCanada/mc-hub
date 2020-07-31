@@ -4,6 +4,7 @@ from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from tests.test_helpers import *
 import pytest
 from typing import Callable
+from tests.mocks.configuration.config_mock import config_auth_saml_mock
 
 
 def test_full_name(database_connection, alice, bob, admin):
