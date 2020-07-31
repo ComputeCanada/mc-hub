@@ -155,7 +155,7 @@ def mock_configuration(mocker):
         "admins": ["the-admin@computecanada.ca"],
         "domains": {
             "calculquebec.cloud": {"dns_provider": "cloudflare"},
-            "c3.ca": {},
+            "c3.ca": {"dns_provider": "gcloud"},
             "sub.example.com": {},
         },
         "dns_providers": {
@@ -165,6 +165,17 @@ def mock_configuration(mocker):
                     "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
                     "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
                     "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN",
+                },
+            },
+            "gcloud": {
+                "magic_castle_configuration": {
+                    "email": "you@example.com",
+                    "project": "your-project-name",
+                    "zone_name": "your-zone-name",
+                },
+                "environment_variables": {
+                    "GOOGLE_CREDENTIALS": "/home/mcu/credentials/gcloud-service-account.json",
+                    "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-service-account.json",
                 },
             },
         },
