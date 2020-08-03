@@ -12,7 +12,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn color="primary" :text="!encourageConfirm" @click="confirm">Yes</v-btn>
-        <v-btn color="primary" :text="!encourageCancel" @click="cancel">Cancel</v-btn>
+        <v-btn color="primary" :text="!encourageCancel" @click="cancel">No</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
