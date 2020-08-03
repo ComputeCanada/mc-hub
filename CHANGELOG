@@ -8,10 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added support for Magic Castle's DNS module
 - Added configuration.json configuration file
+- Added a Cancel button in the cluster editor
 
 ### Changed
 - A cluster's domain must be selected from a preconfigured list of allowed domains
 - Started using Magic Castle version 8.1
+- Improved button labelling in the cluster editor
+- auth_type is now part of configuration.json instead of being an environment variable
+- Changed Spawn and Modify buttons for Apply
+
+### Removed
+- Removed the Destroy button in the cluster editor (only in the cluster list now)
 
 ### Fixed
 - Fixed bug that caused the floating IP not being filled in when the initial plan is cancelled
