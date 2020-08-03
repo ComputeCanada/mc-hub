@@ -620,6 +620,9 @@ export default {
         }
       };
 
+      // Avoid two status pollers running concurrently
+      this.stopStatusPolling();
+
       this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
       fetchStatus();
     },
