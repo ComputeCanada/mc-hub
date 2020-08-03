@@ -182,7 +182,7 @@
                   <v-select
                     :items="getPossibleValues('os_floating_ips')"
                     v-model="magicCastle.os_floating_ips[0]"
-                    :rules="[floatingIpRule]"
+                    :rules="[floatingIpProvidedRule, floatingIpAvailableRule]"
                     label="OpenStack floating IP"
                   />
                 </v-list-item>
@@ -464,17 +464,19 @@ export default {
         "Volume storage exceeds maximum"
       );
     },
-    floatingIpRule() {
-      const floatingIpProvided = this.magicCastle.os_floating_ips.length > 0;
-      const availableFloatingIp =
-        this.possibleResources &&
+    floatingIpProvidedRule() {
+      return (
+        this.magicCastle.os_floating_ips.length > 0 || "No floating IP provided"
+      );
+    },
+    floatingIpAvailableRule() {
+      return (
+        (this.possibleResources &&
+          this.magicCastle &&
         this.possibleResources.os_floating_ips.includes(
           this.magicCastle.os_floating_ips[0]
-        );
-
-      return (
-        (floatingIpProvided && availableFloatingIp) ||
-        "No OpenStack floating IP provided"
+          )) ||
+        "Floating IP not available"
       );
     },
     instanceCountUsed() {
