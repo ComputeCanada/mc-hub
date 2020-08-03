@@ -193,7 +193,7 @@
                   v-on="{click: (existingCluster ? planModification : planCreation)}"
                   color="primary"
                   class="ma-2"
-                  :disabled="loading || !validForm || !dirtyForm"
+                  :disabled="loading || !validForm || (!dirtyForm && currentStatus === 'build_success')"
                   large
                 >Apply</v-btn>
                 <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
@@ -391,14 +391,18 @@ export default {
     } else {
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       this.generateGuestPassword();
+      this.initialMagicCastle = cloneDeep(this.magicCastle);
       await this.loadAvailableResources();
       if (this.possibleResources.os_floating_ips.length === 0) {
         this.showError("There is no floating IP available right now.");
-        return;
+      } else {
+        this.initialMagicCastle.os_floating_ips = [
+          this.possibleResources.os_floating_ips[0]
+        ];
+        this.magicCastle.os_floating_ips = [
+          this.possibleResources.os_floating_ips[0]
+        ];
       }
-      this.magicCastle.os_floating_ips = [
-        this.possibleResources.os_floating_ips[0]
-      ];
     }
     // Wait for magicCastle watcher to finish executing
     this.$nextTick(() => {
@@ -427,7 +431,10 @@ export default {
       );
     },
     dirtyForm() {
-      return !isEqual(this.initialMagicCastle, this.magicCastle);
+      return (
+        !isEqual(this.initialMagicCastle, this.magicCastle) &&
+        this.magicCastleInitialized
+      );
     },
     clusterName() {
       return this.hostname.split(".")[0];
@@ -548,7 +555,7 @@ export default {
   },
   watch: {
     dirtyForm(dirty) {
-      if (dirty && this.magicCastleInitialized) {
+      if (dirty) {
         this.$enableUnloadConfirmation();
       } else {
         this.$disableUnloadConfirmation();
