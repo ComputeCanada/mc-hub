@@ -191,48 +191,23 @@
                 <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
                 <template v-if="existingCluster">
                   <v-btn
-                    v-if="currentStatus == 'created'"
                     @click="planModification"
                     color="primary"
                     class="ma-2"
                     :disabled="loading || !validForm"
                     large
-                  >Create</v-btn>
-                  <v-btn
-                    v-else
-                    @click="planModification"
-                    color="primary"
-                    class="ma-2"
-                    :disabled="loading || !validForm"
-                    large
-                  >Modify</v-btn>
-                  <v-btn
-                    v-if="currentStatus == 'created'"
-                    @click="forceDestruction"
-                    color="primary"
-                    class="ma-2"
-                    :disabled="loading"
-                    large
-                    outlined
-                  >Delete</v-btn>
-                  <v-btn
-                    v-else
-                    @click="planDestruction"
-                    color="primary"
-                    class="ma-2"
-                    :disabled="loading"
-                    large
-                    outlined
-                  >Destroy</v-btn>
+                  >Apply</v-btn>
                 </template>
                 <template v-else>
                   <v-btn
                     @click="planCreation"
                     color="primary"
+                    class="ma-2"
                     :disabled="loading || !validForm"
                     large
-                  >Create</v-btn>
+                  >Apply</v-btn>
                 </template>
+                <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
               </div>
             </template>
             <template v-else-if="resourcesChanges && applyRunning">
@@ -414,7 +389,14 @@ export default {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
-        await this.planDestruction();
+        const { status } = (
+          await MagicCastleRepository.getStatus(this.hostname)
+        ).data;
+        if (status == ClusterStatusCode.CREATED) {
+          await this.forceDestruction();
+        } else {
+          await this.planDestruction();
+        }
       }
       this.startStatusPolling();
     } else {
