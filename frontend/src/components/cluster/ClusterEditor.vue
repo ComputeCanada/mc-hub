@@ -189,24 +189,13 @@
               </v-list>
               <div class="text-center">
                 <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
-                <template v-if="existingCluster">
-                  <v-btn
-                    @click="planModification"
-                    color="primary"
-                    class="ma-2"
-                    :disabled="loading || !validForm"
-                    large
-                  >Apply</v-btn>
-                </template>
-                <template v-else>
-                  <v-btn
-                    @click="planCreation"
-                    color="primary"
-                    class="ma-2"
-                    :disabled="loading || !validForm"
-                    large
-                  >Apply</v-btn>
-                </template>
+                <v-btn
+                  v-on="{click: (existingCluster ? planModification : planCreation)}"
+                  color="primary"
+                  class="ma-2"
+                  :disabled="loading || !validForm || !dirtyForm"
+                  large
+                >Apply</v-btn>
                 <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
               </div>
             </template>
@@ -267,7 +256,7 @@
 </template>
 
 <script>
-import { cloneDeep } from "lodash";
+import { cloneDeep, isEqual } from "lodash";
 import { generatePassword } from "@/models/utils";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
@@ -353,7 +342,6 @@ export default {
       },
 
       validForm: true,
-      dirtyForm: false,
 
       progress: 0,
       successDialog: false,
@@ -365,6 +353,7 @@ export default {
       statusPoller: null,
       currentStatus: null,
       resourcesChanges: [],
+      initialMagicCastle: null,
       magicCastle: null,
       magicCastleInitialized: false,
       quotas: null,
@@ -436,6 +425,9 @@ export default {
         this.currentStatus == "build_running" ||
         this.currentStatus == "destroy_running"
       );
+    },
+    dirtyForm() {
+      return !isEqual(this.initialMagicCastle, this.magicCastle);
     },
     clusterName() {
       return this.hostname.split(".")[0];
@@ -555,16 +547,8 @@ export default {
     }
   },
   watch: {
-    magicCastle: {
-      handler() {
-        if (this.magicCastleInitialized) {
-          this.dirtyForm = true;
-        }
-      },
-      deep: true
-    },
     dirtyForm(dirty) {
-      if (dirty) {
+      if (dirty && this.magicCastleInitialized) {
         this.$enableUnloadConfirmation();
       } else {
         this.$disableUnloadConfirmation();
@@ -673,14 +657,15 @@ export default {
     async loadCluster() {
       try {
         this.magicCastleInitialized = false;
-        this.magicCastle = (
+        this.initialMagicCastle = (
           await MagicCastleRepository.getState(this.hostname)
         ).data;
       } catch (e) {
         // Terraform state file could not be parsed or was not created.
         // This happens for new clusters, which are not built yet.
-        this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
+        this.initialMagicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       } finally {
+        this.magicCastle = cloneDeep(this.initialMagicCastle);
         // Wait for magicCastle watcher to finish executing
         this.$nextTick(() => {
           this.magicCastleInitialized = true;
@@ -764,7 +749,6 @@ export default {
     unloadCluster() {
       this.magicCastle = null;
       this.currentStatus = null;
-      this.dirtyForm = false;
       this.magicCastleInitialized = false;
     }
   }
