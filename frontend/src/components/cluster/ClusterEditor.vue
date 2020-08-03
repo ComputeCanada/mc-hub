@@ -187,6 +187,8 @@
                   />
                 </v-list-item>
               </v-list>
+
+              <!-- Apply and cancel -->
               <div class="text-center">
                 <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
                 <v-btn
@@ -414,21 +416,26 @@ export default {
   },
   computed: {
     loading() {
-      const clusterIsBusy = [
+      const existingClusterIsLoading =
+        this.existingCluster && (this.currentStatus === null || this.busy);
+
+      return !this.possibleResourcesLoaded || existingClusterIsLoading;
+    },
+    possibleResourcesLoaded() {
+      return this.possibleResources !== null;
+    },
+    busy() {
+      return [
+        ClusterStatusCode.DESTROY_RUNNING,
+        ClusterStatusCode.BUILD_RUNNING,
+        ClusterStatusCode.PLAN_RUNNING
+      ].includes(this.currentStatus);
+    },
+    applyRunning() {
+      return [
         ClusterStatusCode.DESTROY_RUNNING,
         ClusterStatusCode.BUILD_RUNNING
       ].includes(this.currentStatus);
-
-      const existingClusterIsLoading =
-        this.existingCluster && (this.currentStatus === null || clusterIsBusy);
-
-      return this.possibleResources === null || existingClusterIsLoading;
-    },
-    applyRunning() {
-      return (
-        this.currentStatus == "build_running" ||
-        this.currentStatus == "destroy_running"
-      );
     },
     dirtyForm() {
       return (
@@ -473,88 +480,85 @@ export default {
       return (
         (this.possibleResources &&
           this.magicCastle &&
-        this.possibleResources.os_floating_ips.includes(
-          this.magicCastle.os_floating_ips[0]
+          this.possibleResources.os_floating_ips.includes(
+            this.magicCastle.os_floating_ips[0]
           )) ||
         "Floating IP not available"
       );
     },
     instanceCountUsed() {
-      if (!this.magicCastle || !this.resourceDetails) return 0;
-
-      return this.instances.reduce((acc, instance) => acc + instance.count, 0);
+      return this.usedResourcesLoaded
+        ? this.instances.reduce((acc, instance) => acc + instance.count, 0)
+        : 0;
     },
     instanceCountMax() {
-      if (!this.quotas) return 0;
-      return this.quotas.instance_count.max;
+      return this.quotas ? this.quotas.instance_count.max : 0;
     },
     ramGbUsed() {
-      if (!this.magicCastle || !this.resourceDetails) return 0;
-
-      return (
-        this.instances.reduce(
-          (acc, instance) =>
-            acc + instance.count * this.getInstanceDetail(instance.type, "ram"),
-          0
-        ) / MB_PER_GB
-      );
+      return this.usedResourcesLoaded
+        ? this.instances.reduce(
+            (acc, instance) =>
+              acc +
+              instance.count * this.getInstanceDetail(instance.type, "ram"),
+            0
+          ) / MB_PER_GB
+        : 0;
     },
     ramGbMax() {
-      if (!this.quotas) return 0;
-      return this.quotas.ram.max / MB_PER_GB;
+      return this.quotas ? this.quotas.ram.max / MB_PER_GB : 0;
     },
     vcpuUsed() {
-      if (!this.magicCastle || !this.resourceDetails) return 0;
-
-      return this.instances.reduce(
-        (acc, instance) =>
-          acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
-        0
-      );
+      return this.usedResourcesLoaded
+        ? this.instances.reduce(
+            (acc, instance) =>
+              acc +
+              instance.count * this.getInstanceDetail(instance.type, "vcpus"),
+            0
+          )
+        : 0;
     },
     vcpuMax() {
-      if (!this.quotas) return 0;
-      return this.quotas.vcpus.max;
+      return this.quotas ? this.quotas.vcpus.max : 0;
     },
     volumeCountUsed() {
-      if (!this.magicCastle || !this.resourceDetails) return 0;
-
-      return (
-        this.instances.reduce(
-          (acc, instance) =>
-            acc +
-            instance.count *
-              this.getInstanceDetail(instance.type, "required_volume_count"),
-          0
-        ) + EXTERNAL_STORAGE_VOLUME_COUNT
-      );
+      return this.usedResourcesLoaded
+        ? this.instances.reduce(
+            (acc, instance) =>
+              acc +
+              instance.count *
+                this.getInstanceDetail(instance.type, "required_volume_count"),
+            0
+          ) + EXTERNAL_STORAGE_VOLUME_COUNT
+        : 0;
     },
     volumeCountMax() {
-      if (!this.quotas) return 0;
-      return this.quotas.volume_count.max;
+      return this.quotas ? this.quotas.volume_count.max : 0;
     },
     volumeSizeUsed() {
-      if (!this.magicCastle || !this.resourceDetails) return 0;
-
-      // storage required by nodes
-      let storage = this.instances.reduce(
+      return this.usedResourcesLoaded
+        ? this.instancesVolumeSizeUsed +
+            this.magicCastle.storage.home_size +
+            this.magicCastle.storage.project_size +
+            this.magicCastle.storage.scratch_size
+        : 0;
+    },
+    instancesVolumeSizeUsed() {
+      return this.instances.reduce(
         (acc, instance) =>
           acc +
           instance.count *
             this.getInstanceDetail(instance.type, "required_volume_size"),
         0
       );
-      storage += this.magicCastle.storage.home_size;
-      storage += this.magicCastle.storage.project_size;
-      storage += this.magicCastle.storage.scratch_size;
-      return storage;
     },
     volumeSizeMax() {
-      if (!this.quotas) return 0;
-      return this.quotas.volume_size.max;
+      return this.quotas ? this.quotas.volume_size.max : 0;
     },
     instances() {
-      return Object.values(this.magicCastle.instances);
+      return this.magicCastle ? Object.values(this.magicCastle.instances) : [];
+    },
+    usedResourcesLoaded() {
+      return this.magicCastle !== null && this.resourceDetails !== null;
     }
   },
   watch: {
