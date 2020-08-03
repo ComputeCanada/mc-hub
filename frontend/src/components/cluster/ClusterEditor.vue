@@ -481,8 +481,8 @@ export default {
     },
     instanceCountUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
-      const instances = Object.values(this.magicCastle.instances);
-      return instances.reduce((acc, instance) => acc + instance.count, 0);
+
+      return this.instances.reduce((acc, instance) => acc + instance.count, 0);
     },
     instanceCountMax() {
       if (!this.quotas) return 0;
@@ -490,9 +490,9 @@ export default {
     },
     ramGbUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
-      const instances = Object.values(this.magicCastle.instances);
+
       return (
-        instances.reduce(
+        this.instances.reduce(
           (acc, instance) =>
             acc + instance.count * this.getInstanceDetail(instance.type, "ram"),
           0
@@ -505,8 +505,8 @@ export default {
     },
     vcpuUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
-      const instances = Object.values(this.magicCastle.instances);
-      return instances.reduce(
+
+      return this.instances.reduce(
         (acc, instance) =>
           acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
         0
@@ -518,9 +518,9 @@ export default {
     },
     volumeCountUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
-      const instances = Object.values(this.magicCastle.instances);
+
       return (
-        instances.reduce(
+        this.instances.reduce(
           (acc, instance) =>
             acc +
             instance.count *
@@ -535,10 +535,9 @@ export default {
     },
     volumeSizeUsed() {
       if (!this.magicCastle || !this.resourceDetails) return 0;
-      const instances = Object.values(this.magicCastle.instances);
 
       // storage required by nodes
-      let storage = instances.reduce(
+      let storage = this.instances.reduce(
         (acc, instance) =>
           acc +
           instance.count *
@@ -553,6 +552,9 @@ export default {
     volumeSizeMax() {
       if (!this.quotas) return 0;
       return this.quotas.volume_size.max;
+    },
+    instances() {
+      return Object.values(this.magicCastle.instances);
     }
   },
   watch: {
