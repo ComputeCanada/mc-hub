@@ -191,6 +191,15 @@
                 <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
                 <template v-if="existingCluster">
                   <v-btn
+                    v-if="currentStatus == 'created'"
+                    @click="planModification"
+                    color="primary"
+                    class="ma-2"
+                    :disabled="loading || !validForm"
+                    large
+                  >Create</v-btn>
+                  <v-btn
+                    v-else
                     @click="planModification"
                     color="primary"
                     class="ma-2"
@@ -198,6 +207,16 @@
                     large
                   >Modify</v-btn>
                   <v-btn
+                    v-if="currentStatus == 'created'"
+                    @click="forceDestruction"
+                    color="primary"
+                    class="ma-2"
+                    :disabled="loading"
+                    large
+                    outlined
+                  >Delete</v-btn>
+                  <v-btn
+                    v-else
                     @click="planDestruction"
                     color="primary"
                     class="ma-2"
@@ -212,7 +231,7 @@
                     color="primary"
                     :disabled="loading || !validForm"
                     large
-                  >Create plan</v-btn>
+                  >Create</v-btn>
                 </template>
               </div>
             </template>
@@ -713,6 +732,16 @@ export default {
     async planDestruction() {
       let planCreator = async () => MagicCastleRepository.delete(this.hostname);
       await this.showPlanConfirmationDialog({ planCreator, destroy: true });
+    },
+    async forceDestruction() {
+      try {
+        this.unloadCluster();
+        await MagicCastleRepository.delete(this.hostname);
+        await MagicCastleRepository.apply(this.hostname);
+        this.startStatusPolling();
+      } catch (e) {
+        this.showError(e.response.data.message);
+      }
     },
     async applyCluster() {
       try {
