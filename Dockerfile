@@ -8,7 +8,7 @@ RUN npm install
 ADD frontend .
 RUN npm run build
 
-## PRODUCTION STAGE
+# BACKEND BUILD STAGE
 
 FROM python:3.8.2-alpine3.11 as base-server
 
@@ -16,8 +16,6 @@ ENV TERRAFORM_VERSION 0.12.24
 ENV MAGIC_CASTLE_VERSION 8.1
 ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 ENV MAGIC_CASTLE_URL https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip
-
-ENV AUTH_TYPE NONE
 
 ## EXTERNAL DEPENDENCIES
 
@@ -36,6 +34,9 @@ RUN adduser -D mcu
 
 # Set mcu as the owner of the SQLite database volume
 RUN mkdir -p /home/mcu/database && chown -R mcu:mcu /home/mcu/database
+
+# Set mcu as the owner of the credentials directory
+RUN mkdir -p /home/mcu/credentials && chown -R mcu:mcu /home/mcu/credentials
 
 USER mcu
 WORKDIR /home/mcu
@@ -69,8 +70,8 @@ FROM base-server as development-server
 USER root
 
 RUN apk add git=2.24.3-r0 \
-    npm=12.15.0-r1 \
-    sqlite=3.30.1-r2
+            npm=12.15.0-r1 \
+            sqlite=3.30.1-r2
 RUN pip install ptvsd==4.3.2 \
                 pylint==2.5.3 \
                 black

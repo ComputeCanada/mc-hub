@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   web:
@@ -18,10 +18,13 @@ services:
         source: database
         target: /home/mcu/database
       - type: bind
+        source: ./gcloud-key.json
+        target: /home/mcu/credentials/gcloud-key.json
+      - type: bind
         source: ./clouds.yaml
         target: /home/mcu/.config/openstack/clouds.yaml
         read_only: true
     user: mcu
 
 volumes:
-  database: 
+  database:
