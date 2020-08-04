@@ -135,4 +135,5 @@ clusters_backup/
 *.env
 *-openrc.sh
 clouds.yaml
+gcloud-key.json
 configuration.json
