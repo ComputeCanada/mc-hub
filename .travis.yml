@@ -8,7 +8,8 @@ env:
     - IMAGE_NAME=fredericfc/magic_castle-ui
 
 before_install:
-  - openssl aes-256-cbc -K $encrypted_8da6df925ffa_key -iv $encrypted_8da6df925ffa_iv -in clouds.yaml.enc -out clouds.yaml -d
+  - openssl aes-256-cbc -K $encrypted_3b9f0b9d36d1_key -iv $encrypted_3b9f0b9d36d1_iv -in secrets.tar.enc -out secrets.tar -d
+  - tar xvf secrets.tar
 
 install:
   - docker build --tag "$IMAGE_NAME" --target production-server .
@@ -17,13 +18,19 @@ script:
   - |
     if [ -z $TRAVIS_TAG ]; then
       docker run --rm --publish 5000:5000 \
-        --mount "type=volume,source=database,target=/home/mcu/database" \
-        --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+     --mount "type=volume,source=database,target=/home/mcu/database" \
+     --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
+     --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+     --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
+     --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
         -w /home/mcu/app "$IMAGE_NAME" python -m pytest;
     else
       docker run --rm --publish 5000:5000 \
-        --mount "type=volume,source=database,target=/home/mcu/database" \
-        --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+     --mount "type=volume,source=database,target=/home/mcu/database" \
+     --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
+     --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+     --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
+     --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
         -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster;
     fi
 
