@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [v5.0.0] UNRELEASED
+## [v5.0.0] 2020-08-04
 
 ### Added
 - Added support for Magic Castle's DNS module
@@ -22,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - Fixed bug that caused the floating IP not being filled in when the initial plan is cancelled
+
+### Security
+- Updated elliptic package from version 6.5.2 to version 6.5.3
 
 ## [v4.0.0] 2020-07-29
 
