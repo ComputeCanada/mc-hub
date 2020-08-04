@@ -4,43 +4,44 @@ Magic Castle UI's configuration is mostly stored in a single file named `configu
 
 An example `configuration.json` is shown below.
 
-````json
+```json
 {
-    "auth_type": "NONE",
-    "admins": [],
-    "domains": {
-        "calculquebec.cloud": {
-            "dns_provider": "cloudflare"
-        },
-        "c3.ca": {
-            "dns_provider": "gcloud"
-        }
+  "auth_type": "NONE",
+  "admins": [],
+  "domains": {
+    "calculquebec.cloud": {
+      "dns_provider": "cloudflare"
     },
-    "dns_providers": {
-        "cloudflare": {
-            "magic_castle_configuration": {
-                "email": "you@example.com"
-            },
-            "environment_variables": {
-                "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
-                "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
-                "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN"
-            }
-        },
-        "gcloud": {
-            "magic_castle_configuration": {
-                "email": "you@example.com",
-                "project": "your-project-name",
-                "zone_name": "your-zone-name"
-            },
-            "environment_variables": {
-                "GOOGLE_CREDENTIALS": "/home/mcu/credentials/gcloud-service-account.json",
-                "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-service-account.json"
-            }
-        }
+    "c3.ca": {
+      "dns_provider": "gcloud"
     }
+  },
+  "dns_providers": {
+    "cloudflare": {
+      "magic_castle_configuration": {
+        "email": "you@example.com"
+      },
+      "environment_variables": {
+        "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
+        "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
+        "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN"
+      }
+    },
+    "gcloud": {
+      "magic_castle_configuration": {
+        "email": "you@example.com",
+        "project": "your-project-id",
+        "zone_name": "your-zone-name"
+      },
+      "environment_variables": {
+        "GOOGLE_CREDENTIALS": "/home/mcu/credentials/gcloud-key.json",
+        "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-key.json"
+      }
+    }
+  }
 }
-````
+```
+
 Here is a description of the purpose of each entry in the configuration.
 
 ### `auth_type`
@@ -64,14 +65,16 @@ An object where each key represents the domain name and the value represents the
 Each domain object can contain an optional `dns_provider` entry.
 
 If `dns_provider` is **provided**, Magic Castle UI will enable the DNS module in Magic Castle, which is required for many features (including JupyterHub, Globus and FreeIPA). The value associated with `dns_provider` must correspond to a configuration in the `dns_providers` object. Here is an example domain with the DNS module enabled:
-````json
+
+```json
 "example.com": {"dns_provider": "cloudflare"}
-````
+```
 
 If `dns_provider` is **not provided**, Magic Castle UI will disable the DNS module in Magic Castle. This is useful if you don't own a domain or have API keys from CloudFlare or Google Cloud to manage one. Here is an example domain with the DNS module disabled:
-````json
+
+```json
 "example.com": {}
-````
+```
 
 ### `dns_providers` (optional)
 
@@ -87,22 +90,22 @@ According to [Magic Castle's documentation](https://github.com/ComputeCanada/mag
 
 Give the following permissions to the token.
 
-| Section | Subsection | Permission|
-| ------------- |-------------:| -----:|
-| Account | Account Settings | Read|
-| Zone | Zone Settings | Read|
-| Zone | Zone | Read|
-| Zone | DNS | Write|
+| Section |       Subsection | Permission |
+| ------- | ---------------: | ---------: |
+| Account | Account Settings |       Read |
+| Zone    |    Zone Settings |       Read |
+| Zone    |             Zone |       Read |
+| Zone    |              DNS |      Write |
 
 Create the token and copy its value in the three environment variables. Here is an example with the token `EXAMPLE_TOKEN`.
 
-````json
+```json
 {
-    "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
-    "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
-    "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN"
+  "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
+  "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
+  "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN"
 }
-````
+```
 
 ### `dns_providers.gcloud.magic_castle_configuration.email`
 
@@ -110,21 +113,12 @@ Your email address. This email is used by Let's Encrypt to send important accoun
 
 ### `dns_providers.gcloud.magic_castle_configuration.project`
 
-The project name of your Google Cloud project.
+The project ID of your Google Cloud project.
 
 ### `dns_providers.gcloud.magic_castle_configuration.zone_name`
 
-The name of the Google Cloud zone.
+The name of the Google Cloud managed zone.
 
 ### `dns_providers.gcloud.environment_variables`
 
-The environment variables required by Google Cloud refer to the path of the Google Cloud account's JSON key, which is always located in `/home/mcu/credentials/<key file name>` in Magic Castle UI.
-
-The key file name should correspond to the file name of the key you downloaded from Google Cloud. Here is an example with a key file named `gcloud-service-account.json`:
-
-````json
-{
-    "GOOGLE_CREDENTIALS": "/home/mcu/credentials/gcloud-service-account.json",
-    "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-service-account.json"
-}
-````
+The environment variables required by Google Cloud refer to the path of the Google Cloud account's JSON key, which is always located in `/home/mcu/credentials/gcloud-key.json` in Magic Castle UI. You don't need to modify this.
