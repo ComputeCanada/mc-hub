@@ -2,6 +2,7 @@ import pytest
 from server import app
 from time import time, sleep
 from os import path
+from random import randrange
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
@@ -19,7 +20,10 @@ References:
 https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option
 """
 
-HOSTNAME = "trulygreatcluster1.calculquebec.cloud"
+# Using a dynamic cluster name to avoid bans from Let's Encrypt when making too many certificate requests
+CLUSTER_NAME = "trulygreatcluster" + str(randrange(100000))
+
+HOSTNAME = f"{CLUSTER_NAME}.calculquebec.cloud"
 JOHN_DOE_HEADERS = {
     "eduPersonPrincipalName": "john.doe@computecanada.ca",
     "givenName": "John",
@@ -40,7 +44,7 @@ def test_plan_creation(client):
     res = client.post(
         f"/api/magic-castles",
         json={
-            "cluster_name": "trulygreatcluster1",
+            "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
             "storage": {
@@ -99,7 +103,7 @@ def test_create_success(client):
 
     # os_floating_ips key is omitted, as we don't know the value yet
     assert {
-        "cluster_name": "trulygreatcluster1",
+        "cluster_name": CLUSTER_NAME,
         "nb_users": 10,
         "storage": {
             "type": "nfs",
@@ -128,7 +132,7 @@ def test_plan_modify(client):
     res = client.put(
         f"/api/magic-castles/{HOSTNAME}",
         json={
-            "cluster_name": "trulygreatcluster1",
+            "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
             "storage": {
@@ -180,7 +184,7 @@ def test_modify_success(client):
 
     # os_floating_ips key is omitted, as we don't know the value yet
     assert {
-        "cluster_name": "trulygreatcluster1",
+        "cluster_name": CLUSTER_NAME,
         "nb_users": 10,
         "storage": {
             "type": "nfs",
