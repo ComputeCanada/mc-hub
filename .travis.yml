@@ -21,7 +21,6 @@ script:
      --mount "type=volume,source=database,target=/home/mcu/database" \
      --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
      --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
-     --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
         -w /home/mcu/app "$IMAGE_NAME" python -m pytest;
     else
@@ -29,7 +28,6 @@ script:
      --mount "type=volume,source=database,target=/home/mcu/database" \
      --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
      --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
-     --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
         -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster;
     fi
