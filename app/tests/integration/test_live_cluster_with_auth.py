@@ -2,11 +2,12 @@ import pytest
 from server import app
 from time import time, sleep
 from os import path
-from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
-using the OpenStack clouds.yaml provided to the container.
+using the OpenStack clouds.yaml, configuration.json and gcloud-key.json provided to the container.
+
+The auth_type variable in configuration.json must be set to "SAML" for these tests to work properly.
 
 These tests are marked as slow. To run these tests, the cli argument --build-live-cluster needs to be added.
 
@@ -19,6 +20,12 @@ https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-
 """
 
 HOSTNAME = "trulygreatcluster1.calculquebec.cloud"
+JOHN_DOE_HEADERS = {
+    "eduPersonPrincipalName": "john.doe@computecanada.ca",
+    "givenName": "John",
+    "surname": "Doe",
+    "mail": "john.doe@example.com",
+}
 
 
 @pytest.fixture
@@ -26,11 +33,6 @@ def client(mocker):
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
-
-
-@pytest.fixture(autouse=True)
-def disable_saml_auth(monkeypatch):
-    monkeypatch.setenv("AUTH_TYPE", "NONE")
 
 
 @pytest.mark.build_live_cluster
@@ -59,6 +61,7 @@ def test_plan_creation(client):
             "image": "CentOS-7-x64-2019-07",
             "os_floating_ips": ["Automatic allocation"],
         },
+        headers=JOHN_DOE_HEADERS,
     )
     assert res.get_json() == {}
     assert res.status_code == 200
@@ -66,14 +69,14 @@ def test_plan_creation(client):
 
 @pytest.mark.build_live_cluster
 def test_apply_creation_plan(client):
-    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply")
+    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply", headers=JOHN_DOE_HEADERS)
     assert res.get_json() == {}
     assert res.status_code == 200
 
 
 @pytest.mark.build_live_cluster
 def test_creation_running(client):
-    res = client.get(f"/api/magic-castles/{HOSTNAME}/status")
+    res = client.get(f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS)
     assert res.get_json()["status"] == "build_running"
     assert res.status_code == 200
 
@@ -82,13 +85,17 @@ def test_creation_running(client):
 def test_create_success(client):
     max_timeout_seconds = 360  # 6 minutes.
     start_time = time()
-    status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()["status"]
+    status = client.get(
+        f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
+    ).get_json()["status"]
     while status == "build_running" and time() - start_time <= max_timeout_seconds:
-        status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()[
-            "status"
-        ]
+        status = client.get(
+            f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
+        ).get_json()["status"]
     assert status == "build_success"
-    state = client.get(f"/api/magic-castles/{HOSTNAME}").get_json()
+    state = client.get(
+        f"/api/magic-castles/{HOSTNAME}", headers=JOHN_DOE_HEADERS
+    ).get_json()
 
     # os_floating_ips key is omitted, as we don't know the value yet
     assert {
@@ -142,6 +149,7 @@ def test_plan_modify(client):
             "image": "CentOS-7-x64-2019-07",
             "os_floating_ips": [],
         },
+        headers=JOHN_DOE_HEADERS,
     )
     assert res.get_json() == {}
     assert res.status_code == 200
@@ -149,7 +157,7 @@ def test_plan_modify(client):
 
 @pytest.mark.build_live_cluster
 def test_apply_modification_plan(client):
-    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply")
+    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply", headers=JOHN_DOE_HEADERS)
     assert res.get_json() == {}
     assert res.status_code == 200
 
@@ -158,13 +166,17 @@ def test_apply_modification_plan(client):
 def test_modify_success(client):
     max_timeout_seconds = 360  # 6 minutes.
     start_time = time()
-    status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()["status"]
+    status = client.get(
+        f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
+    ).get_json()["status"]
     while status == "build_running" and time() - start_time <= max_timeout_seconds:
-        status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()[
-            "status"
-        ]
+        status = client.get(
+            f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
+        ).get_json()["status"]
     assert status == "build_success"
-    state = client.get(f"/api/magic-castles/{HOSTNAME}").get_json()
+    state = client.get(
+        f"/api/magic-castles/{HOSTNAME}", headers=JOHN_DOE_HEADERS
+    ).get_json()
 
     # os_floating_ips key is omitted, as we don't know the value yet
     assert {
@@ -191,14 +203,14 @@ def test_modify_success(client):
 
 @pytest.mark.build_live_cluster
 def test_plan_destroy(client):
-    res = client.delete(f"/api/magic-castles/{HOSTNAME}")
+    res = client.delete(f"/api/magic-castles/{HOSTNAME}", headers=JOHN_DOE_HEADERS)
     assert res.get_json() == {}
     assert res.status_code == 200
 
 
 @pytest.mark.build_live_cluster
 def test_apply_destruction_plan(client):
-    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply")
+    res = client.post(f"/api/magic-castles/{HOSTNAME}/apply", headers=JOHN_DOE_HEADERS)
     assert res.get_json() == {}
     assert res.status_code == 200
 
@@ -207,11 +219,13 @@ def test_apply_destruction_plan(client):
 def test_destroy_success(client):
     max_timeout_seconds = 180  # 3 minutes.
     start_time = time()
-    status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()["status"]
+    status = client.get(
+        f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
+    ).get_json()["status"]
     while status == "destroy_running" and time() - start_time <= max_timeout_seconds:
-        status = client.get(f"/api/magic-castles/{HOSTNAME}/status").get_json()[
-            "status"
-        ]
+        status = client.get(
+            f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
+        ).get_json()["status"]
     assert status == "not_found"
 
 
