@@ -83,7 +83,7 @@ def test_creation_running(client):
 
 @pytest.mark.build_live_cluster
 def test_create_success(client):
-    max_timeout_seconds = 360  # 6 minutes.
+    max_timeout_seconds = 480  # 8 minutes.
     start_time = time()
     status = client.get(
         f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
