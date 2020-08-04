@@ -1,4 +1,6 @@
 from models.configuration import config
+from models.constants import MAGIC_CASTLE_RELEASE_PATH
+from os import path
 
 
 class DnsManager:
@@ -23,7 +25,7 @@ class DnsManager:
         if self.__dns_provider:
             magic_castle_configuration = {
                 "dns": {
-                    "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/{self.__dns_provider}",
+                    "source": f"{MAGIC_CASTLE_RELEASE_PATH}//dns/{self.__dns_provider}",
                     "name": "${module.openstack.cluster_name}",
                     "domain": "${module.openstack.domain}",
                     "public_ip": "${module.openstack.ip}",

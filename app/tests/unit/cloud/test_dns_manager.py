@@ -37,7 +37,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
     assert DnsManager("calculquebec.cloud").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",
-            "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/cloudflare",
+            "source": "/home/mcu/magic_castle-openstack-8.1//dns/cloudflare",
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
             "public_ip": "${module.openstack.ip}",
@@ -52,7 +52,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
             "email": "you@example.com",
             "project": "your-project-name",
             "zone_name": "your-zone-name",
-            "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/gcloud",
+            "source": "/home/mcu/magic_castle-openstack-8.1//dns/gcloud",
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
             "public_ip": "${module.openstack.ip}",
