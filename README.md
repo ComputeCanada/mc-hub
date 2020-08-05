@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/ComputeCanada/magic_castle-ui.svg?branch=master)](https://travis-ci.com/ComputeCanada/magic_castle-ui)
 
-Web interface to launch Magic Castles without knowing anything about Terraform.
+Web interface to launch Magic Castle clusters without knowing anything about Terraform.
 
 ![Magic Castle UI demo](./demo/demo.gif)
 
@@ -43,7 +43,9 @@ Read the section on the [JSON Configuration](./docs/configuration.md) for more i
 
 ## Running the pre-built Docker image
 
-1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port.
+1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port. Also change `v5.0.2` for the latest version of Magic Castle UI in the following command.
+   
+   If you are not using the Google Cloud DNS provider, remove the line `--mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \`.
 
    ```shell script
    docker run --rm -p 80:5000 \
@@ -52,7 +54,7 @@ Read the section on the [JSON Configuration](./docs/configuration.md) for more i
      --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-     fredericfc/magic_castle-ui:v5.0.0
+     fredericfc/magic_castle-ui:v5.0.2
    ```
 
 2. Navigate to `http://localhost:80` and start building clusters!
