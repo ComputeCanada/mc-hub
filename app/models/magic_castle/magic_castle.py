@@ -385,7 +385,9 @@ class MagicCastle:
                         else ClusterStatusCode.BUILD_ERROR
                     )
             finally:
-                self.__remove_existing_plan()
+                with DatabaseManager.connect() as database_connection:
+                    self.__database_connection = database_connection
+                    self.__remove_existing_plan()
 
         destroy = self.get_plan_type() == PlanType.DESTROY
         terraform_apply_thread = Thread(target=terraform_apply, args=(destroy,))
