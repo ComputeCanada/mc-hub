@@ -72,8 +72,7 @@ USER root
 RUN apk add git=2.24.3-r0 \
             npm=12.15.0-r1 \
             sqlite=3.30.1-r2
-RUN pip install ptvsd==4.3.2 \
-                pylint==2.5.3 \
+RUN pip install pylint==2.5.3 \
                 black
 
 USER mcu
@@ -93,7 +92,7 @@ ADD app /home/mcu/app
 ## Vue Js frontend src
 COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
-CMD python -m ptvsd --host 0.0.0.0 --port 5678 --wait --multiprocess -m flask run -h 0.0.0 -p 5000
+CMD python app/server.py
 
 ## PRODUCTION IMAGE
 FROM base-server as production-server
