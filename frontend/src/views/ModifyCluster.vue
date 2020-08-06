@@ -1,5 +1,5 @@
 <template>
-  <cluster-editor
+  <cluster-display
     :existing-cluster="true"
     :hostname="hostname"
     :show-plan-confirmation="showPlanConfirmation"
@@ -8,10 +8,10 @@
 </template>
 
 <script>
-import ClusterEditor from "@/components/cluster/ClusterEditor";
+import ClusterDisplay from "@/components/cluster/ClusterDisplay";
 
 export default {
-  components: { ClusterEditor },
+  components: { ClusterDisplay },
   props: {
     hostname: {
       type: String,

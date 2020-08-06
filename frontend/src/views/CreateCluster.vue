@@ -1,11 +1,11 @@
 <template>
-  <cluster-editor :existing-cluster="false" />
+  <cluster-display :existing-cluster="false" />
 </template>
 
 <script>
-import ClusterEditor from "@/components/cluster/ClusterEditor";
+import ClusterDisplay from "@/components/cluster/ClusterDisplay";
 
 export default {
-  components: { ClusterEditor }
+  components: { ClusterDisplay }
 };
 </script>
