@@ -16,7 +16,7 @@ before_install:
   - tar xvf secrets.tar
 
 install:
-  - npm ci
+  - cd frontend && npm ci
   - docker build --tag "$IMAGE_NAME" --target production-server .
 
 script:
