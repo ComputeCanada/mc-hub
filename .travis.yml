@@ -3,6 +3,10 @@ language: bash
 services:
   - docker
 
+language: node_js
+node_js:
+  - 12
+
 env:
   global:
     - IMAGE_NAME=fredericfc/magic_castle-ui
@@ -12,9 +16,11 @@ before_install:
   - tar xvf secrets.tar
 
 install:
+  - npm ci
   - docker build --tag "$IMAGE_NAME" --target production-server .
 
 script:
+  - cd frontend && npm run test:unit
   - |
     if [ -z $TRAVIS_TAG ]; then
       docker run --rm --publish 5000:5000 \
