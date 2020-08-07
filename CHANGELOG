@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v5.1.0] UNRELEASED
+
+### Changed
+- Changed the hostname display for existing clusters in the frontend
+- Split ClusterEditor component in two smaller components
+
+### Removed
+- Removed ptvsd (VS Code debugger) from development-server Docker image
+
+### Fixed
+- Fixed bug resulting in the plan type not being always updated in the database
+
 ## [v5.0.2] 2020-08-05
 
 ### Fixed
