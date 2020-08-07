@@ -193,10 +193,6 @@ export default {
       await this.loadAvailableResources();
       if (this.possibleResources.os_floating_ips.length === 0) {
         this.showError("There is no floating IP available right now.");
-      } else {
-        this.magicCastle.os_floating_ips = [
-          this.possibleResources.os_floating_ips[0]
-        ];
       }
     }
   },
@@ -311,8 +307,7 @@ export default {
           await MagicCastleRepository.getState(this.hostname)
         ).data;
       } catch (e) {
-        // Terraform state file could not be parsed or was not created.
-        // This happens for new clusters, which are not built yet.
+        // Terraform state file and main.tf.json could not be parsed.
         this.showError(e.response.data.message);
       }
     },

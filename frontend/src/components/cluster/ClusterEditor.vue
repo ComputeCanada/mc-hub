@@ -210,8 +210,7 @@ export default {
       type: Object
     },
     currentStatus: {
-      type: String,
-      required: true
+      type: String
     }
   },
   data: function() {
@@ -242,6 +241,25 @@ export default {
         value.length >= MINIMUM_PASSWORD_LENGTH ||
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`
     };
+  },
+  watch: {
+    possibleResources(possibleResources) {
+      if (possibleResources.os_floating_ips.length > 0) {
+        this.magicCastle.os_floating_ips = [
+          possibleResources.os_floating_ips[0]
+        ];
+        this.initialMagicCastle.os_floating_ips = [
+          possibleResources.os_floating_ips[0]
+        ];
+      }
+    },
+    dirtyForm(dirty) {
+      if (dirty) {
+        this.$enableUnloadConfirmation();
+      } else {
+        this.$disableUnloadConfirmation();
+      }
+    }
   },
   created() {
     this.generateGuestPassword();
@@ -376,15 +394,6 @@ export default {
     },
     usedResourcesLoaded() {
       return this.magicCastle !== null && this.resourceDetails !== null;
-    }
-  },
-  watch: {
-    dirtyForm(dirty) {
-      if (dirty) {
-        this.$enableUnloadConfirmation();
-      } else {
-        this.$disableUnloadConfirmation();
-      }
     }
   },
   methods: {
