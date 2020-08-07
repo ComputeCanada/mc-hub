@@ -16,11 +16,11 @@ before_install:
   - tar xvf secrets.tar
 
 install:
-  - cd frontend && npm ci
+  - (cd frontend && npm ci)
   - docker build --tag "$IMAGE_NAME" --target production-server .
 
 script:
-  - cd frontend && npm run test:unit
+  - (cd frontend && npm run test:unit)
   - |
     if [ -z $TRAVIS_TAG ]; then
       docker run --rm --publish 5000:5000 \
