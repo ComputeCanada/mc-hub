@@ -160,7 +160,7 @@
           @click="apply"
           color="primary"
           class="ma-2"
-          :disabled="loading || !validForm || (!dirtyForm && currentStatus === 'build_success')"
+          :disabled="!applyButtonEnabled"
           large
         >Apply</v-btn>
         <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
@@ -377,6 +377,9 @@ export default {
             this.magicCastle.storage.scratch_size
         : 0;
     },
+    volumeSizeMax() {
+      return this.quotas ? this.quotas.volume_size.max : 0;
+    },
     instancesVolumeSizeUsed() {
       return this.instances.reduce(
         (acc, instance) =>
@@ -386,14 +389,18 @@ export default {
         0
       );
     },
-    volumeSizeMax() {
-      return this.quotas ? this.quotas.volume_size.max : 0;
-    },
     instances() {
       return this.magicCastle ? Object.values(this.magicCastle.instances) : [];
     },
     usedResourcesLoaded() {
       return this.magicCastle !== null && this.resourceDetails !== null;
+    },
+    applyButtonEnabled() {
+      return (
+        !this.loading &&
+        this.validForm &&
+        (this.dirtyForm || this.currentStatus !== "build_success")
+      );
     }
   },
   methods: {
