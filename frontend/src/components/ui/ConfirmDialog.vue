@@ -53,6 +53,7 @@ export default {
       this.$emit("input", false);
     },
     cancel() {
+      this.$emit("cancel");
       this.$emit("input", false);
     },
     input(value) {

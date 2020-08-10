@@ -72,6 +72,7 @@
       title="Destruction confirmation"
       v-model="clusterDestructionDialog"
       @confirm="applyCluster"
+      @cancel="goToClustersList"
     >
       Are you sure you want to permanently destroy your cluster and all its data?
       <cluster-resources
@@ -354,6 +355,9 @@ export default {
       } catch (e) {
         this.showError(e.response.data.message);
       }
+    },
+    async goToClustersList() {
+      await this.$router.push("/");
     },
     async showPlanConfirmationDialog(
       options = { planCreator: async () => {}, destroy: false }
