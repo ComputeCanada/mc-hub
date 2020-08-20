@@ -73,6 +73,14 @@ const DEFAULT_RESOURCE_DETAILS = Object.freeze({
 });
 
 describe("ClusterEditor", () => {
+  it("magicCastleGuestPassword", () => {
+    const clusterEditorWrapperNew = getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
+    const clusterEditorWrapperExisting = getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
+
+    expect(clusterEditorWrapperNew.vm.magicCastle.guest_passwd.length).toBe(12);
+    expect(clusterEditorWrapperExisting.vm.magicCastle.guest_passwd.length).toBe(0);
+  });
+
   it("ramGbUsed", () => {
     const clusterEditorWrapper = getDefaultClusterEditorWrapper();
 
@@ -129,7 +137,9 @@ describe("ClusterEditor", () => {
     expect(clusterEditorWrapper.vm.volumeSizeMax).toBe(490);
   });
 
-  const getDefaultClusterEditorWrapper = () => {
+  const getDefaultClusterEditorWrapper = (
+    customizableProps = { loading: false, existingCluster: true, hostname: "test1.calculquebec.cloud" }
+  ) => {
     return mount(ClusterEditor, {
       localVue,
       router,
@@ -139,9 +149,7 @@ describe("ClusterEditor", () => {
         possibleResources: cloneDeep(DEFAULT_POSSIBLE_RESOURCES),
         quotas: cloneDeep(DEFAULT_QUOTAS),
         resourceDetails: cloneDeep(DEFAULT_RESOURCE_DETAILS),
-        loading: false,
-        hostname: "test1.calculquebec.cloud",
-        existingCluster: true
+        ...customizableProps
       }
     });
   };

@@ -262,7 +262,9 @@ export default {
     }
   },
   created() {
+    if (!this.existingCluster) {
     this.generateGuestPassword();
+    }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
   beforeDestroy() {
