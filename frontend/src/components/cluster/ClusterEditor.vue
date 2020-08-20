@@ -126,7 +126,7 @@
       <v-subheader>Networking and security</v-subheader>
       <v-list>
         <v-list-item>
-          <public-key-input v-model="magicCastle.public_keys[0]" />
+          <public-key-input v-model="magicCastle.public_keys[0]" :rules="[publicKeyRule]" />
         </v-list-item>
         <v-list-item>
           <v-text-field
@@ -179,6 +179,7 @@ import PublicKeyInput from "@/components/ui/PublicKeyInput";
 const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
 const MINIMUM_PASSWORD_LENGTH = 8;
+const SSH_PUBLIC_KEY_REGEX = /^(ssh-rsa AAAAB3NzaC1yc2|ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNT|ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzOD|ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1Mj|ssh-ed25519 AAAAC3NzaC1lZDI1NTE5|ssh-dss AAAAB3NzaC1kc3)[0-9A-Za-z+/]+[=]{0,3}( .*)?$/;
 
 export default {
   name: "ClusterEditor",
@@ -263,7 +264,7 @@ export default {
   },
   created() {
     if (!this.existingCluster) {
-    this.generateGuestPassword();
+      this.generateGuestPassword();
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
@@ -306,6 +307,13 @@ export default {
       return (
         this.volumeSizeUsed <= this.volumeSizeMax ||
         "Volume storage exceeds maximum"
+      );
+    },
+    publicKeyRule() {
+      return (
+        this.magicCastle.public_keys[0] === "" ||
+        this.magicCastle.public_keys[0].match(SSH_PUBLIC_KEY_REGEX) !== null ||
+        "Invalid SSH public key"
       );
     },
     floatingIpProvidedRule() {

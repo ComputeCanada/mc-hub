@@ -8,6 +8,7 @@
       v-show="mode == 'plaintext'"
       placeholder="ssh-rsa ..."
       :value="value"
+      :rules="rules"
       @change="textAreaUpdated"
       outlined
     />
@@ -15,6 +16,7 @@
       v-show="mode == 'file'"
       @change="fileInputUpdated"
       label="SSH public key file"
+      :rules="rules"
       outlined
     />
   </div>
@@ -26,6 +28,10 @@ export default {
     value: {
       type: String,
       required: true
+    },
+    rules: {
+      type: Array,
+      default: () => [true]
     }
   },
   data() {
