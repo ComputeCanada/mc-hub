@@ -179,6 +179,7 @@ import PublicKeyInput from "@/components/ui/PublicKeyInput";
 const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
 const MINIMUM_PASSWORD_LENGTH = 8;
+const CLUSTER_NAME_REGEX = /^[a-z][a-z0-9]*$/;
 const SSH_PUBLIC_KEY_REGEX = /^(ssh-rsa AAAAB3NzaC1yc2|ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNT|ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzOD|ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1Mj|ssh-ed25519 AAAAC3NzaC1lZDI1NTE5|ssh-dss AAAAB3NzaC1kc3)[0-9A-Za-z+/]+[=]{0,3}( .*)?$/;
 
 export default {
@@ -231,7 +232,7 @@ export default {
       initialMagicCastle: null,
 
       clusterNameRegexRule: value =>
-        value.match(/^[a-z][a-z0-9]*$/) !== null ||
+        value.match(CLUSTER_NAME_REGEX) !== null ||
         "The cluster name must have only lowercase alphanumeric characters and start with a letter",
       greaterThanZeroRule: value =>
         (typeof value === "number" && value > 0) || "Must be greater than zero",
