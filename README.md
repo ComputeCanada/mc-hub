@@ -65,24 +65,7 @@ Read the section on the [JSON Configuration](./docs/configuration.md) for more i
 
 ## Building the image from source
 
-This requires installing Docker Compose.
-
-1. Clone this repository.
-
-   ```shell script
-   git clone https://github.com/ComputeCanada/magic_castle-ui.git
-   ```
-
-2. Build the Docker image.
-
-   ```shell script
-   docker-compose build
-   ```
-
-3. Run the container. This will run the container in production mode.
-   ```shell script
-   docker-compose up
-   ```
+Refer to the [Developer Documentation](./docs/developers.md).
 
 ## Cluster storage & backup
 
@@ -99,10 +82,12 @@ Also, a volume named `database` was created and will persist the database even i
 In the end, if one Magic Castle UI container is destroyed or fails, a new container will recover all the previously
 created clusters in the directory.
 
-## Debugging, contributing and advanced usage
-
-Refer to the [Developer Documentation](./docs/developers.md).
-
 ## Adding SAML Authentication and HTTPS to Magic Castle UI
+
+### Option 1. Deploying with an Ansible playbook (recommended)
+
+Use [Ansible Magic Castle UI](https://github.com/ComputeCanada/ansible-mcui).
+
+### Option 2. Configuring the server manually
 
 Check out the [wiki page](https://github.com/ComputeCanada/magic_castle-ui/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
