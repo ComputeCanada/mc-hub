@@ -1,4 +1,4 @@
-title Magic Castle UI - Cluster Creation Workflow
+title MC Hub - Cluster Creation Workflow
 
 participant User
 participant Bash script & Docker
@@ -7,7 +7,7 @@ participant Flask Server
 participant Terraform
 
 User->Bash script & Docker: Sets up OpenStack environment variables
-User->Bash script & Docker: Runs Magic Castle UI image
+User->Bash script & Docker: Runs MC Hub image
 Bash script & Docker->Flask Server: Starts Flask server
 activate Flask Server
 Flask Server-->Bash script & Docker: Web app URL (localhost:5000)
