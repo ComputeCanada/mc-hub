@@ -1,6 +1,6 @@
 # JSON Configuration
 
-Magic Castle UI's configuration is mostly stored in a single file named `configuration.json`.
+MC Hub's configuration is mostly stored in a single file named `configuration.json`.
 
 An example `configuration.json` is shown below.
 
@@ -48,9 +48,9 @@ Here is a description of the purpose of each entry in the configuration.
 
 Either `"NONE"` or `"SAML"`.
 
-This entry is set to `"NONE"` by default. This means that your app doesn't require users to be authenticated, or has an authentication mechanism which is hidden from Magic Castle UI. This value is what the vast majority of users should be using.
+This entry is set to `"NONE"` by default. This means that your app doesn't require users to be authenticated, or has an authentication mechanism which is hidden from MC Hub. This value is what the vast majority of users should be using.
 
-If you are using a SAML authentication mechanism, you can set `auth_type` to `"SAML"`. In this case, you will need to setup a reverse proxy that sends the following headers (corresponding to LDAP entries) to Magic Castle UI: `eduPersonPrincipalName`, `givenName`, `surname` and `mail`. With SAML authentication, each cluster is owned by a user, represented by its `eduPersonPrincipalName`. For more information on how to setup SAML authentication, read [Adding SAML Authentication and HTTPS to Magic Castle UI](https://github.com/ComputeCanada/magic_castle-ui/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
+If you are using a SAML authentication mechanism, you can set `auth_type` to `"SAML"`. In this case, you will need to setup a reverse proxy that sends the following headers (corresponding to LDAP entries) toMC Hub: `eduPersonPrincipalName`, `givenName`, `surname` and `mail`. With SAML authentication, each cluster is owned by a user, represented by its `eduPersonPrincipalName`. For more information on how to setup SAML authentication, read [Adding SAML Authentication and HTTPS to MC Hub](https://github.com/ComputeCanada/magic_castle-ui/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
 
 ### `admins` (optional)
 
@@ -64,13 +64,13 @@ An object where each key represents the domain name and the value represents the
 
 Each domain object can contain an optional `dns_provider` entry.
 
-If `dns_provider` is **provided**, Magic Castle UI will enable the DNS module in Magic Castle, which is required for many features (including JupyterHub, Globus and FreeIPA). The value associated with `dns_provider` must correspond to a configuration in the `dns_providers` object. Here is an example domain with the DNS module enabled:
+If `dns_provider` is **provided**, MC Hub will enable the DNS module in Magic Castle, which is required for many features (including JupyterHub, Globus and FreeIPA). The value associated with `dns_provider` must correspond to a configuration in the `dns_providers` object. Here is an example domain with the DNS module enabled:
 
 ```json
 "example.com": {"dns_provider": "cloudflare"}
 ```
 
-If `dns_provider` is **not provided**, Magic Castle UI will disable the DNS module in Magic Castle. This is useful if you don't own a domain or have API keys from CloudFlare or Google Cloud to manage one. Here is an example domain with the DNS module disabled:
+If `dns_provider` is **not provided**, MC Hub will disable the DNS module in Magic Castle. This is useful if you don't own a domain or have API keys from CloudFlare or Google Cloud to manage one. Here is an example domain with the DNS module disabled:
 
 ```json
 "example.com": {}
@@ -78,7 +78,7 @@ If `dns_provider` is **not provided**, Magic Castle UI will disable the DNS modu
 
 ### `dns_providers` (optional)
 
-Magic Castle UI supports two DNS providers: Cloudflare and Google cloud.
+MC Hub supports two DNS providers: Cloudflare and Google cloud.
 
 ### `dns_providers.cloudflare.magic_castle_configuration.email`
 
@@ -121,4 +121,4 @@ The name of the Google Cloud managed zone.
 
 ### `dns_providers.gcloud.environment_variables`
 
-The environment variables required by Google Cloud refer to the path of the Google Cloud account's JSON key, which is always located in `/home/mcu/credentials/gcloud-key.json` in Magic Castle UI. You don't need to modify this.
+The environment variables required by Google Cloud refer to the path of the Google Cloud account's JSON key, which is always located in `/home/mcu/credentials/gcloud-key.json` in MC Hub. You don't need to modify this.

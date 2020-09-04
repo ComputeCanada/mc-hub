@@ -130,7 +130,7 @@ dmypy.json
 # IntelliJ
 .idea/
 
-# Project specific (Magic Castle UI)
+# Project specific (MC Hub)
 clusters_backup/
 *.env
 *-openrc.sh

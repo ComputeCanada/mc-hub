@@ -1,10 +1,10 @@
-# Magic Castle UI
+# MC Hub
 
 [![Build Status](https://travis-ci.com/ComputeCanada/magic_castle-ui.svg?branch=master)](https://travis-ci.com/ComputeCanada/magic_castle-ui)
 
 Web interface to launch Magic Castle clusters without knowing anything about Terraform.
 
-![Magic Castle UI demo](./demo/demo.gif)
+![MC Hub demo](./demo/demo.gif)
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Web interface to launch Magic Castle clusters without knowing anything about Ter
 
 ## Basic setup
 
-Before running the Magic Castle UI Docker container, you need to setup a few things.
+Before running the MC Hub Docker container, you need to setup a few things.
 
 1. Create a directory named `clusters_backup` and give it the proper permissions.
    ```
@@ -43,7 +43,7 @@ Read the section on the [JSON Configuration](./docs/configuration.md) for more i
 
 ## Running the pre-built Docker image
 
-1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of Magic Castle UI. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port. Also change `v5.0.2` for the latest version of Magic Castle UI in the following command.
+1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of MC Hub. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port. Also change `v5.0.2` for the latest version of MC Hub in the following command.
    
    If you are not using the Google Cloud DNS provider, remove the line `--mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \`.
 
@@ -79,14 +79,14 @@ makes the `/home/mcu/clusters/<cluster name>.<domain>` directory accessible to t
 
 Also, a volume named `database` was created and will persist the database even if the container fails or is destroyed. However, the `database` volume can only be accessed from within a running container, not by the host machine.
 
-In the end, if one Magic Castle UI container is destroyed or fails, a new container will recover all the previously
+In the end, if one MC Hub container is destroyed or fails, a new container will recover all the previously
 created clusters in the directory.
 
-## Adding SAML Authentication and HTTPS to Magic Castle UI
+## Adding SAML Authentication and HTTPS to MC Hub
 
 ### Option 1. Deploying with an Ansible playbook (recommended)
 
-Use [Ansible Magic Castle UI](https://github.com/ComputeCanada/ansible-mcui).
+Use [Ansible MC Hub](https://github.com/ComputeCanada/ansible-mcui).
 
 ### Option 2. Configuring the server manually
 
