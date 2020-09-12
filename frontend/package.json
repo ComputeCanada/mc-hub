@@ -12,18 +12,18 @@
     "@vue/cli-service": "~4.3.0",
     "axios": "^0.19.2",
     "core-js": "^3.6.4",
-    "lodash": "^4.17.19",
-    "vue": "^2.6.11",
-    "vue-router": "^3.4.2",
-    "vuetify": "^2.3.8"
+    "lodash": "^4.17.20",
+    "vue": "^2.6.12",
+    "vue-router": "^3.4.3",
+    "vuetify": "^2.3.10"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.3.0",
     "@vue/cli-plugin-eslint": "~4.3.0",
     "@vue/cli-plugin-router": "~4.3.0",
-    "@vue/cli-plugin-unit-jest": "^4.4.6",
+    "@vue/cli-plugin-unit-jest": "^4.5.6",
     "@vue/eslint-config-prettier": "^6.0.0",
-    "@vue/test-utils": "^1.0.3",
+    "@vue/test-utils": "^1.1.0",
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-prettier": "^3.1.4",
@@ -33,7 +33,7 @@
     "sass-loader": "^8.0.0",
     "vue-cli-plugin-vuetify": "^2.0.7",
     "vue-jest": "^3.0.6",
-    "vue-template-compiler": "^2.6.11",
+    "vue-template-compiler": "^2.6.12",
     "vuetify-loader": "^1.6.0"
   }
 }
