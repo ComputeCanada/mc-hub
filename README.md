@@ -1,6 +1,6 @@
 # MC Hub
 
-[![Build Status](https://travis-ci.com/ComputeCanada/magic_castle-ui.svg?branch=master)](https://travis-ci.com/ComputeCanada/magic_castle-ui)
+[![Build Status](https://travis-ci.com/ComputeCanada/mc-hub.svg?branch=master)](https://travis-ci.com/ComputeCanada/mc-hub)
 
 Web interface to launch Magic Castle clusters without knowing anything about Terraform.
 
