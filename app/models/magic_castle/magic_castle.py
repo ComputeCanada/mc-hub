@@ -379,15 +379,17 @@ class MagicCastle:
                         self.__update_status(ClusterStatusCode.PROVISIONING_RUNNING)
 
                 if not destroy:
-                    try:
-                        ProvisioningManager(self.get_hostname()).poll_until_success()
-                        status_code = ClusterStatusCode.PROVISIONING_SUCCESS
-                    except PuppetTimeoutException:
-                        status_code = ClusterStatusCode.PROVISIONING_ERROR
-                        
-                    with DatabaseManager.connect() as database_connection:
-                        self.__database_connection = database_connection
-                        self.__update_status(status_code)
+                    provisioning_manager = ProvisioningManager(self.get_hostname())
+                    if not provisioning_manager.is_busy():
+                        try:
+                            provisioning_manager.poll_until_success()
+                            status_code = ClusterStatusCode.PROVISIONING_SUCCESS
+                        except PuppetTimeoutException:
+                            status_code = ClusterStatusCode.PROVISIONING_ERROR
+                            
+                        with DatabaseManager.connect() as database_connection:
+                            self.__database_connection = database_connection
+                            self.__update_status(status_code)
 
             except CalledProcessError:
                 logging.info("terraform apply returned an error")
