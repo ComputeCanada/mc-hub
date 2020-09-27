@@ -1,5 +1,5 @@
 from models.user.user import User
-from exceptions.cluster_not_found_exception import ClusterNotFoundException
+from exceptions.invalid_usage_exception import ClusterNotFoundException
 from models.magic_castle.magic_castle import MagicCastle
 from models.configuration import config
 

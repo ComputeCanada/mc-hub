@@ -8,3 +8,13 @@ class ServerException(Exception):
 
     def get_response(self):
         return {"message": self.message}, self.status_code
+
+
+class PuppetTimeoutException(ServerException):
+    def __init__(self):
+        ServerException.__init__(self, "Puppet provisioning timed out", 400)
+
+
+class StateNotFoundException(ServerException):
+    def __init__(self):
+        ServerException.__init__(self, "The terraform state file was not found", 400)

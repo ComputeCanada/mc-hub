@@ -1,6 +1,6 @@
 from models.user.authenticated_user import AuthenticatedUser
 from models.magic_castle.cluster_status_code import ClusterStatusCode
-from exceptions.cluster_not_found_exception import ClusterNotFoundException
+from exceptions.invalid_usage_exception import ClusterNotFoundException
 from tests.test_helpers import *
 import pytest
 from typing import Callable

@@ -1,8 +1,7 @@
 from models.magic_castle.magic_castle import MagicCastle
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from models.magic_castle.plan_type import PlanType
-from exceptions.cluster_not_found_exception import ClusterNotFoundException
-from exceptions.busy_cluster_exception import BusyClusterException
+from exceptions.invalid_usage_exception import ClusterNotFoundException, BusyClusterException
 from tests.test_helpers import *
 from marshmallow.exceptions import ValidationError
 from tests.mocks.configuration.config_mock import config_auth_none_mock

@@ -6,8 +6,7 @@ from models.auth_type import AuthType
 from models.user.anonymous_user import AnonymousUser
 from models.configuration import config
 from models.user.authenticated_user import AuthenticatedUser
-from exceptions.unauthenticated_exception import UnauthenticatedException
-from exceptions.invalid_usage_exception import InvalidUsageException
+from exceptions.invalid_usage_exception import UnauthenticatedException, InvalidUsageException
 import json
 
 DEFAULT_RESPONSE_CODE = 200

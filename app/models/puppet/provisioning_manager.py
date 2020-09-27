@@ -1,5 +1,5 @@
 import time
-from exceptions.puppet_timeout_exception import PuppetTimeoutException
+from exceptions.server_exception import PuppetTimeoutException
 import requests
 from requests.exceptions import ConnectionError
 import logging
