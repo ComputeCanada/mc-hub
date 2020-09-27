@@ -100,7 +100,7 @@ def database_connection(mocker):
                 "valid1.calculquebec.cloud",
                 "valid1",
                 "calculquebec.cloud",
-                "build_success",
+                "provisioning_success",
                 "destroy",
                 "alice@computecanada.ca",
             ),
@@ -110,7 +110,7 @@ def database_connection(mocker):
                 "noowner.calculquebec.cloud",
                 "noowner",
                 "calculquebec.cloud",
-                "build_success",
+                "provisioning_success",
                 "destroy",
             ),
         ]

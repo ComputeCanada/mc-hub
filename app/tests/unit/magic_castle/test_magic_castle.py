@@ -14,7 +14,7 @@ def test_get_status_valid(database_connection):
     buildplanning = MagicCastle(database_connection, "buildplanning.calculquebec.cloud")
     assert buildplanning.get_status() == ClusterStatusCode.PLAN_RUNNING
     valid1 = MagicCastle(database_connection, "valid1.calculquebec.cloud")
-    assert valid1.get_status() == ClusterStatusCode.BUILD_SUCCESS
+    assert valid1.get_status() == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
 def test_get_status_errors(database_connection):

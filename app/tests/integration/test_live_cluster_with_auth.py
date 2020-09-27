@@ -96,7 +96,7 @@ def test_create_success(client):
         status = client.get(
             f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
         ).get_json()["status"]
-    assert status == "build_success"
+    assert status == "provisioning_running"
     state = client.get(
         f"/api/magic-castles/{HOSTNAME}", headers=JOHN_DOE_HEADERS
     ).get_json()
@@ -177,7 +177,7 @@ def test_modify_success(client):
         status = client.get(
             f"/api/magic-castles/{HOSTNAME}/status", headers=JOHN_DOE_HEADERS
         ).get_json()["status"]
-    assert status == "build_success"
+    assert status == "provisioning_running"
     state = client.get(
         f"/api/magic-castles/{HOSTNAME}", headers=JOHN_DOE_HEADERS
     ).get_json()

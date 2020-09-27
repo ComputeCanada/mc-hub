@@ -11,11 +11,13 @@ from models.terraform.terraform_state_parser import TerraformStateParser
 from models.terraform.terraform_plan_parser import TerraformPlanParser
 from models.cloud.cloud_manager import CloudManager
 from models.cloud.dns_manager import DnsManager
+from models.puppet.provisioning_manager import ProvisioningManager
 from exceptions.invalid_usage_exception import InvalidUsageException
 from exceptions.busy_cluster_exception import BusyClusterException
 from exceptions.cluster_not_found_exception import ClusterNotFoundException
 from exceptions.cluster_exists_exception import ClusterExistsException
 from exceptions.plan_not_created_exception import PlanNotCreatedException
+from exceptions.puppet_timeout_exception import PuppetTimeoutException
 from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
 from database.database_manager import DatabaseManager
 import sqlite3
@@ -374,7 +376,19 @@ class MagicCastle:
                         )
                         self.__database_connection.commit()
                     else:
-                        self.__update_status(ClusterStatusCode.BUILD_SUCCESS)
+                        self.__update_status(ClusterStatusCode.PROVISIONING_RUNNING)
+
+                if not destroy:
+                    try:
+                        ProvisioningManager(self.get_hostname()).poll_until_success()
+                        status_code = ClusterStatusCode.PROVISIONING_SUCCESS
+                    except PuppetTimeoutException:
+                        status_code = ClusterStatusCode.PROVISIONING_ERROR
+                        
+                    with DatabaseManager.connect() as database_connection:
+                        self.__database_connection = database_connection
+                        self.__update_status(status_code)
+
             except CalledProcessError:
                 logging.info("terraform apply returned an error")
                 with DatabaseManager.connect() as database_connection:

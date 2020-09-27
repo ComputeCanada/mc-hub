@@ -132,7 +132,7 @@ def test_get_all_magic_castle_names(client):
             "cluster_name": "valid1",
             "domain": "calculquebec.cloud",
             "hostname": "valid1.calculquebec.cloud",
-            "status": "build_success",
+            "status": "provisioning_success",
             "owner": "alice",
         },
     ]
@@ -364,12 +364,12 @@ def test_get_status_code(client, database_connection):
     assert res.get_json()["status"] == "build_running"
 
     modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_SUCCESS
+        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.PROVISIONING_SUCCESS
     )
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
-    assert res.get_json()["status"] == "build_success"
+    assert res.get_json()["status"] == "provisioning_success"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_ERROR
