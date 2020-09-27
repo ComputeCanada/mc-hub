@@ -1,52 +1,49 @@
 title MC Hub - Cluster Destruction Workflow
 
 participant User
-participant Bash script & Docker
 participant Browser
 participant Flask Server
 participant Terraform
 
-User->Bash script & Docker: Sets up OpenStack environment variables
-User->Bash script & Docker: Runs MC Hub image
-Bash script & Docker->Flask Server: Starts Flask server
+User->Browser: Navigates to localhost:5000
+activate Browser
+Browser->Flask Server: Requests clusters table
 activate Flask Server
-Flask Server-->Bash script & Docker: Web app URL (localhost:5000)
+Flask Server-->Browser: Cluster clusters table
 deactivate Flask Server
-Bash script & Docker-->User: Web app URL (localhost:5000)
-User->Browser: Navigates to localhost:5000/clusters/<cluster_name>.<domain>
-Browser->Flask Server: Requests cluster modification form
-activate Flask Server
-Flask Server-->Browser: Cluster modification form
-deactivate Flask Server
-Browser-->User: Displays cluster modification form
+Browser-->User: Displays clusters table
 
-Browser->Flask Server: Poll status
+Browser->Flask Server: Polls cluster status
 activate Flask Server
-Flask Server-->Browser: Status: build_success
+Flask Server-->Browser: Status: provisioning_success
 deactivate Flask Server
-Browser->Flask Server: Load cluster state
-activate Flask Server
-Browser->Flask Server: Get available OpenStack resources
-Flask Server-->Browser: Cluster state
-Flask Server-->Browser: Available OpenStack resources
-deactivate Flask Server
-Browser-->User: Displays cluster state and available resources
-User->Browser: Clicks on the 'Destroy' button
+User->Browser: Clicks on the trash icon next to the desired cluster
 Browser-->User: Displays loading animation
-Browser->>Flask Server: Send DELETE request
+Browser->Flask Server: Sends DELETE request
+activate Flask Server
+Flask Server->Terraform: terraform init
+activate Terraform
+Flask Server->Terraform: terraform plan -destroy
+Terraform-->Flask Server: Plan's raw output
+deactivate Terraform
+Flask Server-->Browser: Formatted plan
+deactivate Flask Server
+Browser-->User: Displays plan
+User->Browser: Clicks "ok" to confirm
+Browser->>Flask Server: Applies the plan
 activate Flask Server
 Flask Server->Terraform: terraform destroy
 activate Terraform
-Browser->Flask Server: Poll status
+Browser->Flask Server: Polls status
 activate Flask Server
 Flask Server-->Browser: Status: destroy_running
 deactivate Flask Server
 Terraform-->Flask Server: terraform destroy return code
+deactivate Terraform
 Flask Server->Flask Server: On success, removes the cluster folder
 deactivate Flask Server
-deactivate Terraform
-Browser->Flask Server: Poll status
+Browser->Flask Server: Polls status
 activate Flask Server
 Flask Server-->Browser: Status: not_found
 deactivate Flask Server
-Browser-->User: Displays not found message
+Browser-->User: Redirection to home page
