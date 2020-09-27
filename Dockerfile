@@ -19,10 +19,10 @@ ENV MAGIC_CASTLE_URL https://github.com/ComputeCanada/magic_castle/releases/down
 
 ## EXTERNAL DEPENDENCIES
 
-RUN apk --no-cache add curl=7.67.0-r0 \
-                       build-base=0.5-r1 \
-                       libffi-dev=3.2.1-r6 \
-                       openssl-dev=1.1.1g-r0
+RUN apk --no-cache add curl~=7.67 \
+                       build-base~=0.5 \
+                       libffi-dev~=3.2 \
+                       openssl-dev~=1.1
 
 # Terraform
 RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
@@ -69,10 +69,10 @@ FROM base-server as development-server
 
 USER root
 
-RUN apk add git=2.24.3-r0 \
-            npm=12.15.0-r1 \
-            sqlite=3.30.1-r2
-RUN pip install pylint==2.5.3 \
+RUN apk add git~=2.24 \
+            npm~=12.15 \
+            sqlite~=3.30
+RUN pip install pylint~=2.5 \
                 black
 
 USER mcu
