@@ -43,7 +43,11 @@
             </v-list>
           </v-menu>
           <v-btn icon :to="`/clusters/${item.hostname}`">
-            <v-icon>mdi-pencil</v-icon>
+            <v-icon
+              v-if="['build_running', 'destroy_running'].includes(item.status)"
+              >mdi-list-status</v-icon
+            >
+            <v-icon v-else>mdi-pencil</v-icon>
           </v-btn>
           <v-btn icon @click="destroyCluster(item.hostname)">
             <v-icon>mdi-delete</v-icon>
