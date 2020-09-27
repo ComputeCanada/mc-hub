@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class ClusterStatusCode(Enum):
-    IDLE = "idle"
     CREATED = "created"
     PLAN_RUNNING = "plan_running"
     BUILD_RUNNING = "build_running"

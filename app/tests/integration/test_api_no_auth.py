@@ -351,12 +351,6 @@ def test_get_status_code(client, database_connection):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "destroy_error"
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.IDLE
-    )
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
-    assert res.get_json()["status"] == "idle"
-
 
 # DELETE /api/magic-castles/<hostname>
 def test_delete_invalid_status(database_connection, client):

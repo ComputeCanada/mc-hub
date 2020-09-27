@@ -289,9 +289,6 @@ export default {
         case ClusterStatusCode.PROVISIONING_SUCCESS:
           this.showSuccess();
           break;
-        case ClusterStatusCode.IDLE:
-          this.showError("The server is still idle");
-          break;
         case ClusterStatusCode.BUILD_ERROR:
           this.showError("An error occurred while creating the cluster.");
           break;
