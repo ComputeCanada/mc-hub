@@ -19,7 +19,11 @@
           />
         </v-list-item>
         <v-list-item>
-          <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
+          <v-select
+            v-model="magicCastle.image"
+            :items="getPossibleValues('image')"
+            label="Image"
+          />
         </v-list-item>
         <v-list-item>
           <v-text-field
@@ -70,10 +74,19 @@
             />
           </v-col>
           <v-col cols="12" sm="4">
-            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+            <resource-usage-display
+              :max="ramGbMax"
+              :used="ramGbUsed"
+              title="RAM"
+              suffix="GB"
+            />
           </v-col>
           <v-col cols="12" sm="4">
-            <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+            <resource-usage-display
+              :max="vcpuMax"
+              :used="vcpuUsed"
+              title="cores"
+            />
           </v-col>
         </v-list-item>
         <v-divider />
@@ -108,7 +121,11 @@
         </div>
         <v-list-item>
           <v-col cols="12" sm="6">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+            <resource-usage-display
+              :max="volumeCountMax"
+              :used="volumeCountUsed"
+              title="volumes"
+            />
           </v-col>
           <v-col cols="12" sm="6">
             <resource-usage-display
@@ -126,7 +143,10 @@
       <v-subheader>Networking and security</v-subheader>
       <v-list>
         <v-list-item>
-          <public-key-input v-model="magicCastle.public_keys[0]" :rules="[publicKeyRule]" />
+          <public-key-input
+            v-model="magicCastle.public_keys[0]"
+            :rules="[publicKeyRule]"
+          />
         </v-list-item>
         <v-list-item>
           <v-text-field
@@ -136,7 +156,12 @@
           />
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click="generateGuestPassword()">
+              <v-btn
+                icon
+                v-bind="attrs"
+                v-on="on"
+                @click="generateGuestPassword()"
+              >
                 <v-icon>mdi-refresh</v-icon>
               </v-btn>
             </template>
@@ -155,15 +180,26 @@
 
       <!-- Apply and cancel -->
       <div class="text-center">
-        <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
+        <p v-if="!validForm" class="error--text">
+          Some form fields are invalid.
+        </p>
         <v-btn
           @click="apply"
           color="primary"
           class="ma-2"
           :disabled="!applyButtonEnabled"
           large
-        >Apply</v-btn>
-        <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
+          >Apply</v-btn
+        >
+        <v-btn
+          to="/"
+          class="ma-2"
+          :disabled="loading"
+          large
+          outlined
+          color="primary"
+          >Cancel</v-btn
+        >
       </div>
     </v-form>
   </div>
@@ -410,7 +446,13 @@ export default {
       return (
         !this.loading &&
         this.validForm &&
-        (this.dirtyForm || this.currentStatus !== "build_success")
+        (this.dirtyForm ||
+          [
+            ClusterStatusCode.CREATED,
+            ClusterStatusCode.BUILD_ERROR,
+            ClusterStatusCode.PROVISIONING_ERROR,
+            ClusterStatusCode.DESTROY_ERROR
+          ].includes(this.currentStatus))
       );
     }
   },

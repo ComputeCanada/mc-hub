@@ -217,6 +217,14 @@ export default {
         ClusterStatusCode.PLAN_RUNNING
       ].includes(this.currentStatus);
     },
+    requiresPolling() {
+      return [
+        ClusterStatusCode.DESTROY_RUNNING,
+        ClusterStatusCode.BUILD_RUNNING,
+        ClusterStatusCode.PROVISIONING_RUNNING,
+        ClusterStatusCode.PLAN_RUNNING
+      ].includes(this.currentStatus);
+    },
     applyRunning() {
       return [
         ClusterStatusCode.DESTROY_RUNNING,
@@ -250,8 +258,10 @@ export default {
           if (statusAlreadyInitialized) {
             this.showStatusDialog();
           }
-          if (!this.busy) {
+          if (!this.requiresPolling) {
             this.stopStatusPolling();
+          }
+          if (!this.busy) {
             if (status == ClusterStatusCode.NOT_FOUND) {
               this.unloadCluster();
               this.$router.push("/");
@@ -276,7 +286,7 @@ export default {
     },
     showStatusDialog() {
       switch (this.currentStatus) {
-        case ClusterStatusCode.BUILD_SUCCESS:
+        case ClusterStatusCode.PROVISIONING_SUCCESS:
           this.showSuccess();
           break;
         case ClusterStatusCode.IDLE:

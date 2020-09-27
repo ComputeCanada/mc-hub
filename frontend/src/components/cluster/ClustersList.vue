@@ -7,16 +7,41 @@
             <v-toolbar-title>Your Magic Castles</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <v-btn color="primary" big to="/create-cluster">Create cluster</v-btn>
+            <v-btn color="primary" big to="/create-cluster"
+              >Create cluster</v-btn
+            >
           </v-toolbar>
-        </template>
-        <template #item.cluster_name="{item}">
-          <router-link :to="`/clusters/${item.hostname}`">{{ item.cluster_name }}</router-link>
         </template>
         <template #item.status="{item}">
           <status-chip :status="item.status" />
         </template>
         <template #item.actions="{item}">
+          <v-menu offset-y>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                :disabled="item.status != 'provisioning_success'"
+                icon
+                v-on="on"
+                v-bind="attrs"
+              >
+                <v-icon>mdi-desktop-mac</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item
+                :href="`https://jupyter.${item.hostname}`"
+                target="_blank"
+              >
+                JupyterHub
+              </v-list-item>
+              <v-list-item
+                :href="`https://ipa.${item.hostname}`"
+                target="_blank"
+              >
+                FreeIPA
+              </v-list-item>
+            </v-list>
+          </v-menu>
           <v-btn icon :to="`/clusters/${item.hostname}`">
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
