@@ -257,6 +257,8 @@ export default {
     startStatusPolling() {
       let fetchStatus = async () => {
         const statusAlreadyInitialized = this.currentStatus !== null;
+        const planWasRunning =
+          this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
 
         const { status, progress } = (
           await MagicCastleRepository.getStatus(this.hostname)
@@ -266,7 +268,9 @@ export default {
         this.resourcesChanges = progress || [];
 
         if (statusChanged) {
-          if (statusAlreadyInitialized) {
+          if (statusAlreadyInitialized && !planWasRunning) {
+            // We avoid displaying any status dialog after plan generation,
+            // because the new status may be the same as before the plan creation.
             this.showStatusDialog();
           }
           if (!this.requiresPolling) {
