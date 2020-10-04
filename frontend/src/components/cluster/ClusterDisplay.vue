@@ -3,20 +3,30 @@
     <v-container>
       <v-card max-width="650" class="mx-auto" :loading="loading">
         <template #progress>
-          <v-progress-linear :indeterminate="progress === 0" :value="progress" />
+          <v-progress-linear
+            :indeterminate="progress === 0"
+            :value="progress"
+          />
         </template>
-        <v-card-title v-if="existingCluster" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
-        <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
+        <v-card-title v-if="existingCluster" class="mx-auto pl-8"
+          >Magic Castle Modification</v-card-title
+        >
+        <v-card-title v-else class="mx-auto pl-8"
+          >Magic Castle Creation</v-card-title
+        >
         <v-card-text>
           <v-list v-if="existingCluster">
             <v-list-item>
               <v-list-item-content>
                 <v-list-item-subtitle>Hostname</v-list-item-subtitle>
-                <v-list-item-title>{{hostname}}</v-list-item-title>
+                <v-list-item-title>{{ hostname }}</v-list-item-title>
               </v-list-item-content>
               <status-chip :status="currentStatus" />
             </v-list-item>
-            <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
+            <v-divider
+              class="mt-2"
+              v-if="resourcesChanges.length > 0 || magicCastle"
+            />
           </v-list>
           <cluster-editor
             v-if="magicCastle && !applyRunning"
@@ -27,7 +37,7 @@
             :possible-resources="possibleResources"
             :resource-details="resourceDetails"
             :quotas="quotas"
-            v-on="{apply: (existingCluster ? planModification : planCreation)}"
+            v-on="{ apply: existingCluster ? planModification : planCreation }"
           />
           <template v-else-if="resourcesChanges.length > 0 && applyRunning">
             <cluster-resources
@@ -40,17 +50,23 @@
       </v-card>
     </v-container>
     <message-dialog v-model="successDialog" type="success">
-      Your cluster was created successfully.
+      Your cluster was provisioned successfully.
       <br />
       <br />Don't forget to destroy it when you are done!
     </message-dialog>
-    <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
+    <message-dialog v-model="provisioningRunningDialog" type="success">
+      The cloud resources have been allocated. Provisioning has started.
+    </message-dialog>
+    <message-dialog v-model="errorDialog" type="error">{{
+      errorMessage
+    }}</message-dialog>
     <message-dialog
       v-model="clusterPlanRunningDialog"
       type="loading"
       no-close
       persistent
-    >Generating resource plan... please wait.</message-dialog>
+      >Generating resource plan... please wait.</message-dialog
+    >
     <confirm-dialog
       encourage-confirm
       :max-width="650"
@@ -74,7 +90,8 @@
       @confirm="applyCluster"
       @cancel="goToClustersList"
     >
-      Are you sure you want to permanently destroy your cluster and all its data?
+      Are you sure you want to permanently destroy your cluster and all its
+      data?
       <cluster-resources
         :resources-changes="resourcesChanges"
         style="max-height: calc(80vh - 200px)"
@@ -155,6 +172,7 @@ export default {
     return {
       progress: 0,
       successDialog: false,
+      provisioningRunningDialog: false,
       errorDialog: false,
       clusterDestructionDialog: false,
       clusterPlanRunningDialog: false,
@@ -236,13 +254,6 @@ export default {
     updateProgress(progress) {
       this.progress = progress;
     },
-    showSuccess() {
-      this.successDialog = true;
-    },
-    showError(message) {
-      this.errorDialog = true;
-      this.errorMessage = message;
-    },
     startStatusPolling() {
       let fetchStatus = async () => {
         const statusAlreadyInitialized = this.currentStatus !== null;
@@ -286,14 +297,24 @@ export default {
     },
     showStatusDialog() {
       switch (this.currentStatus) {
+        case ClusterStatusCode.PROVISIONING_RUNNING:
+          this.provisioningRunningDialog = true;
+          break;
         case ClusterStatusCode.PROVISIONING_SUCCESS:
-          this.showSuccess();
+          this.successDialog = true;
           break;
         case ClusterStatusCode.BUILD_ERROR:
-          this.showError("An error occurred while creating the cluster.");
+          this.errorDialog = true;
+          this.errorMessage = "An error occurred while creating the cluster.";
+          break;
+        case ClusterStatusCode.PROVISIONING_ERROR:
+          this.errorDialog = true;
+          this.errorMessage =
+            "An error occurred while provisioning the cluster.";
           break;
         case ClusterStatusCode.DESTROY_ERROR:
-          this.showError("An error occurred while destroying the cluster.");
+          this.errorDialog = true;
+          this.errorMessage = "An error occurred while destroying the cluster.";
       }
     },
     async loadAvailableResources() {
