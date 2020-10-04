@@ -3,6 +3,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v6.0.0] 2020-10-04
+
+### Added
+- Added Puppet provisioning status checking
+- Added JupyterHub and FreeIPA links to the UI after a successful provisioning
+
+### Removed
+- Removed outdated documentation
+- Removed unused Idle cluster status code
+- Removed build_success status code, replaced with provisioning_* status codes
+
+### Fixed
+- Fixed Alpine Linux packages version pinning in Dockerfile
+
+### Security
+- Updated serialize-javascript to v3.1.0
+- Updated node-forge to v0.10.0
+
 ## [v5.2.0] 2020-09-03
 
 ### Changed
