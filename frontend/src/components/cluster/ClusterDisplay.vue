@@ -305,17 +305,20 @@ export default {
           break;
         case ClusterStatusCode.BUILD_ERROR:
           this.errorDialog = true;
-          this.errorMessage = "An error occurred while creating the cluster.";
+          this.showError("An error occurred while creating the cluster.");
           break;
         case ClusterStatusCode.PROVISIONING_ERROR:
           this.errorDialog = true;
-          this.errorMessage =
-            "An error occurred while provisioning the cluster.";
+          this.showError("An error occurred while provisioning the cluster.");
           break;
         case ClusterStatusCode.DESTROY_ERROR:
           this.errorDialog = true;
-          this.errorMessage = "An error occurred while destroying the cluster.";
+          this.showError("An error occurred while destroying the cluster.");
       }
+    },
+    showError(message) {
+      this.errorDialog = true;
+      this.errorMessage = message;
     },
     async loadAvailableResources() {
       let availableResources = undefined;
