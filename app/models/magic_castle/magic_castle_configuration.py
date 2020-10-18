@@ -5,7 +5,8 @@ from models.magic_castle.magic_castle_configuration_schema import (
 )
 from models.terraform.terraform_state_parser import TerraformStateParser
 from models.constants import (
-    MAGIC_CASTLE_RELEASE_PATH,
+    MAGIC_CASTLE_MODULE_SOURCE,
+    MAGIC_CASTLE_VERSION_TAG,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
     AUTO_ALLOCATED_IP_LABEL,
@@ -83,12 +84,11 @@ class MagicCastleConfiguration:
         Formats the configuration and writes it to the cluster's main.tf.json file.
         """
 
-        openstack_module_source = path.join(MAGIC_CASTLE_RELEASE_PATH, "openstack")
         main_tf_configuration = {
             "terraform": {"required_version": ">= 0.12.21"},
             "module": {
                 "openstack": {
-                    "source": openstack_module_source,
+                    "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//openstack?ref={MAGIC_CASTLE_VERSION_TAG}",
                     "generate_ssh_key": True,
                     **deepcopy(self.__configuration),
                 }

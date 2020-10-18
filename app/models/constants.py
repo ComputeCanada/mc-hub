@@ -5,10 +5,11 @@ INSTANCE_CATEGORIES = ["mgmt", "login", "node"]
 STORAGE_SPACES = ["home", "project", "scratch"]
 AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
 
+# Magic Castle
+MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle.git"
+MAGIC_CASTLE_VERSION_TAG = "8.2"
+
 # Paths and filenames
-MAGIC_CASTLE_RELEASE_PATH = path.join(
-    environ["HOME"], "magic_castle-openstack-" + environ["MAGIC_CASTLE_VERSION"]
-)
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
 APP_PATH = path.join(environ["HOME"], "app")
 DATABASE_PATH = path.join(environ["HOME"], "database", "database.db")

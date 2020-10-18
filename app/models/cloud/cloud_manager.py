@@ -9,7 +9,7 @@ class CloudManager:
     def get_available_resources(self):
         """
         Retrieves the available cloud resources including resources from OpenStack
-        and availables domains.
+        and available domains.
         """
         available_resources = self.__openstack_manager.get_available_resources()
         available_resources["possible_resources"][

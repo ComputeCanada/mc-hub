@@ -273,13 +273,7 @@ class MagicCastle:
 
         try:
             run(
-                [
-                    "terraform",
-                    "init",
-                    "-no-color",
-                    "-plugin-dir",
-                    environ["HOME"] + "/.terraform.d/plugin-cache/linux_amd64",
-                ],
+                ["terraform", "init", "-no-color"],
                 cwd=self.__get_cluster_path(),
                 capture_output=True,
                 check=True,
@@ -376,13 +370,15 @@ class MagicCastle:
 
                 if not destroy:
                     provisioning_manager = ProvisioningManager(self.get_hostname())
+
+                    # Avoid multiple threads polling the same cluster
                     if not provisioning_manager.is_busy():
                         try:
                             provisioning_manager.poll_until_success()
                             status_code = ClusterStatusCode.PROVISIONING_SUCCESS
                         except PuppetTimeoutException:
                             status_code = ClusterStatusCode.PROVISIONING_ERROR
-                            
+
                         with DatabaseManager.connect() as database_connection:
                             self.__database_connection = database_connection
                             self.__update_status(status_code)

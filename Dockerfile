@@ -13,9 +13,7 @@ RUN npm run build
 FROM python:3.8.2-alpine3.11 as base-server
 
 ENV TERRAFORM_VERSION 0.12.24
-ENV MAGIC_CASTLE_VERSION 8.2
 ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-ENV MAGIC_CASTLE_URL https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.zip
 
 ## EXTERNAL DEPENDENCIES
 
@@ -44,16 +42,8 @@ ADD .terraformrc /home/mcu
 RUN mkdir /home/mcu/app
 RUN mkdir /home/mcu/clusters
 
-## Download Magic Castle Open Stack release
-RUN curl -L ${MAGIC_CASTLE_URL} -o magic_castle-openstack.zip && \
-    unzip magic_castle-openstack.zip && \
-    rm magic_castle-openstack.zip
-
 ## Terraform plugin caching setup
 RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
-
-## Terraform init for Magic Castle
-RUN terraform init magic_castle-openstack-${MAGIC_CASTLE_VERSION}
 
 ## Python requirements
 ADD app/requirements.txt ./app
