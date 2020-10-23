@@ -5,7 +5,7 @@ from requests.exceptions import ConnectionError
 import logging
 
 MAX_PROVISIONING_TIME = 3600
-POLL_INTERVAL = 2
+POLL_INTERVAL = 30
 
 
 class ProvisioningManager:
