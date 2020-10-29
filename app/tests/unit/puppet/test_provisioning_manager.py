@@ -15,6 +15,12 @@ def mock_max_provisioning_time(mocker):
 
 
 @pytest.fixture(autouse=True)
+def mock_poll_interval(mocker):
+    # POLL_INTERVAL = 1 second
+    mocker.patch("models.puppet.provisioning_manager.POLL_INTERVAL", new=1)
+
+
+@pytest.fixture(autouse=True)
 def mock_status_requests(mocker):
     def mock_get_request(url):
         class MockResponse:
