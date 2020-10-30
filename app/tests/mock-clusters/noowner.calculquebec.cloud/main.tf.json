@@ -6,6 +6,7 @@
         "openstack": {
             "source": "/home/mcu/magic_castle-openstack-8.2/openstack",
             "generate_ssh_key": true,
+            "puppetenv_rev": "8.2",
             "cluster_name": "noowner",
             "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",

@@ -5,6 +5,7 @@ terraform {
 module "openstack" {
   source = "/home/mcu/magic_castle-openstack-8.2/openstack"
   generate_ssh_key = true
+  puppetenv_rev = "8.2"
 
   cluster_name = "missingfloatingips"
   domain       = "c3.ca"
