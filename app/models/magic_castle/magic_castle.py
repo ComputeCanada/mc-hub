@@ -121,6 +121,17 @@ class MagicCastle:
         )
         self.__database_connection.commit()
 
+        # Log cluster status updates for log analytics
+        print(
+            json.dumps(
+                {
+                    "hostname": self.get_hostname(),
+                    "status": self.__status.value,
+                    "owner": self.get_owner(),
+                }
+            )
+        )
+
     def get_plan_type(self) -> PlanType:
         if self.__plan_type is None:
             result = self.__database_connection.execute(
