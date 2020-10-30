@@ -68,6 +68,7 @@ class MagicCastleConfiguration:
             main_tf_configuration = json.load(main_tf)
         configuration = main_tf_configuration["module"]["openstack"]
         del configuration["source"]
+        del configuration["puppetenv_rev"]
         del configuration["generate_ssh_key"]
 
         # "node" is the only instance category that is encapsulated in a list
