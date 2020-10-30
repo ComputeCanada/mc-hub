@@ -273,7 +273,7 @@ class MagicCastle:
 
         try:
             run(
-                ["terraform", "init", "-no-color"],
+                ["terraform", "init", "-no-color", "-input=false"],
                 cwd=self.__get_cluster_path(),
                 capture_output=True,
                 check=True,
@@ -289,6 +289,7 @@ class MagicCastle:
                     [
                         "terraform",
                         "plan",
+                        "-input=false",
                         "-no-color",
                         "-destroy=" + ("true" if destroy else "false"),
                         "-out="
@@ -345,6 +346,7 @@ class MagicCastle:
                         [
                             "terraform",
                             "apply",
+                            "-input=false",
                             "-no-color",
                             "-auto-approve",
                             self.__get_cluster_path(TERRAFORM_PLAN_BINARY_FILENAME),
