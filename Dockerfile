@@ -17,7 +17,8 @@ ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/
 
 ## EXTERNAL DEPENDENCIES
 
-RUN apk --no-cache add curl~=7.67 \
+RUN apk --no-cache add git~=2.24 \
+                       curl~=7.67 \
                        build-base~=0.5 \
                        libffi-dev~=3.2 \
                        openssl-dev~=1.1
@@ -59,8 +60,7 @@ FROM base-server as development-server
 
 USER root
 
-RUN apk add git~=2.24 \
-            npm~=12.15 \
+RUN apk add npm~=12.15 \
             sqlite~=3.30
 RUN pip install pylint~=2.5 \
                 black
