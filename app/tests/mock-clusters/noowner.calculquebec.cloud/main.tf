@@ -3,9 +3,9 @@ terraform {
 }
 
 module "openstack" {
-  source = "/home/mcu/magic_castle-openstack-8.2/openstack"
+  source = "/home/mcu/magic_castle-openstack-8.3/openstack"
   generate_ssh_key = true
-  puppetenv_rev = "8.2"
+  puppetenv_rev = "8.3"
 
   cluster_name = "noowner"
   domain       = "calculquebec.cloud"
