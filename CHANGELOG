@@ -3,14 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [v6.0.4] UNRELEASED
+## [v6.1.0] 2020-10-30
+
+### Added
+- Added cluster status logging for analytics
 
 ### Changed
 - Magic Castle releases are now fetched from Github
 - Cluster provisioning polling interval changed to 30 seconds
+- Bumped Magic Castle to 8.3
 
 ### Fixed
 - Fixed clusters' backward compatibility with older versions of Magic Castle
+- Fixed puppet-magic_castle version by specifying the puppetenv_rev variable
 - Fixed expired session handling by refreshing the page on session expiration
 - Fixed dangling threads in all tests
 
