@@ -90,6 +90,7 @@ class MagicCastleConfiguration:
                 "openstack": {
                     "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//openstack?ref={MAGIC_CASTLE_VERSION_TAG}",
                     "generate_ssh_key": True,
+                    "puppetenv_rev": MAGIC_CASTLE_VERSION_TAG,
                     **deepcopy(self.__configuration),
                 }
             },
