@@ -2,16 +2,28 @@ import axios from "axios";
 
 const baseURL = process.env.VUE_APP_API_URL || "/api";
 const axiosInstance = axios.create({ baseURL });
+let sessionExpired = false;
 
 axiosInstance.interceptors.response.use((response)=> {
     return response;
 }, (error) => {
-    if (error.response.status == 302) {
-        // API request was redirected to single sign-on login page, therefore the session expired
-        location.reload();
-    } else {
-        return Promise.reject(error);
+    if (typeof error.response === "undefined") {
+        if (!sessionExpired) {
+            // A network error was detected in the API request. This is probably due to a CORS
+            // error in the redirection to the identity provider's login portal.
+            // Note: Other network problems, such as disconnects, may cause the same behaviour.
+            sessionExpired = true;
+            alert("Your session expired. Please refresh the page.");
+
+            // Remove any page reload confirmation dialog
+            window.onbeforeunload = event => {
+                delete event["returnValue"];
+            };
+
+            location.reload();
+        }
     }
+    return Promise.reject(error);
 })
 
 export default axiosInstance;
