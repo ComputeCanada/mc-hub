@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v6.1.3] 2020-11-27
+
+### Fixed
+- Avoid buffering the output stream of cluster status logs
+- Updated live cluster test's CentOS image version
+
 ## [v6.1.2] 2020-11-13
 
 ### Fixed
