@@ -129,7 +129,7 @@ class MagicCastle:
                     "status": self.__status.value,
                     "owner": self.get_owner(),
                 }
-            )
+            ), flush=True
         )
 
     def get_plan_type(self) -> PlanType:
