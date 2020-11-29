@@ -282,6 +282,37 @@ export default {
   },
   watch: {
     possibleResources(possibleResources) {
+      // We set default values for select boxes based on possible resources fetched from the API
+      
+      // Domain
+      if (this.magicCastle.domain === null && possibleResources.domain.length > 0) {
+        this.magicCastle.domain = possibleResources.domain[0];
+        this.initialMagicCastle.domain = possibleResources.domain[0];
+      }
+
+      // Images
+      if (this.magicCastle.image === null && possibleResources.image.length > 0) {
+        this.magicCastle.image = possibleResources.image[0];
+        this.initialMagicCastle.image = possibleResources.image[0];
+      }
+
+      // Instance types
+      if (this.magicCastle.instances.login.type === null && possibleResources.instances.login.type.length > 0) {
+        this.magicCastle.instances.login.type = possibleResources.instances.login.type[0];
+        this.initialMagicCastle.instances.login.type = possibleResources.instances.login.type[0];
+      }
+      if (this.magicCastle.instances.mgmt.type === null && possibleResources.instances.mgmt.type.length > 0) {
+        this.magicCastle.instances.mgmt.type = possibleResources.instances.mgmt.type[0];
+        this.initialMagicCastle.instances.mgmt.type = possibleResources.instances.mgmt.type[0];
+      }
+      if (this.magicCastle.instances.node.type === null && possibleResources.instances.node.type.length > 0) {
+        this.magicCastle.instances.node.type = possibleResources.instances.node.type[0];
+        this.initialMagicCastle.instances.node.type = possibleResources.instances.node.type[0];
+      }
+
+
+      // Floating IPs
+      // Must be set to the first possible value in all cases (either "Automatic allocation" or a specific IP address)
       if (possibleResources.os_floating_ips.length > 0) {
         this.magicCastle.os_floating_ips = [
           possibleResources.os_floating_ips[0]

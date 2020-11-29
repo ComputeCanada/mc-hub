@@ -114,20 +114,20 @@ import ClusterEditor from "@/components/cluster/ClusterEditor";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "phoenix",
-  domain: "calculquebec.cloud",
-  image: "CentOS-7-x64-2019-07",
+  domain: null,
+  image: null,
   nb_users: 10,
   instances: {
     mgmt: {
-      type: "p4-6gb",
+      type: null,
       count: 1
     },
     login: {
-      type: "p2-3gb",
+      type: null,
       count: 1
     },
     node: {
-      type: "p2-3gb",
+      type: null,
       count: 1
     }
   },
