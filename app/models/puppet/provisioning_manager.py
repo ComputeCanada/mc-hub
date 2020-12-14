@@ -33,6 +33,8 @@ class ProvisioningManager:
                         == 200
                         and requests.get(f"https://ipa.{self.__hostname}").status_code
                         == 200
+                        and requests.get(f"https://mokey.{self.__hostname}").status_code
+                        == 200
                     )
                 except requests.exceptions.ConnectionError:
                     pass
