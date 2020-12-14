@@ -34,7 +34,7 @@ TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 class MagicCastle:
     """
     Magic Castle is the class that manages the state of Magic Castle clusters.
-    It is responsible for building, modifying and destroying clusters.
+    It is responsible for building, modifying and destroying clusters using Terraform.
     It is also used to parse the state of existing clusters and return it in
     a simple dictionary format.
     """
@@ -77,6 +77,9 @@ class MagicCastle:
         return self.__owner
 
     def get_owner_username(self):
+        """
+        MC Hub stores username in the form of eduPersonPrincipalName. These
+        """
         owner = self.get_owner()
         if owner:
             return owner.split("@")[0]
@@ -129,7 +132,8 @@ class MagicCastle:
                     "status": self.__status.value,
                     "owner": self.get_owner(),
                 }
-            ), flush=True
+            ),
+            flush=True,
         )
 
     def get_plan_type(self) -> PlanType:
@@ -289,13 +293,19 @@ class MagicCastle:
                 capture_output=True,
                 check=True,
             )
-            with open(
-                self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
-            ) as output_file:
-                environment_variables = environ.copy()
-                dns_manager = DnsManager(self.get_domain())
-                environment_variables.update(dns_manager.get_environment_variables())
-                environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
+        except CalledProcessError:
+            self.__update_status(previous_status)
+            logging.error("An error occurred while initializing Terraform")
+            return
+
+        with open(
+            self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
+        ) as output_file:
+            environment_variables = environ.copy()
+            dns_manager = DnsManager(self.get_domain())
+            environment_variables.update(dns_manager.get_environment_variables())
+            environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
+            try:
                 run(
                     [
                         "terraform",
@@ -312,19 +322,29 @@ class MagicCastle:
                     stderr=output_file,
                     check=True,
                 )
+            except CalledProcessError:
+                self.__update_status(previous_status)
+                logging.error("An error occurred while creating the Terraform plan")
+                return
+
             with open(
                 self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
             ) as output_file:
-                run(
-                    ["terraform", "show", "-json", TERRAFORM_PLAN_BINARY_FILENAME],
-                    cwd=self.__get_cluster_path(),
-                    stdout=output_file,
-                    check=True,
-                )
-        except CalledProcessError:
-            logging.error("Could not generate plan.")
-        finally:
-            self.__update_status(previous_status)
+                try:
+                    run(
+                        ["terraform", "show", "-json", TERRAFORM_PLAN_BINARY_FILENAME],
+                        cwd=self.__get_cluster_path(),
+                        stdout=output_file,
+                        check=True,
+                    )
+                except CalledProcessError:
+                    self.__update_status(previous_status)
+                    logging.error(
+                        "An error occurred while exporting the json Terraform plan"
+                    )
+                    return
+
+        self.__update_status(previous_status)
 
     def apply(self):
         if self.__not_found():
@@ -397,7 +417,7 @@ class MagicCastle:
                             self.__update_status(status_code)
 
             except CalledProcessError:
-                logging.info("terraform apply returned an error")
+                logging.info("An error occurred while running terraform apply")
                 with DatabaseManager.connect() as database_connection:
                     self.__database_connection = database_connection
                     self.__update_status(
