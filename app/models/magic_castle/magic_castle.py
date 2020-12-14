@@ -323,9 +323,41 @@ class MagicCastle:
                     check=True,
                 )
             except CalledProcessError:
-                self.__update_status(previous_status)
-                logging.error("An error occurred while creating the Terraform plan")
-                return
+                if destroy:
+                    # Terraform returns an error if we try to destroy a cluster when the image
+                    # it was created with does not exist anymore (e.g. CentOS-7-x64-2019-07). In these cases,
+                    # not refreshing the terraform state (refresh=false) solves the issue.
+                    try:
+                        run(
+                            [
+                                "terraform",
+                                "plan",
+                                "-refresh=false",
+                                "-input=false",
+                                "-no-color",
+                                "-destroy=" + ("true" if destroy else "false"),
+                                "-out="
+                                + self.__get_cluster_path(
+                                    TERRAFORM_PLAN_BINARY_FILENAME
+                                ),
+                            ],
+                            cwd=self.__get_cluster_path(),
+                            env=environment_variables,
+                            stdout=output_file,
+                            stderr=output_file,
+                            check=True,
+                        )
+                    except CalledProcessError:
+                        # terraform plan fails even without refreshing the state
+                        self.__update_status(previous_status)
+                        logging.error(
+                            "An error occurred while creating the Terraform plan"
+                        )
+                        return
+                else:
+                    self.__update_status(previous_status)
+                    logging.error("An error occurred while creating the Terraform plan")
+                    return
 
             with open(
                 self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
