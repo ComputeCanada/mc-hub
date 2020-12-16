@@ -35,6 +35,12 @@
                 JupyterHub
               </v-list-item>
               <v-list-item
+                :href="`https://mokey.${item.hostname}`"
+                target="_blank"
+              >
+                Mokey
+              </v-list-item>
+              <v-list-item
                 :href="`https://ipa.${item.hostname}`"
                 target="_blank"
               >
