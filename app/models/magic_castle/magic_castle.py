@@ -78,7 +78,7 @@ class MagicCastle:
 
     def get_owner_username(self):
         """
-        MC Hub stores username in the form of eduPersonPrincipalName. These
+        MC Hub stores username in the form of eduPersonPrincipalName.
         """
         owner = self.get_owner()
         if owner:
