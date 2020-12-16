@@ -3,6 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v7.0.0] 2020-12-16
+
+### Added
+- Added Mokey link
+
+### Changed
+- Bumped MC to 9.1
+- Bumped Terraform to 0.13.5
+
+## Fixed
+- Fixed cluster destruction when using a deprecated image
+- Avoid using CentOS 8 as the default image
+
 ## [v6.1.4] 2020-11-29
 
 ### Fixed
