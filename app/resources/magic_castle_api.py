@@ -16,10 +16,10 @@ class MagicCastleAPI(ApiView):
             if type(user) == AuthenticatedUser:
                 return [
                     {
-                        "cluster_name": magic_castle.get_cluster_name(),
-                        "domain": magic_castle.get_domain(),
+                        **magic_castle.dump_configuration(),
                         "hostname": magic_castle.get_hostname(),
                         "status": magic_castle.get_status().value,
+                        "freeipa_passwd": magic_castle.get_freeipa_passwd(),
                         "owner": magic_castle.get_owner_username(),
                     }
                     for magic_castle in user.get_all_magic_castles()
@@ -27,10 +27,10 @@ class MagicCastleAPI(ApiView):
             else:
                 return [
                     {
-                        "cluster_name": magic_castle.get_cluster_name(),
-                        "domain": magic_castle.get_domain(),
+                        **magic_castle.dump_configuration(),
                         "hostname": magic_castle.get_hostname(),
                         "status": magic_castle.get_status().value,
+                        "freeipa_passwd": magic_castle.get_freeipa_passwd(),
                     }
                     for magic_castle in user.get_all_magic_castles()
                 ]

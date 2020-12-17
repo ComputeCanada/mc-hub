@@ -185,6 +185,19 @@ class MagicCastle:
             except FileNotFoundError:
                 self.load_configuration_from_main_tf_json_file()
         return self.__configuration.dump()
+    
+    def get_freeipa_passwd(self):
+        if self.__is_busy():
+            return None
+
+        try:
+            with open(
+                self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
+            ) as terraform_state_file:
+                state = json.load(terraform_state_file)
+                return TerraformStateParser(state).get_freeipa_passwd()
+        except FileNotFoundError:
+            return None
 
     def get_available_resources(self):
         if self.__is_busy():
