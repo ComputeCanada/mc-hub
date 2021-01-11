@@ -178,6 +178,7 @@ def generate_test_clusters():
         "created.calculquebec.cloud",
         "empty.calculquebec.cloud",
         "missingnodes.sub.example.com",
+        "noowner.calculquebec.cloud",
         "valid1.calculquebec.cloud",
         "missingfloatingips.c3.ca",
     ]
