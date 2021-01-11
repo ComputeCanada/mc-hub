@@ -294,6 +294,10 @@ export default {
       if (this.magicCastle.image === null && possibleResources.image.length > 0) {
         this.magicCastle.image = possibleResources.image[0];
         this.initialMagicCastle.image = possibleResources.image[0];
+        // MC is not compatible with CentOS 8 currently. Therefore, we choose another image by default.
+        const image = possibleResources.image.filter(image => image.match(/^(?!CentOS-8|centos8).*$/i))[0];
+        this.magicCastle.image = image;
+        this.initialMagicCastle.image = image;
       }
 
       // Instance types
