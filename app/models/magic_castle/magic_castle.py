@@ -174,6 +174,13 @@ class MagicCastle:
         return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
     def dump_configuration(self):
+        """
+        Returns the Magic Castle configuration dictionary of the current cluster.
+        To do so, it first attempts to read the terraform.tfstate file to parse the configuration.
+        If the file does not exist (for a cluster that isn't built yet), it parses the configuration
+        from the main.tf.json file (which contains less information).
+        """
+        print("a")
         if self.__is_busy():
             raise BusyClusterException
         if self.__not_found():
@@ -185,7 +192,17 @@ class MagicCastle:
             except FileNotFoundError:
                 self.load_configuration_from_main_tf_json_file()
         return self.__configuration.dump()
-    
+
+    def dump_configuration_from_main_tf(self):
+        if self.__not_found():
+            raise ClusterNotFoundException
+
+        try:
+            self.load_configuration_from_main_tf_json_file()
+        except FileNotFoundError:
+            return {}
+        return self.__configuration.dump()
+
     def get_freeipa_passwd(self):
         if self.__is_busy():
             return None

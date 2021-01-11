@@ -182,7 +182,7 @@ class TerraformStateParser:
             # Frontend requires at least one public key, even if empty
             return [""]
 
-    @default("")
+    @default(None)
     def get_freeipa_passwd(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.freeipa_passwd"
