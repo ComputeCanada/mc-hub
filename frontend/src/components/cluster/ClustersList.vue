@@ -1,15 +1,22 @@
 <template>
   <v-container>
     <v-card :max-width="800" class="mx-auto">
-      <v-data-table :headers="headers" :items="magicCastles" :loading="loading" show-expand single-expand item-key="hostname">
+      <v-data-table
+        :headers="headers"
+        :items="magicCastles"
+        :loading="loading"
+        show-expand
+        single-expand
+        item-key="hostname"
+        :expanded.sync="expandedRows"
+        @click:row="rowClicked"
+      >
         <template #top>
           <v-toolbar flat>
             <v-toolbar-title>Your Magic Castles</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <v-btn color="primary" big to="/create-cluster"
-              >Create cluster</v-btn
-            >
+            <v-btn color="primary" big to="/create-cluster">Create cluster</v-btn>
           </v-toolbar>
         </template>
         <template #item.status="{item}">
@@ -17,59 +24,76 @@
         </template>
         <template #expanded-item="{headers, item}">
           <td :colspan="headers.length">
-            <v-container >
-                <v-row class="pa-3">
-                  <h2>Cluster overview</h2>
-                </v-row>
-                <v-row>
-                  <v-col>Hostname</v-col>
-                  <v-col><code>{{item.hostname}}</code></v-col>
-                </v-row>
-                <v-row>
-                  <v-col>Sudoer username</v-col>
-                  <v-col><code>centos</code></v-col>
-                </v-row>
-                <v-row>
-                  <v-col>FreeIPA admin username</v-col>
-                  <v-col><code>admin</code></v-col>
-                </v-row>
-                <v-row>
-                  <v-col>FreeIPA admin password</v-col>
-                  <v-col>
-                    <password-display v-if="item.freeipa_passwd" :password="item.freeipa_passwd"></password-display>
-                    <span v-else>not created</span>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col>Guest usernames</v-col>
-                  <v-col><code>{{getFirstUserName(item.nb_users)}}</code> - <code>{{getLastUserName(item.nb_users)}}</code></v-col>
-                </v-row>
-                <v-row>
-                  <v-col>Guest password</v-col>
-                  <v-col><password-display :password="item.guest_passwd"></password-display></v-col>
-                </v-row>
-                <v-divider class="mt-4"/>
-                <v-row class="pa-2">
-                    <v-btn color="primary" text :href="`https://jupyter.${item.hostname}`"
-                target="_blank">
-                      JupyterHub
-                    </v-btn>
-                    <v-btn color="primary" text :href="`https://ipa.${item.hostname}`"
-                target="_blank">
-                      FreeIPA
-                    </v-btn>
-                    <v-btn color="primary" text :href="`https://mokey.${item.hostname}`"
-                target="_blank">
-                      Mokey
-                    </v-btn>
-                    <v-spacer/>
-                    <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
-                      <v-icon class="mr-2">mdi-pencil</v-icon>Edit
-                    </v-btn>
-                    <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
-                      <v-icon class="mr-2">mdi-delete</v-icon>Delete
-                    </v-btn>
-                </v-row>
+            <v-container>
+              <v-row class="pa-3">
+                <h2>Cluster overview</h2>
+              </v-row>
+              <v-row>
+                <v-col>Hostname</v-col>
+                <v-col
+                  ><code>{{ item.hostname }}</code></v-col
+                >
+              </v-row>
+              <v-row>
+                <v-col>Sudoer username</v-col>
+                <v-col><code>centos</code></v-col>
+              </v-row>
+              <v-row>
+                <v-col>FreeIPA admin username</v-col>
+                <v-col><code>admin</code></v-col>
+              </v-row>
+              <v-row>
+                <v-col>FreeIPA admin password</v-col>
+                <v-col>
+                  <password-display v-if="item.freeipa_passwd" :password="item.freeipa_passwd"></password-display>
+                  <span v-else>not created</span>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>Guest usernames</v-col>
+                <v-col
+                  ><code>{{ getFirstUserName(item.nb_users) }}</code> -
+                  <code>{{ getLastUserName(item.nb_users) }}</code></v-col
+                >
+              </v-row>
+              <v-row>
+                <v-col>Guest password</v-col>
+                <v-col><password-display :password="item.guest_passwd"></password-display></v-col>
+              </v-row>
+              <v-divider class="mt-4" />
+              <v-row class="pa-2">
+                <v-btn
+                  color="primary"
+                  :disabled="item.status !== 'provisioning_success'"
+                  text
+                  :href="`https://jupyter.${item.hostname}`"
+                  target="_blank"
+                  >JupyterHub</v-btn
+                >
+                <v-btn
+                  color="primary"
+                  :disabled="item.status !== 'provisioning_success'"
+                  text
+                  :href="`https://ipa.${item.hostname}`"
+                  target="_blank"
+                  >FreeIPA</v-btn
+                >
+                <v-btn
+                  color="primary"
+                  :disabled="item.status !== 'provisioning_success'"
+                  text
+                  :href="`https://mokey.${item.hostname}`"
+                  target="_blank"
+                  >Mokey</v-btn
+                >
+                <v-spacer />
+                <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
+                  <v-icon class="mr-2">mdi-pencil</v-icon>Edit
+                </v-btn>
+                <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
+                  <v-icon class="mr-2">mdi-delete</v-icon>Delete
+                </v-btn>
+              </v-row>
             </v-container>
           </td>
         </template>
@@ -81,7 +105,7 @@
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import StatusChip from "@/components/ui/StatusChip";
-import PasswordDisplay from '@/components/ui/PasswordDisplay.vue';
+import PasswordDisplay from "@/components/ui/PasswordDisplay.vue";
 
 const POLL_STATUS_INTERVAL = 5000;
 
@@ -93,6 +117,7 @@ export default {
       currentHostname: null,
       statusPoller: null,
       loading: true,
+      expandedRows: [],
 
       magicCastles: []
     };
@@ -172,13 +197,24 @@ export default {
       });
     },
     getFirstUserName(nbUsers) {
-      return "user" + "1".padStart(Math.floor(Math.log10(nbUsers)) + 1, "0")
+      return "user" + "1".padStart(Math.floor(Math.log10(nbUsers)) + 1, "0");
     },
     getLastUserName(nbUsers) {
-      return "user" + nbUsers
+      return "user" + nbUsers;
+    },
+    rowClicked(item) {
+      const expandedRowIndex = this.expandedRows.indexOf(item);
+      this.expandedRows = [];
+      if (expandedRowIndex === -1) {
+        this.expandedRows.push(item);
+      }
     }
   }
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.v-data-table >>> table tbody tr:not(.v-data-table__expanded__content) {
+  cursor: pointer;
+}
+</style>
