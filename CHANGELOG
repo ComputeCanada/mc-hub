@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v7.1.0] 2021-01-12
+
+### Added
+- Added details section in the cluster list
+
+### Changed
+- Bumped npm to 12.20
+
+### Security
+- Bumped Axios to 0.21.1
+
 ## [v7.0.0] 2020-12-16
 
 ### Added
