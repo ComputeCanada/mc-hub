@@ -52,13 +52,19 @@
               <v-row>
                 <v-col>Guest usernames</v-col>
                 <v-col
-                  ><code>{{ getFirstUserName(item.nb_users) }}</code> -
-                  <code>{{ getLastUserName(item.nb_users) }}</code></v-col
-                >
+                  ><template v-if="item.nb_users">
+                    <code>{{ getFirstUserName(item.nb_users) }}</code> -
+                    <code>{{ getLastUserName(item.nb_users) }}</code>
+                  </template>
+                  <span v-else>not available</span>
+                </v-col>
               </v-row>
               <v-row>
                 <v-col>Guest password</v-col>
-                <v-col><password-display :password="item.guest_passwd"></password-display></v-col>
+                <v-col>
+                  <password-display v-if="item.guest_passwd" :password="item.guest_passwd" />
+                  <span v-else>not available</span></v-col
+                >
               </v-row>
               <v-divider class="mt-4" />
               <v-row class="pa-2">
@@ -68,30 +74,32 @@
                   text
                   :href="`https://jupyter.${item.hostname}`"
                   target="_blank"
-                  >JupyterHub</v-btn
-                >
+                  >JupyterHub
+                </v-btn>
                 <v-btn
                   color="primary"
                   :disabled="item.status !== 'provisioning_success'"
                   text
                   :href="`https://ipa.${item.hostname}`"
                   target="_blank"
-                  >FreeIPA</v-btn
-                >
+                  >FreeIPA
+                </v-btn>
                 <v-btn
                   color="primary"
                   :disabled="item.status !== 'provisioning_success'"
                   text
                   :href="`https://mokey.${item.hostname}`"
                   target="_blank"
-                  >Mokey</v-btn
-                >
+                  >Mokey
+                </v-btn>
                 <v-spacer />
                 <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
-                  <v-icon class="mr-2">mdi-pencil</v-icon>Edit
+                  <v-icon class="mr-2">mdi-pencil</v-icon>
+                  Edit
                 </v-btn>
                 <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
-                  <v-icon class="mr-2">mdi-delete</v-icon>Delete
+                  <v-icon class="mr-2">mdi-delete</v-icon>
+                  Delete
                 </v-btn>
               </v-row>
             </v-container>
