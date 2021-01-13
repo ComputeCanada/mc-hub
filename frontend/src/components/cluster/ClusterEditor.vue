@@ -46,12 +46,9 @@
             </v-col>
 
             <v-col cols="12" sm="5">
-              <v-select
-                :items="getPossibleValues(`instances.${id}.type`)"
-                v-model="magicCastle.instances[id].type"
-                label="Type"
-                :rules="instanceRules"
-              />
+              <flavor-select :flavors="getPossibleValues(`instances.${id}.type`)"
+                            v-model="magicCastle.instances[id].type"
+                            label="Type" :rules="instanceRules" />
             </v-col>
 
             <v-col cols="12" sm="4">
@@ -211,6 +208,7 @@ import { generatePassword } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import PublicKeyInput from "@/components/ui/PublicKeyInput";
+import FlavorSelect from "./FlavorSelect";
 
 const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
@@ -221,6 +219,7 @@ const SSH_PUBLIC_KEY_REGEX = /^(ssh-rsa AAAAB3NzaC1yc2|ecdsa-sha2-nistp256 AAAAE
 export default {
   name: "ClusterEditor",
   components: {
+    FlavorSelect,
     ResourceUsageDisplay,
     PublicKeyInput
   },
@@ -283,7 +282,7 @@ export default {
   watch: {
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
-      
+
       // Domain
       if (this.magicCastle.domain === null && possibleResources.domain.length > 0) {
         this.magicCastle.domain = possibleResources.domain[0];
