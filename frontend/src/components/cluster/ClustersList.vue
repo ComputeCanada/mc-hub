@@ -46,7 +46,7 @@
                 <v-col>FreeIPA admin password</v-col>
                 <v-col>
                   <password-display v-if="item.freeipa_passwd" :password="item.freeipa_passwd"></password-display>
-                  <span v-else>not created</span>
+                  <span v-else>not available</span>
                 </v-col>
               </v-row>
               <v-row>
@@ -214,7 +214,7 @@ export default {
 </script>
 
 <style scoped>
-.v-data-table >>> table tbody tr:not(.v-data-table__expanded__content) {
+.v-data-table >>> table tbody tr:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) {
   cursor: pointer;
 }
 </style>
