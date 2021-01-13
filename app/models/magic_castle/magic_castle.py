@@ -88,16 +88,6 @@ class MagicCastle:
                 "The magic castle configuration could not be parsed"
             )
 
-    def load_configuration_from_main_tf_json_file(self):
-        self.__configuration = MagicCastleConfiguration.get_from_main_tf_json_file(
-            self.get_hostname()
-        )
-
-    def load_configuration_from_state_file(self):
-        self.__configuration = MagicCastleConfiguration.get_from_state_file(
-            self.get_hostname()
-        )
-
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
             result = self.__database_connection.execute(
@@ -174,28 +164,14 @@ class MagicCastle:
         If the file does not exist (for a cluster that isn't built yet), it parses the configuration
         from the main.tf.json file (which contains less information).
         """
-        print("a")
-        if self.__is_busy():
-            raise BusyClusterException
-        if self.__not_found():
-            raise ClusterNotFoundException
-
-        if not self.__configuration:
-            try:
-                self.load_configuration_from_state_file()
-            except FileNotFoundError:
-                self.load_configuration_from_main_tf_json_file()
-        return self.__configuration.dump()
-
-    def dump_configuration_from_main_tf(self):
         if self.__not_found():
             raise ClusterNotFoundException
 
         try:
-            self.load_configuration_from_main_tf_json_file()
+            self.__configuration = MagicCastleConfiguration.get(self.get_hostname())
+            return self.__configuration.dump()
         except FileNotFoundError:
-            return {}
-        return self.__configuration.dump()
+            return dict()
 
     def get_freeipa_passwd(self):
         if self.__is_busy():
