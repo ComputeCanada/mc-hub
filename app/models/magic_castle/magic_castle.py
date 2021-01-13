@@ -49,12 +49,6 @@ class MagicCastle:
         self.__status = None
         self.__plan_type = None
 
-    def validate_hostname(self, hostname):
-        return (
-            hostname
-            and re.search(r"^[a-z][a-z0-9]*(\.[a-z0-9]+)+$", hostname) is not None
-        )
-
     def get_hostname(self):
         return self.__hostname
 
