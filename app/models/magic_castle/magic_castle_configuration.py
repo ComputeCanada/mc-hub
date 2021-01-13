@@ -28,7 +28,7 @@ class MagicCastleConfiguration:
         """
         Initializes a MagicCastleConfiguration and validates the configuration schema, if present.
         """
-        self.__configuration = {}
+        self.__configuration = None
         if configuration:
             self.__configuration = MagicCastleConfigurationSchema().load(configuration)
 
