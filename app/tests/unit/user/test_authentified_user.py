@@ -65,7 +65,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
 def test_create_empty_magic_castle(database_connection, alice):
     user = alice(database_connection)
     magic_castle = user.create_empty_magic_castle()
-    magic_castle.load_configuration(
+    magic_castle.set_configuration(
         {
             "cluster_name": "alice123",
             "domain": "sub.example.com",

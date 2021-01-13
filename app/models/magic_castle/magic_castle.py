@@ -79,7 +79,7 @@ class MagicCastle:
             return owner.split("@")[0]
         return None
 
-    def load_configuration(self, configuration: dict):
+    def set_configuration(self, configuration: dict):
         try:
             self.__configuration = MagicCastleConfiguration.get_from_dict(configuration)
             self.__hostname = self.__configuration.get_hostname()

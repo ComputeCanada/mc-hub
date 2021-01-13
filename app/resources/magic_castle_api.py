@@ -45,7 +45,7 @@ class MagicCastleAPI(ApiView):
             json_data = request.get_json()
             if not json_data:
                 raise InvalidUsageException("No json data was provided")
-            magic_castle.load_configuration(json_data)
+            magic_castle.set_configuration(json_data)
             magic_castle.plan_creation()
             return {}
 
@@ -55,7 +55,7 @@ class MagicCastleAPI(ApiView):
         if not json_data:
             raise InvalidUsageException("No json data was provided")
 
-        magic_castle.load_configuration(json_data)
+        magic_castle.set_configuration(json_data)
         magic_castle.plan_modification()
         return {}
 
