@@ -144,8 +144,8 @@
       <v-list>
         <v-list-item>
           <public-key-input
-            v-model="magicCastle.public_keys[0]"
-            :rules="[publicKeyRule]"
+            v-model="magicCastle.public_keys"
+            :rules="[publicKeysRule]"
           />
         </v-list-item>
         <v-list-item>
@@ -379,10 +379,10 @@ export default {
         "Volume storage exceeds maximum"
       );
     },
-    publicKeyRule() {
+    publicKeysRule() {
       return (
-        this.magicCastle.public_keys[0] === "" ||
-        this.magicCastle.public_keys[0].match(SSH_PUBLIC_KEY_REGEX) !== null ||
+        isEqual(this.magicCastle.public_keys, [""]) ||
+        this.magicCastle.public_keys.every(publicKey => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null) ||
         "Invalid SSH public key"
       );
     },

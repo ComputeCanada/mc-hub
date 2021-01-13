@@ -1,24 +1,24 @@
 <template>
   <div style="width:100%">
     <v-radio-group v-model="mode" row>
-      <v-radio value="plaintext" label="Paste public key"></v-radio>
-      <v-radio value="file" label="Upload public key file"></v-radio>
+      <v-radio value="plaintext" label="Paste public keys"></v-radio>
+      <v-radio value="file" label="Upload public key files"></v-radio>
     </v-radio-group>
-    <v-textarea
-      v-show="mode == 'plaintext'"
-      placeholder="ssh-rsa ..."
-      :value="value"
-      :rules="rules"
-      @change="textAreaUpdated"
-      outlined
-    />
-    <v-file-input
-      v-show="mode == 'file'"
-      @change="fileInputUpdated"
-      label="SSH public key file"
-      :rules="rules"
-      outlined
-    />
+    <div v-show="mode === 'plaintext'">
+      <div class="text--secondary">
+        Enter the SSH public keys you want to authorize (one per line).
+      </div>
+      <v-textarea
+        :placeholder="`ssh-rsa key1\nssh-rsa key2`"
+        :value="readableKeys"
+        :rules="rules"
+        @change="textAreaUpdated"
+        outlined
+      />
+    </div>
+    <div v-show="mode === 'file'">
+      <v-file-input @change="fileInputUpdated" multiple label="SSH public key files" :rules="rules" outlined />
+    </div>
   </div>
 </template>
 <script>
@@ -26,7 +26,7 @@ export default {
   name: "PublicKeyInput",
   props: {
     value: {
-      type: String,
+      type: Array,
       required: true
     },
     rules: {
@@ -36,27 +36,44 @@ export default {
   },
   data() {
     return {
-      mode: "plaintext",
-      fileReader: null
+      mode: "plaintext"
     };
   },
-  created() {
-    this.fileReader = new FileReader();
-    this.fileReader.addEventListener("load", event => {
-      this.$emit("input", this.sanitizePublicKey(event.target.result));
-    });
+  computed: {
+    readableKeys() {
+      return this.value.join("\n");
+    }
   },
   methods: {
     textAreaUpdated(text) {
-      this.$emit("input", this.sanitizePublicKey(text));
+      const publicKeys = text.split("\n");
+      this.$emit("input", this.sanitizePublicKeys(publicKeys));
     },
-    fileInputUpdated(file) {
-      if (typeof file === "object") this.fileReader.readAsText(file);
-      else this.$emit("input", "");
+    async fileInputUpdated(files) {
+      const readTextFile = file => {
+        return new Promise((resolve, reject) => {
+          let fileReader = new FileReader();
+          fileReader.onload = event => resolve(event.target.result);
+          fileReader.onerror = reject;
+          fileReader.readAsText(file);
+        });
+      };
+
+      const publicKeys = await Promise.all(files.map(file => readTextFile(file)));
+      this.$emit("input", this.sanitizePublicKeys(publicKeys));
     },
-    sanitizePublicKey(publicKey) {
-      // The new lines (\n) at the end of ssh key files must be removed
-      return publicKey.replace(/(\n)+$/, "");
+    sanitizePublicKeys(publicKeys) {
+      // The new lines (\n) at the end of ssh key must be removed
+      let sanitizedPublicKeys = publicKeys
+        .map(publicKey => publicKey.replace(/([\n\r])+$/, ""))
+        .filter(publicKey => publicKey !== "");
+      if (sanitizedPublicKeys.length === 0) {
+        // Magic Castle doesn't accept empty array of public keys.
+        // If no public key is provided, we must pass [""] instead.
+        return [""];
+      } else {
+        return sanitizedPublicKeys;
+      }
     }
   }
 };
