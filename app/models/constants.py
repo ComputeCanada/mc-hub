@@ -7,7 +7,7 @@ AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
 
 # Magic Castle
 MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle.git"
-MAGIC_CASTLE_VERSION_TAG = "9.1"
+MAGIC_CASTLE_VERSION_TAG = "9.2"
 
 # Paths and filenames
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
