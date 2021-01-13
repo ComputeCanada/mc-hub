@@ -241,41 +241,8 @@ def test_get_from_dict_invalid_floating_ip():
     }
 
 
-def test_get_from_state_file_valid():
-    config = MagicCastleConfiguration.get_from_state_file(
-        "missingnodes.sub.example.com"
-    )
-    assert config.dump() == {
-        "cluster_name": "missingnodes",
-        "domain": "sub.example.com",
-        "image": "CentOS-7-x64-2019-07",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
-        },
-        "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "project_size": 50,
-            "scratch_size": 50,
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "os_floating_ips": ["100.101.102.103"],
-    }
-
-
-def test_get_from_state_file_not_found():
-    with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_state_file("non-existing")
-
-
-def test_get_from_main_tf_json_file_valid():
-    config = MagicCastleConfiguration.get_from_main_tf_json_file(
-        "missingnodes.sub.example.com"
-    )
+def test_get_file_valid():
+    config = MagicCastleConfiguration.get("missingnodes.sub.example.com")
     assert config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
@@ -292,15 +259,15 @@ def test_get_from_main_tf_json_file_valid():
             "project_size": 50,
             "scratch_size": 50,
         },
-        "public_keys": [],
-        "guest_passwd": "",
-        "os_floating_ips": ["Automatic allocation"],
+        "public_keys": [""],
+        "guest_passwd": "password-123",
+        "os_floating_ips": ["100.101.102.103"],
     }
 
 
-def test_get_from_main_tf_json_file_not_found():
+def test_get_file_not_found():
     with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_main_tf_json_file("non-existing")
+        MagicCastleConfiguration.get("non-existing")
 
 
 def test_update_main_tf_json_file():
@@ -327,9 +294,7 @@ def test_update_main_tf_json_file():
         }
     )
     modified_config.update_main_tf_json_file()
-    saved_config = MagicCastleConfiguration.get_from_main_tf_json_file(
-        "missingnodes.sub.example.com"
-    )
+    saved_config = MagicCastleConfiguration.get("missingnodes.sub.example.com")
     assert saved_config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
@@ -348,7 +313,7 @@ def test_update_main_tf_json_file():
         },
         "public_keys": ["ssh-rsa FOOBAR"],
         "guest_passwd": "",
-        "os_floating_ips": ["Automatic allocation"],
+        "os_floating_ips": ["100.101.102.103"],
     }
 
 

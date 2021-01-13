@@ -34,7 +34,7 @@
                 "scratch_size": 1
             },
             "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "",
+            "guest_passwd": "password-123",
             "os_floating_ips": []
         }
     }

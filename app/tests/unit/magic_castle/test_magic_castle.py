@@ -1,9 +1,8 @@
 from models.magic_castle.magic_castle import MagicCastle
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from models.magic_castle.plan_type import PlanType
-from exceptions.invalid_usage_exception import ClusterNotFoundException, BusyClusterException
+from exceptions.invalid_usage_exception import ClusterNotFoundException
 from tests.test_helpers import *
-from marshmallow.exceptions import ValidationError
 from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 
@@ -77,7 +76,7 @@ def test_dump_configuration_valid(database_connection):
             "node": {"type": "p2-3gb", "count": 1},
         },
         "domain": "calculquebec.cloud",
-        "public_keys": ["ssh-rsa FAKE"],
+        "public_keys": [""],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
     }
@@ -85,9 +84,7 @@ def test_dump_configuration_valid(database_connection):
 
 def test_dump_configuration_empty(database_connection):
     magic_castle = MagicCastle(database_connection, "empty.calculquebec.cloud")
-
-    with pytest.raises(ValidationError):
-        magic_castle.dump_configuration()
+    assert magic_castle.dump_configuration() == dict()
 
 
 def test_dump_configuration_missing_nodes(database_connection):
@@ -103,12 +100,12 @@ def test_dump_configuration_missing_nodes(database_connection):
             "project_size": 50,
         },
         "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "p2-3gb", "count": 1},
         },
         "domain": "sub.example.com",
-        "public_keys": ["ssh-rsa FAKE"],
+        "public_keys": [""],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
     }
@@ -116,8 +113,26 @@ def test_dump_configuration_missing_nodes(database_connection):
 
 def test_dump_configuration_busy(database_connection):
     magic_castle = MagicCastle(database_connection, "missingfloatingips.c3.ca")
-    with pytest.raises(BusyClusterException):
-        magic_castle.dump_configuration()
+    assert magic_castle.dump_configuration() == {
+        "cluster_name": "missingfloatingips",
+        "domain": "c3.ca",
+        "image": "CentOS-7-x64-2019-07",
+        "nb_users": 17,
+        "instances": {
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "p2-3gb", "count": 3},
+        },
+        "storage": {
+            "type": "nfs",
+            "home_size": 50,
+            "project_size": 1,
+            "scratch_size": 1,
+        },
+        "public_keys": [""],
+        "guest_passwd": "password-123",
+        "os_floating_ips": ["Automatic allocation"],
+    }
 
 
 def test_dump_configuration_not_found(database_connection):

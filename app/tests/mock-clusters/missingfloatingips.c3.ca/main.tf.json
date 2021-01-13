@@ -33,8 +33,8 @@
                 "project_size": 1,
                 "scratch_size": 1
             },
-            "public_keys": [],
-            "guest_passwd": "",
+            "public_keys": [""],
+            "guest_passwd": "password-123",
             "os_floating_ips": []
         }
     }
