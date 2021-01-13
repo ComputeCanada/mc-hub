@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v7.2.1] 2021-01-13
+
+### Changed
+- Bumped MC to 9.2
+
+### Fixed
+- Avoids trying to parse terraform.tfstate file when the cluster is busy
+
 ## [v7.2.0] 2021-01-13
 
 ### Added
