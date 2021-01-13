@@ -168,7 +168,13 @@ class MagicCastle:
             raise ClusterNotFoundException
 
         try:
-            self.__configuration = MagicCastleConfiguration.get(self.get_hostname())
+            parse_terraform_state_file = not self.__is_busy() and path.exists(
+                self.__get_cluster_path(TERRAFORM_STATE_FILENAME)
+            )
+            self.__configuration = MagicCastleConfiguration.get(
+                self.get_hostname(),
+                parse_terraform_state_file=parse_terraform_state_file,
+            )
             return self.__configuration.dump()
         except FileNotFoundError:
             return dict()

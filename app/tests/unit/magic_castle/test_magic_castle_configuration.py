@@ -242,7 +242,9 @@ def test_get_from_dict_invalid_floating_ip():
 
 
 def test_get_file_valid():
-    config = MagicCastleConfiguration.get("missingnodes.sub.example.com")
+    config = MagicCastleConfiguration.get(
+        "missingnodes.sub.example.com", parse_terraform_state_file=True
+    )
     assert config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
@@ -267,7 +269,9 @@ def test_get_file_valid():
 
 def test_get_file_not_found():
     with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get("non-existing")
+        MagicCastleConfiguration.get("non-existing", parse_terraform_state_file=True)
+    with pytest.raises(FileNotFoundError):
+        MagicCastleConfiguration.get("non-existing", parse_terraform_state_file=False)
 
 
 def test_update_main_tf_json_file():
@@ -294,7 +298,9 @@ def test_update_main_tf_json_file():
         }
     )
     modified_config.update_main_tf_json_file()
-    saved_config = MagicCastleConfiguration.get("missingnodes.sub.example.com")
+    saved_config = MagicCastleConfiguration.get(
+        "missingnodes.sub.example.com", parse_terraform_state_file=True
+    )
     assert saved_config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
