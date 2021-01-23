@@ -31,21 +31,26 @@
               <v-row>
                 <v-col>Hostname</v-col>
                 <v-col
-                  ><code>{{ item.hostname }}</code></v-col
+                  ><copy-button :color="expandedContentColor" :text="item.hostname" /><code>{{
+                    item.hostname
+                  }}</code></v-col
                 >
               </v-row>
               <v-row>
                 <v-col>Sudoer username</v-col>
-                <v-col><code>centos</code></v-col>
+                <v-col><copy-button :color="expandedContentColor" text="centos" /><code>centos</code></v-col>
               </v-row>
               <v-row>
                 <v-col>FreeIPA admin username</v-col>
-                <v-col><code>admin</code></v-col>
+                <v-col><copy-button :color="expandedContentColor" text="admin" /><code>admin</code></v-col>
               </v-row>
               <v-row>
                 <v-col>FreeIPA admin password</v-col>
                 <v-col>
-                  <password-display v-if="item.freeipa_passwd" :password="item.freeipa_passwd"></password-display>
+                  <template v-if="item.freeipa_passwd">
+                    <copy-button :color="expandedContentColor" :text="item.freeipa_passwd" />
+                    <password-display :password="item.freeipa_passwd" :color="expandedContentColor" />
+                  </template>
                   <span v-else>not available</span>
                 </v-col>
               </v-row>
@@ -62,7 +67,10 @@
               <v-row>
                 <v-col>Guest password</v-col>
                 <v-col>
-                  <password-display v-if="item.guest_passwd" :password="item.guest_passwd" />
+                  <template v-if="item.guest_passwd">
+                    <copy-button :color="expandedContentColor" :text="item.guest_passwd" />
+                    <password-display :password="item.guest_passwd" :color="expandedContentColor" />
+                  </template>
                   <span v-else>not available</span></v-col
                 >
               </v-row>
@@ -114,18 +122,20 @@
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import StatusChip from "@/components/ui/StatusChip";
 import PasswordDisplay from "@/components/ui/PasswordDisplay.vue";
+import CopyButton from "@/components/ui/CopyButton";
 
 const POLL_STATUS_INTERVAL = 5000;
 
 export default {
   name: "ClustersList",
-  components: { StatusChip, PasswordDisplay },
+  components: { CopyButton, StatusChip, PasswordDisplay },
   data() {
     return {
       currentHostname: null,
       statusPoller: null,
       loading: true,
       expandedRows: [],
+      expandedContentColor: "#C0341D",
 
       magicCastles: []
     };

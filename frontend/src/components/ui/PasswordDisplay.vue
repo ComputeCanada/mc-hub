@@ -2,7 +2,7 @@
   <span>
     <code>{{ visible ? password : "**********" }}</code>
     <v-btn icon small style="margin: -6px 0;" @click="visible = !visible">
-      <v-icon small color="#C0341D">{{visible ? "mdi-eye-off" : "mdi-eye"}}</v-icon>
+      <v-icon small :color="color">{{ visible ? "mdi-eye-off" : "mdi-eye" }}</v-icon>
     </v-btn>
   </span>
 </template>
@@ -14,12 +14,16 @@ export default {
     password: {
       required: true,
       type: String
+    },
+    color: {
+      required: true,
+      type: String
     }
   },
   data() {
     return {
       visible: false
-    }
+    };
   }
 };
 </script>
