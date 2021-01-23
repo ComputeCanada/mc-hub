@@ -23,7 +23,7 @@
           <status-chip :status="item.status" />
         </template>
         <template #expanded-item="{headers, item}">
-          <td :colspan="headers.length">
+          <td :colspan="headers.length" :key="item.hostname">
             <v-container>
               <v-row class="pa-3">
                 <h2>Cluster overview</h2>
