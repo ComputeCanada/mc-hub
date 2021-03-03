@@ -7,6 +7,7 @@ from models.terraform.terraform_state_parser import TerraformStateParser
 from models.constants import (
     MAGIC_CASTLE_MODULE_SOURCE,
     MAGIC_CASTLE_VERSION_TAG,
+    MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
     AUTO_ALLOCATED_IP_LABEL,
@@ -17,6 +18,15 @@ import json
 
 
 MAIN_TERRAFORM_FILENAME = "main.tf.json"
+
+IGNORED_CONFIGURATION_FIELDS = [
+    "source",
+    "config_git_url",
+    "config_version",
+    "generate_ssh_key",
+    # Legacy fields
+    "puppetenv_rev",
+]
 
 
 def get_cluster_path(hostname, sub_path):
@@ -58,9 +68,9 @@ class MagicCastleConfiguration:
         with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
             main_tf_configuration = json.load(main_tf)
         configuration = main_tf_configuration["module"]["openstack"]
-        del configuration["source"]
-        del configuration["puppetenv_rev"]
-        del configuration["generate_ssh_key"]
+
+        for field in IGNORED_CONFIGURATION_FIELDS:
+            configuration.pop(field, None)
 
         # "node" is the only instance category that is encapsulated in a list
         configuration["instances"]["node"] = configuration["instances"]["node"][0]
@@ -91,7 +101,8 @@ class MagicCastleConfiguration:
                 "openstack": {
                     "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//openstack?ref={MAGIC_CASTLE_VERSION_TAG}",
                     "generate_ssh_key": True,
-                    "puppetenv_rev": MAGIC_CASTLE_VERSION_TAG,
+                    "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
+                    "config_version": MAGIC_CASTLE_VERSION_TAG,
                     **deepcopy(self.__configuration),
                 }
             },

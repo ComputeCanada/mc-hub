@@ -7,7 +7,10 @@ AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
 
 # Magic Castle
 MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle.git"
-MAGIC_CASTLE_VERSION_TAG = "9.3"
+MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
+    "https://github.com/ComputeCanada/puppet-magic_castle.git"
+)
+MAGIC_CASTLE_VERSION_TAG = "10.0"
 
 # Paths and filenames
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
