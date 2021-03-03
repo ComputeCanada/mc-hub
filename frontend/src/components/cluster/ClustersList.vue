@@ -30,19 +30,24 @@
               </v-row>
               <v-row>
                 <v-col>Hostname</v-col>
-                <v-col
-                  ><copy-button :color="expandedContentColor" :text="item.hostname" /><code>{{
-                    item.hostname
-                  }}</code></v-col
+                <v-col>
+                  <copy-button :color="expandedContentColor" :text="item.hostname" />
+                  <code>{{ item.hostname }}</code></v-col
                 >
               </v-row>
               <v-row>
                 <v-col>Sudoer username</v-col>
-                <v-col><copy-button :color="expandedContentColor" text="centos" /><code>centos</code></v-col>
+                <v-col>
+                  <copy-button :color="expandedContentColor" text="centos" />
+                  <code>centos</code></v-col
+                >
               </v-row>
               <v-row>
                 <v-col>FreeIPA admin username</v-col>
-                <v-col><copy-button :color="expandedContentColor" text="admin" /><code>admin</code></v-col>
+                <v-col>
+                  <copy-button :color="expandedContentColor" text="admin" />
+                  <code>admin</code></v-col
+                >
               </v-row>
               <v-row>
                 <v-col>FreeIPA admin password</v-col>
@@ -56,8 +61,8 @@
               </v-row>
               <v-row>
                 <v-col>Guest usernames</v-col>
-                <v-col
-                  ><template v-if="item.nb_users">
+                <v-col>
+                  <template v-if="item.nb_users">
                     <code>{{ getFirstUserName(item.nb_users) }}</code> -
                     <code>{{ getLastUserName(item.nb_users) }}</code>
                   </template>
@@ -101,7 +106,16 @@
                   >Mokey
                 </v-btn>
                 <v-spacer />
-                <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
+                <v-btn
+                  v-if="['build_running', 'destroy_running'].includes(item.status)"
+                  color="secondary"
+                  text
+                  :to="`/clusters/${item.hostname}`"
+                >
+                  <v-icon class="mr-2">mdi-list-status</v-icon>
+                  Check progress
+                </v-btn>
+                <v-btn v-else color="secondary" text :to="`/clusters/${item.hostname}`">
                   <v-icon class="mr-2">mdi-pencil</v-icon>
                   Edit
                 </v-btn>
