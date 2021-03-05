@@ -202,3 +202,8 @@ def disable_provisionning_polling(mocker):
         "models.puppet.provisioning_manager.ProvisioningManager.is_busy",
         return_value=True,
     )
+
+
+@pytest.fixture
+def fake_successful_subprocess_run(mocker):
+    mocker.patch("models.magic_castle.magic_castle.run", return_value=None)

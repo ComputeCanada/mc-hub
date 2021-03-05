@@ -371,12 +371,14 @@ export default {
         await options.planCreator();
 
         // Fetch plan
-        const { progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
+        const { message, progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
         this.resourcesChanges = progress || [];
         this.clusterPlanRunningDialog = false;
 
         // Display plan
-        if (options.destroy === true) {
+        if (message) {
+          this.showError(message);
+        } else if (options.destroy === true) {
           this.clusterDestructionDialog = true;
         } else {
           this.clusterModificationDialog = true;

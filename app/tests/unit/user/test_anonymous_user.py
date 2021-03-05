@@ -2,6 +2,7 @@ from models.user.anonymous_user import AnonymousUser
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
 from tests.mocks.configuration.config_mock import config_auth_saml_mock
+import pytest
 
 
 def test_full_name(database_connection):
@@ -30,6 +31,7 @@ def test_get_all_magic_castles(database_connection):
     ]
 
 
+@pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(database_connection):
     user = AnonymousUser(database_connection)
     magic_castle = user.create_empty_magic_castle()

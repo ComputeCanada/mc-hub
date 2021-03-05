@@ -62,6 +62,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
     ]
 
 
+@pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(database_connection, alice):
     user = alice(database_connection)
     magic_castle = user.create_empty_magic_castle()

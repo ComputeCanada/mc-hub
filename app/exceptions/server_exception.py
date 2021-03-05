@@ -1,5 +1,5 @@
 class ServerException(Exception):
-    DEFAULT_STATUS_CODE = 400
+    DEFAULT_STATUS_CODE = 500
 
     def __init__(self, message: str, status_code: int = DEFAULT_STATUS_CODE):
         Exception.__init__(self)
@@ -12,9 +12,14 @@ class ServerException(Exception):
 
 class PuppetTimeoutException(ServerException):
     def __init__(self):
-        ServerException.__init__(self, "Puppet provisioning timed out", 400)
+        ServerException.__init__(self, "Puppet provisioning timed out")
 
 
 class StateNotFoundException(ServerException):
     def __init__(self):
-        ServerException.__init__(self, "The terraform state file was not found", 400)
+        ServerException.__init__(self, "The terraform state file was not found")
+
+
+class PlanException(ServerException):
+    def __init__(self, message="An error occurred when planning changes"):
+        ServerException.__init__(self, message)

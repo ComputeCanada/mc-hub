@@ -6,7 +6,11 @@ from models.auth_type import AuthType
 from models.user.anonymous_user import AnonymousUser
 from models.configuration import config
 from models.user.authenticated_user import AuthenticatedUser
-from exceptions.invalid_usage_exception import UnauthenticatedException, InvalidUsageException
+from exceptions.invalid_usage_exception import (
+    UnauthenticatedException,
+    InvalidUsageException,
+)
+from exceptions.server_exception import *
 import json
 
 DEFAULT_RESPONSE_CODE = 200
@@ -25,11 +29,11 @@ def output_json(route_handler):
     return decorator
 
 
-def handle_invalid_usage(route_handler):
+def handle_exceptions(route_handler):
     def decorator(*args, **kwargs):
         try:
             return route_handler(*args, **kwargs)
-        except InvalidUsageException as e:
+        except (InvalidUsageException, ServerException) as e:
             return e.get_response()
 
     return decorator
@@ -65,6 +69,6 @@ def compute_current_user(route_handler):
 class ApiView(MethodView):
     decorators = [
         compute_current_user,
-        handle_invalid_usage,
+        handle_exceptions,
         output_json,
     ]

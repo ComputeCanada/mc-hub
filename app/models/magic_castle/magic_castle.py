@@ -1,5 +1,4 @@
-from os import path, environ, mkdir, listdir, remove
-from os.path import isdir
+from os import path, environ, mkdir, remove
 from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
@@ -18,7 +17,6 @@ from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
 from database.database_manager import DatabaseManager
 import sqlite3
 import logging
-import re
 import json
 
 
@@ -302,7 +300,7 @@ class MagicCastle:
         except CalledProcessError:
             self.__update_status(previous_status)
             logging.error("An error occurred while initializing Terraform")
-            return
+            raise PlanException("An error occurred while initializing Terraform")
 
         with open(
             self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
@@ -359,28 +357,28 @@ class MagicCastle:
                         logging.error(
                             "An error occurred while creating the Terraform plan"
                         )
-                        return
+                        raise PlanException("An error occurred while planning changes")
                 else:
                     self.__update_status(previous_status)
                     logging.error("An error occurred while creating the Terraform plan")
-                    return
+                    raise PlanException("An error occurred while planning changes")
 
-            with open(
-                self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
-            ) as output_file:
-                try:
-                    run(
-                        ["terraform", "show", "-json", TERRAFORM_PLAN_BINARY_FILENAME],
-                        cwd=self.__get_cluster_path(),
-                        stdout=output_file,
-                        check=True,
-                    )
-                except CalledProcessError:
-                    self.__update_status(previous_status)
-                    logging.error(
-                        "An error occurred while exporting the json Terraform plan"
-                    )
-                    return
+        with open(
+            self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
+        ) as output_file:
+            try:
+                run(
+                    ["terraform", "show", "-json", TERRAFORM_PLAN_BINARY_FILENAME],
+                    cwd=self.__get_cluster_path(),
+                    stdout=output_file,
+                    check=True,
+                )
+            except CalledProcessError:
+                self.__update_status(previous_status)
+                logging.error(
+                    "An error occurred while exporting the json Terraform plan"
+                )
+                raise PlanException("An error occurred while exporting planned changes")
 
         self.__update_status(previous_status)
 
