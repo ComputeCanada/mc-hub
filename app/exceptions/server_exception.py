@@ -15,11 +15,6 @@ class PuppetTimeoutException(ServerException):
         ServerException.__init__(self, "Puppet provisioning timed out.")
 
 
-class StateNotFoundException(ServerException):
-    def __init__(self):
-        ServerException.__init__(self, "The terraform state file was not found.")
-
-
 class PlanException(ServerException):
     def __init__(self, message="An error occurred when planning changes."):
         ServerException.__init__(self, message)
