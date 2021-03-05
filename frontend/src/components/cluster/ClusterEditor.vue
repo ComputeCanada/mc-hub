@@ -4,11 +4,7 @@
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item v-if="!existingCluster">
-          <v-text-field
-            v-model="magicCastle.cluster_name"
-            label="Cluster name"
-            :rules="[clusterNameRegexRule]"
-          />
+          <v-text-field v-model="magicCastle.cluster_name" label="Cluster name" :rules="[clusterNameRegexRule]" />
         </v-list-item>
         <v-list-item v-if="!existingCluster">
           <v-select
@@ -19,11 +15,7 @@
           />
         </v-list-item>
         <v-list-item>
-          <v-select
-            v-model="magicCastle.image"
-            :items="getPossibleValues('image')"
-            label="Image"
-          />
+          <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
         </v-list-item>
         <v-list-item>
           <v-text-field
@@ -46,9 +38,12 @@
             </v-col>
 
             <v-col cols="12" sm="5">
-              <flavor-select :flavors="getPossibleValues(`instances.${id}.type`)"
-                            v-model="magicCastle.instances[id].type"
-                            label="Type" :rules="instanceRules" />
+              <flavor-select
+                :flavors="getPossibleValues(`instances.${id}.type`)"
+                v-model="magicCastle.instances[id].type"
+                label="Type"
+                :rules="instanceRules"
+              />
             </v-col>
 
             <v-col cols="12" sm="4">
@@ -64,26 +59,13 @@
         </div>
         <v-list-item>
           <v-col cols="12" sm="4">
-            <resource-usage-display
-              :max="instanceCountMax"
-              :used="instanceCountUsed"
-              title="Instances"
-            />
+            <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
           </v-col>
           <v-col cols="12" sm="4">
-            <resource-usage-display
-              :max="ramGbMax"
-              :used="ramGbUsed"
-              title="RAM"
-              suffix="GB"
-            />
+            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
           </v-col>
           <v-col cols="12" sm="4">
-            <resource-usage-display
-              :max="vcpuMax"
-              :used="vcpuUsed"
-              title="cores"
-            />
+            <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
           </v-col>
         </v-list-item>
         <v-divider />
@@ -95,10 +77,7 @@
         <v-list-item>
           <v-col cols="12" sm="3" class="pl-0">Type</v-col>
           <v-col cols="12" sm="9">
-            <v-select
-              :items="getPossibleValues('storage.type')"
-              v-model="magicCastle.storage.type"
-            />
+            <v-select :items="getPossibleValues('storage.type')" v-model="magicCastle.storage.type" />
           </v-col>
         </v-list-item>
         <v-divider />
@@ -118,19 +97,10 @@
         </div>
         <v-list-item>
           <v-col cols="12" sm="6">
-            <resource-usage-display
-              :max="volumeCountMax"
-              :used="volumeCountUsed"
-              title="volumes"
-            />
+            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
           </v-col>
           <v-col cols="12" sm="6">
-            <resource-usage-display
-              :max="volumeSizeMax"
-              :used="volumeSizeUsed"
-              title="volume storage"
-              suffix="GB"
-            />
+            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
           </v-col>
         </v-list-item>
         <v-divider />
@@ -140,25 +110,13 @@
       <v-subheader>Networking and security</v-subheader>
       <v-list>
         <v-list-item>
-          <public-key-input
-            v-model="magicCastle.public_keys"
-            :rules="[publicKeysRule]"
-          />
+          <public-key-input v-model="magicCastle.public_keys" :rules="[publicKeysRule]" />
         </v-list-item>
         <v-list-item>
-          <v-text-field
-            v-model="magicCastle.guest_passwd"
-            label="Guest password"
-            :rules="[passwordLengthRule]"
-          />
+          <v-text-field v-model="magicCastle.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                v-bind="attrs"
-                v-on="on"
-                @click="generateGuestPassword()"
-              >
+              <v-btn icon v-bind="attrs" v-on="on" @click="generateGuestPassword()">
                 <v-icon>mdi-refresh</v-icon>
               </v-btn>
             </template>
@@ -180,23 +138,8 @@
         <p v-if="!validForm" class="error--text">
           Some form fields are invalid.
         </p>
-        <v-btn
-          @click="apply"
-          color="primary"
-          class="ma-2"
-          :disabled="!applyButtonEnabled"
-          large
-          >Apply</v-btn
-        >
-        <v-btn
-          to="/"
-          class="ma-2"
-          :disabled="loading"
-          large
-          outlined
-          color="primary"
-          >Cancel</v-btn
-        >
+        <v-btn @click="apply" color="primary" class="ma-2" :disabled="!applyButtonEnabled" large>Apply</v-btn>
+        <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
       </div>
     </v-form>
   </div>
@@ -269,11 +212,8 @@ export default {
       clusterNameRegexRule: value =>
         value.match(CLUSTER_NAME_REGEX) !== null ||
         "The cluster name must have only lowercase alphanumeric characters and start with a letter",
-      greaterThanZeroRule: value =>
-        (typeof value === "number" && value > 0) || "Must be greater than zero",
-      positiveNumberRule: value =>
-        (typeof value === "number" && value >= 0) ||
-        "Must be a positive number",
+      greaterThanZeroRule: value => (typeof value === "number" && value > 0) || "Must be greater than zero",
+      positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number",
       passwordLengthRule: value =>
         value.length >= MINIMUM_PASSWORD_LENGTH ||
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`
@@ -311,16 +251,11 @@ export default {
         this.initialMagicCastle.instances.node.type = possibleResources.instances.node.type[0];
       }
 
-
       // Floating IPs
       // Must be set to the first possible value in all cases (either "Automatic allocation" or a specific IP address)
       if (possibleResources.os_floating_ips.length > 0) {
-        this.magicCastle.os_floating_ips = [
-          possibleResources.os_floating_ips[0]
-        ];
-        this.initialMagicCastle.os_floating_ips = [
-          possibleResources.os_floating_ips[0]
-        ];
+        this.magicCastle.os_floating_ips = [possibleResources.os_floating_ips[0]];
+        this.initialMagicCastle.os_floating_ips = [possibleResources.os_floating_ips[0]];
       }
     },
     dirtyForm(dirty) {
@@ -342,10 +277,7 @@ export default {
   },
   computed: {
     applyRunning() {
-      return [
-        ClusterStatusCode.DESTROY_RUNNING,
-        ClusterStatusCode.BUILD_RUNNING
-      ].includes(this.currentStatus);
+      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     },
     dirtyForm() {
       return !isEqual(this.initialMagicCastle, this.magicCastle);
@@ -355,8 +287,7 @@ export default {
     },
     domainRule() {
       return (
-        (this.possibleResources &&
-          this.possibleResources.domain.includes(this.magicCastle.domain)) ||
+        (this.possibleResources && this.possibleResources.domain.includes(this.magicCastle.domain)) ||
         "Invalid domain provided"
       );
     },
@@ -367,16 +298,10 @@ export default {
       ];
     },
     volumeCountRule() {
-      return (
-        this.volumeCountUsed <= this.volumeCountMax ||
-        "Number of volumes exceeds maximum"
-      );
+      return this.volumeCountUsed <= this.volumeCountMax || "Number of volumes exceeds maximum";
     },
     volumeSizeRule() {
-      return (
-        this.volumeSizeUsed <= this.volumeSizeMax ||
-        "Volume storage exceeds maximum"
-      );
+      return this.volumeSizeUsed <= this.volumeSizeMax || "Volume storage exceeds maximum";
     },
     publicKeysRule() {
       return (
@@ -386,24 +311,18 @@ export default {
       );
     },
     floatingIpProvidedRule() {
-      return (
-        this.magicCastle.os_floating_ips.length > 0 || "No floating IP provided"
-      );
+      return this.magicCastle.os_floating_ips.length > 0 || "No floating IP provided";
     },
     floatingIpAvailableRule() {
       return (
         (this.possibleResources &&
           this.magicCastle &&
-          this.possibleResources.os_floating_ips.includes(
-            this.magicCastle.os_floating_ips[0]
-          )) ||
+          this.possibleResources.os_floating_ips.includes(this.magicCastle.os_floating_ips[0])) ||
         "Floating IP not available"
       );
     },
     instanceCountUsed() {
-      return this.usedResourcesLoaded
-        ? this.instances.reduce((acc, instance) => acc + instance.count, 0)
-        : 0;
+      return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;
     },
     instanceCountMax() {
       return this.quotas ? this.quotas.instance_count.max : 0;
@@ -411,9 +330,7 @@ export default {
     ramGbUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
-            (acc, instance) =>
-              acc +
-              instance.count * this.getInstanceDetail(instance.type, "ram"),
+            (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "ram"),
             0
           ) / MB_PER_GB
         : 0;
@@ -424,9 +341,7 @@ export default {
     vcpuUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
-            (acc, instance) =>
-              acc +
-              instance.count * this.getInstanceDetail(instance.type, "vcpus"),
+            (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
             0
           )
         : 0;
@@ -437,10 +352,7 @@ export default {
     volumeCountUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
-            (acc, instance) =>
-              acc +
-              instance.count *
-                this.getInstanceDetail(instance.type, "required_volume_count"),
+            (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_count"),
             0
           ) + EXTERNAL_STORAGE_VOLUME_COUNT
         : 0;
@@ -461,10 +373,7 @@ export default {
     },
     instancesVolumeSizeUsed() {
       return this.instances.reduce(
-        (acc, instance) =>
-          acc +
-          instance.count *
-            this.getInstanceDetail(instance.type, "required_volume_size"),
+        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_size"),
         0
       );
     },
@@ -493,9 +402,7 @@ export default {
       if (this.possibleResources === null) {
         return [];
       } else {
-        return fieldPath
-          .split(".")
-          .reduce((acc, x) => acc[x], this.possibleResources);
+        return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
       }
     },
     getInstanceDetail(instanceType, detailName, defaultValue = 0) {

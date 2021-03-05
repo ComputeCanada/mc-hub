@@ -1,8 +1,6 @@
 <template>
   <div>
-    <v-chip label :color="formattedStatus.color" dark v-if="status !== null">{{
-      formattedStatus.text
-    }}</v-chip>
+    <v-chip label :color="formattedStatus.color" dark v-if="status !== null">{{ formattedStatus.text }}</v-chip>
   </div>
 </template>
 

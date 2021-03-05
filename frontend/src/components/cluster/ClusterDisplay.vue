@@ -3,17 +3,10 @@
     <v-container>
       <v-card max-width="650" class="mx-auto" :loading="loading">
         <template #progress>
-          <v-progress-linear
-            :indeterminate="progress === 0"
-            :value="progress"
-          />
+          <v-progress-linear :indeterminate="progress === 0" :value="progress" />
         </template>
-        <v-card-title v-if="existingCluster" class="mx-auto pl-8"
-          >Magic Castle Modification</v-card-title
-        >
-        <v-card-title v-else class="mx-auto pl-8"
-          >Magic Castle Creation</v-card-title
-        >
+        <v-card-title v-if="existingCluster" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
+        <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
         <v-card-text>
           <v-list v-if="existingCluster">
             <v-list-item>
@@ -23,10 +16,7 @@
               </v-list-item-content>
               <status-chip :status="currentStatus" />
             </v-list-item>
-            <v-divider
-              class="mt-2"
-              v-if="resourcesChanges.length > 0 || magicCastle"
-            />
+            <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
           <cluster-editor
             v-if="magicCastle && !applyRunning"
@@ -40,11 +30,7 @@
             v-on="{ apply: existingCluster ? planModification : planCreation }"
           />
           <template v-else-if="resourcesChanges.length > 0 && applyRunning">
-            <cluster-resources
-              :resources-changes="resourcesChanges"
-              @updateProgress="updateProgress"
-              show-progress
-            />
+            <cluster-resources :resources-changes="resourcesChanges" @updateProgress="updateProgress" show-progress />
           </template>
         </v-card-text>
       </v-card>
@@ -57,16 +43,10 @@
     <message-dialog v-model="provisioningRunningDialog" type="success">
       The cloud resources have been allocated. Provisioning has started.
     </message-dialog>
-    <message-dialog v-model="errorDialog" type="error">{{
-      errorMessage
-    }}</message-dialog>
-    <message-dialog
-      v-model="clusterPlanRunningDialog"
-      type="loading"
-      no-close
-      persistent
-      >Generating resource plan... please wait.</message-dialog
-    >
+    <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
+    <message-dialog v-model="clusterPlanRunningDialog" type="loading" no-close persistent
+      >Generating resource plan... please wait.
+    </message-dialog>
     <confirm-dialog
       encourage-confirm
       :max-width="650"
@@ -90,8 +70,7 @@
       @confirm="applyCluster"
       @cancel="goToClustersList"
     >
-      Are you sure you want to permanently destroy your cluster and all its
-      data?
+      Are you sure you want to permanently destroy your cluster and all its data?
       <cluster-resources
         :resources-changes="resourcesChanges"
         style="max-height: calc(80vh - 200px)"
@@ -192,9 +171,7 @@ export default {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
-        const { status } = (
-          await MagicCastleRepository.getStatus(this.hostname)
-        ).data;
+        const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
         if (status == ClusterStatusCode.CREATED) {
           /* 
           The initial plan was created, but the cluster was never built.
@@ -220,8 +197,7 @@ export default {
   },
   computed: {
     loading() {
-      const existingClusterIsLoading =
-        this.existingCluster && (this.currentStatus === null || this.busy);
+      const existingClusterIsLoading = this.existingCluster && (this.currentStatus === null || this.busy);
 
       return !this.possibleResourcesLoaded || existingClusterIsLoading;
     },
@@ -244,10 +220,7 @@ export default {
       ].includes(this.currentStatus);
     },
     applyRunning() {
-      return [
-        ClusterStatusCode.DESTROY_RUNNING,
-        ClusterStatusCode.BUILD_RUNNING
-      ].includes(this.currentStatus);
+      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     }
   },
   methods: {
@@ -257,12 +230,9 @@ export default {
     startStatusPolling() {
       let fetchStatus = async () => {
         const statusAlreadyInitialized = this.currentStatus !== null;
-        const planWasRunning =
-          this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
+        const planWasRunning = this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
 
-        const { status, progress } = (
-          await MagicCastleRepository.getStatus(this.hostname)
-        ).data;
+        const { status, progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
         const statusChanged = status !== this.currentStatus;
         this.currentStatus = status;
         this.resourcesChanges = progress || [];
@@ -281,10 +251,7 @@ export default {
               this.unloadCluster();
               this.$router.push("/");
             } else {
-              await Promise.all([
-                this.loadAvailableResources(),
-                this.loadCluster()
-              ]);
+              await Promise.all([this.loadAvailableResources(), this.loadCluster()]);
             }
           }
         }
@@ -339,9 +306,7 @@ export default {
     },
     async loadCluster() {
       try {
-        this.magicCastle = (
-          await MagicCastleRepository.getState(this.hostname)
-        ).data;
+        this.magicCastle = (await MagicCastleRepository.getState(this.hostname)).data;
       } catch (e) {
         // Terraform state file and main.tf.json could not be parsed.
         this.showError(e.response.data.message);
@@ -364,8 +329,7 @@ export default {
       }
     },
     async planModification() {
-      let planCreator = async () =>
-        MagicCastleRepository.update(this.hostname, this.magicCastle);
+      let planCreator = async () => MagicCastleRepository.update(this.hostname, this.magicCastle);
       await this.showPlanConfirmationDialog({ planCreator });
     },
     async planDestruction() {
@@ -395,7 +359,10 @@ export default {
       await this.$router.push("/");
     },
     async showPlanConfirmationDialog(
-      options = { planCreator: async () => {}, destroy: false }
+      options = {
+        planCreator: async () => {},
+        destroy: false
+      }
     ) {
       this.resourcesChanges = [];
       try {
@@ -404,9 +371,7 @@ export default {
         await options.planCreator();
 
         // Fetch plan
-        const { progress } = (
-          await MagicCastleRepository.getStatus(this.hostname)
-        ).data;
+        const { progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
         this.resourcesChanges = progress || [];
         this.clusterPlanRunningDialog = false;
 
