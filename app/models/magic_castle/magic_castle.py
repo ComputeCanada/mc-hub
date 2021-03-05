@@ -83,7 +83,7 @@ class MagicCastle:
             self.__hostname = self.__configuration.get_hostname()
         except ValidationError:
             raise InvalidUsageException(
-                "The magic castle configuration could not be parsed"
+                "The magic castle configuration could not be parsed."
             )
 
     def get_status(self) -> ClusterStatusCode:
@@ -299,8 +299,8 @@ class MagicCastle:
             )
         except CalledProcessError:
             self.__update_status(previous_status)
-            logging.error("An error occurred while initializing Terraform")
-            raise PlanException("An error occurred while initializing Terraform")
+            logging.error("An error occurred while initializing Terraform.")
+            raise PlanException("An error occurred while initializing Terraform.")
 
         with open(
             self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
@@ -355,13 +355,15 @@ class MagicCastle:
                         # terraform plan fails even without refreshing the state
                         self.__update_status(previous_status)
                         logging.error(
-                            "An error occurred while creating the Terraform plan"
+                            "An error occurred while creating the Terraform plan."
                         )
-                        raise PlanException("An error occurred while planning changes")
+                        raise PlanException("An error occurred while planning changes.")
                 else:
                     self.__update_status(previous_status)
-                    logging.error("An error occurred while creating the Terraform plan")
-                    raise PlanException("An error occurred while planning changes")
+                    logging.error(
+                        "An error occurred while creating the Terraform plan."
+                    )
+                    raise PlanException("An error occurred while planning changes.")
 
         with open(
             self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
@@ -376,9 +378,11 @@ class MagicCastle:
             except CalledProcessError:
                 self.__update_status(previous_status)
                 logging.error(
-                    "An error occurred while exporting the json Terraform plan"
+                    "An error occurred while exporting the json Terraform plan."
                 )
-                raise PlanException("An error occurred while exporting planned changes")
+                raise PlanException(
+                    "An error occurred while exporting planned changes."
+                )
 
         self.__update_status(previous_status)
 
@@ -453,7 +457,7 @@ class MagicCastle:
                             self.__update_status(status_code)
 
             except CalledProcessError:
-                logging.info("An error occurred while running terraform apply")
+                logging.info("An error occurred while running terraform apply.")
                 with DatabaseManager.connect() as database_connection:
                     self.__database_connection = database_connection
                     self.__update_status(
