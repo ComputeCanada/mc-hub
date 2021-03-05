@@ -1,10 +1,8 @@
-from models.user.authenticated_user import AuthenticatedUser
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from exceptions.invalid_usage_exception import ClusterNotFoundException
-from tests.test_helpers import *
+from tests.test_helpers import *  # noqa
 import pytest
-from typing import Callable
-from tests.mocks.configuration.config_mock import config_auth_saml_mock
+from tests.mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
 def test_full_name(database_connection, alice, bob, admin):

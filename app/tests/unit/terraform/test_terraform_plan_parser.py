@@ -1,12 +1,9 @@
-from models.magic_castle.magic_castle import MagicCastle
 from models.terraform.terraform_plan_parser import TerraformPlanParser
-from pathlib import Path
-from os import path
 import pytest
 import tests
 import json
-from tests.test_helpers import *
-from tests.mocks.configuration.config_mock import config_auth_none_mock
+from tests.test_helpers import *  # noqa
+from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 def load_plan(hostname):

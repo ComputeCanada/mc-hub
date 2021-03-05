@@ -1,10 +1,9 @@
 from models.terraform.terraform_state_parser import TerraformStateParser
-from pathlib import Path
 from os import path
 import pytest
 import json
 import tests
-from tests.mocks.configuration.config_mock import config_auth_none_mock
+from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 def load_state(hostname):

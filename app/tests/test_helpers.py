@@ -2,12 +2,10 @@ from tests.mocks.openstack.openstack_connection_mock import OpenStackConnectionM
 from pathlib import Path
 from os import path
 from shutil import rmtree, copytree
-from subprocess import run
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
 from models.user.authenticated_user import AuthenticatedUser
 from typing import Callable
-import logging
 import pytest
 import sqlite3
 

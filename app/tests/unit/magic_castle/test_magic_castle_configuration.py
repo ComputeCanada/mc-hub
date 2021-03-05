@@ -1,7 +1,7 @@
 from models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
-from tests.test_helpers import *
+from tests.test_helpers import *  # noqa;
 from marshmallow.exceptions import ValidationError
-from tests.mocks.configuration.config_mock import config_auth_none_mock
+from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 def test_constructor_none():

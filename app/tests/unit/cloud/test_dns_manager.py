@@ -1,7 +1,7 @@
-from tests.test_helpers import *
+from tests.test_helpers import *  # noqa;
 from models.cloud.dns_manager import DnsManager
 import pytest
-from tests.mocks.configuration.config_mock import config_auth_none_mock
+from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 def test_initialize_disallowed_domain():

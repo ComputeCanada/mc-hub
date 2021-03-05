@@ -3,7 +3,6 @@ from server import app
 from time import time, sleep
 from os import path
 from random import randrange
-import threading
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
@@ -46,7 +45,10 @@ def disable_provisionning_polling(mocker):
     ProvisioningManager continues polling the cluster status at the end of the tests.
     To avoid this behaviour, we mock ProvisioningManager.is_busy.
     """
-    mocker.patch("models.puppet.provisioning_manager.ProvisioningManager.is_busy", return_value=True)
+    mocker.patch(
+        "models.puppet.provisioning_manager.ProvisioningManager.is_busy",
+        return_value=True,
+    )
 
 
 @pytest.mark.build_live_cluster

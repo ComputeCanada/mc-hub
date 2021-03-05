@@ -1,9 +1,7 @@
 from server import app
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *
-from tests.mocks.configuration.config_mock import config_auth_none_mock
-from os import path
-import sqlite3
+from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"

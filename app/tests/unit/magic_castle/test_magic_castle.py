@@ -2,8 +2,8 @@ from models.magic_castle.magic_castle import MagicCastle
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from models.magic_castle.plan_type import PlanType
 from exceptions.invalid_usage_exception import ClusterNotFoundException
-from tests.test_helpers import *
-from tests.mocks.configuration.config_mock import config_auth_none_mock
+from tests.test_helpers import *  # noqa;
+from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 def test_get_status_valid(database_connection):
