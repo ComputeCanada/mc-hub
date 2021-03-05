@@ -12,7 +12,7 @@ def test_constructor_none():
 def test_constructor_valid():
     config = MagicCastleConfiguration(
         {
-            "cluster_name": "foo",
+            "cluster_name": "foo-123",
             "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2019-07",
             "nb_users": 17,
@@ -33,7 +33,7 @@ def test_constructor_valid():
         }
     )
     assert config.dump() == {
-        "cluster_name": "foo",
+        "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2019-07",
         "nb_users": 17,
@@ -59,6 +59,30 @@ def test_constructor_invalid_cluster_name():
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo!",
+                "domain": "calculquebec.cloud",
+                "image": "CentOS-7-x64-2019-07",
+                "nb_users": 17,
+                "instances": {
+                    "mgmt": {"type": "p4-6gb", "count": 1},
+                    "login": {"type": "p4-6gb", "count": 1},
+                    "node": {"type": "p2-3gb", "count": 3},
+                },
+                "storage": {
+                    "type": "nfs",
+                    "home_size": 50,
+                    "project_size": 1,
+                    "scratch_size": 1,
+                },
+                "public_keys": [""],
+                "guest_passwd": '1234\\56789\t "',
+                "os_floating_ips": [],
+            }
+        )
+
+    with pytest.raises(ValidationError):
+        MagicCastleConfiguration(
+            {
+                "cluster_name": "foo_underscore",
                 "domain": "calculquebec.cloud",
                 "image": "CentOS-7-x64-2019-07",
                 "nb_users": 17,

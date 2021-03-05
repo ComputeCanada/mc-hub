@@ -12,7 +12,7 @@ class StorageSchema(Schema):
 
 
 def validate_cluster_name(cluster_name):
-    return re.search(r"^[a-z][a-z0-9]*$", cluster_name) is not None
+    return re.search(r"^[a-z]([a-z0-9-]*[a-z0-9]+)?$", cluster_name) is not None
 
 
 def validate_domain(domain):
