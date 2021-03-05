@@ -370,7 +370,13 @@ class MagicCastle:
         ) as output_file:
             try:
                 run(
-                    ["terraform", "show", "-json", TERRAFORM_PLAN_BINARY_FILENAME],
+                    [
+                        "terraform",
+                        "show",
+                        "-no-color",
+                        "-json",
+                        TERRAFORM_PLAN_BINARY_FILENAME,
+                    ],
                     cwd=self.__get_cluster_path(),
                     stdout=output_file,
                     check=True,

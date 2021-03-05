@@ -4,6 +4,90 @@ from models.magic_castle.plan_type import PlanType
 from exceptions.invalid_usage_exception import ClusterNotFoundException
 from tests.test_helpers import *  # noqa;
 from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+import pytest
+from exceptions.server_exception import PlanException
+from subprocess import CalledProcessError
+
+VALID_CLUSTER_CONFIGURATION = {
+    "cluster_name": "a-123-45",
+    "nb_users": 10,
+    "guest_passwd": "password-123",
+    "storage": {
+        "type": "nfs",
+        "home_size": 100,
+        "scratch_size": 50,
+        "project_size": 50,
+    },
+    "instances": {
+        "mgmt": {"type": "p4-6gb", "count": 1},
+        "login": {"type": "p4-6gb", "count": 1},
+        "node": {"type": "p2-3gb", "count": 1},
+    },
+    "domain": "calculquebec.cloud",
+    "public_keys": [""],
+    "image": "CentOS-7-x64-2019-07",
+    "os_floating_ips": ["100.101.102.103"],
+}
+
+
+@pytest.mark.usefixtures("fake_successful_subprocess_run")
+def test_create_magic_castle_plan_valid(database_connection):
+    cluster = MagicCastle(database_connection, "a-123-45.calculquebec.cloud")
+    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
+    cluster.plan_creation()
+
+
+def test_create_magic_castle_init_fail(database_connection, monkeypatch):
+    def fake_run(process_args, *args, **kwargs):
+        if process_args == ["terraform", "init", "-no-color", "-input=false"]:
+            raise CalledProcessError(1, "terraform init")
+
+    monkeypatch.setattr("models.magic_castle.magic_castle.run", fake_run)
+    cluster = MagicCastle(database_connection, "a-123-45.calculquebec.cloud")
+    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
+    with pytest.raises(
+        PlanException, match="An error occurred while initializing Terraform."
+    ):
+        cluster.plan_creation()
+
+
+def test_create_magic_castle_plan_fail(database_connection, monkeypatch):
+    def fake_run(process_args, *args, **kwargs):
+        if process_args[:5] == [
+            "terraform",
+            "plan",
+            "-input=false",
+            "-no-color",
+            "-destroy=false",
+        ]:
+            raise CalledProcessError(1, "terraform plan")
+
+    monkeypatch.setattr("models.magic_castle.magic_castle.run", fake_run)
+    cluster = MagicCastle(database_connection, "a-123-45.calculquebec.cloud")
+    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
+    with pytest.raises(
+        PlanException, match="An error occurred while planning changes."
+    ):
+        cluster.plan_creation()
+
+
+def test_create_magic_castle_plan_export_fail(database_connection, monkeypatch):
+    def fake_run(process_args, *args, **kwargs):
+        if process_args[:4] == [
+            "terraform",
+            "show",
+            "-no-color",
+            "-json",
+        ]:
+            raise CalledProcessError(1, "terraform show")
+
+    monkeypatch.setattr("models.magic_castle.magic_castle.run", fake_run)
+    cluster = MagicCastle(database_connection, "a-123-45.calculquebec.cloud")
+    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
+    with pytest.raises(
+        PlanException, match="An error occurred while exporting planned changes."
+    ):
+        cluster.plan_creation()
 
 
 def test_get_status_valid(database_connection):
