@@ -12,6 +12,7 @@ class StorageSchema(Schema):
 
 
 def validate_cluster_name(cluster_name):
+    # Must follow RFC 1035's subdomain naming rules: https://tools.ietf.org/html/rfc1035#section-2.3.1
     return re.search(r"^[a-z]([a-z0-9-]*[a-z0-9]+)?$", cluster_name) is not None
 
 
