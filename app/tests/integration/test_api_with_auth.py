@@ -108,7 +108,7 @@ def test_get_current_user_authentified(client):
 # GET /api/users/me
 def test_get_current_user_non_authentified(client):
     res = client.get(f"/api/users/me")
-    assert res.get_json() == {"message": "You need to be authenticated"}
+    assert res.get_json() == {"message": "You need to be authenticated."}
 
 
 # GET /api/magic_castle
@@ -194,7 +194,7 @@ def test_get_all_magic_castle_names(client):
 def test_get_all_magic_castles_unauthenticated(client):
     # No authentication header at all
     res = client.get(f"/api/magic-castles")
-    assert res.get_json() == {"message": "You need to be authenticated"}
+    assert res.get_json() == {"message": "You need to be authenticated."}
     assert res.status_code != 200
 
     # Missing some authentication headers
@@ -202,7 +202,7 @@ def test_get_all_magic_castles_unauthenticated(client):
         f"/api/magic-castles",
         headers={"eduPersonPrincipalName": "alice@computecanada.ca"},
     )
-    assert res.get_json() == {"message": "You need to be authenticated"}
+    assert res.get_json() == {"message": "You need to be authenticated."}
     assert res.status_code != 200
 
 
@@ -217,7 +217,7 @@ def test_get_state_non_existing(client):
     res = client.get(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
 
@@ -225,7 +225,7 @@ def test_get_state_not_owned(client):
     res = client.get(
         f"/api/magic-castles/missingfloatingips.c3.ca", headers=ALICE_HEADERS
     )
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
 
@@ -453,7 +453,7 @@ def test_delete_invalid_status(database_connection, client):
     res = client.delete(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
     modify_cluster_status(
@@ -462,7 +462,7 @@ def test_delete_invalid_status(database_connection, client):
     res = client.delete(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
     modify_cluster_status(
@@ -471,7 +471,7 @@ def test_delete_invalid_status(database_connection, client):
     res = client.delete(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
 
@@ -482,7 +482,7 @@ def test_modify_invalid_status(database_connection, client):
         json=NON_EXISTING_CLUSTER_CONFIGURATION,
         headers=ALICE_HEADERS,
     )
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
     modify_cluster_status(
@@ -493,7 +493,7 @@ def test_modify_invalid_status(database_connection, client):
         json=EXISTING_CLUSTER_CONFIGURATION,
         headers=ALICE_HEADERS,
     )
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
     modify_cluster_status(
@@ -504,7 +504,7 @@ def test_modify_invalid_status(database_connection, client):
         json=EXISTING_CLUSTER_CONFIGURATION,
         headers=ALICE_HEADERS,
     )
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
 

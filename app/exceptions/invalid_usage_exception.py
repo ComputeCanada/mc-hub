@@ -12,26 +12,26 @@ class InvalidUsageException(Exception):
 
 class BusyClusterException(InvalidUsageException):
     def __init__(self):
-        InvalidUsageException.__init__(self, "This cluster is busy")
+        InvalidUsageException.__init__(self, "This cluster is busy.")
 
 
 class ClusterExistsException(InvalidUsageException):
     def __init__(self):
-        InvalidUsageException.__init__(self, "This cluster already exists")
+        InvalidUsageException.__init__(self, "This cluster already exists.")
 
 
 class ClusterNotFoundException(InvalidUsageException):
     def __init__(self):
-        InvalidUsageException.__init__(self, "This cluster does not exist")
+        InvalidUsageException.__init__(self, "This cluster does not exist.")
 
 
 class PlanNotCreatedException(InvalidUsageException):
     def __init__(self):
         InvalidUsageException.__init__(
-            self, "The terraform plan for this cluster does not exist"
+            self, "The terraform plan for this cluster does not exist."
         )
 
 
 class UnauthenticatedException(InvalidUsageException):
     def __init__(self):
-        InvalidUsageException.__init__(self, "You need to be authenticated")
+        InvalidUsageException.__init__(self, "You need to be authenticated.")

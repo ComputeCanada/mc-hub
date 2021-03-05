@@ -244,7 +244,7 @@ def test_get_state_existing(client):
 
 def test_get_state_non_existing(client):
     res = client.get(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}")
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
 
@@ -456,21 +456,21 @@ def test_get_status_code(client, database_connection):
 # DELETE /api/magic-castles/<hostname>
 def test_delete_invalid_status(database_connection, client):
     res = client.delete(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}")
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
     res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
     res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
 
@@ -480,7 +480,7 @@ def test_modify_invalid_status(database_connection, client):
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,
     )
-    assert res.get_json() == {"message": "This cluster does not exist"}
+    assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
     modify_cluster_status(
@@ -489,7 +489,7 @@ def test_modify_invalid_status(database_connection, client):
     res = client.put(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", json=EXISTING_CLUSTER_CONFIGURATION,
     )
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
     modify_cluster_status(
@@ -498,7 +498,7 @@ def test_modify_invalid_status(database_connection, client):
     res = client.put(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", json=EXISTING_CLUSTER_CONFIGURATION,
     )
-    assert res.get_json() == {"message": "This cluster is busy"}
+    assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
 
