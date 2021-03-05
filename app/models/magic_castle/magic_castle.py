@@ -299,8 +299,10 @@ class MagicCastle:
             )
         except CalledProcessError:
             self.__update_status(previous_status)
-            logging.error("An error occurred while initializing Terraform.")
-            raise PlanException("An error occurred while initializing Terraform.")
+            raise PlanException(
+                "An error occurred while initializing Terraform.",
+                additional_details=f"hostname: {self.get_hostname()}",
+            )
 
         with open(
             self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
@@ -354,16 +356,16 @@ class MagicCastle:
                     except CalledProcessError:
                         # terraform plan fails even without refreshing the state
                         self.__update_status(previous_status)
-                        logging.error(
-                            "An error occurred while creating the Terraform plan."
+                        raise PlanException(
+                            "An error occurred while planning changes.",
+                            additional_details=f"hostname: {self.get_hostname()}",
                         )
-                        raise PlanException("An error occurred while planning changes.")
                 else:
                     self.__update_status(previous_status)
-                    logging.error(
-                        "An error occurred while creating the Terraform plan."
+                    raise PlanException(
+                        "An error occurred while planning changes.",
+                        additional_details=f"hostname: {self.get_hostname()}",
                     )
-                    raise PlanException("An error occurred while planning changes.")
 
         with open(
             self.__get_cluster_path(TERRAFORM_PLAN_JSON_FILENAME), "w"
@@ -383,11 +385,9 @@ class MagicCastle:
                 )
             except CalledProcessError:
                 self.__update_status(previous_status)
-                logging.error(
-                    "An error occurred while exporting the json Terraform plan."
-                )
                 raise PlanException(
-                    "An error occurred while exporting planned changes."
+                    "An error occurred while exporting planned changes.",
+                    additional_details=f"hostname: {self.get_hostname()}",
                 )
 
         self.__update_status(previous_status)
