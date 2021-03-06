@@ -33,4 +33,5 @@ class MagicCastleConfigurationSchema(Schema):
     storage = fields.Nested(StorageSchema, required=True)
     public_keys = fields.List(fields.Str(), required=True)
     guest_passwd = fields.Str(required=True)
+    hieradata = fields.Str(missing="")
     os_floating_ips = fields.List(fields.Str(), required=True)

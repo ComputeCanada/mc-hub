@@ -28,6 +28,8 @@ def test_constructor_valid():
                 "scratch_size": 1,
             },
             "public_keys": [""],
+            "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
+            "jupyterhub::enable_otp_auth: false",
             "guest_passwd": '1234\\56789\t "',
             "os_floating_ips": [],
         }
@@ -49,6 +51,54 @@ def test_constructor_valid():
             "scratch_size": 1,
         },
         "public_keys": [""],
+        "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
+        "jupyterhub::enable_otp_auth: false",
+        "guest_passwd": '1234\\56789\t "',
+        "os_floating_ips": [],
+    }
+
+
+def test_constructor_no_hieradata_valid():
+    config = MagicCastleConfiguration(
+        {
+            "cluster_name": "foo-123",
+            "domain": "calculquebec.cloud",
+            "image": "CentOS-7-x64-2019-07",
+            "nb_users": 17,
+            "instances": {
+                "mgmt": {"type": "p4-6gb", "count": 1},
+                "login": {"type": "p4-6gb", "count": 1},
+                "node": {"type": "p2-3gb", "count": 3},
+            },
+            "storage": {
+                "type": "nfs",
+                "home_size": 50,
+                "project_size": 1,
+                "scratch_size": 1,
+            },
+            "public_keys": [""],
+            "guest_passwd": '1234\\56789\t "',
+            "os_floating_ips": [],
+        }
+    )
+    assert config.dump() == {
+        "cluster_name": "foo-123",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2019-07",
+        "nb_users": 17,
+        "instances": {
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "p2-3gb", "count": 3},
+        },
+        "storage": {
+            "type": "nfs",
+            "home_size": 50,
+            "project_size": 1,
+            "scratch_size": 1,
+        },
+        "public_keys": [""],
+        "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
         "os_floating_ips": [],
     }
@@ -74,6 +124,7 @@ def test_constructor_invalid_cluster_name():
                     "scratch_size": 1,
                 },
                 "public_keys": [""],
+                "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
                 "os_floating_ips": [],
             }
@@ -98,6 +149,7 @@ def test_constructor_invalid_cluster_name():
                     "scratch_size": 1,
                 },
                 "public_keys": [""],
+                "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
                 "os_floating_ips": [],
             }
@@ -124,6 +176,7 @@ def test_constructor_invalid_domain():
                     "scratch_size": 1,
                 },
                 "public_keys": [""],
+                "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
                 "os_floating_ips": [],
             }
@@ -149,6 +202,7 @@ def test_get_from_dict_valid():
                 "scratch_size": 1,
             },
             "public_keys": [""],
+            "hieradata": "",
             "guest_passwd": '1234\\56789\t "',
             "os_floating_ips": [],
         }
@@ -170,6 +224,7 @@ def test_get_from_dict_valid():
             "scratch_size": 1,
         },
         "public_keys": [""],
+        "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
         "os_floating_ips": [],
     }
@@ -194,6 +249,7 @@ def test_get_from_dict_automatic_floating_ip():
                 "scratch_size": 1,
             },
             "public_keys": [""],
+            "hieradata": "",
             "guest_passwd": '1234\\56789\t "',
             "os_floating_ips": ["Automatic allocation"],
         }
@@ -215,6 +271,7 @@ def test_get_from_dict_automatic_floating_ip():
             "scratch_size": 1,
         },
         "public_keys": [""],
+        "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
         "os_floating_ips": [],
     }
@@ -239,6 +296,7 @@ def test_get_from_dict_invalid_floating_ip():
                 "scratch_size": 1,
             },
             "public_keys": [""],
+            "hieradata": "",
             "guest_passwd": '1234\\56789\t "',
             "os_floating_ips": ["4.4.4.4"],
         }
@@ -260,6 +318,7 @@ def test_get_from_dict_invalid_floating_ip():
             "scratch_size": 1,
         },
         "public_keys": [""],
+        "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
         "os_floating_ips": [],
     }
@@ -286,6 +345,7 @@ def test_get_file_valid():
             "scratch_size": 50,
         },
         "public_keys": [""],
+        "hieradata": "",
         "guest_passwd": "password-123",
         "os_floating_ips": ["100.101.102.103"],
     }
@@ -317,6 +377,7 @@ def test_update_main_tf_json_file():
                 "scratch_size": 50,
             },
             "public_keys": ["ssh-rsa FOOBAR"],
+            "hieradata": "",
             "guest_passwd": "",
             "os_floating_ips": [],
         }
@@ -342,6 +403,7 @@ def test_update_main_tf_json_file():
             "scratch_size": 50,
         },
         "public_keys": ["ssh-rsa FOOBAR"],
+        "hieradata": "",
         "guest_passwd": "",
         "os_floating_ips": ["100.101.102.103"],
     }
@@ -367,6 +429,7 @@ def test_get_hostname():
             },
             "public_keys": [""],
             "guest_passwd": '1234\\56789\t "',
+            "hieradata": "",
             "os_floating_ips": [],
         }
     )

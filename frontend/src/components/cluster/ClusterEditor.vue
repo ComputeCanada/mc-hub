@@ -30,6 +30,39 @@
             :rules="[positiveNumberRule]"
           />
         </v-list-item>
+        <v-list-group prepend-icon="mdi-script-text-outline">
+          <template #activator>
+            <v-list-item-content>
+              <v-list-item-title>Additional puppet configuration (optional)</v-list-item-title>
+            </v-list-item-content>
+          </template>
+          <v-list-item>
+            <v-list-item-content>
+              <span class="mb-2" style="line-height: 18pt;"
+                >Configuration variables are documented in
+                <a
+                  href="https://github.com/ComputeCanada/puppet-magic_castle/blob/master/README.md#puppet-magic-castle"
+                  target="_blank"
+                  >puppet-magic_castle</a
+                >
+                and
+                <a
+                  href="https://github.com/ComputeCanada/puppet-jupyterhub/blob/master/README.md#hieradata-configuration"
+                  target="_blank"
+                  >puppet-jupyterhub</a
+                >.
+              </span>
+
+              <v-textarea
+                v-model="magicCastle.hieradata"
+                filled
+                class="hieradata-editor"
+                placeholder='profile::base::admin_email: "me@example.org"
+jupyterhub::enable_otp_auth: false'
+              />
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-group>
       </v-list>
       <v-divider />
 
@@ -429,3 +462,9 @@ export default {
   }
 };
 </script>
+<style scoped>
+.hieradata-editor {
+  font-size: 10pt;
+  font-family: "Consolas", "Deja Vu Sans Mono", "Bitstream Vera Sans Mono", monospace;
+}
+</style>

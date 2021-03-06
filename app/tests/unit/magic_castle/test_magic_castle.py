@@ -25,6 +25,7 @@ VALID_CLUSTER_CONFIGURATION = {
     },
     "domain": "calculquebec.cloud",
     "public_keys": [""],
+    "hieradata": "",
     "image": "CentOS-7-x64-2019-07",
     "os_floating_ips": ["100.101.102.103"],
 }
@@ -160,6 +161,7 @@ def test_dump_configuration_valid(database_connection):
             "node": {"type": "p2-3gb", "count": 1},
         },
         "domain": "calculquebec.cloud",
+        "hieradata": "",
         "public_keys": [""],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
@@ -189,6 +191,7 @@ def test_dump_configuration_missing_nodes(database_connection):
             "node": {"type": "p2-3gb", "count": 1},
         },
         "domain": "sub.example.com",
+        "hieradata": "",
         "public_keys": [""],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
@@ -214,6 +217,7 @@ def test_dump_configuration_busy(database_connection):
             "scratch_size": 1,
         },
         "public_keys": [""],
+        "hieradata": "",
         "guest_passwd": "password-123",
         "os_floating_ips": ["Automatic allocation"],
     }

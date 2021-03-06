@@ -118,6 +118,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
   },
   public_keys: [""],
   guest_passwd: "",
+  hieradata: "",
   os_floating_ips: []
 });
 
