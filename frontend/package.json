@@ -13,6 +13,7 @@
     "axios": "^0.21.1",
     "core-js": "^3.6.4",
     "lodash": "^4.17.20",
+    "monaco-editor": "^0.23.0",
     "vue": "^2.6.12",
     "vue-router": "^3.4.3",
     "vuetify": "^2.3.10"

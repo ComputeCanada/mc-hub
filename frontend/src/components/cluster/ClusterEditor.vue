@@ -30,39 +30,6 @@
             :rules="[positiveNumberRule]"
           />
         </v-list-item>
-        <v-list-group prepend-icon="mdi-script-text-outline">
-          <template #activator>
-            <v-list-item-content>
-              <v-list-item-title>Additional puppet configuration (optional)</v-list-item-title>
-            </v-list-item-content>
-          </template>
-          <v-list-item>
-            <v-list-item-content>
-              <span class="mb-2" style="line-height: 18pt;"
-                >Configuration variables are documented in
-                <a
-                  href="https://github.com/ComputeCanada/puppet-magic_castle/blob/master/README.md#puppet-magic-castle"
-                  target="_blank"
-                  >puppet-magic_castle</a
-                >
-                and
-                <a
-                  href="https://github.com/ComputeCanada/puppet-jupyterhub/blob/master/README.md#hieradata-configuration"
-                  target="_blank"
-                  >puppet-jupyterhub</a
-                >.
-              </span>
-
-              <v-textarea
-                v-model="magicCastle.hieradata"
-                filled
-                class="hieradata-editor"
-                placeholder='profile::base::admin_email: "me@example.org"
-jupyterhub::enable_otp_auth: false'
-              />
-            </v-list-item-content>
-          </v-list-item>
-        </v-list-group>
       </v-list>
       <v-divider />
 
@@ -169,6 +136,39 @@ jupyterhub::enable_otp_auth: false'
             label="OpenStack floating IP"
           />
         </v-list-item>
+
+        <v-list-group prepend-icon="mdi-script-text-outline">
+          <template #activator>
+            <v-list-item-content>
+              <v-list-item-title>Additional puppet configuration (optional)</v-list-item-title>
+            </v-list-item-content>
+          </template>
+          <v-list-item>
+            <v-list-item-content>
+              <span class="mb-4" style="line-height: 18pt;"
+                >Configuration variables are documented in
+                <a
+                  href="https://github.com/ComputeCanada/puppet-magic_castle/blob/master/README.md#puppet-magic-castle"
+                  target="_blank"
+                  >puppet-magic_castle</a
+                >
+                and
+                <a
+                  href="https://github.com/ComputeCanada/puppet-jupyterhub/blob/master/README.md#hieradata-configuration"
+                  target="_blank"
+                  >puppet-jupyterhub</a
+                >.
+              </span>
+
+              <code-editor
+                v-model="magicCastle.hieradata"
+                language="yaml"
+                placeholder='profile::base::admin_email: "me@example.org"
+jupyterhub::enable_otp_auth: false'
+              />
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-group>
       </v-list>
 
       <!-- Apply and cancel -->
@@ -190,6 +190,7 @@ import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import PublicKeyInput from "@/components/ui/PublicKeyInput";
 import FlavorSelect from "./FlavorSelect";
+import CodeEditor from "@/components/ui/CodeEditor";
 
 const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
@@ -200,6 +201,7 @@ const SSH_PUBLIC_KEY_REGEX = /^(ssh-rsa AAAAB3NzaC1yc2|ecdsa-sha2-nistp256 AAAAE
 export default {
   name: "ClusterEditor",
   components: {
+    CodeEditor,
     FlavorSelect,
     ResourceUsageDisplay,
     PublicKeyInput
