@@ -1,0 +1,62 @@
+name: Build, test and deploy
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      force_build_live_cluster:
+        description: "Force live cluster test (yes/no)"
+        required: true
+        default: "no"
+
+env:
+  IMAGE_NAME: "fredericfc/magic_castle-ui"
+
+jobs:
+  main:
+    runs-on: ubuntu-20.04
+    name: Build, test and deploy
+    steps:
+      - uses: actions/checkout@v2
+      - name: Decrypt secret files
+        run: |
+          FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
+          for file_name in "${FILE_NAMES[@]}"
+          do
+            gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
+              --output "./$file_name" "./.github/secrets/$file_name.gpg"
+          done
+        env:
+          DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
+      - name: Install NPM dependencies
+        run: (cd frontend && npm ci)
+      - name: Build Docker image
+        run: docker build --tag "$IMAGE_NAME" --target production-server .
+      - name: Run frontend unit tests
+        run: (cd frontend && npm run test:unit)
+      - name: Run backend regular tests
+        if: github.event.inputs.force_build_live_cluster != 'yes' && !startsWith(github.ref, 'refs/tags/v')
+        run: |
+          docker run --rm --publish 5000:5000 \
+          --mount "type=volume,source=database,target=/home/mcu/database" \
+          --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
+          --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+          --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
+            -w /home/mcu/app "$IMAGE_NAME" python -m pytest;
+      - name: Run backend extended tests (including live cluster tests)
+        if: github.event.inputs.force_build_live_cluster == 'yes' || startsWith(github.ref, 'refs/tags/v')
+        run: |
+          docker run --rm --publish 5000:5000 \
+          --mount "type=volume,source=database,target=/home/mcu/database" \
+          --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
+          --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
+          --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
+             -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster;
+      - name: Deploy to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+          docker tag "$IMAGE_NAME" "${IMAGE_NAME}:$(git describe --tags --abbrev=0)"
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:$(git describe --tags --abbrev=0)"
+
