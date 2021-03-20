@@ -1,17 +1,42 @@
 <template>
   <div>
     <div class="code-placeholder" v-show="showPlaceholder">{{ placeholder }}</div>
-    <div ref="codeEditorWrapper">
+    <div ref="codeEditorWrapper" class="mb-2">
       <div class="code-editor"></div>
     </div>
+    <v-messages :value="errorMessages" color="error" />
   </div>
 </template>
 
 <script>
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import { VMessages } from "vuetify/lib";
+import jsYaml from "js-yaml";
+import { VInput } from "vuetify/lib";
+import { capitalize } from "lodash";
+
+function CodeException(messages) {
+  this.messages = messages;
+}
+
+const CODE_VALIDATORS = {
+  yaml: code => {
+    try {
+      jsYaml.load(code);
+      return true;
+    } catch (e) {
+      const message = `Line ${e.mark.line + 1}, column ${e.mark.column + 1}: ${capitalize(e.reason)}.`;
+      throw new CodeException([message]);
+    }
+  }
+};
 
 export default {
   name: "CodeEditor",
+  extends: VInput,
+  components: {
+    VMessages
+  },
   props: {
     value: {
       type: String,
@@ -28,7 +53,8 @@ export default {
   },
   data() {
     return {
-      editor: null
+      editor: null,
+      errorMessages: []
     };
   },
   watch: {
@@ -55,19 +81,24 @@ export default {
       theme: "mc-hub",
       language: this.language,
       automaticLayout: true,
-      lineNumbers: "off",
+      lineNumbers: "on",
       folding: false,
-      layoutInfo: {
-        height: 10
-      },
-      lineDecorationsWidth: 0,
       glyphMargin: false,
       minimap: {
         enabled: false
       }
     });
     this.editor.onDidChangeModelContent(() => {
-      this.$emit("input", this.editor.getValue());
+      const code = this.editor.getValue();
+      this.$emit("input", code);
+
+      // validate code
+      try {
+        CODE_VALIDATORS[this.language](code);
+        this.errorMessages = [];
+      } catch (e) {
+        this.errorMessages = e.messages;
+      }
     });
   }
 };
@@ -75,8 +106,9 @@ export default {
 
 <style scoped>
 .code-editor {
-  height: 200px;
+  height: 300px;
 }
+
 .code-placeholder {
   color: grey;
   font-family: "Consolas", "Deja Vu Sans Mono", "Bitstream Vera Sans Mono", monospace;
@@ -86,5 +118,6 @@ export default {
   user-select: none;
   cursor: text;
   white-space: pre;
+  margin-left: 50px;
 }
 </style>
