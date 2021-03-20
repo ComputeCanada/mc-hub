@@ -115,6 +115,14 @@ class MagicCastleConfiguration:
         main_tf_configuration["module"]["openstack"]["instances"]["node"] = [
             main_tf_configuration["module"]["openstack"]["instances"]["node"]
         ]
+
+        # Magic Castle does not support an empty hieradata field
+        if (
+            main_tf_configuration["module"]["openstack"].get("hieradata") is not None
+            and len(main_tf_configuration["module"]["openstack"]["hieradata"]) == 0
+        ):
+            del main_tf_configuration["module"]["openstack"]["hieradata"]
+
         with open(
             get_cluster_path(self.get_hostname(), MAIN_TERRAFORM_FILENAME), "w"
         ) as main_terraform_file:
