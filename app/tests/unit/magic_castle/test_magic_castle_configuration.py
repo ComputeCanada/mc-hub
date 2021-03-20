@@ -202,6 +202,53 @@ def test_get_from_dict_valid():
                 "scratch_size": 1,
             },
             "public_keys": [""],
+            "hieradata": 'profile::base::admin_email: "me@example.org"',
+            "guest_passwd": '1234\\56789\t "',
+            "os_floating_ips": [],
+        }
+    )
+    assert config.dump() == {
+        "cluster_name": "foo",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2019-07",
+        "nb_users": 17,
+        "instances": {
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "p2-3gb", "count": 3},
+        },
+        "storage": {
+            "type": "nfs",
+            "home_size": 50,
+            "project_size": 1,
+            "scratch_size": 1,
+        },
+        "public_keys": [""],
+        "hieradata": 'profile::base::admin_email: "me@example.org"',
+        "guest_passwd": '1234\\56789\t "',
+        "os_floating_ips": [],
+    }
+
+
+def test_get_from_dict_empty_hieradata_valid():
+    config = MagicCastleConfiguration.get_from_dict(
+        {
+            "cluster_name": "foo",
+            "domain": "calculquebec.cloud",
+            "image": "CentOS-7-x64-2019-07",
+            "nb_users": 17,
+            "instances": {
+                "mgmt": {"type": "p4-6gb", "count": 1},
+                "login": {"type": "p4-6gb", "count": 1},
+                "node": {"type": "p2-3gb", "count": 3},
+            },
+            "storage": {
+                "type": "nfs",
+                "home_size": 50,
+                "project_size": 1,
+                "scratch_size": 1,
+            },
+            "public_keys": [""],
             "hieradata": "",
             "guest_passwd": '1234\\56789\t "',
             "os_floating_ips": [],
