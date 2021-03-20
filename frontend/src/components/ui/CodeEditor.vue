@@ -10,7 +10,7 @@
 
 <script>
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { VMessages, VInput } from "vuetify/es5";
+import { VMessages, VInput } from "vuetify/lib";
 import jsYaml from "js-yaml";
 import { capitalize } from "lodash";
 
@@ -99,7 +99,6 @@ export default {
   },
   methods: {
     validateCode() {
-      // validate code
       try {
         CODE_VALIDATORS[this.language](this.editor.getValue());
         this.errorMessages = [];
