@@ -92,14 +92,22 @@ export default {
       const code = this.editor.getValue();
       this.$emit("input", code);
 
+      this.errorMessages = [];
+    });
+    this.editor.onDidBlurEditorText(() => {
+      this.validateCode();
+    });
+  },
+  methods: {
+    validateCode() {
       // validate code
       try {
-        CODE_VALIDATORS[this.language](code);
+        CODE_VALIDATORS[this.language](this.editor.getValue());
         this.errorMessages = [];
       } catch (e) {
         this.errorMessages = e.messages;
       }
-    });
+    }
   }
 };
 </script>
