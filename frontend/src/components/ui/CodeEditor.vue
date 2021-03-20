@@ -10,9 +10,8 @@
 
 <script>
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { VMessages } from "vuetify/lib";
+import { VMessages, VInput } from "vuetify/es5";
 import jsYaml from "js-yaml";
-import { VInput } from "vuetify/lib";
 import { capitalize } from "lodash";
 
 function CodeException(messages) {
