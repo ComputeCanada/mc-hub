@@ -129,7 +129,7 @@ class MagicCastleConfiguration:
         """
 
         main_tf_configuration = {
-            "terraform": {"required_version": ">= 0.13.4"},
+            "terraform": {"required_version": TERRAFORM_REQUIRED_VERSION},
             "module": {
                 "openstack": {
                     "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//openstack?ref={MAGIC_CASTLE_VERSION_TAG}",
