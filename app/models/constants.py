@@ -11,7 +11,7 @@ MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
     "https://github.com/ComputeCanada/puppet-magic_castle.git"
 )
 MAGIC_CASTLE_VERSION_TAG = "10.0"
-TERRAFORM_REQUIRED_VERSION = ">= 0.13.4"
+TERRAFORM_REQUIRED_VERSION = ">= 0.14.5"
 
 # Paths and filenames
 CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
