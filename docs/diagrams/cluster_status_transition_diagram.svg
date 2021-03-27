@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="518pt" height="588pt" viewBox="0.00 0.00 517.82 587.73">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 583.7331)">
+<title>finite_state_machine</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-583.7331 513.8177,-583.7331 513.8177,4 -4,4"/>
+<!-- Start -->
+<g id="node1" class="node">
+<title>Start</title>
+<ellipse fill="none" stroke="#000000" cx="312.216" cy="-550.4594" rx="29.049" ry="29.049"/>
+<text text-anchor="middle" x="312.216" y="-546.2594" font-family="Times,serif" font-size="14.00" fill="#000000">Start</text>
+</g>
+<!-- PLAN_RUNNING -->
+<g id="node3" class="node">
+<title>PLAN_RUNNING</title>
+<polygon fill="none" stroke="#000000" points="374.2946,-485.1858 250.1374,-485.1858 250.1374,-449.1858 374.2946,-449.1858 374.2946,-485.1858"/>
+<text text-anchor="middle" x="312.216" y="-462.9858" font-family="Times,serif" font-size="14.00" fill="#000000">PLAN_RUNNING</text>
+</g>
+<!-- Start&#45;&gt;PLAN_RUNNING -->
+<g id="edge1" class="edge">
+<title>Start-&gt;PLAN_RUNNING</title>
+<path fill="none" stroke="#000000" d="M312.216,-520.8658C312.216,-512.6745 312.216,-503.8029 312.216,-495.676"/>
+<polygon fill="#000000" stroke="#000000" points="315.7161,-495.541 312.216,-485.541 308.7161,-495.5411 315.7161,-495.541"/>
+</g>
+<!-- End -->
+<g id="node2" class="node">
+<title>End</title>
+<ellipse fill="none" stroke="#000000" cx="168.216" cy="-26.5929" rx="26.6861" ry="26.6861"/>
+<text text-anchor="middle" x="168.216" y="-22.3929" font-family="Times,serif" font-size="14.00" fill="#000000">End</text>
+</g>
+<!-- CREATED -->
+<g id="node4" class="node">
+<title>CREATED</title>
+<polygon fill="none" stroke="#000000" points="291.2615,-413.1858 211.1705,-413.1858 211.1705,-377.1858 291.2615,-377.1858 291.2615,-413.1858"/>
+<text text-anchor="middle" x="251.216" y="-390.9858" font-family="Times,serif" font-size="14.00" fill="#000000">CREATED</text>
+</g>
+<!-- PLAN_RUNNING&#45;&gt;CREATED -->
+<g id="edge2" class="edge">
+<title>PLAN_RUNNING-&gt;CREATED</title>
+<path fill="none" stroke="#000000" d="M290.2664,-441.278C284.8097,-434.8374 278.9559,-427.9279 273.4841,-421.4694"/>
+<polygon fill="#000000" stroke="#000000" points="287.6885,-443.6497 296.8231,-449.0171 293.0294,-439.1248 287.6885,-443.6497"/>
+<polygon fill="#000000" stroke="#000000" points="275.9508,-418.9664 266.8161,-413.599 270.6099,-423.4914 275.9508,-418.9664"/>
+</g>
+<!-- BUILD_ERROR -->
+<g id="node5" class="node">
+<title>BUILD_ERROR</title>
+<polygon fill="none" stroke="#000000" points="112.6488,-269.1858 -.2168,-269.1858 -.2168,-233.1858 112.6488,-233.1858 112.6488,-269.1858"/>
+<text text-anchor="middle" x="56.216" y="-246.9858" font-family="Times,serif" font-size="14.00" fill="#000000">BUILD_ERROR</text>
+</g>
+<!-- PLAN_RUNNING&#45;&gt;BUILD_ERROR -->
+<g id="edge4" class="edge">
+<title>PLAN_RUNNING-&gt;BUILD_ERROR</title>
+<path fill="none" stroke="#000000" d="M256.4877,-444.869C238.3228,-436.3097 218.6246,-425.5776 202.216,-413.1858 149.295,-373.2196 100.4438,-312.1055 74.8674,-277.4921"/>
+<polygon fill="#000000" stroke="#000000" points="255.2723,-448.1619 265.8215,-449.1441 258.1873,-441.7977 255.2723,-448.1619"/>
+<polygon fill="#000000" stroke="#000000" points="77.6027,-275.303 68.8781,-269.2921 71.95,-279.4318 77.6027,-275.303"/>
+</g>
+<!-- PROVISIONING_ERROR -->
+<g id="node8" class="node">
+<title>PROVISIONING_ERROR</title>
+<polygon fill="none" stroke="#000000" points="308.9083,-197.1858 139.5237,-197.1858 139.5237,-161.1858 308.9083,-161.1858 308.9083,-197.1858"/>
+<text text-anchor="middle" x="224.216" y="-174.9858" font-family="Times,serif" font-size="14.00" fill="#000000">PROVISIONING_ERROR</text>
+</g>
+<!-- PLAN_RUNNING&#45;&gt;PROVISIONING_ERROR -->
+<g id="edge13" class="edge">
+<title>PLAN_RUNNING-&gt;PROVISIONING_ERROR</title>
+<path fill="none" stroke="#000000" d="M323.4132,-439.7404C340.3767,-393.4212 366.6674,-298.4135 327.216,-233.1858 319.2016,-219.935 306.7438,-209.777 293.2246,-202.048"/>
+<polygon fill="#000000" stroke="#000000" points="320.13,-438.5277 319.8594,-449.1191 326.6758,-441.0081 320.13,-438.5277"/>
+<polygon fill="#000000" stroke="#000000" points="294.7028,-198.8709 284.2234,-197.3116 291.4432,-205.0656 294.7028,-198.8709"/>
+</g>
+<!-- PROVISIONING_SUCCESS -->
+<g id="node10" class="node">
+<title>PROVISIONING_SUCCESS</title>
+<polygon fill="none" stroke="#000000" points="509.9195,-197.1858 326.5125,-197.1858 326.5125,-161.1858 509.9195,-161.1858 509.9195,-197.1858"/>
+<text text-anchor="middle" x="418.216" y="-174.9858" font-family="Times,serif" font-size="14.00" fill="#000000">PROVISIONING_SUCCESS</text>
+</g>
+<!-- PLAN_RUNNING&#45;&gt;PROVISIONING_SUCCESS -->
+<g id="edge18" class="edge">
+<title>PLAN_RUNNING-&gt;PROVISIONING_SUCCESS</title>
+<path fill="none" stroke="#000000" d="M334.1038,-440.7401C340.2921,-432.3164 346.5927,-422.7037 351.216,-413.1858 385.3164,-342.9828 405.0864,-252.2793 413.4542,-207.1967"/>
+<polygon fill="#000000" stroke="#000000" points="331.2995,-438.6456 328.0192,-448.7199 336.8659,-442.89 331.2995,-438.6456"/>
+<polygon fill="#000000" stroke="#000000" points="416.9144,-207.7308 415.2484,-197.2677 410.0259,-206.486 416.9144,-207.7308"/>
+</g>
+<!-- BUILD_RUNNING -->
+<g id="node6" class="node">
+<title>BUILD_RUNNING</title>
+<polygon fill="none" stroke="#000000" points="289.5095,-341.1858 158.9225,-341.1858 158.9225,-305.1858 289.5095,-305.1858 289.5095,-341.1858"/>
+<text text-anchor="middle" x="224.216" y="-318.9858" font-family="Times,serif" font-size="14.00" fill="#000000">BUILD_RUNNING</text>
+</g>
+<!-- CREATED&#45;&gt;BUILD_RUNNING -->
+<g id="edge6" class="edge">
+<title>CREATED-&gt;BUILD_RUNNING</title>
+<path fill="none" stroke="#000000" d="M244.4028,-377.0171C241.4516,-369.1475 237.9302,-359.7569 234.661,-351.039"/>
+<polygon fill="#000000" stroke="#000000" points="237.9094,-349.7334 231.121,-341.599 231.3551,-352.1913 237.9094,-349.7334"/>
+</g>
+<!-- BUILD_RUNNING&#45;&gt;BUILD_ERROR -->
+<g id="edge8" class="edge">
+<title>BUILD_RUNNING-&gt;BUILD_ERROR</title>
+<path fill="none" stroke="#000000" d="M172.5737,-301.0534C151.9133,-292.1989 128.17,-282.0232 107.5413,-273.1823"/>
+<polygon fill="#000000" stroke="#000000" points="171.2523,-304.2949 181.8225,-305.0171 174.0098,-297.8609 171.2523,-304.2949"/>
+<polygon fill="#000000" stroke="#000000" points="108.8748,-269.946 98.3046,-269.2238 106.1174,-276.38 108.8748,-269.946"/>
+</g>
+<!-- PROVISIONING_RUNNING -->
+<g id="node7" class="node">
+<title>PROVISIONING_RUNNING</title>
+<polygon fill="none" stroke="#000000" points="317.7694,-269.1858 130.6626,-269.1858 130.6626,-233.1858 317.7694,-233.1858 317.7694,-269.1858"/>
+<text text-anchor="middle" x="224.216" y="-246.9858" font-family="Times,serif" font-size="14.00" fill="#000000">PROVISIONING_RUNNING</text>
+</g>
+<!-- BUILD_RUNNING&#45;&gt;PROVISIONING_RUNNING -->
+<g id="edge10" class="edge">
+<title>BUILD_RUNNING-&gt;PROVISIONING_RUNNING</title>
+<path fill="none" stroke="#000000" d="M224.216,-294.7583C224.216,-289.865 224.216,-284.7761 224.216,-279.8759"/>
+<polygon fill="#000000" stroke="#000000" points="220.7161,-295.0171 224.216,-305.0171 227.7161,-295.0172 220.7161,-295.0171"/>
+<polygon fill="#000000" stroke="#000000" points="227.7161,-279.599 224.216,-269.599 220.7161,-279.5991 227.7161,-279.599"/>
+</g>
+<!-- PROVISIONING_RUNNING&#45;&gt;PROVISIONING_ERROR -->
+<g id="edge11" class="edge">
+<title>PROVISIONING_RUNNING-&gt;PROVISIONING_ERROR</title>
+<path fill="none" stroke="#000000" d="M224.216,-233.0171C224.216,-225.3167 224.216,-216.1601 224.216,-207.6024"/>
+<polygon fill="#000000" stroke="#000000" points="227.7161,-207.599 224.216,-197.599 220.7161,-207.5991 227.7161,-207.599"/>
+</g>
+<!-- DESTROY_RUNNING -->
+<g id="node9" class="node">
+<title>DESTROY_RUNNING</title>
+<polygon fill="none" stroke="#000000" points="300.2904,-125.1858 148.1416,-125.1858 148.1416,-89.1858 300.2904,-89.1858 300.2904,-125.1858"/>
+<text text-anchor="middle" x="224.216" y="-102.9858" font-family="Times,serif" font-size="14.00" fill="#000000">DESTROY_RUNNING</text>
+</g>
+<!-- PROVISIONING_RUNNING&#45;&gt;DESTROY_RUNNING -->
+<g id="edge15" class="edge">
+<title>PROVISIONING_RUNNING-&gt;DESTROY_RUNNING</title>
+<path fill="none" stroke="#000000" d="M171.5535,-233.1094C155.3961,-224.8037 139.4554,-213.1489 130.216,-197.1858 122.201,-183.338 122.201,-175.0335 130.216,-161.1858 137.723,-148.2157 149.6539,-138.0898 162.5306,-130.2936"/>
+<polygon fill="#000000" stroke="#000000" points="164.5243,-133.1893 171.5535,-125.2621 161.115,-127.0756 164.5243,-133.1893"/>
+</g>
+<!-- PROVISIONING_RUNNING&#45;&gt;PROVISIONING_SUCCESS -->
+<g id="edge16" class="edge">
+<title>PROVISIONING_RUNNING-&gt;PROVISIONING_SUCCESS</title>
+<path fill="none" stroke="#000000" d="M273.1704,-233.0171C299.578,-223.2164 332.3416,-211.0567 360.0446,-200.7752"/>
+<polygon fill="#000000" stroke="#000000" points="361.4563,-203.9846 369.6136,-197.2238 359.0207,-197.4219 361.4563,-203.9846"/>
+</g>
+<!-- PROVISIONING_ERROR&#45;&gt;DESTROY_RUNNING -->
+<g id="edge14" class="edge">
+<title>PROVISIONING_ERROR-&gt;DESTROY_RUNNING</title>
+<path fill="none" stroke="#000000" d="M224.216,-161.0171C224.216,-153.3167 224.216,-144.1601 224.216,-135.6024"/>
+<polygon fill="#000000" stroke="#000000" points="227.7161,-135.599 224.216,-125.599 220.7161,-135.5991 227.7161,-135.599"/>
+</g>
+<!-- DESTROY_RUNNING&#45;&gt;End -->
+<g id="edge22" class="edge">
+<title>DESTROY_RUNNING-&gt;End</title>
+<path fill="none" stroke="#000000" d="M211.5087,-88.898C204.9392,-79.4434 196.7495,-67.6572 189.2667,-56.8882"/>
+<polygon fill="#000000" stroke="#000000" points="192.0421,-54.7487 183.4616,-48.5337 186.2936,-58.7431 192.0421,-54.7487"/>
+</g>
+<!-- DESTROY_ERROR -->
+<g id="node11" class="node">
+<title>DESTROY_ERROR</title>
+<polygon fill="none" stroke="#000000" points="347.4294,-44.5929 213.0026,-44.5929 213.0026,-8.5929 347.4294,-8.5929 347.4294,-44.5929"/>
+<text text-anchor="middle" x="280.216" y="-22.3929" font-family="Times,serif" font-size="14.00" fill="#000000">DESTROY_ERROR</text>
+</g>
+<!-- DESTROY_RUNNING&#45;&gt;DESTROY_ERROR -->
+<g id="edge20" class="edge">
+<title>DESTROY_RUNNING-&gt;DESTROY_ERROR</title>
+<path fill="none" stroke="#000000" d="M242.8454,-80.3751C248.9325,-71.6148 255.6875,-61.8932 261.7617,-53.1515"/>
+<polygon fill="#000000" stroke="#000000" points="239.7553,-78.6886 236.9233,-88.898 245.5038,-82.683 239.7553,-78.6886"/>
+<polygon fill="#000000" stroke="#000000" points="264.727,-55.0176 267.559,-44.8083 258.9785,-51.0232 264.727,-55.0176"/>
+</g>
+<!-- PROVISIONING_SUCCESS&#45;&gt;DESTROY_RUNNING -->
+<g id="edge19" class="edge">
+<title>PROVISIONING_SUCCESS-&gt;DESTROY_RUNNING</title>
+<path fill="none" stroke="#000000" d="M369.2616,-161.0171C342.854,-151.2164 310.0904,-139.0567 282.3874,-128.7752"/>
+<polygon fill="#000000" stroke="#000000" points="283.4113,-125.4219 272.8184,-125.2238 280.9757,-131.9846 283.4113,-125.4219"/>
+</g>
+</g>
+</svg>
