@@ -3,11 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [v7.5.0] UNRELEASED
+## [v7.5.0] 2021-03-27
+
+### Added
+- Support custom cluster hieradata
+- Display error message when plan fails
 
 ### Changed
+- Now running CI workflow with GitHub Actions instead of Travis CI
 - Cluster names can now include dashes
-- Display error message when plan fails
+
+### Security
+- Bumped Jinja2 to 2.11.3
+- Bumped elliptic to 6.5.4
 
 ## [v7.4] 2021-03-03
 
