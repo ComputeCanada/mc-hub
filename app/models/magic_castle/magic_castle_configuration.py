@@ -11,6 +11,7 @@ from models.constants import (
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
     AUTO_ALLOCATED_IP_LABEL,
+    TERRAFORM_REQUIRED_VERSION,
 )
 from copy import deepcopy
 from os import path
@@ -58,12 +59,16 @@ class MagicCastleConfiguration:
         return cls(configuration)
 
     @classmethod
-    def get(cls, hostname, *, parse_terraform_state_file: bool):
+    def get_from_main_tf_json_file(
+        cls, hostname, *, parse_floating_ips_from_state: bool
+    ):
         """
         Returns a new MagicCastleConfiguration object with the configuration parsed from the main.tf.json file.
-        If parse_terraform_state_file is True, it will fetch the os_floating_ips from the
-        terraform.tfstate file. This option should be set to True only when terraform is not running and if the
-        terraform.tfstate file exists.
+
+        :param hostname: the hostname of the cluster.
+        :param parse_floating_ips_from_state: If True, it will use the terraform.tfstate file to parse the floating IPs,
+        which are not necessarily available in the main.tf.json file.
+        :return: The MagicCastleConfiguration object associated with the cluster.
         """
         with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
             main_tf_configuration = json.load(main_tf)
@@ -76,7 +81,7 @@ class MagicCastleConfiguration:
         configuration["instances"]["node"] = configuration["instances"]["node"][0]
 
         # Try to parse the floating ips from terraform.tfstate
-        if parse_terraform_state_file:
+        if parse_floating_ips_from_state:
             with open(
                 get_cluster_path(hostname, TERRAFORM_STATE_FILENAME), "r"
             ) as terraform_state_file:
@@ -87,6 +92,34 @@ class MagicCastleConfiguration:
             if len(configuration["os_floating_ips"]) == 0:
                 # When the floating ips is an empty list, it means it will be automatically allocated
                 configuration["os_floating_ips"] = [AUTO_ALLOCATED_IP_LABEL]
+
+        return cls(configuration)
+
+    @classmethod
+    def get_from_state_file(cls, hostname):
+        """
+        Returns a new MagicCastleConfiguration object with the configuration parsed from the terraform.tfstate file.
+
+        Note: the `hieradata` field gets parsed from the main.tf.json file instead, because it is not available in the
+        terraform.tfstate file.
+        """
+        with open(
+            get_cluster_path(hostname, TERRAFORM_STATE_FILENAME), "r"
+        ) as terraform_state_file:
+            state = json.load(terraform_state_file)
+        parser = TerraformStateParser(state)
+        configuration = parser.get_partial_configuration()
+
+        # Add hieradata to configuration
+        with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
+            main_tf_configuration = json.load(main_tf)
+
+        if main_tf_configuration["module"]["openstack"].get("hieradata"):
+            configuration["hieradata"] = main_tf_configuration["module"]["openstack"][
+                "hieradata"
+            ]
+        else:
+            configuration["hieradata"] = ""
 
         return cls(configuration)
 
@@ -116,7 +149,7 @@ class MagicCastleConfiguration:
             main_tf_configuration["module"]["openstack"]["instances"]["node"]
         ]
 
-        # Magic Castle does not support an empty hieradata field
+        # Magic Castle does not support an empty string in the hieradata field
         if (
             main_tf_configuration["module"]["openstack"].get("hieradata") is not None
             and len(main_tf_configuration["module"]["openstack"]["hieradata"]) == 0

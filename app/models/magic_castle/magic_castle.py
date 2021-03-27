@@ -192,24 +192,34 @@ class MagicCastle:
             terraform_output = ""
         return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
-    def dump_configuration(self):
+    def dump_configuration(self, planned_only=False):
         """
         Returns the Magic Castle configuration dictionary of the current cluster.
-        To do so, it first attempts to read the terraform.tfstate file to parse the configuration.
-        If the file does not exist (for a cluster that isn't built yet), it parses the configuration
-        from the main.tf.json file (which contains less information).
+
+        :param planned_only: Set to True to extract configuration exclusively from main.tf.json (runs faster). If set to
+        False, it will attempt to extract the configuration from the terraform state file if available (and otherwise
+        use the main.tf.json file).
+        :return: The configuration dictionary
         """
         if self.__not_found():
             raise ClusterNotFoundException
 
         try:
-            parse_terraform_state_file = not self.__is_busy() and path.exists(
-                self.__get_cluster_path(TERRAFORM_STATE_FILENAME)
-            )
-            self.__configuration = MagicCastleConfiguration.get(
-                self.get_hostname(),
-                parse_terraform_state_file=parse_terraform_state_file,
-            )
+            terraform_state_file_available = not self.get_status() in [
+                ClusterStatusCode.BUILD_RUNNING,
+                ClusterStatusCode.DESTROY_RUNNING,
+            ] and path.exists(self.__get_cluster_path(TERRAFORM_STATE_FILENAME))
+
+            if planned_only or not terraform_state_file_available:
+                self.__configuration = MagicCastleConfiguration.get_from_main_tf_json_file(
+                    self.get_hostname(),
+                    parse_floating_ips_from_state=terraform_state_file_available,
+                )
+            else:
+                self.__configuration = MagicCastleConfiguration.get_from_state_file(
+                    self.get_hostname()
+                )
+
             return self.__configuration.dump()
         except FileNotFoundError:
             return dict()

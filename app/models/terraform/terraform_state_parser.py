@@ -31,7 +31,12 @@ class TerraformStateParser:
     def __init__(self, tf_state: object):
         self.__tf_state = tf_state
 
-    def get_configuration(self):
+    def get_partial_configuration(self):
+        """
+        Gets all the information required for a MagicCastleConfiguration object, except for the hieradata field,
+        which is not available in the terraform state.
+        :return: The dictionary containing the partial configuration.
+        """
         return {
             "cluster_name": self.__get_cluster_name(),
             "domain": self.__get_domain(),

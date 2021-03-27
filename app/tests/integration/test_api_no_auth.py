@@ -65,7 +65,7 @@ EXISTING_CLUSTER_STATE = {
         "node": {"type": "p2-3gb", "count": 1},
     },
     "domain": "calculquebec.cloud",
-    "public_keys": [""],
+    "public_keys": ["ssh-rsa FAKE"],
     "image": "CentOS-7-x64-2019-07",
     "hieradata": "",
     "os_floating_ips": ["100.101.102.103"],

@@ -145,7 +145,7 @@ def test_get_owner_no_owner(database_connection):
 
 def test_dump_configuration_valid(database_connection):
     magic_castle = MagicCastle(database_connection, "valid1.calculquebec.cloud")
-    assert magic_castle.dump_configuration() == {
+    assert magic_castle.dump_configuration(planned_only=True) == {
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -166,6 +166,27 @@ def test_dump_configuration_valid(database_connection):
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
     }
+    assert magic_castle.dump_configuration(planned_only=False) == {
+        "cluster_name": "valid1",
+        "nb_users": 10,
+        "guest_passwd": "password-123",
+        "storage": {
+            "type": "nfs",
+            "home_size": 100,
+            "scratch_size": 50,
+            "project_size": 50,
+        },
+        "instances": {
+            "mgmt": {"type": "p4-6gb", "count": 1},
+            "login": {"type": "p4-6gb", "count": 1},
+            "node": {"type": "p2-3gb", "count": 1},
+        },
+        "domain": "calculquebec.cloud",
+        "hieradata": "",
+        "public_keys": ["ssh-rsa FAKE"],
+        "image": "CentOS-7-x64-2019-07",
+        "os_floating_ips": ["100.101.102.103"],
+    }
 
 
 def test_dump_configuration_empty(database_connection):
@@ -175,7 +196,7 @@ def test_dump_configuration_empty(database_connection):
 
 def test_dump_configuration_missing_nodes(database_connection):
     magic_castle = MagicCastle(database_connection, "missingnodes.sub.example.com")
-    assert magic_castle.dump_configuration() == {
+    assert magic_castle.dump_configuration(planned_only=True) == {
         "cluster_name": "missingnodes",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -193,6 +214,27 @@ def test_dump_configuration_missing_nodes(database_connection):
         "domain": "sub.example.com",
         "hieradata": "",
         "public_keys": [""],
+        "image": "CentOS-7-x64-2019-07",
+        "os_floating_ips": ["100.101.102.103"],
+    }
+    assert magic_castle.dump_configuration(planned_only=False) == {
+        "cluster_name": "missingnodes",
+        "nb_users": 10,
+        "guest_passwd": "password-123",
+        "storage": {
+            "type": "nfs",
+            "home_size": 100,
+            "scratch_size": 50,
+            "project_size": 50,
+        },
+        "instances": {
+            "mgmt": {"type": "", "count": 0},
+            "login": {"type": "", "count": 0},
+            "node": {"type": "", "count": 0},
+        },
+        "domain": "sub.example.com",
+        "hieradata": "",
+        "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2019-07",
         "os_floating_ips": ["100.101.102.103"],
     }
