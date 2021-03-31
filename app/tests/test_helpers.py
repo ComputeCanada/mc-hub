@@ -29,7 +29,7 @@ def teardown_mock_clusters(cluster_names):
 @pytest.fixture(autouse=True)
 def database_connection(mocker):
     # Using an in-memory database for faster unit tests with less disk IO
-    mocker.patch("database.database_manager.DATABASE_PATH", new=":memory:")
+    mocker.patch("database.database_manager.DATABASE_FILE_PATH", new=":memory:")
 
     with DatabaseManager.connect() as database_connection:
         # The database :memory: only exist within a single connection.
