@@ -1,5 +1,6 @@
 from tests.test_helpers import *  # noqa;
 from models.cloud.dns_manager import DnsManager
+from models.constants import MAGIC_CASTLE_VERSION_TAG
 import pytest
 from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
@@ -37,7 +38,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
     assert DnsManager("calculquebec.cloud").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",
-            "source": "git::https://github.com/ComputeCanada/magic_castle.git//dns/cloudflare?ref=10.0",
+            "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/cloudflare?ref={MAGIC_CASTLE_VERSION_TAG}",
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
             "public_ip": "${module.openstack.ip}",
@@ -52,7 +53,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
             "email": "you@example.com",
             "project": "your-project-name",
             "zone_name": "your-zone-name",
-            "source": "git::https://github.com/ComputeCanada/magic_castle.git//dns/gcloud?ref=10.0",
+            "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/gcloud?ref={MAGIC_CASTLE_VERSION_TAG}",
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
             "public_ip": "${module.openstack.ip}",
