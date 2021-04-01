@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v7.6.0] 2021-04-01
+
+### Added
+- Terraform {plan, apply, destroy} log rotation
+- Constant TERRAFORM_REQUIRED_VERSION (currently set to 0.14.2)
+
+### Changed
+- Terraform state is now parsed instead of main.tf.json when possible
+- DNS manager test now use MAGIC_CASTLE_VERSION_TAG constant instead of hardcoded value
+- Bumped MC to 10.2
+
 ## [v7.5.1] 2021-03-27
 
 ### Fixed
