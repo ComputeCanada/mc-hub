@@ -1,6 +1,6 @@
 from models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
 from tests.test_helpers import *  # noqa;
-from marshmallow.exceptions import ValidationError
+from exceptions.server_exception import ServerException
 from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
@@ -105,7 +105,7 @@ def test_constructor_no_hieradata_valid():
 
 
 def test_constructor_invalid_cluster_name():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ServerException):
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo!",
@@ -130,7 +130,7 @@ def test_constructor_invalid_cluster_name():
             }
         )
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ServerException):
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo_underscore",
@@ -157,7 +157,7 @@ def test_constructor_invalid_cluster_name():
 
 
 def test_constructor_invalid_domain():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ServerException):
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo",
