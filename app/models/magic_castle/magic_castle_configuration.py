@@ -68,15 +68,11 @@ class MagicCastleConfiguration:
         return cls(configuration)
 
     @classmethod
-    def get_from_main_tf_json_file(
-        cls, hostname, *, parse_floating_ips_from_state: bool
-    ):
+    def get_from_main_tf_json_file(cls, hostname):
         """
         Returns a new MagicCastleConfiguration object with the configuration parsed from the main.tf.json file.
 
         :param hostname: the hostname of the cluster.
-        :param parse_floating_ips_from_state: If True, it will use the terraform.tfstate file to parse the floating IPs,
-        which are not necessarily available in the main.tf.json file.
         :return: The MagicCastleConfiguration object associated with the cluster.
         """
         with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
@@ -90,14 +86,14 @@ class MagicCastleConfiguration:
         configuration["instances"]["node"] = configuration["instances"]["node"][0]
 
         # Try to parse the floating ips from terraform.tfstate
-        if parse_floating_ips_from_state:
+        try:
             with open(
                 get_cluster_path(hostname, TERRAFORM_STATE_FILENAME), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
             parser = TerraformStateParser(state)
             configuration["os_floating_ips"] = parser.get_os_floating_ips()
-        else:
+        except (json.JSONDecodeError, FileNotFoundError):
             if len(configuration["os_floating_ips"]) == 0:
                 # When the floating ips is an empty list, it means it will be automatically allocated
                 configuration["os_floating_ips"] = [AUTO_ALLOCATED_IP_LABEL]

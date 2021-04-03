@@ -373,7 +373,7 @@ def test_get_from_dict_invalid_floating_ip():
 
 def test_get_file_valid():
     config = MagicCastleConfiguration.get_from_main_tf_json_file(
-        "missingnodes.sub.example.com", parse_floating_ips_from_state=True
+        "missingnodes.sub.example.com"
     )
     assert config.dump() == {
         "cluster_name": "missingnodes",
@@ -402,9 +402,7 @@ def test_get_file_not_found():
     with pytest.raises(FileNotFoundError):
         MagicCastleConfiguration.get_from_state_file("non-existing")
     with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_main_tf_json_file(
-            "non-existing", parse_floating_ips_from_state=False
-        )
+        MagicCastleConfiguration.get_from_main_tf_json_file("non-existing")
 
 
 def test_update_main_tf_json_file():
@@ -433,7 +431,7 @@ def test_update_main_tf_json_file():
     )
     modified_config.update_main_tf_json_file()
     saved_config = MagicCastleConfiguration.get_from_main_tf_json_file(
-        "missingnodes.sub.example.com", parse_floating_ips_from_state=True
+        "missingnodes.sub.example.com"
     )
     assert saved_config.dump() == {
         "cluster_name": "missingnodes",

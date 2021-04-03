@@ -204,15 +204,14 @@ class MagicCastle:
             raise ClusterNotFoundException
 
         try:
-            terraform_state_file_available = not self.get_status() in [
-                ClusterStatusCode.BUILD_RUNNING,
-                ClusterStatusCode.DESTROY_RUNNING,
-            ] and path.exists(self.__get_cluster_path(TERRAFORM_STATE_FILENAME))
-
-            if planned_only or not terraform_state_file_available:
+            if (
+                planned_only
+                or self.get_status()
+                in [ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.DESTROY_RUNNING]
+                or not path.exists(self.__get_cluster_path(TERRAFORM_STATE_FILENAME))
+            ):
                 self.__configuration = MagicCastleConfiguration.get_from_main_tf_json_file(
                     self.get_hostname(),
-                    parse_floating_ips_from_state=terraform_state_file_available,
                 )
             else:
                 self.__configuration = MagicCastleConfiguration.get_from_state_file(
