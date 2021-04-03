@@ -1,4 +1,3 @@
-import argparse
 import sqlite3
 from os import listdir, path
 from os.path import isfile
@@ -15,8 +14,8 @@ class SchemaManager:
         self.__database_connection = database_connection
 
     def update_schema(self):
-        current_version = self.get_current_version()
-        latest_version = self.get_latest_version()
+        current_version = self.__get_current_version()
+        latest_version = self.__get_latest_version()
 
         # Installs all the new migrations
         for i in range(current_version, latest_version):
@@ -25,17 +24,17 @@ class SchemaManager:
             ) as migration_file:
                 self.__database_connection.executescript(migration_file.read())
                 self.__database_connection.commit()
-                self.increment_version()
+                self.__increment_version()
 
-    def get_current_version(self):
+    def __get_current_version(self):
         return self.__database_connection.execute("PRAGMA user_version").fetchone()[0]
 
-    def increment_version(self):
-        new_version = self.get_current_version() + 1
+    def __increment_version(self):
+        new_version = self.__get_current_version() + 1
         self.__database_connection.execute(f"PRAGMA user_version = {new_version}")
         self.__database_connection.commit()
 
-    def get_latest_version(self):
+    def __get_latest_version(self):
         return len(
             [
                 migration_file
