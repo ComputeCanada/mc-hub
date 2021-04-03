@@ -3,10 +3,14 @@ import sqlite3
 from os import listdir, path
 from os.path import isfile
 from models.constants import SCHEMA_MIGRATIONS_DIRECTORY
-from database.database_manager import DatabaseManager
 
 
 class SchemaManager:
+    """
+    SchemaManager is responsible for updating the database schema to the latest version using migration files contained
+    in the `migrations` directory.
+    """
+
     def __init__(self, database_connection: sqlite3.Connection):
         self.__database_connection = database_connection
 

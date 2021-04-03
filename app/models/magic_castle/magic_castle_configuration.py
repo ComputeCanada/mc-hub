@@ -35,6 +35,15 @@ def get_cluster_path(hostname, sub_path):
 
 
 class MagicCastleConfiguration:
+    """
+    MagicCastleConfiguration is responsible for loading, updating and dumping Magic Castle configurations.
+
+    Loading can be done using a raw configuration dictionary (get_from_dict),
+    from a main.tf.json file (get_from_main_tf_json_file), or from a Terraform state file (get_from_state_file).
+
+    All configurations are validated with the configuration schema using the MagicCastleSchema class.
+    """
+
     def __init__(self, configuration=None):
         """
         Initializes a MagicCastleConfiguration and validates the configuration schema, if present.

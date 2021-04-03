@@ -2,13 +2,19 @@ import time
 from exceptions.server_exception import PuppetTimeoutException
 import requests
 from requests.exceptions import ConnectionError
-import logging
 
 MAX_PROVISIONING_TIME = 3600
 POLL_INTERVAL = 30
 
 
 class ProvisioningManager:
+    """
+    ProvisioningManager is responsible for monitoring the provisioning status of a single cluster.
+
+    To do so, ProvisioningManager periodically sends GET requests to HTTP services created by Magic Castle until
+    they all send a valid response, meaning the provisioning is probably finished.
+    """
+
     # Contains the hostnames of clusters currently being polled
     # to avoid multiple threads from polling the same cluster
     __busy_hostnames = set()
@@ -36,7 +42,7 @@ class ProvisioningManager:
                         and requests.get(f"https://mokey.{self.__hostname}").status_code
                         == 200
                     )
-                except requests.exceptions.ConnectionError:
+                except ConnectionError:
                     pass
 
                 time.sleep(POLL_INTERVAL)

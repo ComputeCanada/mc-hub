@@ -5,6 +5,14 @@ from models.configuration import config
 
 
 class AuthenticatedUser(User):
+    """
+    User class for users created when the authentication type is set to SAML.
+
+    An authenticated user can be an admin or a regular user. An admin can view
+    and edit clusters created by anyone, while a regular user can only view and
+    edit his own clusters.
+    """
+
     def __init__(
         self,
         database_connection,
@@ -36,9 +44,9 @@ class AuthenticatedUser(User):
 
     def get_all_magic_castles(self):
         """
-        Retrieve all the Magic Castles retrieved in the database.
         If the user is admin, it will retrieve all the clusters,
         otherwise, only the clusters owned by the user.
+
         :return: A list of MagicCastle objects
         """
         if self.is_admin():

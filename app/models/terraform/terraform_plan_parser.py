@@ -1,6 +1,3 @@
-from jsonpath_ng.ext import parse
-
-
 class TerraformPlanParser:
     """
     Class in charge of parsing the json representation outputted by terraform plan
@@ -122,4 +119,3 @@ class TerraformPlanParser:
 
             done_resource_change["change"]["progress"] = progress
         return done_resources_changes
-

@@ -31,10 +31,9 @@ TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
 class MagicCastle:
     """
-    Magic Castle is the class that manages the state of Magic Castle clusters.
-    It is responsible for building, modifying and destroying clusters using Terraform.
-    It is also used to parse the state of existing clusters and return it in
-    a simple dictionary format.
+    Magic Castle is the class that manages everything related to the state of a Magic Castle cluster.
+    It is responsible for building, modifying and destroying the cluster using Terraform.
+    It is also used to get the state of the cluster and the cloud resources available.
     """
 
     def __init__(

@@ -17,6 +17,13 @@ DEFAULT_RESPONSE_CODE = 200
 
 
 def output_json(route_handler):
+    """
+    Creates a decorator that serializes the response data from the return value of the route handler to a JSON string.
+
+    :param route_handler:  The Flask route handler function.
+    :return: The decorator that serializes the response to JSON.
+    """
+
     def decorator(*args, **kwargs):
         response = route_handler(*args, **kwargs)
         if type(response) == tuple:
@@ -30,6 +37,13 @@ def output_json(route_handler):
 
 
 def handle_exceptions(route_handler):
+    """
+    Creates a decorator that catches server and user exceptions and injects the error message in the response.
+
+    :param route_handler: The Flask route handler function.
+    :return: The decorator that handles exceptions.
+    """
+
     def decorator(*args, **kwargs):
         try:
             return route_handler(*args, **kwargs)
@@ -40,6 +54,16 @@ def handle_exceptions(route_handler):
 
 
 def compute_current_user(route_handler):
+    """
+    Creates a decorator used to pass the current User object as a parameter to the route handler.
+
+    If the authentication type is SAML, an AuthenticatedUser object will be passed.
+    Otherwise, if the authentication type is NONE, an AnonymousUser object will be passed.
+
+    :param route_handler: The Flask route handler function.
+    :return: The decorator that modifies the route handler to have the current user as a parameter.
+    """
+
     def decorator(*args, **kwargs):
         auth_type = AuthType(config.get("auth_type") or "NONE")
         with DatabaseManager.connect() as database_connection:
@@ -67,6 +91,10 @@ def compute_current_user(route_handler):
 
 
 class ApiView(MethodView):
+    """
+    Configures all child classes to use the default decorators on all route handlers.
+    """
+
     decorators = [
         compute_current_user,
         handle_exceptions,

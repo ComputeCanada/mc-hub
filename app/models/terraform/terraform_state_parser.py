@@ -5,6 +5,7 @@ from models.constants import INSTANCE_CATEGORIES, STORAGE_SPACES
 def default(default_value):
     """
     This decorator allows a function that normally throws an exception to return a default value instead.
+
     :param default_value: The default return value, in case of an exception.
     :return: The decorated function's return value or the default value.
     """
@@ -24,7 +25,7 @@ def default(default_value):
 class TerraformStateParser:
     """
     TerraformStateParser handles the parsing of the state file of a cluster, i.e. the terraform.tfstate file.
-    It makes it easy to get access to the important variables in the state (intance types, guest password, ...)
+    It makes it easy to get access to the important variables in the state (instance types, guest password, ...)
     through the get_configuration method.
     """
 
@@ -35,6 +36,7 @@ class TerraformStateParser:
         """
         Gets all the information required for a MagicCastleConfiguration object, except for the hieradata field,
         which is not available in the terraform state.
+
         :return: The dictionary containing the partial configuration.
         """
         return {
@@ -72,6 +74,7 @@ class TerraformStateParser:
         Calculates the number of volumes used by the cluster.
         This includes both the volumes associated with an instance
         and the external volumes (NFS).
+
         :return: The number of volumes in the cluster
         """
         root_storage_parser = parse(
@@ -89,6 +92,7 @@ class TerraformStateParser:
         Calculates the amount of volume storage used by the cluster.
         This includes both the volumes associated with an instance
         and the external volumes (NFS).
+
         :return: The number of gibibytes used by all volumes in the cluster
         """
         root_storage_parser = parse(

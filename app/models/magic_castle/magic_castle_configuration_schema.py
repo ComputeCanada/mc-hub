@@ -21,6 +21,11 @@ def validate_domain(domain):
 
 
 class MagicCastleConfigurationSchema(Schema):
+    """
+    Marshmallow schema used to validate, deserialize and serialize Magic Castle configurations.
+    This schema is then used in MagicCastleConfiguration to load, create and update a cluster's main.tf.json file.
+    """
+
     cluster_name = fields.Str(required=True, validate=validate_cluster_name)
     domain = fields.Str(required=True, validate=validate_domain)
     image = fields.Str(required=True)

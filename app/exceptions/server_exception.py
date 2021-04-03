@@ -14,8 +14,8 @@ class ServerException(Exception):
         """
         Instantiates an exception related to an error originating from the server.
 
-        :param status_code: The HTTP response status code.
         :param message: The error message, which will be logged and displayed to the user.
+        :param status_code: The HTTP response status code.
         :param additional_details: Additional details which will be logged but not shown to the user.
         """
         Exception.__init__(self, message)

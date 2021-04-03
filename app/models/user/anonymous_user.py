@@ -3,6 +3,10 @@ from models.magic_castle.magic_castle import MagicCastle
 
 
 class AnonymousUser(User):
+    """
+    User class for users created when the authentication type is set to NONE.
+    """
+
     def __init__(self, database_connection):
         super().__init__(database_connection)
 

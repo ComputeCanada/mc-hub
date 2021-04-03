@@ -2,6 +2,12 @@ class InvalidUsageException(Exception):
     DEFAULT_STATUS_CODE = 400
 
     def __init__(self, message: str, status_code: int = DEFAULT_STATUS_CODE):
+        """
+        Instantiates an exception related to an error originating from the user.
+
+        :param message: The error message, which will be displayed to the user.
+        :param status_code: The HTTP response status code.
+        """
         Exception.__init__(self, message)
         self.status_code = status_code
         self.message = message

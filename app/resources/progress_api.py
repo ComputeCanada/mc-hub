@@ -1,4 +1,3 @@
-from flask import request
 from resources.api_view import ApiView
 from exceptions.invalid_usage_exception import InvalidUsageException
 from models.magic_castle.cluster_status_code import ClusterStatusCode

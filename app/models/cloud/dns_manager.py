@@ -1,9 +1,15 @@
 from models.configuration import config
 from models.constants import MAGIC_CASTLE_MODULE_SOURCE, MAGIC_CASTLE_VERSION_TAG
-from os import path
 
 
 class DnsManager:
+    """
+    DnsManager is responsible for creating a DNS configuration that can be used in a Magic Castle configuration
+    and providing the list of available domains.
+
+    To do so, DnsManager uses the custom configuration provided in configuration.json.
+    """
+
     def __init__(self, domain):
         self.__domain = domain
         self.__dns_provider = config["domains"][domain].get("dns_provider")

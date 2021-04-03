@@ -22,6 +22,11 @@ INSTANCE_MINIMUM_REQUIREMENTS = {
 
 
 class OpenStackManager:
+    """
+    OpenStackManager is responsible for fetching available OpenStack resources (instances, floating IPs, images,
+    storage types) and usage quotas from the OpenStack API.
+    """
+
     def __init__(
         self,
         *,
@@ -50,6 +55,9 @@ class OpenStackManager:
 
     @staticmethod
     def test_connection():
+        """
+        Attempts to connect to the OpenStack API and raises an exception if the connection fails.
+        """
         if not path.isfile(OPENSTACK_CONFIG_PATH):
             raise FileNotFoundError(f"The {OPENSTACK_CONFIG_FILENAME} was not found.")
         openstack.connect()

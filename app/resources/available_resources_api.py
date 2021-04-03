@@ -1,5 +1,4 @@
 from resources.api_view import ApiView
-from exceptions.invalid_usage_exception import InvalidUsageException
 from models.cloud.cloud_manager import CloudManager
 from models.user.user import User
 
