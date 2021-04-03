@@ -6,14 +6,14 @@ from resources.user_api import UserAPI
 from flask_cors import CORS
 from models.cloud.openstack_manager import OpenStackManager
 from database.schema_manager import SchemaManager
-from database.database_connection import DatabaseConnection
+from database.database_manager import DatabaseManager
 from models.configuration import config
 
 # Exit with an error if the clouds.yaml is not found or the OpenStack API can't be reached
 OpenStackManager.test_connection()
 
 # Update the database schema to the latest version
-with DatabaseConnection() as database_connection:
+with DatabaseManager.connect() as database_connection:
     SchemaManager(database_connection).update_schema()
 
 app = Flask(__name__)

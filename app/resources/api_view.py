@@ -1,7 +1,7 @@
 from flask import request
 from flask.views import MethodView
 from flask import make_response
-from database.database_connection import DatabaseConnection
+from database.database_manager import DatabaseManager
 from models.auth_type import AuthType
 from models.user.anonymous_user import AnonymousUser
 from models.configuration import config
@@ -66,7 +66,7 @@ def compute_current_user(route_handler):
 
     def decorator(*args, **kwargs):
         auth_type = AuthType(config.get("auth_type") or "NONE")
-        with DatabaseConnection() as database_connection:
+        with DatabaseManager.connect() as database_connection:
             if auth_type == AuthType.SAML:
                 try:
                     # Note: Request headers are interpreted as ISO Latin 1 encoded strings.

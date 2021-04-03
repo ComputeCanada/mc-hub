@@ -14,7 +14,7 @@ from models.puppet.provisioning_manager import ProvisioningManager
 from exceptions.invalid_usage_exception import *
 from exceptions.server_exception import *
 from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
-from database.database_connection import DatabaseConnection
+from database.database_manager import DatabaseManager
 import sqlite3
 import logging
 import json
@@ -37,7 +37,7 @@ class MagicCastle:
     """
 
     def __init__(
-        self, database_connection: sqlite3.Connection, hostname=None, owner=None,
+        self, database_connection: sqlite3.Connection, hostname=None, owner=None
     ):
         self.__database_connection = database_connection
         self.__hostname = hostname
@@ -481,7 +481,7 @@ class MagicCastle:
                         check=True,
                         env=environment_variables,
                     )
-                with DatabaseConnection() as database_connection:
+                with DatabaseManager.connect() as database_connection:
                     self.__database_connection = database_connection
                     if destroy:
                         # Removes the content of the cluster's folder, even if not empty
@@ -505,13 +505,13 @@ class MagicCastle:
                         except PuppetTimeoutException:
                             status_code = ClusterStatusCode.PROVISIONING_ERROR
 
-                        with DatabaseConnection() as database_connection:
+                        with DatabaseManager.connect() as database_connection:
                             self.__database_connection = database_connection
                             self.__update_status(status_code)
 
             except CalledProcessError:
                 logging.info("An error occurred while running terraform apply.")
-                with DatabaseConnection() as database_connection:
+                with DatabaseManager.connect() as database_connection:
                     self.__database_connection = database_connection
                     self.__update_status(
                         ClusterStatusCode.DESTROY_ERROR
@@ -519,7 +519,7 @@ class MagicCastle:
                         else ClusterStatusCode.BUILD_ERROR
                     )
             finally:
-                with DatabaseConnection() as database_connection:
+                with DatabaseManager.connect() as database_connection:
                     self.__database_connection = database_connection
                     self.__remove_existing_plan()
 
