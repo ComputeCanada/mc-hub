@@ -12,9 +12,3 @@ class DatabaseConnection:
 
     def __exit__(self, type, value, traceback):
         self.__connection.close()
-
-
-class DatabaseManager:
-    @staticmethod
-    def connect() -> DatabaseConnection:
-        return DatabaseConnection()
