@@ -8,6 +8,7 @@ An example `configuration.json` is shown below.
 {
   "auth_type": "NONE",
   "admins": [],
+  "cors_allowed_origins": ["https://mc-hub.example.com"],
   "domains": {
     "calculquebec.cloud": {
       "dns_provider": "cloudflare"
@@ -57,6 +58,16 @@ If you are using a SAML authentication mechanism, you can set `auth_type` to `"S
 A list of users with administrator rights. This entry is ignored when `auth_type` is set to `"NONE"`.
 
 If `auth_type` is set to `"SAML"`, the values contained in `admins` are strings reprensenting the `eduPersonPrincipalName` attribute of the user. Administrators can view, modify and delete clusters created by any other user.
+
+### `cors_allowed_origins`
+
+A list of origins allowed making HTTP requests to the server. This should be set to the frontend base URL. 
+
+For instance, if you are running MC Hub locally, this may be set to `http://localhost:5000`. If you are running an additional Node development server, you can also add its url, which may look like `http://localhost:8080`. 
+
+Otherwise, if you are running MC Hub in production, the origin url may look like `https://mc.computecanada.dev` (without an explicit port number).
+
+> Note: The * wildcard origin can be used but is not recommended for security reasons. This way, a malicious web page could view and edit your clusters. 
 
 ### `domains`
 

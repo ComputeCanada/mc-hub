@@ -7,6 +7,7 @@ from flask_cors import CORS
 from models.cloud.openstack_manager import OpenStackManager
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
+from models.configuration import config
 
 # Exit with an error if the clouds.yaml is not found or the OpenStack API can't be reached
 OpenStackManager.test_connection()
@@ -18,7 +19,9 @@ with DatabaseManager.connect() as database_connection:
 app = Flask(__name__)
 
 # Allows all origins on all routes (not safe for production)
-CORS(app)
+CORS(
+    app, origins=config["cors_allowed_origins"],
+)
 
 magic_castle_view = MagicCastleAPI.as_view("magic_castle")
 app.add_url_rule(
