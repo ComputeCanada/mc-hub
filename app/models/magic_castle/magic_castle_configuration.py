@@ -16,6 +16,8 @@ from models.constants import (
 from copy import deepcopy
 from os import path
 import json
+import marshmallow
+from exceptions.server_exception import ServerException
 
 
 MAIN_TERRAFORM_FILENAME = "main.tf.json"
@@ -50,7 +52,12 @@ class MagicCastleConfiguration:
         """
         self.__configuration = None
         if configuration:
-            self.__configuration = MagicCastleConfigurationSchema().load(configuration)
+            try:
+                self.__configuration = MagicCastleConfigurationSchema().load(
+                    configuration
+                )
+            except marshmallow.ValidationError:
+                raise ServerException("The cluster configuration is invalid.")
 
     @classmethod
     def get_from_dict(cls, configuration_dict):
