@@ -185,7 +185,7 @@ jupyterhub::enable_otp_auth: false'
 
 <script>
 import { cloneDeep, isEqual } from "lodash";
-import { generatePassword } from "@/models/utils";
+import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import PublicKeyInput from "@/components/ui/PublicKeyInput";
@@ -308,6 +308,7 @@ export default {
   },
   created() {
     if (!this.existingCluster) {
+      this.generateClusterName();
       this.generateGuestPassword();
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
@@ -457,6 +458,9 @@ export default {
     },
     apply() {
       this.$emit("apply");
+    },
+    generateClusterName() {
+      this.magicCastle.cluster_name = generatePetName();
     },
     generateGuestPassword() {
       this.magicCastle.guest_passwd = generatePassword();
