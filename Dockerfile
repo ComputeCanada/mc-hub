@@ -61,7 +61,7 @@ FROM base-server as development-server
 
 USER root
 
-RUN apk add npm~=12.21 \
+RUN apk add npm~=12.22 \
             sqlite~=3.32
 RUN pip install pylint~=2.5 \
                 black
