@@ -34,12 +34,12 @@ class MagicCastle:
     Magic Castle is the class that manages everything related to the state of a Magic Castle cluster.
     It is responsible for building, modifying and destroying the cluster using Terraform.
     It is also used to get the state of the cluster and the cloud resources available.
+
+    Note: In this class, the database connection is recreated everytime the database must be accessed
+    to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    def __init__(
-        self, database_connection: sqlite3.Connection, hostname=None, owner=None
-    ):
-        self.__database_connection = database_connection
+    def __init__(self, hostname=None, owner=None):
         self.__hostname = hostname
         self.__owner = owner
         self.__configuration = None
@@ -57,10 +57,11 @@ class MagicCastle:
 
     def get_owner(self):
         if self.__owner is None:
-            result = self.__database_connection.execute(
-                "SELECT owner FROM magic_castles WHERE hostname = ?",
-                (self.get_hostname(),),
-            ).fetchone()
+            with DatabaseManager.connect() as database_connection:
+                result = database_connection.execute(
+                    "SELECT owner FROM magic_castles WHERE hostname = ?",
+                    (self.get_hostname(),),
+                ).fetchone()
             if result:
                 self.__owner = result[0]
             else:
@@ -87,10 +88,11 @@ class MagicCastle:
 
     def get_status(self) -> ClusterStatusCode:
         if self.__status is None:
-            result = self.__database_connection.execute(
-                "SELECT status FROM magic_castles WHERE hostname = ?",
-                (self.get_hostname(),),
-            ).fetchone()
+            with DatabaseManager.connect() as database_connection:
+                result = database_connection.execute(
+                    "SELECT status FROM magic_castles WHERE hostname = ?",
+                    (self.get_hostname(),),
+                ).fetchone()
             if result:
                 self.__status = ClusterStatusCode(result[0])
             else:
@@ -99,11 +101,12 @@ class MagicCastle:
 
     def __update_status(self, status: ClusterStatusCode):
         self.__status = status
-        self.__database_connection.execute(
-            "UPDATE magic_castles SET status = ? WHERE hostname = ?",
-            (self.__status.value, self.__hostname),
-        )
-        self.__database_connection.commit()
+        with DatabaseManager.connect() as database_connection:
+            database_connection.execute(
+                "UPDATE magic_castles SET status = ? WHERE hostname = ?",
+                (self.__status.value, self.__hostname),
+            )
+            database_connection.commit()
 
         # Log cluster status updates for log analytics
         print(
@@ -156,10 +159,11 @@ class MagicCastle:
 
     def get_plan_type(self) -> PlanType:
         if self.__plan_type is None:
-            result = self.__database_connection.execute(
-                "SELECT plan_type FROM magic_castles WHERE hostname = ?",
-                (self.get_hostname(),),
-            ).fetchone()
+            with DatabaseManager.connect() as database_connection:
+                result = database_connection.execute(
+                    "SELECT plan_type FROM magic_castles WHERE hostname = ?",
+                    (self.get_hostname(),),
+                ).fetchone()
             if result:
                 self.__plan_type = PlanType(result[0])
             else:
@@ -168,11 +172,12 @@ class MagicCastle:
 
     def __update_plan_type(self, plan_type: PlanType):
         self.__plan_type = plan_type
-        self.__database_connection.execute(
-            "UPDATE magic_castles SET plan_type = ? WHERE hostname = ?",
-            (self.__plan_type.value, self.__hostname),
-        )
-        self.__database_connection.commit()
+        with DatabaseManager.connect() as database_connection:
+            database_connection.execute(
+                "UPDATE magic_castles SET plan_type = ? WHERE hostname = ?",
+                (self.__plan_type.value, self.__hostname),
+            )
+            database_connection.commit()
 
     def get_progress(self):
         if self.__not_found():
@@ -315,17 +320,19 @@ class MagicCastle:
             self.__remove_existing_plan()
             previous_status = self.get_status()
         else:
-            self.__database_connection.execute(
-                "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type, owner) VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    self.get_hostname(),
-                    self.get_cluster_name(),
-                    self.get_domain(),
-                    ClusterStatusCode.CREATED.value,
-                    plan_type.value,
-                    self.get_owner(),
-                ),
-            )
+            with DatabaseManager.connect() as database_connection:
+                database_connection.execute(
+                    "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type, owner) VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        self.get_hostname(),
+                        self.get_cluster_name(),
+                        self.get_domain(),
+                        ClusterStatusCode.CREATED.value,
+                        plan_type.value,
+                        self.get_owner(),
+                    ),
+                )
+                database_connection.commit()
             mkdir(self.__get_cluster_path())
             previous_status = ClusterStatusCode.CREATED
 
@@ -481,18 +488,17 @@ class MagicCastle:
                         check=True,
                         env=environment_variables,
                     )
-                with DatabaseManager.connect() as database_connection:
-                    self.__database_connection = database_connection
-                    if destroy:
-                        # Removes the content of the cluster's folder, even if not empty
-                        rmtree(self.__get_cluster_path(), ignore_errors=True)
-                        self.__database_connection.execute(
+                if destroy:
+                    # Removes the content of the cluster's folder, even if not empty
+                    rmtree(self.__get_cluster_path(), ignore_errors=True)
+                    with DatabaseManager.connect() as database_connection:
+                        database_connection.execute(
                             "DELETE FROM magic_castles WHERE hostname = ?",
                             (self.get_hostname(),),
                         )
-                        self.__database_connection.commit()
-                    else:
-                        self.__update_status(ClusterStatusCode.PROVISIONING_RUNNING)
+                        database_connection.commit()
+                else:
+                    self.__update_status(ClusterStatusCode.PROVISIONING_RUNNING)
 
                 if not destroy:
                     provisioning_manager = ProvisioningManager(self.get_hostname())
@@ -505,23 +511,18 @@ class MagicCastle:
                         except PuppetTimeoutException:
                             status_code = ClusterStatusCode.PROVISIONING_ERROR
 
-                        with DatabaseManager.connect() as database_connection:
-                            self.__database_connection = database_connection
-                            self.__update_status(status_code)
+                        self.__update_status(status_code)
 
             except CalledProcessError:
                 logging.info("An error occurred while running terraform apply.")
-                with DatabaseManager.connect() as database_connection:
-                    self.__database_connection = database_connection
-                    self.__update_status(
-                        ClusterStatusCode.DESTROY_ERROR
-                        if destroy
-                        else ClusterStatusCode.BUILD_ERROR
-                    )
+
+                self.__update_status(
+                    ClusterStatusCode.DESTROY_ERROR
+                    if destroy
+                    else ClusterStatusCode.BUILD_ERROR
+                )
             finally:
-                with DatabaseManager.connect() as database_connection:
-                    self.__database_connection = database_connection
-                    self.__remove_existing_plan()
+                self.__remove_existing_plan()
 
         destroy = self.get_plan_type() == PlanType.DESTROY
         terraform_apply_thread = Thread(target=terraform_apply, args=(destroy,))

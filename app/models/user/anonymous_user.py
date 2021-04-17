@@ -18,10 +18,10 @@ class AnonymousUser(User):
         results = self._database_connection.execute(
             "SELECT hostname FROM magic_castles"
         ).fetchall()
-        return [MagicCastle(self._database_connection, result[0]) for result in results]
+        return [MagicCastle(result[0]) for result in results]
 
     def create_empty_magic_castle(self):
-        return MagicCastle(self._database_connection)
+        return MagicCastle()
 
     def get_magic_castle_by_hostname(self, hostname):
-        return MagicCastle(self._database_connection, hostname)
+        return MagicCastle(hostname)

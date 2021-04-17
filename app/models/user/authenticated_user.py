@@ -59,14 +59,12 @@ class AuthenticatedUser(User):
                 (self.edu_person_principal_name,),
             )
         return [
-            MagicCastle(self._database_connection, hostname=result[0], owner=result[1],)
+            MagicCastle(hostname=result[0], owner=result[1])
             for result in results.fetchall()
         ]
 
     def create_empty_magic_castle(self):
-        return MagicCastle(
-            self._database_connection, owner=self.edu_person_principal_name
-        )
+        return MagicCastle(owner=self.edu_person_principal_name)
 
     def get_magic_castle_by_hostname(self, hostname):
         if self.is_admin():
@@ -81,8 +79,6 @@ class AuthenticatedUser(User):
             )
         row = results.fetchone()
         if row:
-            return MagicCastle(
-                self._database_connection, hostname=row[0], owner=row[1],
-            )
+            return MagicCastle(hostname=row[0], owner=row[1])
         else:
             raise ClusterNotFoundException
