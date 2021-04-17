@@ -14,6 +14,7 @@ def test_get_all_magic_castles(database_connection):
     assert [magic_castle.get_hostname() for magic_castle in all_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
+        "empty-state.calculquebec.cloud",
         "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.sub.example.com",
@@ -23,6 +24,7 @@ def test_get_all_magic_castles(database_connection):
     assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
+        ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.BUILD_ERROR,

@@ -192,6 +192,31 @@ def test_dump_configuration_empty(database_connection):
     assert magic_castle.dump_configuration() == dict()
 
 
+def test_dump_configuration_empty_state(database_connection):
+    magic_castle = MagicCastle("empty-state.calculquebec.cloud")
+    assert magic_castle.dump_configuration() == {
+        "cluster_name": "empty-state",
+        "nb_users": 0,
+        "guest_passwd": "",
+        "storage": {
+            "type": "nfs",
+            "home_size": 0,
+            "scratch_size": 0,
+            "project_size": 0,
+        },
+        "instances": {
+            "mgmt": {"type": "", "count": 0},
+            "login": {"type": "", "count": 0},
+            "node": {"type": "", "count": 0},
+        },
+        "domain": "calculquebec.cloud",
+        "hieradata": "",
+        "public_keys": [""],
+        "image": "",
+        "os_floating_ips": [],
+    }
+
+
 def test_dump_configuration_missing_nodes(database_connection):
     magic_castle = MagicCastle("missingnodes.sub.example.com")
     assert magic_castle.dump_configuration(planned_only=True) == {

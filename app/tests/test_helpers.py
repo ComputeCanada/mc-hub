@@ -79,6 +79,14 @@ def database_connection(mocker):
                 "bob12.bobby@computecanada.ca",
             ),
             (
+                "empty-state.calculquebec.cloud",
+                "empty-state",
+                "calculquebec.cloud",
+                "build_error",
+                "none",
+                "bob12.bobby@computecanada.ca",
+            ),
+            (
                 "missingfloatingips.c3.ca",
                 "missingfloatingips",
                 "c3.ca",
@@ -175,6 +183,7 @@ def generate_test_clusters():
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
         "empty.calculquebec.cloud",
+        "empty-state.calculquebec.cloud",
         "missingnodes.sub.example.com",
         "noowner.calculquebec.cloud",
         "valid1.calculquebec.cloud",

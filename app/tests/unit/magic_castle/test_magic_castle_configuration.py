@@ -371,7 +371,7 @@ def test_get_from_dict_invalid_floating_ip():
     }
 
 
-def test_get_file_valid():
+def test_get_from_main_tf_json_file_valid():
     config = MagicCastleConfiguration.get_from_main_tf_json_file(
         "missingnodes.sub.example.com"
     )
@@ -398,11 +398,70 @@ def test_get_file_valid():
     }
 
 
-def test_get_file_not_found():
+def test_get_from_main_tf_json_file_not_found():
     with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_state_file("non-existing")
+        MagicCastleConfiguration.get_from_main_tf_json_file("empty")
     with pytest.raises(FileNotFoundError):
         MagicCastleConfiguration.get_from_main_tf_json_file("non-existing")
+
+
+def test_get_from_state_file_missing_nodes():
+    config = MagicCastleConfiguration.get_from_state_file(
+        "missingnodes.sub.example.com"
+    )
+    assert config.dump() == {
+        "cluster_name": "missingnodes",
+        "domain": "sub.example.com",
+        "image": "CentOS-7-x64-2019-07",
+        "nb_users": 10,
+        "instances": {
+            "mgmt": {"type": "", "count": 0},
+            "login": {"type": "", "count": 0},
+            "node": {"type": "", "count": 0},
+        },
+        "storage": {
+            "type": "nfs",
+            "home_size": 100,
+            "project_size": 50,
+            "scratch_size": 50,
+        },
+        "public_keys": ["ssh-rsa FAKE"],
+        "hieradata": "",
+        "guest_passwd": "password-123",
+        "os_floating_ips": ["100.101.102.103"],
+    }
+
+
+def test_get_from_state_file_empty():
+    config = MagicCastleConfiguration.get_from_state_file(
+        "empty-state.calculquebec.cloud"
+    )
+    assert config.dump() == {
+        "cluster_name": "empty-state",
+        "domain": "calculquebec.cloud",
+        "image": "",
+        "nb_users": 0,
+        "instances": {
+            "mgmt": {"type": "", "count": 0},
+            "login": {"type": "", "count": 0},
+            "node": {"type": "", "count": 0},
+        },
+        "storage": {
+            "type": "nfs",
+            "home_size": 0,
+            "project_size": 0,
+            "scratch_size": 0,
+        },
+        "public_keys": [""],
+        "hieradata": "",
+        "guest_passwd": "",
+        "os_floating_ips": [],
+    }
+
+
+def test_get_from_state_file_not_found():
+    with pytest.raises(FileNotFoundError):
+        MagicCastleConfiguration.get_from_state_file("non-existing")
 
 
 def test_update_main_tf_json_file():
