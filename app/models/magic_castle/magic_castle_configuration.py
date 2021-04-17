@@ -122,6 +122,12 @@ class MagicCastleConfiguration:
         parser = TerraformStateParser(state)
         configuration = parser.get_partial_configuration()
 
+        # Add cluster_name and domain. When the terraform state file is empty,
+        # these variables must still be parsed correctly to create a valid MagicCastleConfiguration object.
+        [cluster_name, domain] = hostname.split(".", 1)
+        configuration["cluster_name"] = cluster_name
+        configuration["domain"] = domain
+
         # Add hieradata to configuration
         with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
             main_tf_configuration = json.load(main_tf)
