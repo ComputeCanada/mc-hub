@@ -18,7 +18,7 @@ ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/
 ## EXTERNAL DEPENDENCIES
 
 RUN apk --no-cache add git~=2.26 \
-                       curl~=7.69 \
+                       curl~=7.76 \
                        build-base~=0.5 \
                        libffi-dev~=3.3 \
                        openssl-dev~=1.1 \
