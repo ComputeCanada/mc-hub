@@ -3,18 +3,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [v8.0.0] UNRELEASED
+## [v8.0.0] 2021-05-01
 
 ### Added
 - Added required field `cors_allowed_origins` in configuration.json file
+- Added ability to define constants using environment variables
 - Improved documentation of multiple classes
 - Default cluster name now generated randomly, using a random pet name
+
+### Changed
+- Bumped npm to 12.22
+- Bumped curl to 7.76
 
 ### Fixed
 - Fixed occasional bug when reading Terraform state file
 
 ### Security
 - Restricted the CORS allowed origins, instead of allowing all origins to make API calls
+- Bumped ssri to 6.0.2
 
 ## [v7.6.0] 2021-04-01
 
