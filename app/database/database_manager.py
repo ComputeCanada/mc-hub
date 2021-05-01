@@ -4,6 +4,7 @@ from models.constants import DATABASE_PATH, DATABASE_FILENAME
 
 DATABASE_FILE_PATH = path.join(DATABASE_PATH, DATABASE_FILENAME)
 
+
 class DatabaseConnection:
     def __init__(self):
         self.__connection = None
