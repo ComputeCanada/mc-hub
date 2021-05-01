@@ -14,9 +14,12 @@ MAGIC_CASTLE_VERSION_TAG = "10.2"
 TERRAFORM_REQUIRED_VERSION = ">= 0.14.2"
 
 # Paths and filenames
-CLUSTERS_PATH = path.join(environ["HOME"], "clusters")
-APP_PATH = path.join(environ["HOME"], "app")
-DATABASE_PATH = path.join(environ["HOME"], "database", "database.db")
+CLUSTERS_PATH = environ.get('MCH_CLUSTERS_PATH', path.join(environ["HOME"], "clusters"))
+APP_PATH = environ.get('MCH_APP_PATH', path.join(environ["HOME"], "app"))
+DATABASE_PATH = environ.get('MCH_DATABASE_PATH', path.join(environ["HOME"], "database"))
 SCHEMA_MIGRATIONS_DIRECTORY = path.join(APP_PATH, "database", "migrations")
+CONFIGURATION_FILE_PATH = environ.get('MCH_CONFIGURATION_FILE_PATH', environ["HOME"])
+
+CONFIGURATION_FILENAME = "configuration.json"
+DATABASE_FILENAME = "database.db"
 TERRAFORM_STATE_FILENAME = "terraform.tfstate"
-CONFIGURATION_FILE_PATH = path.join(environ["HOME"], "configuration.json")

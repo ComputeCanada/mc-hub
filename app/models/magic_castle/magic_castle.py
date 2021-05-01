@@ -20,7 +20,7 @@ import logging
 import json
 
 
-DEFAULT_CLOUD = "openstack"
+DEFAULT_CLOUD = environ.get("OS_CLOUD", "openstack")
 
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
