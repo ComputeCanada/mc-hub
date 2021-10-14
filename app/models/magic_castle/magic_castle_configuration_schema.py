@@ -4,11 +4,13 @@ from models.cloud.dns_manager import DnsManager
 import re
 
 
-class StorageSchema(Schema):
-    type = fields.Str(required=True)
-    home_size = fields.Int(required=True)
-    project_size = fields.Int(required=True)
-    scratch_size = fields.Int(required=True)
+class VolumeSchema(Schema):
+    keys = fields.Str(required=True)
+    values = fields.Dict(
+        keys = fields.Str(),
+        values = fields.Dict(size=fields.Int(), type=fields.Str()),
+        required=True
+    )
 
 
 def validate_cluster_name(cluster_name):
@@ -32,10 +34,10 @@ class MagicCastleConfigurationSchema(Schema):
     nb_users = fields.Int(required=True)
     instances = fields.Dict(
         keys=fields.Str(validate=validate.OneOf(INSTANCE_CATEGORIES)),
-        values=fields.Dict(type=fields.Str(), count=fields.Int()),
+        values=fields.Dict(type=fields.Str(), count=fields.Int(), tags=fields.List(fields.Str())),
         required=True,
     )
-    storage = fields.Nested(StorageSchema, required=True)
+    volume = fields.Nested(VolumeSchema, required=True)
     public_keys = fields.List(fields.Str(), required=True)
     guest_passwd = fields.Str(required=True)
     hieradata = fields.Str(missing="")

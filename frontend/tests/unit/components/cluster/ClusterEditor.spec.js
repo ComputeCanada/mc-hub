@@ -14,29 +14,33 @@ localVue.use(Vuetify);
 localVue.use(UnloadConfirmation, { router });
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
-  cluster_name: "phoenix",
+  cluster_name: "",
   domain: "calculquebec.cloud",
   image: "CentOS-7-x64-2019-07",
   nb_users: 10,
   instances: {
     mgmt: {
       type: "p4-6gb",
-      count: 1
+      count: 1,
+      tags: ["mgmt", "puppet", "nfs"]
     },
     login: {
       type: "p2-3gb",
-      count: 1
+      count: 1,
+      tags: ["login", "public", "proxy"]
     },
     node: {
       type: "p1-1.5gb",
-      count: 5
+      count: 1,
+      tags: ["node"]
     }
   },
-  storage: {
-    type: "nfs",
-    home_size: 100,
-    project_size: 50,
-    scratch_size: 20.6
+  volue: {
+    nfs: {
+      home: { size: 100 },
+      project: { size: 50 },
+      scratch: { size: 20 },
+    }
   },
   public_keys: [""],
   guest_passwd: "",
