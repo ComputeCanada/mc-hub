@@ -45,7 +45,7 @@ class TerraformStateParser:
             "image": self.__get_image(),
             "nb_users": self.__get_nb_users(),
             "instances": self.__get_instances(),
-            "storage": self.__get_storage(),
+            "volumes": self.__get_volumes(),
             "public_keys": self.__get_public_keys(),
             "guest_passwd": self.__get_guest_passwd(),
             "os_floating_ips": self.get_os_floating_ips(),
@@ -157,28 +157,38 @@ class TerraformStateParser:
             )
             return len(parser.find(self.__tf_state))
 
+        @default([])
+        def get_instance_tags(instance_category):
+            parser = parse(
+                f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[0].attributes.all_tags'
+            )
+            return parser.find(self.__tf_state)[0].value
+
         return {
             instance_category: {
                 "type": get_instance_type(instance_category),
                 "count": get_instance_count(instance_category),
+                "tags": get_instance_tags(instance_category),
             }
             for instance_category in INSTANCE_CATEGORIES
         }
 
-    def __get_storage(self):
+    def __get_volumes(self):
         @default(0)
-        def get_external_storage_size(space_name):
+        # TODO: FIX THIS
+        def get_external_volume_size(space_name):
             parser = parse(
                 f'resources[?type="openstack_blockstorage_volume_v2" & name="{space_name}"].instances[0].attributes.size'
             )
             return int(parser.find(self.__tf_state)[0].value)
 
-        storage = {
-            f"{space}_size": get_external_storage_size(space)
-            for space in STORAGE_SPACES
+        volumes = {
+            "nfs" : {
+                space: { "size" : get_external_volume_size(space) }
+                for space in STORAGE_SPACES
+            }
         }
-        storage["type"] = "nfs"
-        return storage
+        return volumes
 
     def __get_public_keys(self):
         parser = parse(
