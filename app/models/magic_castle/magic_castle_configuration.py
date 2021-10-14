@@ -162,11 +162,6 @@ class MagicCastleConfiguration:
             DnsManager(self.__configuration["domain"]).get_magic_castle_configuration()
         )
 
-        # "node" is the only instance category that needs to be encapsulated in a list
-        main_tf_configuration["module"]["openstack"]["instances"]["node"] = [
-            main_tf_configuration["module"]["openstack"]["instances"]["node"]
-        ]
-
         # Magic Castle does not support an empty string in the hieradata field
         if (
             main_tf_configuration["module"]["openstack"].get("hieradata") is not None

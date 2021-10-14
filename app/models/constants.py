@@ -10,8 +10,8 @@ MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle
 MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
     "https://github.com/ComputeCanada/puppet-magic_castle.git"
 )
-MAGIC_CASTLE_VERSION_TAG = "10.2"
-TERRAFORM_REQUIRED_VERSION = ">= 0.14.2"
+MAGIC_CASTLE_VERSION_TAG = "11.6"
+TERRAFORM_REQUIRED_VERSION = ">= 0.15.2"
 
 # Paths and filenames
 CLUSTERS_PATH = environ.get("MCH_CLUSTERS_PATH", path.join(environ["HOME"], "clusters"))
