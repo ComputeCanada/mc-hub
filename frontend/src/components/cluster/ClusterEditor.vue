@@ -76,14 +76,12 @@
         <v-divider />
       </v-list>
 
-      <!-- Storage -->
-      <v-subheader>Storage</v-subheader>
+      <!-- Volumes -->
+      <v-subheader>Volumes</v-subheader>
       <v-list>
         <v-list-item>
           <v-col cols="12" sm="3" class="pl-0">Type</v-col>
-          <v-col cols="12" sm="9">
-            <v-select :items="getPossibleValues('storage.type')" v-model="magicCastle.storage.type" />
-          </v-col>
+          <v-col cols="12" sm="9">NFS</v-col>
         </v-list-item>
         <v-divider />
         <div :key="id" v-for="[id, label] in Object.entries(STORAGE_LABELS)">
@@ -91,7 +89,7 @@
             <v-col cols="12" sm="3" class="pl-0">{{ label }} size</v-col>
             <v-col cols="12" sm="9">
               <v-text-field
-                v-model.number="magicCastle.storage[`${id}_size`]"
+                v-model.number="magicCastle.volumes.nfs[id].size"
                 type="number"
                 suffix="GB"
                 :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
@@ -404,9 +402,9 @@ export default {
     volumeSizeUsed() {
       return this.usedResourcesLoaded
         ? this.instancesVolumeSizeUsed +
-            this.magicCastle.storage.home_size +
-            this.magicCastle.storage.project_size +
-            this.magicCastle.storage.scratch_size
+            this.magicCastle.volumes["nfs"]["home"].size +
+            this.magicCastle.volumes["nfs"]["project"].size +
+            this.magicCastle.volumes["nfs"]["scratch"].size
         : 0;
     },
     volumeSizeMax() {

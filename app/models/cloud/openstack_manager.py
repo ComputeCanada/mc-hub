@@ -101,7 +101,7 @@ class OpenStackManager:
                 for category in INSTANCE_CATEGORIES
             },
             "os_floating_ips": floating_ips,
-            "storage": {"type": ["nfs"]},
+            "volumes": { },
         }
 
     def __get_resource_details(self):

@@ -110,11 +110,12 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
       count: 1
     }
   },
-  storage: {
-    type: "nfs",
-    home_size: 100,
-    project_size: 50,
-    scratch_size: 50
+  volumes: {
+    nfs : {
+      home : { size: 100 },
+      project : { size: 50 },
+      scratch : { size: 50 }
+    }
   },
   public_keys: [""],
   guest_passwd: "",

@@ -35,7 +35,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
       tags: ["node"]
     }
   },
-  volue: {
+  volumes: {
     nfs: {
       home: { size: 100 },
       project: { size: 50 },
