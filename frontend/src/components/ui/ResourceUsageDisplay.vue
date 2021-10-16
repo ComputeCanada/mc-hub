@@ -1,6 +1,6 @@
 <template>
   <div class="text-center d-flex flex-column align-center">
-    Used {{ title }}
+    {{ title }}
     <v-progress-circular :color="usageColor" :value="usagePercentage" :size="60" :width="5"
       >{{ usagePercentage }} %
     </v-progress-circular>
