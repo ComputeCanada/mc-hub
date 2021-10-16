@@ -257,7 +257,6 @@ class MagicCastle:
                 pre_allocated_cores=parser.get_cores(),
                 pre_allocated_volume_count=parser.get_volume_count(),
                 pre_allocated_volume_size=parser.get_volume_size(),
-                pre_allocated_floating_ips=parser.get_os_floating_ips(),
             )
         except FileNotFoundError:
             cloud_manager = CloudManager()

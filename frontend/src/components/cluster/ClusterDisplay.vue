@@ -120,7 +120,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
   public_keys: [""],
   guest_passwd: "",
   hieradata: "",
-  os_floating_ips: []
+  os_floating_ips: { }
 });
 
 const POLL_STATUS_INTERVAL = 1000;
@@ -189,9 +189,6 @@ export default {
     } else {
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       await this.loadAvailableResources();
-      if (this.possibleResources.os_floating_ips.length === 0) {
-        this.showError("There is no floating IP available right now.");
-      }
     }
   },
   beforeDestroy() {

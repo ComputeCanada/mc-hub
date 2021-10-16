@@ -126,15 +126,6 @@
             <span>Generate new password</span>
           </v-tooltip>
         </v-list-item>
-        <v-list-item>
-          <v-select
-            :items="getPossibleValues('os_floating_ips')"
-            v-model="magicCastle.os_floating_ips[0]"
-            :rules="[floatingIpProvidedRule, floatingIpAvailableRule]"
-            label="OpenStack floating IP"
-          />
-        </v-list-item>
-
         <v-list-group prepend-icon="mdi-script-text-outline">
           <template #activator>
             <v-list-item-content>
@@ -291,10 +282,8 @@ export default {
 
       // Floating IPs
       // Must be set to the first possible value in all cases (either "Automatic allocation" or a specific IP address)
-      if (possibleResources.os_floating_ips.length > 0) {
-        this.magicCastle.os_floating_ips = [possibleResources.os_floating_ips[0]];
-        this.initialMagicCastle.os_floating_ips = [possibleResources.os_floating_ips[0]];
-      }
+      this.magicCastle.os_floating_ips = { };
+      this.initialMagicCastle.os_floating_ips = { };
     },
     dirtyForm(dirty) {
       if (dirty) {
@@ -347,17 +336,6 @@ export default {
         isEqual(this.magicCastle.public_keys, [""]) ||
         this.magicCastle.public_keys.every(publicKey => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null) ||
         "Invalid SSH public key"
-      );
-    },
-    floatingIpProvidedRule() {
-      return this.magicCastle.os_floating_ips.length > 0 || "No floating IP provided";
-    },
-    floatingIpAvailableRule() {
-      return (
-        (this.possibleResources &&
-          this.magicCastle &&
-          this.possibleResources.os_floating_ips.includes(this.magicCastle.os_floating_ips[0])) ||
-        "Floating IP not available"
       );
     },
     instanceCountUsed() {
