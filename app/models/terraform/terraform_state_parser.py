@@ -204,7 +204,7 @@ class TerraformStateParser:
     @default(None)
     def get_freeipa_passwd(self):
         parser = parse(
-            "resources[?name=hieradata].instances[0].attributes.vars.freeipa_passwd"
+            "resources[?name=freeipa_passwd].instances[0].result"
         )
         return parser.find(self.__tf_state)[0].value
 
