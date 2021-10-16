@@ -34,7 +34,7 @@
       <v-divider />
 
       <!-- Instances -->
-      <v-list>      
+      <v-list>
         <v-list-item>
           <v-col cols="12" sm="4">
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
@@ -79,7 +79,9 @@
           </v-list-item>
         </div>
       </v-list>
+      <v-divider />      
       <!-- Volumes -->
+      <v-list>
         <v-list-item>
           <v-col cols="12" sm="6">
             <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
@@ -88,6 +90,7 @@
             <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
           </v-col>
         </v-list-item>
+      </v-list>        
       <v-list>
         <v-list-item>
           <v-col cols="12" sm="3" class="pl-0">Type</v-col>
