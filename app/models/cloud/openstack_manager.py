@@ -96,7 +96,8 @@ class OpenStackManager:
                 category: {
                     "type": [
                         flavor.name for flavor in self.__get_available_flavors(category)
-                    ]
+                    ],
+                    "tags": self.__get_available_tags(category)
                 }
                 for category in INSTANCE_CATEGORIES
             },
@@ -144,6 +145,14 @@ class OpenStackManager:
             return self.__available_flavors
         else:
             return list(filter(validate_flavor_requirements, self.__available_flavors))
+
+    def __get_available_tags(self, category=None):
+        tags = {
+            'mgmt' : ['mgmt', 'nfs', 'puppet'],
+            'login' : ['login', 'public', 'proxy'],
+            'node' : ['node'],
+        }
+        return tags
 
     def __get_available_instance_count(self):
         return (
