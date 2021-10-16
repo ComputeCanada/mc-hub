@@ -10,19 +10,19 @@ RUN npm run build
 
 # BACKEND BUILD STAGE
 
-FROM python:3.8.7-alpine3.12 as base-server
+FROM python:3.8.12-alpine3.14 as base-server
 
-ENV TERRAFORM_VERSION 0.14.2
+ENV TERRAFORM_VERSION 1.0.9
 ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
 ## EXTERNAL DEPENDENCIES
 
-RUN apk --no-cache add git~=2.26 \
-                       curl~=7.76 \
+RUN apk --no-cache add git~=2.32 \
+                       curl~=7.79 \
                        build-base~=0.5 \
                        libffi-dev~=3.3 \
                        openssl-dev~=1.1 \
-                       cargo~=1.44
+                       cargo~=1.52
 
 # Terraform
 RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
@@ -61,8 +61,9 @@ FROM base-server as development-server
 
 USER root
 
-RUN apk add npm~=12.22 \
-            sqlite~=3.32
+RUN apk update
+RUN apk add npm \
+            sqlite
 RUN pip install pylint~=2.5 \
                 black
 
