@@ -66,12 +66,6 @@ class MagicCastleConfiguration:
         """
         configuration = deepcopy(configuration_dict)
 
-        # When modifying a cluster, the existing floating ip must be excluded
-        # from the configuration, as it does not look available to Open Stack.
-        available_floating_ips = set(OpenStackManager().get_available_floating_ips())
-        if not set(configuration["os_floating_ips"]).issubset(available_floating_ips):
-            configuration["os_floating_ips"] = []
-
         return cls(configuration)
 
     @classmethod
@@ -88,22 +82,6 @@ class MagicCastleConfiguration:
 
         for field in IGNORED_CONFIGURATION_FIELDS:
             configuration.pop(field, None)
-
-        # "node" is the only instance category that is encapsulated in a list
-        configuration["instances"]["node"] = configuration["instances"]["node"][0]
-
-        # Try to parse the floating ips from terraform.tfstate
-        try:
-            with open(
-                get_cluster_path(hostname, TERRAFORM_STATE_FILENAME), "r"
-            ) as terraform_state_file:
-                state = json.load(terraform_state_file)
-            parser = TerraformStateParser(state)
-            configuration["os_floating_ips"] = parser.get_os_floating_ips()
-        except (json.JSONDecodeError, FileNotFoundError):
-            if len(configuration["os_floating_ips"]) == 0:
-                # When the floating ips is an empty list, it means it will be automatically allocated
-                configuration["os_floating_ips"] = [AUTO_ALLOCATED_IP_LABEL]
 
         return cls(configuration)
 

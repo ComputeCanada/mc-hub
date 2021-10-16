@@ -35,7 +35,6 @@ class OpenStackManager:
         pre_allocated_ram=0,
         pre_allocated_volume_count=0,
         pre_allocated_volume_size=0,
-        pre_allocated_floating_ips=None,
     ):
         self.__connection = openstack.connect()
         self.__project_id = self.__connection.current_project_id
@@ -45,7 +44,6 @@ class OpenStackManager:
         self.__pre_allocated_ram = pre_allocated_ram
         self.__pre_allocated_volume_count = pre_allocated_volume_count
         self.__pre_allocated_volume_size = pre_allocated_volume_size
-        self.__pre_allocated_floating_ips = pre_allocated_floating_ips or []
 
         self.__volume_quotas = None
         self.__compute_quotas = None
@@ -69,12 +67,6 @@ class OpenStackManager:
             "possible_resources": self.__get_possible_resources(),
         }
 
-    def get_available_floating_ips(self):
-        return self.__pre_allocated_floating_ips + [
-            ip.floating_ip_address
-            for ip in self.__connection.network.ips(status="DOWN")
-        ]
-
     def __get_quotas(self):
         return {
             "instance_count": {"max": self.__get_available_instance_count()},
@@ -85,11 +77,6 @@ class OpenStackManager:
         }
 
     def __get_possible_resources(self):
-        floating_ips = []
-        if self.__get_non_allocated_floating_ip_count() > 0:
-            floating_ips += [AUTO_ALLOCATED_IP_LABEL]
-        floating_ips += self.get_available_floating_ips()
-
         return {
             "image": self.__get_images(),
             "instances": {
@@ -101,7 +88,6 @@ class OpenStackManager:
                 }
                 for category in INSTANCE_CATEGORIES
             },
-            "os_floating_ips": floating_ips,
             "volumes": { },
         }
 

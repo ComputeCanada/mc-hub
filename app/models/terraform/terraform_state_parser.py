@@ -48,7 +48,6 @@ class TerraformStateParser:
             "volumes": self.__get_volumes(),
             "public_keys": self.__get_public_keys(),
             "guest_passwd": self.__get_guest_passwd(),
-            "os_floating_ips": self.get_os_floating_ips(),
         }
 
     def get_instance_count(self) -> int:
@@ -108,12 +107,6 @@ class TerraformStateParser:
                 + external_storage_parser.find(self.__tf_state)
             ]
         )
-
-    def get_os_floating_ips(self):
-        parser = parse(
-            "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.floating_ip"
-        )
-        return [match.value for match in parser.find(self.__tf_state)]
 
     @default("")
     def __get_cluster_name(self):

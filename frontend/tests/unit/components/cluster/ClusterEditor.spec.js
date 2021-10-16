@@ -44,7 +44,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
   },
   public_keys: [""],
   guest_passwd: "",
-  os_floating_ips: []
+  os_floating_ips: { }
 });
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
@@ -54,7 +54,7 @@ const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
     login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },
     node: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] }
   },
-  os_floating_ips: ["206.12.94.21"],
+  os_floating_ips: { },
   storage: { type: ["nfs"] },
   domain: ["calculquebec.cloud", "c3.ca"]
 });
