@@ -34,34 +34,7 @@
       <v-divider />
 
       <!-- Instances -->
-      <v-subheader>Node instances</v-subheader>
-      <v-list>
-        <div :key="id" v-for="[id, label] in Object.entries(NODE_LABELS)">
-          <v-list-item>
-            <v-col cols="12" sm="3" class="pl-0">
-              <p>{{ label }}</p>
-            </v-col>
-
-            <v-col cols="12" sm="5">
-              <flavor-select
-                :flavors="getPossibleValues(`instances.${id}.type`)"
-                v-model="magicCastle.instances[id].type"
-                label="Type"
-                :rules="instanceRules"
-              />
-            </v-col>
-
-            <v-col cols="12" sm="4">
-              <v-text-field
-                v-model.number="magicCastle.instances[id].count"
-                type="number"
-                label="Count"
-                :rules="[greaterThanZeroRule, ...instanceRules]"
-              />
-            </v-col>
-          </v-list-item>
-          <v-divider />
-        </div>
+      <v-list>      
         <v-list-item>
           <v-col cols="12" sm="4">
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
@@ -73,17 +46,53 @@
             <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
           </v-col>
         </v-list-item>
-        <v-divider />
       </v-list>
-
+      <v-list>
+        <div :key="id" v-for="[id, label] in Object.entries(NODE_LABELS)">
+          <v-subheader>{{ label }}</v-subheader>
+          <v-list-item>
+            <v-col cols="12" sm="3">
+              <flavor-select
+                :flavors="getPossibleValues(`instances.${id}.type`)"
+                v-model="magicCastle.instances[id].type"
+                label="Type"
+                :rules="instanceRules"
+              />
+            </v-col>
+            <v-col cols="12" sm="2">
+              <v-text-field
+                v-model.number="magicCastle.instances[id].count"
+                type="number"
+                label="Count"
+                :rules="[greaterThanZeroRule, ...instanceRules]"
+              />
+            </v-col>
+            <v-col cols="12" sm="7">
+              <v-combobox
+                v-model="magicCastle.instances[id].tags"
+                :items="items"
+                label="Tags"
+                multiple
+                chips
+              ></v-combobox>
+            </v-col>
+          </v-list-item>
+        </div>
+      </v-list>
       <!-- Volumes -->
-      <v-subheader>Volumes</v-subheader>
+        <v-list-item>
+          <v-col cols="12" sm="6">
+            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+          </v-col>
+          <v-col cols="12" sm="6">
+            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
+          </v-col>
+        </v-list-item>
       <v-list>
         <v-list-item>
           <v-col cols="12" sm="3" class="pl-0">Type</v-col>
           <v-col cols="12" sm="9">NFS</v-col>
         </v-list-item>
-        <v-divider />
         <div :key="id" v-for="[id, label] in Object.entries(STORAGE_LABELS)">
           <v-list-item>
             <v-col cols="12" sm="3" class="pl-0">{{ label }} size</v-col>
@@ -96,16 +105,7 @@
               />
             </v-col>
           </v-list-item>
-          <v-divider />
         </div>
-        <v-list-item>
-          <v-col cols="12" sm="6">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
-          <v-col cols="12" sm="6">
-            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
-          </v-col>
-        </v-list-item>
         <v-divider />
       </v-list>
 
