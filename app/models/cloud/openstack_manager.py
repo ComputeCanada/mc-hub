@@ -3,7 +3,7 @@ from models.constants import INSTANCE_CATEGORIES, AUTO_ALLOCATED_IP_LABEL
 from re import search, IGNORECASE
 import openstack
 
-VALID_IMAGES = r"centos"
+VALID_IMAGES = r"centos|almalinux|rocky"
 OPENSTACK_CONFIG_FILENAME = "clouds.yaml"
 OPENSTACK_CONFIG_PATH = path.join(
     environ["HOME"], ".config", "openstack", OPENSTACK_CONFIG_FILENAME
