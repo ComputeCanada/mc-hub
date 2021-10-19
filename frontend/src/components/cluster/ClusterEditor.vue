@@ -34,16 +34,19 @@
       <v-divider />
 
       <!-- Instances -->
-      <v-list>
+      <v-list class="pt-0">
         <v-list-item>
-          <v-col cols="12" sm="4">
+          <v-col cols="12" sm="3">
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
           </v-col>
-          <v-col cols="12" sm="4">
+          <v-col cols="12" sm="3">
             <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
           </v-col>
-          <v-col cols="12" sm="4">
+          <v-col cols="12" sm="3">
             <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+          </v-col>
+          <v-col cols="12" sm="3">
+            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
           </v-col>
         </v-list-item>
       </v-list>
@@ -70,32 +73,24 @@
             <v-col cols="12" sm="7">
               <v-combobox
                 v-model="magicCastle.instances[id].tags"
-                :items="items"
+                :items="TAGS"
                 label="Tags"
                 multiple
-                chips
               ></v-combobox>
             </v-col>
           </v-list-item>
         </div>
       </v-list>
-      <v-divider />      
+      <v-divider />
       <!-- Volumes -->
       <v-list>
         <v-list-item>
-          <v-col cols="12" sm="6">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
-          <v-col cols="12" sm="6">
+          <v-col cols="12" sm="12">
             <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
           </v-col>
         </v-list-item>
-      </v-list>        
+      </v-list>
       <v-list>
-        <v-list-item>
-          <v-col cols="12" sm="3" class="pl-0">Type</v-col>
-          <v-col cols="12" sm="9">NFS</v-col>
-        </v-list-item>
         <div :key="id" v-for="[id, label] in Object.entries(STORAGE_LABELS)">
           <v-list-item>
             <v-col cols="12" sm="3" class="pl-0">{{ label }} size</v-col>
@@ -237,7 +232,15 @@ export default {
         project: "Project",
         scratch: "Scratch"
       },
-
+      TAGS: [
+        "mgmt",
+        "puppet",
+        "nfs",
+        "login",
+        "proxy",
+        "public",
+        "node",
+      ],
       validForm: true,
       initialMagicCastle: null,
 
@@ -300,6 +303,9 @@ export default {
     if (!this.existingCluster) {
       this.generateClusterName();
       this.generateGuestPassword();
+      this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
+      this.magicCastle.instances["login"].tags = ["login", "proxy", "public"];
+      this.magicCastle.instances["node"].tags = ["node"];
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
