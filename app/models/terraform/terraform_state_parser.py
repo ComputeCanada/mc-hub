@@ -30,7 +30,7 @@ class TerraformStateParser:
     """
 
     def __init__(self, tf_state: object):
-        self.__tf_state = tf_state
+        self.tf_state = tf_state
 
     def get_partial_configuration(self):
         """
@@ -54,19 +54,19 @@ class TerraformStateParser:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.id"
         )
-        return len(parser.find(self.__tf_state))
+        return len(parser.find(self.tf_state))
 
     def get_cores(self) -> int:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.vcpus"
         )
-        return sum([cores.value for cores in parser.find(self.__tf_state)])
+        return sum([cores.value for cores in parser.find(self.tf_state)])
 
     def get_ram(self) -> int:
         parser = parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.ram"
         )
-        return sum([ram.value for ram in parser.find(self.__tf_state)])
+        return sum([ram.value for ram in parser.find(self.tf_state)])
 
     def get_volume_count(self) -> int:
         """
@@ -82,8 +82,8 @@ class TerraformStateParser:
         external_storage_parser = parse(
             "resources[?type=openstack_blockstorage_volume_v2].instances[*].attributes.size"
         )
-        return len(root_storage_parser.find(self.__tf_state)) + len(
-            external_storage_parser.find(self.__tf_state)
+        return len(root_storage_parser.find(self.tf_state)) + len(
+            external_storage_parser.find(self.tf_state)
         )
 
     def get_volume_size(self) -> int:
@@ -103,8 +103,8 @@ class TerraformStateParser:
         return sum(
             [
                 storage.value
-                for storage in root_storage_parser.find(self.__tf_state)
-                + external_storage_parser.find(self.__tf_state)
+                for storage in root_storage_parser.find(self.tf_state)
+                + external_storage_parser.find(self.tf_state)
             ]
         )
 
@@ -113,49 +113,49 @@ class TerraformStateParser:
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.cluster_name"
         )
-        return parser.find(self.__tf_state)[0].value
+        return parser.find(self.tf_state)[0].value
 
     @default("")
     def __get_domain(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.domain_name"
         )
-        full_domain_name = parser.find(self.__tf_state)[0].value
+        full_domain_name = parser.find(self.tf_state)[0].value
         return full_domain_name[len(self.__get_cluster_name()) + 1 :]
 
     @default("")
     def __get_image(self):
         parser = parse("resources[?name=image].instances[0].attributes.name")
-        return parser.find(self.__tf_state)[0].value
+        return parser.find(self.tf_state)[0].value
 
     @default(0)
     def __get_nb_users(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.nb_users"
         )
-        return int(parser.find(self.__tf_state)[0].value)
+        return int(parser.find(self.tf_state)[0].value)
 
     def __get_instances(self):
         @default("")
         def get_instance_type(instance_category):
             parser = parse(
-                f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[0].attributes.flavor_name'
+                f'resources[?type="openstack_compute_instance_v2" & name="instances"].instances[?index_key="{instance_category}1"].attributes.flavor_name'
             )
-            return parser.find(self.__tf_state)[0].value
+            return parser.find(self.tf_state)[0].value
 
         @default(0)
         def get_instance_count(instance_category):
             parser = parse(
-                f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[*]'
+                f'resources[?type="openstack_compute_instance_v2" & name="instances"].instances[*].index_key'
             )
-            return len(parser.find(self.__tf_state))
+            return sum(key.value.startswith(instance_category) for key in parser.find(self.tf_state))
 
         @default([])
         def get_instance_tags(instance_category):
             parser = parse(
                 f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[0].attributes.all_tags'
             )
-            return parser.find(self.__tf_state)[0].value
+            return parser.find(self.tf_state)[0].value
 
         return {
             instance_category: {
@@ -173,7 +173,7 @@ class TerraformStateParser:
             parser = parse(
                 f'resources[?type="openstack_blockstorage_volume_v2" & name="{space_name}"].instances[0].attributes.size'
             )
-            return int(parser.find(self.__tf_state)[0].value)
+            return int(parser.find(self.tf_state)[0].value)
 
         volumes = {
             "nfs" : {
@@ -187,7 +187,7 @@ class TerraformStateParser:
         parser = parse(
             "resources[?type=openstack_compute_keypair_v2].instances[*].attributes.public_key"
         )
-        public_keys = [match.value for match in parser.find(self.__tf_state)]
+        public_keys = [match.value for match in parser.find(self.tf_state)]
         if len(public_keys) > 0:
             return public_keys
         else:
@@ -199,11 +199,11 @@ class TerraformStateParser:
         parser = parse(
             "resources[?name=freeipa_passwd].instances[0].result"
         )
-        return parser.find(self.__tf_state)[0].value
+        return parser.find(self.tf_state)[0].value
 
     @default("")
     def __get_guest_passwd(self):
         parser = parse(
             "resources[?name=hieradata].instances[0].attributes.vars.guest_passwd"
         )
-        return parser.find(self.__tf_state)[0].value
+        return parser.find(self.tf_state)[0].value
