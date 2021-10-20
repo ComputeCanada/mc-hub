@@ -43,11 +43,9 @@ class TerraformStateParser:
             "cluster_name": self.__get_cluster_name(),
             "domain": self.__get_domain(),
             "image": self.__get_image(),
-            "nb_users": self.__get_nb_users(),
             "instances": self.__get_instances(),
             "volumes": self.__get_volumes(),
             "public_keys": self.__get_public_keys(),
-            "guest_passwd": self.__get_guest_passwd(),
         }
 
     def get_instance_count(self) -> int:
@@ -128,13 +126,6 @@ class TerraformStateParser:
         parser = parse("resources[?name=image].instances[0].attributes.name")
         return parser.find(self.tf_state)[0].value
 
-    @default(0)
-    def __get_nb_users(self):
-        parser = parse(
-            "resources[?name=hieradata].instances[0].attributes.vars.nb_users"
-        )
-        return int(parser.find(self.tf_state)[0].value)
-
     def __get_instances(self):
         @default("")
         def get_instance_type(instance_category):
@@ -150,18 +141,10 @@ class TerraformStateParser:
             )
             return sum(key.value.startswith(instance_category) for key in parser.find(self.tf_state))
 
-        @default([])
-        def get_instance_tags(instance_category):
-            parser = parse(
-                f'resources[?type="openstack_compute_instance_v2" & name="{instance_category}"].instances[0].attributes.all_tags'
-            )
-            return parser.find(self.tf_state)[0].value
-
         return {
             instance_category: {
                 "type": get_instance_type(instance_category),
                 "count": get_instance_count(instance_category),
-                "tags": get_instance_tags(instance_category),
             }
             for instance_category in INSTANCE_CATEGORIES
         }
