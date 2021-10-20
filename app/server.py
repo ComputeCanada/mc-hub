@@ -1,3 +1,5 @@
+from os import path as os_path
+
 from flask import Flask, send_file, send_from_directory
 from resources.magic_castle_api import MagicCastleAPI
 from resources.progress_api import ProgressAPI
@@ -8,6 +10,8 @@ from models.cloud.openstack_manager import OpenStackManager
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
 from models.configuration import config
+
+from models.constants import DIST_PATH
 
 # Exit with an error if the clouds.yaml is not found or the OpenStack API can't be reached
 OpenStackManager.test_connection()
@@ -68,19 +72,19 @@ app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
 
 @app.route("/css/<path:path>")
 def send_css_file(path):
-    return send_from_directory("../dist/css", path)
+    return send_from_directory(os_path.join(DIST_PATH, "css"), path)
 
 
 @app.route("/js/<path:path>")
 def send_js_file(path):
-    return send_from_directory("../dist/js", path)
+    return send_from_directory(os_path.join(DIST_PATH, "js"), path)
 
 
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def catch_all(path):
     # Single page application
-    response = send_file("../dist/index.html")
+    response = send_file(os_path.join(DIST_PATH, "index.html"))
 
     # Avoid caching SPA to avoid showing the page when the user is logged out
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
