@@ -78,7 +78,7 @@ class TerraformStateParser:
             "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
         )
         external_storage_parser = parse(
-            "resources[?type=openstack_blockstorage_volume_v2].instances[*].attributes.size"
+            "resources[?type=openstack_blockstorage_volume_v3].instances[*].attributes.size"
         )
         return len(root_storage_parser.find(self.tf_state)) + len(
             external_storage_parser.find(self.tf_state)
@@ -96,7 +96,7 @@ class TerraformStateParser:
             "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
         )
         external_storage_parser = parse(
-            "resources[?type=openstack_blockstorage_volume_v2].instances[*].attributes.size"
+            "resources[?type=openstack_blockstorage_volume_v3].instances[*].attributes.size"
         )
         return sum(
             [
@@ -154,7 +154,7 @@ class TerraformStateParser:
         # TODO: FIX THIS
         def get_external_volume_size(space_name):
             parser = parse(
-                f'resources[?type="openstack_blockstorage_volume_v2" & name="{space_name}"].instances[0].attributes.size'
+                f'resources[?type="openstack_blockstorage_volume_v3" & name="{space_name}"].instances[0].attributes.size'
             )
             return int(parser.find(self.tf_state)[0].value)
 
@@ -180,13 +180,6 @@ class TerraformStateParser:
     @default(None)
     def get_freeipa_passwd(self):
         parser = parse(
-            "resources[?name=freeipa_passwd].instances[0].result"
-        )
-        return parser.find(self.tf_state)[0].value
-
-    @default("")
-    def __get_guest_passwd(self):
-        parser = parse(
-            "resources[?name=hieradata].instances[0].attributes.vars.guest_passwd"
+            "resources[?name=freeipa_passwd].instances[0].attributes.result"
         )
         return parser.find(self.tf_state)[0].value
