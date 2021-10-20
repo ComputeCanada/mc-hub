@@ -338,7 +338,7 @@ export default {
       return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     },
     dirtyForm() {
-      return !isEqual(this.initialMagicCastle, this.magicCastle);
+      return !this.existingCluster || !isEqual(this.initialMagicCastle, this.magicCastle);
     },
     clusterName() {
       return this.hostname.split(".")[0];
