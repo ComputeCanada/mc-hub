@@ -22,14 +22,6 @@
         <v-list-item>
           <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
         </v-list-item>
-        <v-list-item>
-          <v-text-field
-            v-model.number="magicCastle.nb_users"
-            type="number"
-            label="Number of users"
-            :rules="[positiveNumberRule]"
-          />
-        </v-list-item>
       </v-list>
       <v-divider />
 
@@ -71,7 +63,7 @@
               <flavor-select
                 :flavors="getPossibleValues(`instances.${id}.type`)"
                 v-model="magicCastle.instances[id].type"
-                label="type"
+                label="Type"
                 :rules="instanceRules"
               />
             </v-col>
@@ -101,14 +93,16 @@
             <v-col cols="12" sm="3" class="pt-0">
               <v-text-field :value="id" label="volume name" readonly/>
             </v-col>
-            <v-col cols="12" sm="9">
+            <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
                 v-model.number="magicCastle.volumes.nfs[id].size"
                 type="number"
                 label="size"
-                suffix="GB"
-                min="0"
+                prefix="GB"
                 :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
+                min="0"
+                dir="rtl"
+                reverse
               />
             </v-col>
           </v-list-item>
@@ -121,6 +115,14 @@
       <v-list>
         <v-list-item>
           <public-key-input v-model="magicCastle.public_keys" :rules="[publicKeysRule]" />
+        </v-list-item>
+        <v-list-item>
+          <v-text-field
+            v-model.number="magicCastle.nb_users"
+            type="number"
+            label="Number of guest users"
+            min="0"
+          />
         </v-list-item>
         <v-list-item>
           <v-text-field v-model="magicCastle.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
