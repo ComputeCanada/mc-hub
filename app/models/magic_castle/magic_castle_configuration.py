@@ -114,7 +114,6 @@ class MagicCastleConfiguration:
         configuration["hieradata"] = main_tf_configuration["module"]["openstack"].get("hieradata", "")
         configuration["guest_passwd"] = main_tf_configuration["module"]["openstack"].get("guest_passwd", "")
         
-        import pdb; pdb.set_trace()
         for key, value in configuration["instances"].items():
             instance = main_tf_configuration["module"]["openstack"]["instances"].get(key, {})
             value["tags"] = instance.get("tags", [])
