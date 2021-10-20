@@ -92,7 +92,7 @@ import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
-  cluster_name: "phoenix",
+  cluster_name: "",
   domain: null,
   image: null,
   nb_users: 10,
