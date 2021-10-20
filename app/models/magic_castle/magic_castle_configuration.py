@@ -106,16 +106,18 @@ class MagicCastleConfiguration:
         configuration["cluster_name"] = cluster_name
         configuration["domain"] = domain
 
-        # Add hieradata to configuration
+        # Add missing parameter to configuration
         with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
             main_tf_configuration = json.load(main_tf)
 
-        if main_tf_configuration["module"]["openstack"].get("hieradata"):
-            configuration["hieradata"] = main_tf_configuration["module"]["openstack"][
-                "hieradata"
-            ]
-        else:
-            configuration["hieradata"] = ""
+        configuration["nb_users"] = main_tf_configuration["module"]["openstack"].get("nb_users", 0)
+        configuration["hieradata"] = main_tf_configuration["module"]["openstack"].get("hieradata", "")
+        configuration["guest_passwd"] = main_tf_configuration["module"]["openstack"].get("guest_passwd", "")
+        
+        import pdb; pdb.set_trace()
+        for key, value in configuration["instances"].items():
+            instance = main_tf_configuration["module"]["openstack"]["instances"].get(key, {})
+            value["tags"] = instance.get("tags", [])
 
         return cls(configuration)
 
