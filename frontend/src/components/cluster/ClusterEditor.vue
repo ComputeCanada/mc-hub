@@ -363,7 +363,6 @@ export default {
     },
     publicKeysRule() {
       return (
-        isEqual(this.magicCastle.public_keys, [""]) ||
         this.magicCastle.public_keys.every(publicKey => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null) ||
         "Invalid SSH public key"
       );
