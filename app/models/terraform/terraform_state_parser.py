@@ -44,7 +44,6 @@ class TerraformStateParser:
             "domain": self.__get_domain(),
             "image": self.__get_image(),
             "instances": self.__get_instances(),
-            "volumes": self.__get_volumes(),
             "public_keys": self.__get_public_keys(),
         }
 
@@ -93,7 +92,7 @@ class TerraformStateParser:
         :return: The number of gibibytes used by all volumes in the cluster
         """
         root_storage_parser = parse(
-            "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
+            'resources[?type="openstack_compute_instance_v2" & name="instances"].instances[*].attributes.block_device[*].volume_size'
         )
         external_storage_parser = parse(
             "resources[?type=openstack_blockstorage_volume_v3].instances[*].attributes.size"
@@ -148,23 +147,6 @@ class TerraformStateParser:
             }
             for instance_category in INSTANCE_CATEGORIES
         }
-
-    def __get_volumes(self):
-        @default(0)
-        # TODO: FIX THIS
-        def get_external_volume_size(space_name):
-            parser = parse(
-                f'resources[?type="openstack_blockstorage_volume_v3" & name="{space_name}"].instances[0].attributes.size'
-            )
-            return int(parser.find(self.tf_state)[0].value)
-
-        volumes = {
-            "nfs" : {
-                space: { "size" : get_external_volume_size(space) }
-                for space in STORAGE_SPACES
-            }
-        }
-        return volumes
 
     def __get_public_keys(self):
         parser = parse(
