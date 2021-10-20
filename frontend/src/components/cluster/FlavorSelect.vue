@@ -1,5 +1,5 @@
 <template>
-  <v-select :items="items" v-model="value" label="Type" :rules="rules">
+  <v-select :items="items" v-model="value" :label="label" :rules="rules">
     <template #item="{item}">
       <v-list-item-content v-if="typeof item !== 'undefined'">
         <v-list-item-title>{{ item.text }}</v-list-item-title>
