@@ -12,22 +12,22 @@ VALID_CLUSTER_CONFIGURATION = {
     "cluster_name": "a-123-45",
     "nb_users": 10,
     "guest_passwd": "password-123",
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "scratch_size": 50,
-        "project_size": 50,
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "scratch": {"size": 50},
+            "project": {"size": 50},
+        }
     },
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "puppet", "nfs"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
     },
     "domain": "calculquebec.cloud",
     "public_keys": [""],
     "hieradata": "",
     "image": "CentOS-7-x64-2019-07",
-    "os_floating_ips": ["100.101.102.103"],
 }
 
 
@@ -147,43 +147,43 @@ def test_dump_configuration_valid(database_connection):
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
-        "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "scratch_size": 50,
-            "project_size": 50,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50}
+            }
         },
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 1},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
         "hieradata": "",
         "public_keys": [""],
         "image": "CentOS-7-x64-2019-07",
-        "os_floating_ips": ["100.101.102.103"],
     }
     assert magic_castle.dump_configuration(planned_only=False) == {
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
-        "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "scratch_size": 50,
-            "project_size": 50,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50}
+            }
         },
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 1},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2019-07",
-        "os_floating_ips": ["100.101.102.103"],
     }
 
 
