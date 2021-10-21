@@ -21,17 +21,17 @@ def test_constructor_valid():
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 3},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 50},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": [""],
             "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
             "jupyterhub::enable_otp_auth: false",
             "guest_passwd": '1234\\56789\t "',
-            "os_floating_ips": [],
         }
     )
     assert config.dump() == {
@@ -44,17 +44,17 @@ def test_constructor_valid():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 3},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
         "public_keys": [""],
         "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
         "jupyterhub::enable_otp_auth: false",
         "guest_passwd": '1234\\56789\t "',
-        "os_floating_ips": [],
     }
 
 
@@ -70,15 +70,15 @@ def test_constructor_no_hieradata_valid():
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 3},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 50},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": [""],
             "guest_passwd": '1234\\56789\t "',
-            "os_floating_ips": [],
         }
     )
     assert config.dump() == {
@@ -91,16 +91,16 @@ def test_constructor_no_hieradata_valid():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 3},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
         "public_keys": [""],
         "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
-        "os_floating_ips": [],
     }
 
 
@@ -117,16 +117,16 @@ def test_constructor_invalid_cluster_name():
                     "login": {"type": "p4-6gb", "count": 1},
                     "node": {"type": "p2-3gb", "count": 3},
                 },
-                "storage": {
-                    "type": "nfs",
-                    "home_size": 50,
-                    "project_size": 1,
-                    "scratch_size": 1,
+                "volumes": {
+                    "nfs": {
+                        "home": {"size": 50},
+                        "project": {"size": 1},
+                        "scratch": {"size": 1},
+                    }
                 },
                 "public_keys": [""],
                 "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
-                "os_floating_ips": [],
             }
         )
 
@@ -142,16 +142,16 @@ def test_constructor_invalid_cluster_name():
                     "login": {"type": "p4-6gb", "count": 1},
                     "node": {"type": "p2-3gb", "count": 3},
                 },
-                "storage": {
-                    "type": "nfs",
-                    "home_size": 50,
-                    "project_size": 1,
-                    "scratch_size": 1,
+                "volumes": {
+                    "nfs": {
+                        "home": {"size": 50},
+                        "project": {"size": 1},
+                        "scratch": {"size": 1},
+                    }
                 },
                 "public_keys": [""],
                 "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
-                "os_floating_ips": [],
             }
         )
 
@@ -169,16 +169,16 @@ def test_constructor_invalid_domain():
                     "login": {"type": "p4-6gb", "count": 1},
                     "node": {"type": "p2-3gb", "count": 3},
                 },
-                "storage": {
-                    "type": "nfs",
-                    "home_size": 50,
-                    "project_size": 1,
-                    "scratch_size": 1,
+                "volumes": {
+                    "nfs": {
+                        "home": {"size": 50},
+                        "project": {"size": 1},
+                        "scratch": {"size": 1},
+                    }
                 },
                 "public_keys": [""],
                 "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
-                "os_floating_ips": [],
             }
         )
 
@@ -195,16 +195,16 @@ def test_get_from_dict_valid():
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 3},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 50},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": [""],
             "hieradata": 'profile::base::admin_email: "me@example.org"',
             "guest_passwd": '1234\\56789\t "',
-            "os_floating_ips": [],
         }
     )
     assert config.dump() == {
@@ -217,16 +217,16 @@ def test_get_from_dict_valid():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 3},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
         "public_keys": [""],
         "hieradata": 'profile::base::admin_email: "me@example.org"',
         "guest_passwd": '1234\\56789\t "',
-        "os_floating_ips": [],
     }
 
 
@@ -242,16 +242,16 @@ def test_get_from_dict_empty_hieradata_valid():
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 3},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 50},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": [""],
             "hieradata": "",
             "guest_passwd": '1234\\56789\t "',
-            "os_floating_ips": [],
         }
     )
     assert config.dump() == {
@@ -264,110 +264,16 @@ def test_get_from_dict_empty_hieradata_valid():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 3},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
         "public_keys": [""],
         "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
-        "os_floating_ips": [],
-    }
-
-
-def test_get_from_dict_automatic_floating_ip():
-    config = MagicCastleConfiguration.get_from_dict(
-        {
-            "cluster_name": "foo",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
-            },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
-            },
-            "public_keys": [""],
-            "hieradata": "",
-            "guest_passwd": '1234\\56789\t "',
-            "os_floating_ips": ["Automatic allocation"],
-        }
-    )
-    assert config.dump() == {
-        "cluster_name": "foo",
-        "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2019-07",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
-        },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
-        },
-        "public_keys": [""],
-        "hieradata": "",
-        "guest_passwd": '1234\\56789\t "',
-        "os_floating_ips": [],
-    }
-
-
-def test_get_from_dict_invalid_floating_ip():
-    config = MagicCastleConfiguration.get_from_dict(
-        {
-            "cluster_name": "foo",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
-            },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
-            },
-            "public_keys": [""],
-            "hieradata": "",
-            "guest_passwd": '1234\\56789\t "',
-            "os_floating_ips": ["4.4.4.4"],
-        }
-    )
-    assert config.dump() == {
-        "cluster_name": "foo",
-        "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2019-07",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
-        },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
-        },
-        "public_keys": [""],
-        "hieradata": "",
-        "guest_passwd": '1234\\56789\t "',
-        "os_floating_ips": [],
     }
 
 
@@ -385,16 +291,15 @@ def test_get_from_main_tf_json_file_valid():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 1},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "project_size": 50,
-            "scratch_size": 50,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
         },
-        "public_keys": [""],
         "hieradata": "",
         "guest_passwd": "password-123",
-        "os_floating_ips": ["100.101.102.103"],
     }
 
 
@@ -420,15 +325,15 @@ def test_get_from_state_file_missing_nodes():
             "node": {"type": "", "count": 0},
         },
         "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "project_size": 50,
-            "scratch_size": 50,
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
         },
         "public_keys": ["ssh-rsa FAKE"],
         "hieradata": "",
         "guest_passwd": "password-123",
-        "os_floating_ips": ["100.101.102.103"],
     }
 
 
@@ -446,16 +351,16 @@ def test_get_from_state_file_empty():
             "login": {"type": "", "count": 0},
             "node": {"type": "", "count": 0},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 0,
-            "project_size": 0,
-            "scratch_size": 0,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 0},
+                "project": {"size": 0},
+                "scratch": {"size": 0},
+            }
         },
         "public_keys": [""],
         "hieradata": "",
         "guest_passwd": "",
-        "os_floating_ips": [],
     }
 
 
@@ -502,11 +407,12 @@ def test_update_main_tf_json_file():
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 12},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 400,
-            "project_size": 12,
-            "scratch_size": 50,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 400},
+                "project": {"size": 12},
+                "scratch": {"size": 50},
+            }
         },
         "public_keys": ["ssh-rsa FOOBAR"],
         "hieradata": "",
@@ -528,10 +434,11 @@ def test_get_hostname():
                 "node": {"type": "p2-3gb", "count": 3},
             },
             "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
+                "nfs": {
+                    "home": {"size": 50},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": [""],
             "guest_passwd": '1234\\56789\t "',

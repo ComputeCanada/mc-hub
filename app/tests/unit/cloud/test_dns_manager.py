@@ -1,6 +1,6 @@
 from tests.test_helpers import *  # noqa;
 from models.cloud.dns_manager import DnsManager
-from models.constants import MAGIC_CASTLE_VERSION_TAG
+from models.constants import MAGIC_CASTLE_MODULE_SOURCE, MAGIC_CASTLE_VERSION_TAG
 import pytest
 from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
@@ -38,14 +38,12 @@ def test_get_magic_castle_configuration_with_dns_provider():
     assert DnsManager("calculquebec.cloud").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",
-            "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/cloudflare?ref={MAGIC_CASTLE_VERSION_TAG}",
+            "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//dns/cloudflare?ref={MAGIC_CASTLE_VERSION_TAG}",
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
-            "public_ip": "${module.openstack.ip}",
-            "login_ids": "${module.openstack.login_ids}",
-            "rsa_public_key": "${module.openstack.rsa_public_key}",
+            "public_instances": "${module.openstack.public_instances}",
             "ssh_private_key": "${module.openstack.ssh_private_key}",
-            "sudoer_username": "${module.openstack.sudoer_username}",
+            "sudoer_username": "${module.openstack.accounts.sudoer.username}",
         }
     }
     assert DnsManager("c3.ca").get_magic_castle_configuration() == {
@@ -53,14 +51,12 @@ def test_get_magic_castle_configuration_with_dns_provider():
             "email": "you@example.com",
             "project": "your-project-name",
             "zone_name": "your-zone-name",
-            "source": f"git::https://github.com/ComputeCanada/magic_castle.git//dns/gcloud?ref={MAGIC_CASTLE_VERSION_TAG}",
+            "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//dns/gcloud?ref={MAGIC_CASTLE_VERSION_TAG}",
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
-            "public_ip": "${module.openstack.ip}",
-            "login_ids": "${module.openstack.login_ids}",
-            "rsa_public_key": "${module.openstack.rsa_public_key}",
+            "public_instances": "${module.openstack.public_instances}",
             "ssh_private_key": "${module.openstack.ssh_private_key}",
-            "sudoer_username": "${module.openstack.sudoer_username}",
+            "sudoer_username": "${module.openstack.accounts.sudoer.username}",
         }
     }
 
