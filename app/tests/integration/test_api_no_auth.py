@@ -17,16 +17,16 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
         "login": {"type": "p4-6gb", "count": 1},
         "node": {"type": "p2-3gb", "count": 1},
     },
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "project_size": 50,
-        "scratch_size": 50,
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "project": {"size": 50},
+            "scratch": {"size": 50},
+        }
     },
     "public_keys": [],
     "guest_passwd": "",
     "hieradata": "",
-    "os_floating_ips": [],
 }
 EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "valid1",
@@ -38,26 +38,27 @@ EXISTING_CLUSTER_CONFIGURATION = {
         "login": {"type": "p4-6gb", "count": 1},
         "node": {"type": "p2-3gb", "count": 1},
     },
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "project_size": 50,
-        "scratch_size": 50,
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "project": {"size": 50},
+            "scratch": {"size": 50},
+        }
     },
     "public_keys": [],
     "guest_passwd": "",
     "hieradata": "",
-    "os_floating_ips": [],
 }
 EXISTING_CLUSTER_STATE = {
     "cluster_name": "valid1",
     "nb_users": 10,
     "guest_passwd": "password-123",
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "scratch_size": 50,
-        "project_size": 50,
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "project": {"size": 50},
+            "scratch": {"size": 50},
+        }
     },
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1},
@@ -68,7 +69,6 @@ EXISTING_CLUSTER_STATE = {
     "public_keys": ["ssh-rsa FAKE"],
     "image": "CentOS-7-x64-2019-07",
     "hieradata": "",
-    "os_floating_ips": ["100.101.102.103"],
 }
 
 
@@ -99,16 +99,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "c1-7.5gb-30", "count": 5},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 73,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 73},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["Automatic allocation"],
             "hostname": "buildplanning.calculquebec.cloud",
             "status": "plan_running",
             "freeipa_passwd": None,
@@ -123,16 +123,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "c1-7.5gb-30", "count": 5},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 73,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 73},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["Automatic allocation"],
             "hostname": "created.calculquebec.cloud",
             "status": "created",
             "freeipa_passwd": None,
@@ -148,16 +148,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "c1-7.5gb-30", "count": 5},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 73,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 73},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": [],
             "status": "build_error",
             "freeipa_passwd": None,
         },
@@ -176,16 +176,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 3},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 50},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": [""],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["Automatic allocation"],
             "hostname": "missingfloatingips.c3.ca",
             "status": "build_running",
             "freeipa_passwd": None,
@@ -200,16 +200,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 1},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 100,
-                "project_size": 50,
-                "scratch_size": 50,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 100},
+                    "project": {"size": 50},
+                    "scratch": {"size": 50},
+                }
             },
             "public_keys": [""],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["100.101.102.103"],
             "hostname": "missingnodes.sub.example.com",
             "status": "build_error",
             "freeipa_passwd": "FAKE",
@@ -224,16 +224,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 1},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 100,
-                "project_size": 50,
-                "scratch_size": 50,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 100},
+                    "project": {"size": 50},
+                    "scratch": {"size": 50},
+                }
             },
             "public_keys": [""],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["100.101.102.103"],
             "hostname": "noowner.calculquebec.cloud",
             "status": "provisioning_success",
             "freeipa_passwd": "FAKE",
@@ -248,16 +248,16 @@ def test_get_all_magic_castle_names(client):
                 "login": {"type": "p4-6gb", "count": 1},
                 "node": {"type": "p2-3gb", "count": 1},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 100,
-                "project_size": 50,
-                "scratch_size": 50,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 100},
+                    "project": {"size": 50},
+                    "scratch": {"size": 50},
+                }
             },
             "public_keys": [""],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["100.101.102.103"],
             "hostname": "valid1.calculquebec.cloud",
             "status": "provisioning_success",
             "freeipa_passwd": "FAKE",
