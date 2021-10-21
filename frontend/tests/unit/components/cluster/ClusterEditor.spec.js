@@ -39,7 +39,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
     nfs: {
       home: { size: 100 },
       project: { size: 50 },
-      scratch: { size: 20 },
+      scratch: { size: 20.6 },
     }
   },
   public_keys: [""],
