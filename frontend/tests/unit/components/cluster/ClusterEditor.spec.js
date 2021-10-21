@@ -31,7 +31,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
     },
     node: {
       type: "p1-1.5gb",
-      count: 1,
+      count: 5,
       tags: ["node"]
     }
   },
