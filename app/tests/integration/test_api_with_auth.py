@@ -27,7 +27,6 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "public_keys": [],
     "hieradata": "",
     "guest_passwd": "",
-    "os_floating_ips": [],
 }
 EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "valid1",
@@ -48,7 +47,6 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "public_keys": [""],
     "hieradata": "",
     "guest_passwd": "password-123",
-    "os_floating_ips": [],
 }
 
 EXISTING_CLUSTER_STATE = {
@@ -70,7 +68,6 @@ EXISTING_CLUSTER_STATE = {
     "public_keys": ["ssh-rsa FAKE"],
     "hieradata": "",
     "image": "CentOS-7-x64-2020-11",
-    "os_floating_ips": ["100.101.102.103"],
 }
 
 ALICE_HEADERS = {
@@ -137,7 +134,6 @@ def test_get_all_magic_castle_names(client):
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["Automatic allocation"],
             "hostname": "buildplanning.calculquebec.cloud",
             "status": "plan_running",
             "freeipa_passwd": None,
@@ -162,7 +158,6 @@ def test_get_all_magic_castle_names(client):
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["Automatic allocation"],
             "hostname": "created.calculquebec.cloud",
             "status": "created",
             "freeipa_passwd": None,
@@ -187,7 +182,6 @@ def test_get_all_magic_castle_names(client):
             "public_keys": [""],
             "guest_passwd": "password-123",
             "hieradata": "",
-            "os_floating_ips": ["100.101.102.103"],
             "hostname": "valid1.calculquebec.cloud",
             "status": "provisioning_success",
             "freeipa_passwd": "FAKE",

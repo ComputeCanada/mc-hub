@@ -196,24 +196,24 @@ def test_dump_configuration_empty_state(database_connection):
     magic_castle = MagicCastle("empty-state.calculquebec.cloud")
     assert magic_castle.dump_configuration() == {
         "cluster_name": "empty-state",
-        "nb_users": 0,
-        "guest_passwd": "",
-        "storage": {
-            "type": "nfs",
-            "home_size": 0,
-            "scratch_size": 0,
-            "project_size": 0,
+        "nb_users": 34,
+        "guest_passwd": "password-123",
+        "volumes": {
+            "nfs": {
+                "home": {"size": 73},
+                "scratch": {"size": 1},
+                "project": {"size": 1},
+            }
         },
         "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
+            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "", "count": 0, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
         "hieradata": "",
         "public_keys": [""],
-        "image": "",
-        "os_floating_ips": [],
+        "image": ""
     }
 
 
@@ -223,43 +223,43 @@ def test_dump_configuration_missing_nodes(database_connection):
         "cluster_name": "missingnodes",
         "nb_users": 10,
         "guest_passwd": "password-123",
-        "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "scratch_size": 50,
-            "project_size": 50,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100} ,
+                "scratch": {"size": 50},
+                "project": {"size": 50},
+            }
         },
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 1},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "sub.example.com",
         "hieradata": "",
         "public_keys": [""],
         "image": "CentOS-7-x64-2020-11",
-        "os_floating_ips": ["100.101.102.103"],
     }
     assert magic_castle.dump_configuration(planned_only=False) == {
         "cluster_name": "missingnodes",
         "nb_users": 10,
         "guest_passwd": "password-123",
-        "storage": {
-            "type": "nfs",
-            "home_size": 100,
-            "scratch_size": 50,
-            "project_size": 50,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100} ,
+                "scratch": {"size": 50},
+                "project": {"size": 50},
+            }
         },
         "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
+            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "", "count": 0, "tags": ["node"]},
         },
         "domain": "sub.example.com",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2020-11",
-        "os_floating_ips": ["100.101.102.103"],
     }
 
 
@@ -271,20 +271,20 @@ def test_dump_configuration_busy(database_connection):
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "project_size": 1,
-            "scratch_size": 1,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50} ,
+                "scratch": {"size": 1},
+                "project": {"size": 1},
+            }
         },
         "public_keys": [""],
         "hieradata": "",
         "guest_passwd": "password-123",
-        "os_floating_ips": ["Automatic allocation"],
     }
 
 
@@ -302,9 +302,8 @@ def test_get_available_resources_valid(database_connection):
     1 + 1 + 1 = 3 instances
     4 + 4 + 2 = 10 vcpus
     6144 + 6144 + 3072 = 15360 ram (15 GiO)
-    3 [root disks] + 3 [external volumes] = 6 volumes
-    10 + 10 + 10 [root disks]
-    + 50 + 50 + 100 [external volumes] = 230 GiO of volume storage
+    3 [external volumes] = 3 volumes
+    50 + 50 + 100 [external volumes] = 200 GiO of volume storage
 
     openstack's quotas says there currently remains:
     128 - 28 = 100 instances
@@ -317,8 +316,8 @@ def test_get_available_resources_valid(database_connection):
     3 + 100 = 103 instances
     10 + 301 = 311 vcpus
     15,360 + 102,400 = 117,760 ram (115 GiO)
-    6 + 28 = 34 volumes
-    230 + 280 = 510 GiO of volume storage
+    3 + 28 = 31 volumes
+    200 + 280 = 480 GiO of volume storage
     """
     magic_castle = MagicCastle("valid1.calculquebec.cloud")
     assert magic_castle.get_available_resources() == {
@@ -326,8 +325,8 @@ def test_get_available_resources_valid(database_connection):
             "instance_count": {"max": 103},
             "ram": {"max": 117_760},
             "vcpus": {"max": 311},
-            "volume_count": {"max": 34},
-            "volume_size": {"max": 510},
+            "volume_count": {"max": 31},
+            "volume_size": {"max": 480},
         },
         "resource_details": {
             "instance_types": [
@@ -392,6 +391,11 @@ def test_get_available_resources_valid(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
+                    ],
+                    "tags": [
+                        "mgmt",
+                        "nfs",
+                        "puppet"
                     ]
                 },
                 "login": {
@@ -402,6 +406,11 @@ def test_get_available_resources_valid(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
+                    ],
+                    "tags": [
+                        "login",
+                        "proxy",
+                        "public"
                     ]
                 },
                 "node": {
@@ -412,17 +421,13 @@ def test_get_available_resources_valid(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
+                    ],
+                    "tags": [
+                        "node"
                     ]
                 },
             },
-            "os_floating_ips": [
-                "Automatic allocation",
-                "100.101.102.103",
-                "2.1.1.1",
-                "2.1.1.2",
-                "2.1.1.3",
-            ],
-            "storage": {"type": ["nfs"]},
+            "volumes": {},
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
