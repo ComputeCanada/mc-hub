@@ -44,19 +44,19 @@ def test_create_empty_magic_castle(database_connection):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 1},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 100,
-                "project_size": 50,
-                "scratch_size": 50,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 100},
+                    "project": {"size": 50},
+                    "scratch": {"size": 50},
+                }
             },
-            "public_keys": [],
+            "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "",
-            "os_floating_ips": [],
         }
     )
     magic_castle.plan_creation()
