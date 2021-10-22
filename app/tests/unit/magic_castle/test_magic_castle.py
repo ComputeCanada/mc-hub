@@ -161,7 +161,7 @@ def test_dump_configuration_valid(database_connection):
         },
         "domain": "calculquebec.cloud",
         "hieradata": "",
-        "public_keys": [""],
+        "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2020-11",
     }
     assert magic_castle.dump_configuration(planned_only=False) == {
