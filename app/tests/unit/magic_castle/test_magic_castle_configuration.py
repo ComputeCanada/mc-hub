@@ -433,7 +433,7 @@ def test_get_hostname():
                 "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
                 "node": {"type": "", "count": 3, "tags": ["node"]},
             },
-            "storage": {
+            "volumes": {
                 "nfs": {
                     "home": {"size": 50},
                     "project": {"size": 1},
