@@ -135,10 +135,10 @@ class OpenStackManager:
     def __get_available_tags(self, category=None):
         tags = {
             'mgmt' : ['mgmt', 'nfs', 'puppet'],
-            'login' : ['login', 'public', 'proxy'],
+            'login' : ['login', 'proxy', 'public'],
             'node' : ['node'],
         }
-        return tags
+        return tags[category]
 
     def __get_available_instance_count(self):
         return (

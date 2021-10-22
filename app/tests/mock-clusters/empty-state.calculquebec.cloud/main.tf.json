@@ -27,8 +27,8 @@
                     "count": 1,
                     "tags": [
                         "login",
-                        "public",
-                        "proxy"
+                        "proxy",
+                        "public"
                     ]
                 },
                 "node": {

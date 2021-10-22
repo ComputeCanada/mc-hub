@@ -14,15 +14,28 @@
             "instances": {
                 "mgmt": {
                     "type": "p4-6gb",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "mgmt",
+                        "nfs",
+                        "puppet"
+                    ]
                 },
                 "login": {
                     "type": "p4-6gb",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "login",
+                        "proxy",
+                        "public"
+                    ]
                 },
                 "node": {
                     "type": "p2-3gb",
-                    "count": 3
+                    "count": 3,
+                    "tags": [
+                        "node"
+                    ]
                 }
             },
             "volumes": {
