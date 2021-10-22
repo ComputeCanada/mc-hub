@@ -383,7 +383,7 @@ class MagicCastle:
             except CalledProcessError:
                 if destroy:
                     # Terraform returns an error if we try to destroy a cluster when the image
-                    # it was created with does not exist anymore (e.g. CentOS-7-x64-2019-07). In these cases,
+                    # it was created with does not exist anymore (e.g. CentOS-7-x64-2020-11). In these cases,
                     # not refreshing the terraform state (refresh=false) solves the issue.
                     try:
                         run(

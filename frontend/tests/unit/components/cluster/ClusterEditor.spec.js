@@ -16,7 +16,7 @@ localVue.use(UnloadConfirmation, { router });
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "",
   domain: "calculquebec.cloud",
-  image: "CentOS-7-x64-2019-07",
+  image: "CentOS-7-x64-2020-11",
   nb_users: 10,
   instances: {
     mgmt: {
@@ -48,7 +48,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
 });
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
-  image: ["centos7", "centos7-updated", "CentOS-7-x64-2019-07", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
+  image: ["centos7", "centos7-updated", "CentOS-7-x64-2020-11", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
   instances: {
     mgmt: { type: ["p4-6gb", "c64-256gb-10"] },
     login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },

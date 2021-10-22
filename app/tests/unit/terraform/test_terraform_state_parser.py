@@ -138,7 +138,7 @@ def test_get_configuration_valid(valid_state):
         },
         "domain": "calculquebec.cloud",
         "public_keys": ["ssh-rsa FAKE"],
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "os_floating_ips": ["100.101.102.103"],
     }
 
@@ -186,6 +186,6 @@ def test_get_configuration_missing_nodes(missing_nodes_state):
         },
         "domain": "sub.example.com",
         "public_keys": ["ssh-rsa FAKE"],
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "os_floating_ips": ["100.101.102.103"],
     }

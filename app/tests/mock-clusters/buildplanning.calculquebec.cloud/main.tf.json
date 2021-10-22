@@ -9,7 +9,7 @@
             "puppetenv_rev": "11.6",
             "cluster_name": "buildplanning",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
                 "mgmt": {
@@ -26,13 +26,21 @@
                 }
             },
             "volumes": {
-                "nfs":{
-                    "home": {"size" : 73},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1}
+                "nfs": {
+                    "home": {
+                        "size": 73
+                    },
+                    "project": {
+                        "size": 1
+                    },
+                    "scratch": {
+                        "size": 1
+                    }
                 }
             },
-            "public_keys": ["ssh-rsa FAKE"],
+            "public_keys": [
+                "ssh-rsa FAKE"
+            ],
             "guest_passwd": "password-123"
         }
     }
