@@ -52,7 +52,7 @@
                 }
             },
             "public_keys": [
-                ""
+                "ssh-rsa FAKE"
             ],
             "guest_passwd": "password-123"
         }

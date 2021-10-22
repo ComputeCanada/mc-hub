@@ -113,9 +113,9 @@ def test_constructor_invalid_cluster_name():
                 "image": "CentOS-7-x64-2020-11",
                 "nb_users": 17,
                 "instances": {
-                    "mgmt": {"type": "p4-6gb", "count": 1},
-                    "login": {"type": "p4-6gb", "count": 1},
-                    "node": {"type": "p2-3gb", "count": 3},
+                    "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                    "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
                 },
                 "volumes": {
                     "nfs": {
@@ -138,9 +138,9 @@ def test_constructor_invalid_cluster_name():
                 "image": "CentOS-7-x64-2020-11",
                 "nb_users": 17,
                 "instances": {
-                    "mgmt": {"type": "p4-6gb", "count": 1},
-                    "login": {"type": "p4-6gb", "count": 1},
-                    "node": {"type": "p2-3gb", "count": 3},
+                    "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                    "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
                 },
                 "volumes": {
                     "nfs": {
@@ -165,9 +165,9 @@ def test_constructor_invalid_domain():
                 "image": "CentOS-7-x64-2020-11",
                 "nb_users": 17,
                 "instances": {
-                    "mgmt": {"type": "p4-6gb", "count": 1},
-                    "login": {"type": "p4-6gb", "count": 1},
-                    "node": {"type": "p2-3gb", "count": 3},
+                    "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                    "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
                 },
                 "volumes": {
                     "nfs": {
@@ -191,9 +191,9 @@ def test_get_from_dict_valid():
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
+                    "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                    "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -213,9 +213,9 @@ def test_get_from_dict_valid():
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
         "volumes": {
             "nfs": {
@@ -238,9 +238,9 @@ def test_get_from_dict_empty_hieradata_valid():
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -260,9 +260,9 @@ def test_get_from_dict_empty_hieradata_valid():
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
         "volumes": {
             "nfs": {
@@ -287,9 +287,9 @@ def test_get_from_main_tf_json_file_valid():
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 1},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "volumes": {
             "nfs": {
@@ -299,7 +299,8 @@ def test_get_from_main_tf_json_file_valid():
             }
         },
         "hieradata": "",
-        "guest_passwd": "password-123",
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123"
     }
 
 
@@ -320,11 +321,11 @@ def test_get_from_state_file_missing_nodes():
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
+            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "", "count": 0, "tags": ["node"]},
         },
-        "storage": {
+        "volumes": {
             "nfs": {
                 "home": {"size": 100},
                 "project": {"size": 50},
@@ -345,22 +346,22 @@ def test_get_from_state_file_empty():
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
         "image": "",
-        "nb_users": 0,
+        "nb_users": 34,
         "instances": {
-            "mgmt": {"type": "", "count": 0},
-            "login": {"type": "", "count": 0},
-            "node": {"type": "", "count": 0},
+            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "", "count": 0, "tags": ["node"]},
         },
         "volumes": {
             "nfs": {
-                "home": {"size": 0},
-                "project": {"size": 0},
-                "scratch": {"size": 0},
+                "home": {"size": 73},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
             }
         },
-        "public_keys": [""],
+        "public_keys": [],
         "hieradata": "",
-        "guest_passwd": "",
+        "guest_passwd": "password-123"
     }
 
 
@@ -377,20 +378,20 @@ def test_update_main_tf_json_file():
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 30,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 12},
+                "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "", "count": 12, "tags": ["node"]},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 400,
-                "project_size": 12,
-                "scratch_size": 50,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 400},
+                    "project": {"size": 12},
+                    "scratch": {"size": 50},
+                }
             },
             "public_keys": ["ssh-rsa FOOBAR"],
             "hieradata": "",
-            "guest_passwd": "",
-            "os_floating_ips": [],
+            "guest_passwd": ""
         }
     )
     modified_config.update_main_tf_json_file()
@@ -403,9 +404,9 @@ def test_update_main_tf_json_file():
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 30,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 12},
+            "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "", "count": 12, "tags": ["node"]},
         },
         "volumes": {
             "nfs": {
@@ -416,8 +417,7 @@ def test_update_main_tf_json_file():
         },
         "public_keys": ["ssh-rsa FOOBAR"],
         "hieradata": "",
-        "guest_passwd": "",
-        "os_floating_ips": ["100.101.102.103"],
+        "guest_passwd": ""
     }
 
 
@@ -429,9 +429,9 @@ def test_get_hostname():
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
+                "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "", "count": 3, "tags": ["node"]},
             },
             "storage": {
                 "nfs": {
@@ -440,10 +440,9 @@ def test_get_hostname():
                     "scratch": {"size": 1},
                 }
             },
-            "public_keys": [""],
+            "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": '1234\\56789\t "',
-            "hieradata": "",
-            "os_floating_ips": [],
+            "hieradata": ""
         }
     )
     assert config.get_hostname() == "foo.calculquebec.cloud"
