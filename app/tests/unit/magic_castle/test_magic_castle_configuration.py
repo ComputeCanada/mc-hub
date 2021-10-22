@@ -14,7 +14,7 @@ def test_constructor_valid():
         {
             "cluster_name": "foo-123",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1},
@@ -37,7 +37,7 @@ def test_constructor_valid():
     assert config.dump() == {
         "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -63,7 +63,7 @@ def test_constructor_no_hieradata_valid():
         {
             "cluster_name": "foo-123",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1},
@@ -84,7 +84,7 @@ def test_constructor_no_hieradata_valid():
     assert config.dump() == {
         "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -110,7 +110,7 @@ def test_constructor_invalid_cluster_name():
             {
                 "cluster_name": "foo!",
                 "domain": "calculquebec.cloud",
-                "image": "CentOS-7-x64-2019-07",
+                "image": "CentOS-7-x64-2020-11",
                 "nb_users": 17,
                 "instances": {
                     "mgmt": {"type": "p4-6gb", "count": 1},
@@ -135,7 +135,7 @@ def test_constructor_invalid_cluster_name():
             {
                 "cluster_name": "foo_underscore",
                 "domain": "calculquebec.cloud",
-                "image": "CentOS-7-x64-2019-07",
+                "image": "CentOS-7-x64-2020-11",
                 "nb_users": 17,
                 "instances": {
                     "mgmt": {"type": "p4-6gb", "count": 1},
@@ -162,7 +162,7 @@ def test_constructor_invalid_domain():
             {
                 "cluster_name": "foo",
                 "domain": "invalid.cloud",
-                "image": "CentOS-7-x64-2019-07",
+                "image": "CentOS-7-x64-2020-11",
                 "nb_users": 17,
                 "instances": {
                     "mgmt": {"type": "p4-6gb", "count": 1},
@@ -188,7 +188,7 @@ def test_get_from_dict_valid():
         {
             "cluster_name": "foo",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1},
@@ -210,7 +210,7 @@ def test_get_from_dict_valid():
     assert config.dump() == {
         "cluster_name": "foo",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -235,7 +235,7 @@ def test_get_from_dict_empty_hieradata_valid():
         {
             "cluster_name": "foo",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1},
@@ -257,7 +257,7 @@ def test_get_from_dict_empty_hieradata_valid():
     assert config.dump() == {
         "cluster_name": "foo",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -284,7 +284,7 @@ def test_get_from_main_tf_json_file_valid():
     assert config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -317,7 +317,7 @@ def test_get_from_state_file_missing_nodes():
     assert config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
             "mgmt": {"type": "", "count": 0},
@@ -374,7 +374,7 @@ def test_update_main_tf_json_file():
         {
             "cluster_name": "missingnodes",
             "domain": "sub.example.com",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 30,
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1},
@@ -400,7 +400,7 @@ def test_update_main_tf_json_file():
     assert saved_config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 30,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -426,7 +426,7 @@ def test_get_hostname():
         {
             "cluster_name": "foo",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1},

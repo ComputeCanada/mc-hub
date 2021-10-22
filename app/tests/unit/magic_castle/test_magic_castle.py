@@ -27,7 +27,7 @@ VALID_CLUSTER_CONFIGURATION = {
     "domain": "calculquebec.cloud",
     "public_keys": [""],
     "hieradata": "",
-    "image": "CentOS-7-x64-2019-07",
+    "image": "CentOS-7-x64-2020-11",
 }
 
 
@@ -162,7 +162,7 @@ def test_dump_configuration_valid(database_connection):
         "domain": "calculquebec.cloud",
         "hieradata": "",
         "public_keys": [""],
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
     }
     assert magic_castle.dump_configuration(planned_only=False) == {
         "cluster_name": "valid1",
@@ -183,7 +183,7 @@ def test_dump_configuration_valid(database_connection):
         "domain": "calculquebec.cloud",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
     }
 
 
@@ -237,7 +237,7 @@ def test_dump_configuration_missing_nodes(database_connection):
         "domain": "sub.example.com",
         "hieradata": "",
         "public_keys": [""],
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "os_floating_ips": ["100.101.102.103"],
     }
     assert magic_castle.dump_configuration(planned_only=False) == {
@@ -258,7 +258,7 @@ def test_dump_configuration_missing_nodes(database_connection):
         "domain": "sub.example.com",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "os_floating_ips": ["100.101.102.103"],
     }
 
@@ -268,7 +268,7 @@ def test_dump_configuration_busy(database_connection):
     assert magic_castle.dump_configuration() == {
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
-        "image": "CentOS-7-x64-2019-07",
+        "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},

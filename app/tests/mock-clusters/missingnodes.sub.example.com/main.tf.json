@@ -9,7 +9,7 @@
             "puppetenv_rev": "11.6",
             "cluster_name": "missingnodes",
             "domain": "sub.example.com",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
                 "mgmt": {
@@ -26,13 +26,21 @@
                 }
             },
             "volumes": {
-                "nfs":{
-                    "home": {"size" : 100},
-                    "project": {"size": 50},
-                    "scratch": {"size": 50}
+                "nfs": {
+                    "home": {
+                        "size": 100
+                    },
+                    "project": {
+                        "size": 50
+                    },
+                    "scratch": {
+                        "size": 50
+                    }
                 }
             },
-            "public_keys": [""],
+            "public_keys": [
+                ""
+            ],
             "guest_passwd": "password-123"
         }
     }
