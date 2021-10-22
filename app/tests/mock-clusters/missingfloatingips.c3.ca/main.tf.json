@@ -4,9 +4,10 @@
     },
     "module": {
         "openstack": {
-            "source": "/home/mcu/magic_castle-openstack-11.6/openstack",
+            "source": "git::https://github.com/ComputeCanada/magic_castle.git//openstack?ref=11.6",
             "generate_ssh_key": true,
-            "puppetenv_rev": "11.6",
+            "config_git_url": "https://github.com/ComputeCanada/puppet-magic_castle.git",
+            "config_version": "11.6",
             "cluster_name": "missingfloatingips",
             "domain": "c3.ca",
             "image": "CentOS-7-x64-2020-11",

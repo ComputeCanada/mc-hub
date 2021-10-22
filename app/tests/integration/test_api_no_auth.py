@@ -13,9 +13,9 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "image": "CentOS-7-x64-2020-11",
     "nb_users": 10,
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]}
     },
     "volumes": {
         "nfs": {
@@ -34,9 +34,9 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "image": "CentOS-7-x64-2020-11",
     "nb_users": 10,
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]}
     },
     "volumes": {
         "nfs": {
@@ -61,9 +61,9 @@ EXISTING_CLUSTER_STATE = {
         }
     },
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]}
     },
     "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
@@ -86,7 +86,7 @@ def test_get_current_user(client):
 
 
 # GET /api/magic_castle
-@pytest.mark.skip(reason="source of truth is currently false")
+# @pytest.mark.skip(reason="source of truth is currently false")
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles")
     assert res.get_json() == [
