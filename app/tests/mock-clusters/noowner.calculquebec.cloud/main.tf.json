@@ -14,15 +14,28 @@
             "instances": {
                 "mgmt": {
                     "type": "p4-6gb",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "mgmt",
+                        "nfs",
+                        "puppet"
+                    ]
                 },
                 "login": {
                     "type": "p4-6gb",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "login",
+                        "proxy",
+                        "public"
+                    ]
                 },
                 "node": {
                     "type": "p2-3gb",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "node"
+                    ]
                 }
             },
             "volumes": {
@@ -39,7 +52,7 @@
                 }
             },
             "public_keys": [
-                ""
+                "ssh-rsa FAKE"
             ],
             "guest_passwd": "password-123"
         }

@@ -96,9 +96,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "c1-7.5gb-30", "count": 5},
+                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -120,9 +120,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "c1-7.5gb-30", "count": 5},
+                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -145,9 +145,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "c1-7.5gb-30", "count": 5},
+                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -173,9 +173,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -184,7 +184,7 @@ def test_get_all_magic_castle_names(client):
                     "scratch": {"size": 1},
                 }
             },
-            "public_keys": [""],
+            "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
             "hostname": "missingfloatingips.c3.ca",
@@ -197,9 +197,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 1},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -208,7 +208,7 @@ def test_get_all_magic_castle_names(client):
                     "scratch": {"size": 50},
                 }
             },
-            "public_keys": [""],
+            "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
             "hostname": "missingnodes.sub.example.com",
@@ -221,9 +221,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 1},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -232,7 +232,7 @@ def test_get_all_magic_castle_names(client):
                     "scratch": {"size": 50},
                 }
             },
-            "public_keys": [""],
+            "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
             "hostname": "noowner.calculquebec.cloud",
@@ -245,9 +245,9 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 1},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
                 "nfs": {
@@ -256,7 +256,7 @@ def test_get_all_magic_castle_names(client):
                     "scratch": {"size": 50},
                 }
             },
-            "public_keys": [""],
+            "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
             "hieradata": "",
             "hostname": "valid1.calculquebec.cloud",
