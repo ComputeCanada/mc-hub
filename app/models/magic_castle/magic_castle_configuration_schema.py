@@ -17,8 +17,8 @@ class MagicCastleConfigurationSchema(Schema):
     Marshmallow schema used to validate, deserialize and serialize Magic Castle configurations.
     This schema is then used in MagicCastleConfiguration to load, create and update a cluster's main.tf.json file.
     """
-    cluster_name = fields.Str(required=True)
-    domain = fields.Str(required=True)
+    cluster_name = fields.Str(required=True, validate=validate_cluster_name)
+    domain = fields.Str(required=True, validate=validate_domain)
     image = fields.Str(required=True)
     nb_users = fields.Int(required=True)
     instances = fields.Dict(
@@ -37,4 +37,4 @@ class MagicCastleConfigurationSchema(Schema):
     public_keys = fields.List(fields.Str(), required=True)
     guest_passwd = fields.Str(required=True)
     hieradata = fields.Str(missing="")
-    os_floating_ips = fields.Dict()
+

@@ -153,11 +153,7 @@ class TerraformStateParser:
             "resources[?type=openstack_compute_keypair_v2].instances[*].attributes.public_key"
         )
         public_keys = [match.value for match in parser.find(self.tf_state)]
-        if len(public_keys) > 0:
-            return public_keys
-        else:
-            # Frontend requires at least one public key, even if empty
-            return [""]
+        return public_keys
 
     @default(None)
     def get_freeipa_passwd(self):

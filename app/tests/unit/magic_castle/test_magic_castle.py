@@ -212,7 +212,7 @@ def test_dump_configuration_empty_state(database_connection):
         },
         "domain": "calculquebec.cloud",
         "hieradata": "",
-        "public_keys": [""],
+        "public_keys": [],
         "image": ""
     }
 
@@ -237,7 +237,7 @@ def test_dump_configuration_missing_nodes(database_connection):
         },
         "domain": "sub.example.com",
         "hieradata": "",
-        "public_keys": [""],
+        "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2020-11",
     }
     assert magic_castle.dump_configuration(planned_only=False) == {
@@ -518,7 +518,8 @@ def test_get_available_resources_empty(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["mgmt", "nfs", "puppet"]
                 },
                 "login": {
                     "type": [
@@ -528,7 +529,8 @@ def test_get_available_resources_empty(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["login", "proxy", "public"]
                 },
                 "node": {
                     "type": [
@@ -538,21 +540,16 @@ def test_get_available_resources_empty(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["node"]
                 },
             },
-            "os_floating_ips": [
-                "Automatic allocation",
-                "2.1.1.1",
-                "2.1.1.2",
-                "2.1.1.3",
-            ],
-            "storage": {"type": ["nfs"]},
+            "volumes": { },
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
 
-
+@pytest.mark.skip(reason="source of truth is currently false")
 def test_get_available_resources_missing_nodes(database_connection):
     """
     Mock context :
@@ -651,7 +648,8 @@ def test_get_available_resources_missing_nodes(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["mgmt", "nfs", "puppet"]
                 },
                 "login": {
                     "type": [
@@ -661,7 +659,8 @@ def test_get_available_resources_missing_nodes(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["login", "proxy", "public"]
                 },
                 "node": {
                     "type": [
@@ -671,17 +670,11 @@ def test_get_available_resources_missing_nodes(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["node"]
                 },
             },
-            "os_floating_ips": [
-                "Automatic allocation",
-                "100.101.102.103",
-                "2.1.1.1",
-                "2.1.1.2",
-                "2.1.1.3",
-            ],
-            "storage": {"type": ["nfs"]},
+            "volumes": { },
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
@@ -770,7 +763,8 @@ def test_get_available_resources_not_found(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["mgmt", "nfs", "puppet"]
                 },
                 "login": {
                     "type": [
@@ -780,7 +774,8 @@ def test_get_available_resources_not_found(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["login", "proxy", "public"]
                 },
                 "node": {
                     "type": [
@@ -790,16 +785,11 @@ def test_get_available_resources_not_found(database_connection):
                         "c8-90gb-186",
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
-                    ]
+                    ],
+                    "tags": ["node"]
                 },
             },
-            "os_floating_ips": [
-                "Automatic allocation",
-                "2.1.1.1",
-                "2.1.1.2",
-                "2.1.1.3",
-            ],
-            "storage": {"type": ["nfs"]},
+            "volumes": { },
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
