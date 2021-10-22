@@ -14,15 +14,16 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "image": "CentOS-7-x64-2020-11",
     "nb_users": 10,
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
-    },
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "project_size": 50,
-        "scratch_size": 50,
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+    },    
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "scratch": {"size": 50},
+            "project": {"size": 50},
+        }
     },
     "public_keys": [],
     "hieradata": "",
@@ -34,15 +35,16 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "image": "CentOS-7-x64-2020-11",
     "nb_users": 10,
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
-    },
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "project_size": 50,
-        "scratch_size": 50,
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+    },    
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "scratch": {"size": 50},
+            "project": {"size": 50},
+        }
     },
     "public_keys": [""],
     "hieradata": "",
@@ -53,16 +55,17 @@ EXISTING_CLUSTER_STATE = {
     "cluster_name": "valid1",
     "nb_users": 10,
     "guest_passwd": "password-123",
-    "storage": {
-        "type": "nfs",
-        "home_size": 100,
-        "scratch_size": 50,
-        "project_size": 50,
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "scratch": {"size": 50},
+            "project": {"size": 50},
+        }
     },
     "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1},
-        "login": {"type": "p4-6gb", "count": 1},
-        "node": {"type": "p2-3gb", "count": 1},
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
     },
     "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
@@ -121,15 +124,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "c1-7.5gb-30", "count": 5},
+                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 73,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 73},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
@@ -145,15 +149,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "c1-7.5gb-30", "count": 5},
+                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 73,
-                "project_size": 1,
-                "scratch_size": 1,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 73},
+                    "project": {"size": 1},
+                    "scratch": {"size": 1},
+                }
             },
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": "password-123",
@@ -169,15 +174,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 1},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
-            "storage": {
-                "type": "nfs",
-                "home_size": 100,
-                "project_size": 50,
-                "scratch_size": 50,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 100},
+                    "project": {"size": 50},
+                    "scratch": {"size": 50},
+                }
             },
             "public_keys": [""],
             "guest_passwd": "password-123",
@@ -207,7 +213,7 @@ def test_get_all_magic_castles_unauthenticated(client):
 
 
 # GET /api/magic-castles/<hostname>
-@pytest.mark.skip(reason="source of truth is currently false")
+# @pytest.mark.skip(reason="source of truth is currently false")
 def test_get_state_existing(client):
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
@@ -232,6 +238,7 @@ def test_get_state_not_owned(client):
 
 
 # GET /api/magic-castles/<hostname>/status
+@pytest.mark.skip(reason="source of truth is currently false")
 def test_get_status(mocker, client):
     res = client.get(
         f"/api/magic-castles/missingfloatingips.c3.ca/status", headers=BOB_HEADERS

@@ -86,7 +86,6 @@ def test_get_current_user(client):
 
 
 # GET /api/magic_castle
-# @pytest.mark.skip(reason="source of truth is currently false")
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles")
     assert res.get_json() == [
@@ -282,6 +281,7 @@ def test_get_state_non_existing(client):
 
 
 # GET /api/magic-castles/<hostname>/status
+@pytest.mark.skip(reason="source of truth is currently false")
 def test_get_status(mocker, client):
     res = client.get(f"/api/magic-castles/missingfloatingips.c3.ca/status")
     assert res.get_json() == {
