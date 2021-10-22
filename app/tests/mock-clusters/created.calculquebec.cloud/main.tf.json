@@ -4,35 +4,57 @@
     },
     "module": {
         "openstack": {
-            "source": "/home/mcu/magic_castle-openstack-11.6/openstack",
+            "source": "git::https://github.com/ComputeCanada/magic_castle.git//openstack?ref=11.6",
             "generate_ssh_key": true,
-            "puppetenv_rev": "11.6",
+            "config_git_url": "https://github.com/ComputeCanada/puppet-magic_castle.git",
+            "config_version": "11.6",
             "cluster_name": "created",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2019-07",
+            "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
                 "mgmt": {
                     "type": "c2-7.5gb-31",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "mgmt",
+                        "nfs",
+                        "puppet"
+                    ]
                 },
                 "login": {
                     "type": "p4-6gb",
-                    "count": 1
+                    "count": 1,
+                    "tags": [
+                        "login",
+                        "public",
+                        "proxy"
+                    ]
                 },
                 "node": {
-                        "type": "c1-7.5gb-30",
-                        "count": 5
+                    "type": "c1-7.5gb-30",
+                    "count": 5,
+                    "tags": [
+                        "node"
+                    ]
                 }
             },
             "volumes": {
-                "nfs":{
-                    "home": {"size" : 73},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1}
+                "nfs": {
+                    "home": {
+                        "size": 73
+                    },
+                    "project": {
+                        "size": 1
+                    },
+                    "scratch": {
+                        "size": 1
+                    }
                 }
             },
-            "public_keys": ["ssh-rsa FAKE"],
+            "public_keys": [
+                "ssh-rsa FAKE"
+            ],
             "guest_passwd": "password-123"
         }
     }
