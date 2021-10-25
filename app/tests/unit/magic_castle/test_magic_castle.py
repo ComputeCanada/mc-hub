@@ -549,7 +549,6 @@ def test_get_available_resources_empty(database_connection):
         },
     }
 
-@pytest.mark.skip(reason="source of truth is currently false")
 def test_get_available_resources_missing_nodes(database_connection):
     """
     Mock context :
