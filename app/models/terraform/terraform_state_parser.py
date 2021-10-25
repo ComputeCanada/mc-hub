@@ -40,8 +40,6 @@ class TerraformStateParser:
         :return: The dictionary containing the partial configuration.
         """
         return {
-            "cluster_name": self.__get_cluster_name(),
-            "domain": self.__get_domain(),
             "image": self.__get_image(),
             "instances": self.__get_instances(),
             "public_keys": self.__get_public_keys(),
@@ -104,21 +102,6 @@ class TerraformStateParser:
                 + external_storage_parser.find(self.tf_state)
             ]
         )
-
-    @default("")
-    def __get_cluster_name(self):
-        parser = parse(
-            "resources[?name=hieradata].instances[0].attributes.vars.cluster_name"
-        )
-        return parser.find(self.tf_state)[0].value
-
-    @default("")
-    def __get_domain(self):
-        parser = parse(
-            "resources[?name=hieradata].instances[0].attributes.vars.domain_name"
-        )
-        full_domain_name = parser.find(self.tf_state)[0].value
-        return full_domain_name[len(self.__get_cluster_name()) + 1 :]
 
     @default("")
     def __get_image(self):
