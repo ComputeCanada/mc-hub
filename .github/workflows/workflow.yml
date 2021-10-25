@@ -12,7 +12,6 @@ on:
 env:
   IMAGE_NAME: "fredericfc/magic_castle-ui"
   RUN_LIVE_CLUSTER_TESTS: ${{ (github.event.inputs.force_build_live_cluster == 'yes' || startsWith(github.ref, 'refs/tags/v')) && 'true' || 'false' }}
-  MCH_RUN_PATH: /home/mcu
 
 jobs:
   main:
@@ -40,6 +39,7 @@ jobs:
         if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
         run: |
           docker run --rm --publish 5000:5000 \
+          --env MCH_RUN_PATH=/home/mcu \
           --mount "type=volume,source=database,target=/home/mcu/database" \
           --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
           --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
@@ -49,6 +49,7 @@ jobs:
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         run: |
           docker run --rm --publish 5000:5000 \
+          --env MCH_RUN_PATH=/home/mcu \
           --mount "type=volume,source=database,target=/home/mcu/database" \
           --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
           --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
@@ -64,4 +65,3 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
