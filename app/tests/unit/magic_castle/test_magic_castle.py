@@ -252,9 +252,9 @@ def test_dump_configuration_missing_nodes(database_connection):
             }
         },
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "", "count": 0, "tags": ["node"]},
         },
         "domain": "sub.example.com",
         "hieradata": "",
@@ -282,7 +282,7 @@ def test_dump_configuration_busy(database_connection):
                 "project": {"size": 1},
             }
         },
-        "public_keys": [""],
+        "public_keys": ["ssh-rsa FAKE"],
         "hieradata": "",
         "guest_passwd": "password-123",
     }
