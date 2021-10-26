@@ -3,7 +3,8 @@ from models.constants import INSTANCE_CATEGORIES, AUTO_ALLOCATED_IP_LABEL
 from re import search, IGNORECASE
 import openstack
 
-VALID_IMAGES = r"centos|almalinux|rocky"
+CENTOS_VALID_IMAGES = r"centos"
+OTHER_VALID_IMAGES = r"almalinux|rocky"
 OPENSTACK_CONFIG_FILENAME = "clouds.yaml"
 OPENSTACK_CONFIG_PATH = path.join(
     environ["HOME"], ".config", "openstack", OPENSTACK_CONFIG_FILENAME
@@ -110,11 +111,16 @@ class OpenStackManager:
         }
 
     def __get_images(self):
-        return [
-            image.name
-            for image in self.__connection.image.images()
-            if search(VALID_IMAGES, image.name, IGNORECASE)
-        ]
+        centos = []
+        others = []
+        for image in self.__connection.image.images():
+            if search(CENTOS_VALID_IMAGES, image.name, IGNORECASE):
+                centos.append(image.name)
+            elif search(OTHER_VALID_IMAGES, image.name, IGNORECASE):
+                others.append(image.name)
+        centos.sort()
+        others.sort()
+        return centos + others
 
     def __get_available_flavors(self, category=None):
         if self.__available_flavors is None:
