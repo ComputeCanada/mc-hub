@@ -111,16 +111,15 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
     }
   },
   volumes: {
-    nfs : {
-      home : { size: 100 },
-      project : { size: 50 },
-      scratch : { size: 50 }
+    nfs: {
+      home: { size: 100 },
+      project: { size: 50 },
+      scratch: { size: 50 }
     }
   },
   public_keys: [""],
   guest_passwd: "",
-  hieradata: "",
-  os_floating_ips: { }
+  hieradata: ""
 });
 
 const POLL_STATUS_INTERVAL = 1000;
@@ -175,7 +174,7 @@ export default {
       } else if (this.destroy) {
         const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
         if (status == ClusterStatusCode.CREATED) {
-          /* 
+          /*
           The initial plan was created, but the cluster was never built.
           We don't show a confirmation because no resource has been created.
           */
