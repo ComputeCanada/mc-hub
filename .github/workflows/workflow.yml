@@ -54,7 +54,12 @@ jobs:
           --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
           --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
           --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-             -w /home/mcu/app "$IMAGE_NAME" python -m pytest --build-live-cluster;
+             -w /home/mcu/app "$IMAGE_NAME" python -m pytest -x -vv --build-live-cluster;
+
+      - name: Debug with tmate on failure
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
       - name: Deploy to Docker Hub
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
