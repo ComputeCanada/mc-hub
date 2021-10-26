@@ -120,8 +120,8 @@ def test_create_success(client):
         "volumes": {
             "nfs": {
                 "home": {"size": 50},
-                "scratch_size": {"size": 5},
-                "project_size": {"size": 5},
+                "scratch": {"size": 5},
+                "project": {"size": 5},
             }
         },
         "instances": {
@@ -151,14 +151,14 @@ def test_plan_modify(client):
             "volumes": {
                 "nfs": {
                     "home": {"size": 50},
-                    "scratch_size": {"size": 5},
-                    "project_size": {"size": 5},
+                    "scratch": {"size": 5},
+                    "project": {"size": 5},
                 }
             },
             "instances": {
                 "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
                 "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-                "node": {"type": "c2-7.5gb-31", "count": 3, "tags": ["node"]},
+                "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
             },
             "domain": "calculquebec.cloud",
             "public_keys": [
@@ -202,14 +202,14 @@ def test_modify_success(client):
         "volumes": {
             "nfs": {
                 "home": {"size": 50},
-                "scratch_size": {"size": 5},
-                "project_size": {"size": 5},
+                "scratch": {"size": 5},
+                "project": {"size": 5},
             }
         },
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
             "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-            "node": {"type": "c2-7.5gb-31", "count": 3, "tags": ["node"]},
+            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
         "public_keys": [
