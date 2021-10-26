@@ -75,7 +75,7 @@ def test_plan_creation(client):
             "public_keys": [
                 "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
             ],
-            "image": "CentOS-7-x64-2020-03",
+            "image": "CentOS-7-x64-2020-11",
         },
         headers=JOHN_DOE_HEADERS,
     )
@@ -133,7 +133,7 @@ def test_create_success(client):
         "public_keys": [
             "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
         ],
-        "image": "CentOS-7-x64-2020-03",
+        "image": "CentOS-7-x64-2020-11",
     }.items() < state.items()
 
 
@@ -164,7 +164,7 @@ def test_plan_modify(client):
             "public_keys": [
                 "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
             ],
-            "image": "CentOS-7-x64-2020-03",
+            "image": "CentOS-7-x64-2020-11",
         },
         headers=JOHN_DOE_HEADERS,
     )
@@ -215,7 +215,7 @@ def test_modify_success(client):
         "public_keys": [
             "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB2S4ftDLiz1IrD2Lj+4QmtWgGnTAwsTQfx4GwNcC3mOfZkL/raNIUBZn7xjOjDzkOQ9k37T/aaQNnz/yBhdeydKJHKuS+J2gscMAAc+2zXNyAEfWlrv0aPX0EGhkYwsjsumQ4k9wO6+GNlA+Z3sisNB8Jo/JtxIQ6B2t16Ru2Qe07G+NTZWMLuB++8j+eJW2Ux8B7n14Vf+lPwzz4TbjjIbueugh9JRcdfXa/FclEvnZwgO61tbHjJJNH+FCHyxWraTEB1//COaAGfwekK17T/83Wi3Avdr5ZL+ffgVbVwVZXCuq3PTc3qmthRxxe/DBjcJYsGuRa0/f7U5bCKYYflL+U2nDmlfBbCYFvFFje9K3NXjmZJZWf1L31fVWE1doj9BgRwXMFC/WMx7jt3TUcdGXsWICHU7jMtywUSf/i10dzs+BgpAnH7XeCswHekfaNseKdFDWY6c7egsfbT16BzQn+hBlrEQ3UNlFf/ye9aVSdTppjIKD3IqV8qrDqB2s= noname"
         ],
-        "image": "CentOS-7-x64-2020-03",
+        "image": "CentOS-7-x64-2020-11",
     }.items() < state.items()
 
 
