@@ -306,11 +306,6 @@ export default {
         this.magicCastle.instances.node.type = possibleResources.instances.node.type[0];
         this.initialMagicCastle.instances.node.type = possibleResources.instances.node.type[0];
       }
-
-      // Floating IPs
-      // Must be set to the first possible value in all cases (either "Automatic allocation" or a specific IP address)
-      this.magicCastle.os_floating_ips = { };
-      this.initialMagicCastle.os_floating_ips = { };
     },
     dirtyForm(dirty) {
       if (dirty) {
