@@ -117,16 +117,17 @@ def test_create_success(client):
     assert {
         "cluster_name": CLUSTER_NAME,
         "nb_users": 10,
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "scratch_size": 5,
-            "project_size": 5,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "scratch_size": {"size": 5},
+                "project_size": {"size": 5},
+            }
         },
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 1},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
         "public_keys": [
@@ -147,16 +148,17 @@ def test_plan_modify(client):
             "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
-            "storage": {
-                "type": "nfs",
-                "home_size": 50,
-                "scratch_size": 5,
-                "project_size": 5,
+            "volumes": {
+                "nfs": {
+                    "home": {"size": 50},
+                    "scratch_size": {"size": 5},
+                    "project_size": {"size": 5},
+                }
             },
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "c2-7.5gb-31", "count": 3},
+                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "node": {"type": "c2-7.5gb-31", "count": 3, "tags": ["node"]},
             },
             "domain": "calculquebec.cloud",
             "public_keys": [
@@ -197,16 +199,17 @@ def test_modify_success(client):
     assert {
         "cluster_name": CLUSTER_NAME,
         "nb_users": 10,
-        "storage": {
-            "type": "nfs",
-            "home_size": 50,
-            "scratch_size": 5,
-            "project_size": 5,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "scratch_size": {"size": 5},
+                "project_size": {"size": 5},
+            }
         },
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "c2-7.5gb-31", "count": 3},
+            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "node": {"type": "c2-7.5gb-31", "count": 3, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
         "public_keys": [
