@@ -85,7 +85,7 @@ class OpenStackConnectionMock:
                 self.Image("CentOS-8 x64"),
                 self.Image("CentOS VGPU"),
             ]
-            return (image for image in images)
+            return iter(images)
 
     class BlockStorageApi:
         def get(self, url):
