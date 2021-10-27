@@ -321,7 +321,9 @@ export default {
       try {
         let currentUser = (await UserRepository.getCurrent()).data;
         this.magicCastle.public_keys = currentUser.public_keys;
-      } catch { }
+      } catch (e) {
+        console.log("User cannot be found");
+      }
       this.magicCastle.cluster_name = generatePetName();
       this.magicCastle.guest_passwd = generatePassword();
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
