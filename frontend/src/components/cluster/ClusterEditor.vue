@@ -316,14 +316,8 @@ export default {
       }
     }
   },
-  async created() {
+  created() {
     if (!this.existingCluster) {
-      try {
-        let currentUser = (await UserRepository.getCurrent()).data;
-        this.magicCastle.public_keys = currentUser.public_keys;
-      } catch (e) {
-        console.log("User cannot be found");
-      }
       this.magicCastle.cluster_name = generatePetName();
       this.magicCastle.guest_passwd = generatePassword();
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
@@ -331,6 +325,16 @@ export default {
       this.magicCastle.instances["node"].tags = ["node"];
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
+  },
+  async mounted() {
+    if (!this.existingCluster) {
+      try {
+        let currentUser = (await UserRepository.getCurrent()).data;
+        this.magicCastle.public_keys = currentUser.public_keys;
+      } catch (e) {
+        console.log("User cannot be found");
+      }
+    }
   },
   beforeDestroy() {
     this.$disableUnloadConfirmation();
@@ -465,12 +469,6 @@ export default {
     },
     apply() {
       this.$emit("apply");
-    },
-    async generateClusterName() {
-      this.magicCastle.cluster_name = generatePetName();
-    },
-    async generateGuestPassword() {
-      this.magicCastle.guest_passwd = generatePassword();
     }
   }
 };
