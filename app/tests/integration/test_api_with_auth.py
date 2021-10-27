@@ -103,13 +103,13 @@ def test_get_current_user_authentified(client):
     assert res.get_json() == {
         "full_name": "Alice Tremblay",
         "username": "alice",
-        "public_key": "ssh-rsa FAKE",
+        "public_keys": ["ssh-rsa FAKE"],
     }
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
     assert res.get_json() == {
         "full_name": "Bob Rodriguez",
         "username": "bob12.bobby",
-        "public_key": "ssh-rsa FAKE",
+        "public_keys": ["ssh-rsa FAKE"],
     }
 
 

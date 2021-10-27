@@ -16,7 +16,7 @@ class User:
         return None
 
     @property
-    def public_key(self):
+    def public_keys(self):
         return None
 
     def get_all_magic_castles(self) -> List[MagicCastle]:
