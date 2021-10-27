@@ -229,6 +229,9 @@ export default {
     },
     currentStatus: {
       type: String
+    },
+    user: {
+      type: Object
     }
   },
   data: function() {
@@ -276,6 +279,12 @@ export default {
     };
   },
   watch: {
+    user (user) {
+      if ( this.magicCastle.public_keys === null && user != null && user.public_key != "") {
+        this.magicCastle.public_keys = [user.public_key];
+        this.initialMagicCastle.public_keys = [user.public_key];
+      }
+    },
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
 

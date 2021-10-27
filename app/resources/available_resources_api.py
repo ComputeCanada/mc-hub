@@ -6,7 +6,7 @@ from models.user.user import User
 class AvailableResourcesApi(ApiView):
     def get(self, user: User, hostname):
         if hostname:
-            magic_castle = user.get_magic_castle_by_hostname(hostname)
-            return magic_castle.get_available_resources()
+            source = user.get_magic_castle_by_hostname(hostname)
         else:
-            return CloudManager().get_available_resources()
+            source = CloudManager()
+        return source.get_available_resources()

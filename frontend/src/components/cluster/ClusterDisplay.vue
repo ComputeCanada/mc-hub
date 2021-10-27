@@ -27,6 +27,7 @@
             :possible-resources="possibleResources"
             :resource-details="resourceDetails"
             :quotas="quotas"
+            :user="user"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
           />
           <template v-else-if="resourcesChanges.length > 0 && applyRunning">
@@ -84,6 +85,7 @@
 import { cloneDeep } from "lodash";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import UserRepository from "@/repositories/UserRepository";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import MessageDialog from "@/components/ui/MessageDialog";
 import StatusChip from "@/components/ui/StatusChip";
@@ -164,7 +166,8 @@ export default {
       magicCastle: null,
       quotas: null,
       resourceDetails: null,
-      possibleResources: null
+      possibleResources: null,
+      user: null
     };
   },
   async created() {
@@ -301,6 +304,13 @@ export default {
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
       this.resourceDetails = availableResources.resource_details;
+
+      try {
+        this.user = (await UserRepository.get()).data;
+      } catch (e) {
+        this.user = null;
+      }
+
     },
     async loadCluster() {
       try {
