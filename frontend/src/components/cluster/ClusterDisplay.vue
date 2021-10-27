@@ -307,10 +307,9 @@ export default {
 
       try {
         this.user = (await UserRepository.get()).data;
-      } catch (e) {
+      } catch (e) {
         this.user = null;
       }
-
     },
     async loadCluster() {
       try {
