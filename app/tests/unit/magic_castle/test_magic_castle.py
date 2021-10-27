@@ -382,7 +382,7 @@ def test_get_available_resources_valid(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -509,7 +509,7 @@ def test_get_available_resources_empty(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -638,7 +638,7 @@ def test_get_available_resources_missing_nodes(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -753,7 +753,7 @@ def test_get_available_resources_not_found(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ["centos7", "CentOS-8 x64", "CentOS VGPU"],
+            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
             "instances": {
                 "mgmt": {
                     "type": [
