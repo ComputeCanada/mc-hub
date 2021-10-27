@@ -79,6 +79,7 @@ def compute_current_user(route_handler):
                         given_name=request.headers["givenName"],
                         surname=request.headers["surname"],
                         mail=request.headers["mail"],
+                        public_key=request.headers.get("sshPublicKey", "")
                     )
                 except KeyError:
                     # Missing an authentication header
