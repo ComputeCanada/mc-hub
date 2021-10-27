@@ -317,14 +317,16 @@ export default {
     }
   },
   async created() {
-    let currentUser = (await UserRepository.getCurrent()).data;
     if (!this.existingCluster) {
-      this.generateClusterName();
-      this.generateGuestPassword();
+      try {
+        let currentUser = (await UserRepository.getCurrent()).data;
+        this.magicCastle.public_keys = currentUser.public_keys;
+      } catch { }
+      this.magicCastle.cluster_name = generatePetName();
+      this.magicCastle.guest_passwd = generatePassword();
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
       this.magicCastle.instances["login"].tags = ["login", "proxy", "public"];
       this.magicCastle.instances["node"].tags = ["node"];
-      this.magicCastle.public_keys = currentUser.public_keys;
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
@@ -462,10 +464,10 @@ export default {
     apply() {
       this.$emit("apply");
     },
-    generateClusterName() {
+    async generateClusterName() {
       this.magicCastle.cluster_name = generatePetName();
     },
-    generateGuestPassword() {
+    async generateGuestPassword() {
       this.magicCastle.guest_passwd = generatePassword();
     }
   }
