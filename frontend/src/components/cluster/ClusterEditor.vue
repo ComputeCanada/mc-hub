@@ -279,10 +279,10 @@ export default {
     };
   },
   watch: {
-    user (user) {
-      if ( this.magicCastle.public_keys === null && user != null && user.public_key != "") {
-        this.magicCastle.public_keys = [user.public_key];
-        this.initialMagicCastle.public_keys = [user.public_key];
+    user(user) {
+      if ( this.magicCastle.public_keys === null && user != null) {
+        this.magicCastle.public_keys = user.public_keys;
+        this.initialMagicCastle.public_keys = user.public_keys;
       }
     },
     possibleResources(possibleResources) {

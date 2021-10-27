@@ -39,8 +39,8 @@ class AuthenticatedUser(User):
         return self.edu_person_principal_name.split("@")[0]
 
     @property
-    def public_key(self):
-        return self.ssh_public_key
+    def public_keys(self):
+        return self.ssh_public_key.split(";")
 
     def is_admin(self):
         try:

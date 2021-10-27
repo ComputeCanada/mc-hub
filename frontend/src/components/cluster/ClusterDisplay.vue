@@ -309,6 +309,7 @@ export default {
         this.user = (await UserRepository.get()).data;
       } catch (e) {
         this.user = null;
+        console.log("Could not find user");
       }
     },
     async loadCluster() {
