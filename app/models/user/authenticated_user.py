@@ -21,14 +21,14 @@ class AuthenticatedUser(User):
         given_name,
         surname,
         mail,
-        public_key,
+        ssh_public_key,
     ):
         super().__init__(database_connection)
         self.edu_person_principal_name = edu_person_principal_name
         self.given_name = given_name
         self.surname = surname
         self.mail = mail
-        self.public_key = public_key
+        self.ssh_public_key = ssh_public_key
 
     @property
     def full_name(self):
@@ -37,6 +37,10 @@ class AuthenticatedUser(User):
     @property
     def username(self):
         return self.edu_person_principal_name.split("@")[0]
+
+    @property
+    def public_key(self):
+        return self.ssh_public_key
 
     def is_admin(self):
         try:

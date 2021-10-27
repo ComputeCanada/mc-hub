@@ -141,7 +141,7 @@ def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
         given_name="Alice",
         surname="Tremblay",
         mail="alice.tremblay@example.com",
-        public_key="ssh-rsa FAKE",
+        ssh_public_key="ssh-rsa FAKE",
     )
 
 
@@ -153,7 +153,7 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
         given_name="Bob",
         surname="Rodriguez",
         mail="bob-rodriguez435@example.com",
-        public_key="ssh-rsa FAKE",
+        ssh_public_key="ssh-rsa FAKE",
     )
 
 
@@ -165,7 +165,7 @@ def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
         given_name="Admin",
         surname="Istrator",
         mail="administrator@example.com",
-        public_key="ssh-rsa FAKE",
+        ssh_public_key="ssh-rsa FAKE",
     )
 
 

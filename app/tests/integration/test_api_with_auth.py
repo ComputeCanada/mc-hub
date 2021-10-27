@@ -17,7 +17,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
         "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
         "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-    },    
+    },
     "volumes": {
         "nfs": {
             "home": {"size": 100},
@@ -38,7 +38,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
         "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
         "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-    },    
+    },
     "volumes": {
         "nfs": {
             "home": {"size": 100},
@@ -78,6 +78,7 @@ ALICE_HEADERS = {
     "givenName": "Alice",
     "surname": "Tremblay",
     "mail": "alice.tremblay@example.com",
+    "sshPublicKey": "ssh-rsa FAKE",
 }
 
 BOB_HEADERS = {
@@ -85,6 +86,7 @@ BOB_HEADERS = {
     "givenName": "Bob",
     "surname": "Rodriguez",
     "mail": "bob-rodriguez435@example.com",
+    "sshPublicKey": "ssh-rsa FAKE",
 }
 
 
@@ -99,11 +101,15 @@ def client(mocker):
 def test_get_current_user_authentified(client):
     res = client.get(f"/api/users/me", headers=ALICE_HEADERS)
     assert res.get_json() == {
-        "full_name": "Alice Tremblay", "username": "alice"}
+        "full_name": "Alice Tremblay",
+        "username": "alice",
+        "public_key": "ssh-rsa FAKE",
+    }
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
     assert res.get_json() == {
         "full_name": "Bob Rodriguez",
         "username": "bob12.bobby",
+        "public_key": "ssh-rsa FAKE",
     }
 
 
