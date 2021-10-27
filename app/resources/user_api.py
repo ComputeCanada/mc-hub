@@ -4,4 +4,8 @@ from models.user.user import User
 
 class UserAPI(ApiView):
     def get(self, user: User):
-        return {"full_name": user.full_name, "username": user.username}
+        return {
+            "full_name": user.full_name,
+            "username": user.username,
+            "public_key": user.public_key
+        }
