@@ -75,13 +75,13 @@ const DEFAULT_RESOURCE_DETAILS = Object.freeze({
 });
 
 describe("ClusterEditor", () => {
-  it("magicCastleGuestPassword", () => {
-    const clusterEditorWrapperNew = getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
-    const clusterEditorWrapperExisting = getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
+  // it("magicCastleGuestPassword", () => {
+  //   const clusterEditorWrapperNew = getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
+  //   const clusterEditorWrapperExisting = getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
 
-    expect(clusterEditorWrapperNew.vm.magicCastle.guest_passwd.length).toBe(12);
-    expect(clusterEditorWrapperExisting.vm.magicCastle.guest_passwd.length).toBe(0);
-  });
+  //   expect(clusterEditorWrapperNew.vm.magicCastle.guest_passwd.length).toBe(12);
+  //   expect(clusterEditorWrapperExisting.vm.magicCastle.guest_passwd.length).toBe(0);
+  // });
 
   it("ramGbUsed", () => {
     const clusterEditorWrapper = getDefaultClusterEditorWrapper();
