@@ -185,6 +185,7 @@ jupyterhub::enable_otp_auth: false'
 import { cloneDeep, isEqual } from "lodash";
 import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
+import UserRepository from "@/repositories/UserRepository";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import PublicKeyInput from "@/components/ui/PublicKeyInput";
 import FlavorSelect from "./FlavorSelect";
@@ -229,9 +230,6 @@ export default {
     },
     currentStatus: {
       type: String
-    },
-    user: {
-      type: Object
     }
   },
   data: function() {
@@ -279,12 +277,6 @@ export default {
     };
   },
   watch: {
-    user(user) {
-      if ( this.magicCastle.public_keys === null && user != null) {
-        this.magicCastle.public_keys = user.public_keys;
-        this.initialMagicCastle.public_keys = user.public_keys;
-      }
-    },
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
 
@@ -324,13 +316,15 @@ export default {
       }
     }
   },
-  created() {
+  async created() {
+    let currentUser = (await UserRepository.getCurrent()).data;
     if (!this.existingCluster) {
       this.generateClusterName();
       this.generateGuestPassword();
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
       this.magicCastle.instances["login"].tags = ["login", "proxy", "public"];
       this.magicCastle.instances["node"].tags = ["node"];
+      this.magicCastle.public_keys = currentUser.public_keys;
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
