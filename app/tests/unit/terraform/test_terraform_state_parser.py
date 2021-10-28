@@ -111,7 +111,6 @@ def test_get_configuration_valid(valid_state):
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 1},
         },
-        "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2020-11",
     }
 
@@ -125,7 +124,6 @@ def test_get_configuration_empty(empty_state):
             "login": {"type": "", "count": 0},
             "node": {"type": "", "count": 0},
         },
-        "public_keys": [],
     }
 
 
@@ -137,6 +135,5 @@ def test_get_configuration_missing_nodes(missing_nodes_state):
             "login": {"type": "", "count": 0},
             "node": {"type": "", "count": 0},
         },
-        "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2020-11",
     }

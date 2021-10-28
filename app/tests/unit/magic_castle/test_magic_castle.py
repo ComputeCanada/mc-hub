@@ -212,7 +212,7 @@ def test_dump_configuration_empty_state(database_connection):
         },
         "domain": "calculquebec.cloud",
         "hieradata": "",
-        "public_keys": [],
+        "public_keys": ["ssh-rsa FAKE"],
         "image": ""
     }
 
