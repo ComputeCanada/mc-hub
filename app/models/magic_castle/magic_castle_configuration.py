@@ -114,6 +114,7 @@ class MagicCastleConfiguration:
         configuration["hieradata"] = main_tf_configuration["module"]["openstack"].get("hieradata", "")
         configuration["guest_passwd"] = main_tf_configuration["module"]["openstack"].get("guest_passwd", "")
         configuration["volumes"] = main_tf_configuration["module"]["openstack"].get("volumes", {})
+        configuration["public_keys"] = main_tf_configuration["module"]["openstack"].get("public_keys", [])
         
         for key, value in configuration["instances"].items():
             instance = main_tf_configuration["module"]["openstack"]["instances"].get(key, {})
