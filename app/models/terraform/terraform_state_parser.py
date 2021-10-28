@@ -34,15 +34,13 @@ class TerraformStateParser:
 
     def get_partial_configuration(self):
         """
-        Gets all the information required for a MagicCastleConfiguration object, except for the hieradata field,
-        which is not available in the terraform state.
+        Gets some of the information required for a MagicCastleConfiguration object.
 
         :return: The dictionary containing the partial configuration.
         """
         return {
             "image": self.__get_image(),
-            "instances": self.__get_instances(),
-            "public_keys": self.__get_public_keys(),
+            "instances": self.__get_instances()
         }
 
     def get_instance_count(self) -> int:
@@ -130,13 +128,6 @@ class TerraformStateParser:
             }
             for instance_category in INSTANCE_CATEGORIES
         }
-
-    def __get_public_keys(self):
-        parser = parse(
-            "resources[?type=openstack_compute_keypair_v2].instances[*].attributes.public_key"
-        )
-        public_keys = [match.value for match in parser.find(self.tf_state)]
-        return public_keys
 
     @default(None)
     def get_freeipa_passwd(self):
