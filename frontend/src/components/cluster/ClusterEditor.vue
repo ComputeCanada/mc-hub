@@ -57,7 +57,7 @@
               />
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
-              <v-text-field :value="id" label="hostname prefix" readonly/>
+              <v-text-field :value="id" label="hostname prefix" readonly />
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
               <flavor-select
@@ -68,12 +68,7 @@
               />
             </v-col>
             <v-col cols="12" sm="5" class="pt-0">
-              <v-combobox
-                v-model="magicCastle.instances[id].tags"
-                :items="TAGS"
-                label="tags"
-                multiple
-              ></v-combobox>
+              <v-combobox v-model="magicCastle.instances[id].tags" :items="TAGS" label="tags" multiple></v-combobox>
             </v-col>
           </v-list-item>
         </div>
@@ -91,7 +86,7 @@
         <div :key="id" v-for="id in DEFAULT_VOLUMES">
           <v-list-item>
             <v-col cols="12" sm="3" class="pt-0">
-              <v-text-field :value="id" label="volume name" readonly/>
+              <v-text-field :value="id" label="volume name" readonly />
             </v-col>
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
@@ -117,12 +112,7 @@
           <public-key-input v-model="magicCastle.public_keys" :rules="[publicKeysRule]" />
         </v-list-item>
         <v-list-item>
-          <v-text-field
-            v-model.number="magicCastle.nb_users"
-            type="number"
-            label="Number of guest users"
-            min="0"
-          />
+          <v-text-field v-model.number="magicCastle.nb_users" type="number" label="Number of guest users" min="0" />
         </v-list-item>
         <v-list-item>
           <v-text-field v-model="magicCastle.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
@@ -191,7 +181,6 @@ import PublicKeyInput from "@/components/ui/PublicKeyInput";
 import FlavorSelect from "./FlavorSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 
-const EXTERNAL_STORAGE_VOLUME_COUNT = 3;
 const MB_PER_GB = 1024;
 const MINIMUM_PASSWORD_LENGTH = 8;
 const CLUSTER_NAME_REGEX = /^[a-z]([a-z0-9-]*[a-z0-9]+)?$/;
@@ -234,35 +223,9 @@ export default {
   },
   data: function() {
     return {
-      DEFAULT_INSTANCE_PREFIX: [
-        'mgmt',
-        'login',
-        'node'
-      ],
-      DEFAULT_VOLUMES: [
-        'home',
-        'project',
-        'scratch'
-      ],
-      NODE_LABELS: {
-        mgmt: "Management",
-        login: "Login",
-        node: "Compute"
-      },
-      STORAGE_LABELS: {
-        home: "Home",
-        project: "Project",
-        scratch: "Scratch"
-      },
-      TAGS: [
-        "mgmt",
-        "puppet",
-        "nfs",
-        "login",
-        "proxy",
-        "public",
-        "node",
-      ],
+      DEFAULT_INSTANCE_PREFIX: ["mgmt", "login", "node"],
+      DEFAULT_VOLUMES: ["home", "project", "scratch"],
+      TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node"],
       validForm: true,
       initialMagicCastle: null,
 
@@ -328,12 +291,13 @@ export default {
   },
   async mounted() {
     if (!this.existingCluster) {
+      let public_keys = [];
       try {
-        let currentUser = (await UserRepository.getCurrent()).data;
-        this.magicCastle.public_keys = currentUser.public_keys;
+        public_keys = (await UserRepository.getCurrent()).data.public_keys;
       } catch (e) {
-        console.log("User cannot be found");
+        console.log("User SSH public keys be found");
       }
+      this.magicCastle.public_keys = public_keys.filter(key => key.match(SSH_PUBLIC_KEY_REGEX));
     }
   },
   beforeDestroy() {
@@ -406,7 +370,7 @@ export default {
         ? this.instances.reduce(
             (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_count"),
             0
-          ) + EXTERNAL_STORAGE_VOLUME_COUNT
+          ) + Object.keys(this.magicCastle.volumes["nfs"]).length
         : 0;
     },
     volumeCountMax() {

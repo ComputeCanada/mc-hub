@@ -53,7 +53,7 @@ const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
     login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },
     node: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] }
   },
-  storage: { type: ["nfs"] },
+  volumes: { },
   domain: ["calculquebec.cloud", "c3.ca"]
 });
 
