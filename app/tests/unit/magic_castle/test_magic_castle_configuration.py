@@ -359,7 +359,7 @@ def test_get_from_state_file_empty():
                 "scratch": {"size": 1},
             }
         },
-        "public_keys": [],
+        "public_keys": ["ssh-rsa FAKE"],
         "hieradata": "",
         "guest_passwd": "password-123"
     }
