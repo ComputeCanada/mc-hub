@@ -109,7 +109,28 @@
       <v-subheader>Networking and security</v-subheader>
       <v-list>
         <v-list-item>
-          <public-key-input v-model="magicCastle.public_keys" :rules="[publicKeysRule]" />
+          <v-combobox
+          v-model="magicCastle.public_keys"
+          label="SSH Keys"
+          multiple
+          chips
+          append-icon
+          clearable
+          deletable-chips
+          hint="Paste a key then press enter. Only the comment section will be displayed."
+          >
+          <template v-slot:selection="data">
+              <v-chip
+              :key="JSON.stringify(data.item)"
+              v-bind="data.attrs"
+              @click:close="data.parent.selectItem(data.item)"
+              close
+              close-icon="mdi-delete"
+              >
+              {{ data.item.split(" ")[2] }}
+              </v-chip>
+          </template>
+          </v-combobox>
         </v-list-item>
         <v-list-item>
           <v-text-field v-model.number="magicCastle.nb_users" type="number" label="Number of guest users" min="0" />
@@ -177,7 +198,6 @@ import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import UserRepository from "@/repositories/UserRepository";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
-import PublicKeyInput from "@/components/ui/PublicKeyInput";
 import FlavorSelect from "./FlavorSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 
@@ -192,7 +212,6 @@ export default {
     CodeEditor,
     FlavorSelect,
     ResourceUsageDisplay,
-    PublicKeyInput
   },
   props: {
     magicCastle: {
@@ -297,7 +316,9 @@ export default {
       } catch (e) {
         console.log("User SSH public keys be found");
       }
-      this.magicCastle.public_keys = public_keys.filter(key => key.match(SSH_PUBLIC_KEY_REGEX));
+      if (public_keys != null ) {
+        this.magicCastle.public_keys = public_keys.filter(key => key.match(SSH_PUBLIC_KEY_REGEX));
+      }
     }
   },
   beforeDestroy() {
