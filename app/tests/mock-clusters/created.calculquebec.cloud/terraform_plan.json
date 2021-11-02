@@ -3388,7 +3388,7 @@
         "root_module": {
             "module_calls": {
                 "openstack": {
-                    "source": "git::https://github.com/ComputeCanada/magic_castle.git//openstack?ref=11.6",
+                    "source": "git::https://github.com/ComputeCanada/magic_castle.git//openstack?ref=11.7",
                     "expressions": {
                         "cluster_name": {
                             "constant_value": "created"
@@ -3397,7 +3397,7 @@
                             "constant_value": "https://github.com/ComputeCanada/puppet-magic_castle.git"
                         },
                         "config_version": {
-                            "constant_value": "11.6"
+                            "constant_value": "11.7"
                         },
                         "domain": {
                             "constant_value": "calculquebec.cloud"

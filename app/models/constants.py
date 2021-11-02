@@ -10,7 +10,7 @@ MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle
 MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
     "https://github.com/ComputeCanada/puppet-magic_castle.git"
 )
-MAGIC_CASTLE_VERSION_TAG = "11.6"
+MAGIC_CASTLE_VERSION_TAG = "11.7"
 TERRAFORM_REQUIRED_VERSION = ">= 0.15.2"
 
 # Paths and filenames
