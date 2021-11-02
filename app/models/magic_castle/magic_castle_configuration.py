@@ -54,7 +54,8 @@ class MagicCastleConfiguration:
         if configuration:
             try:
                 self.__configuration = MagicCastleConfigurationSchema().load(
-                    configuration
+                    configuration,
+                    unknown=marshmallow.EXCLUDE,
                 )
             except marshmallow.ValidationError:
                 raise ServerException("The cluster configuration is invalid.")
