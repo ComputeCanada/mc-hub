@@ -42,7 +42,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
       scratch: { size: 20.6 },
     }
   },
-  public_keys: [""],
+  public_keys: [],
   guest_passwd: ""
 });
 
