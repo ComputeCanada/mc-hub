@@ -68,9 +68,7 @@ export default {
         .map(publicKey => publicKey.replace(/([\n\r])+$/, ""))
         .filter(publicKey => publicKey !== "");
       if (sanitizedPublicKeys.length === 0) {
-        // Magic Castle doesn't accept empty array of public keys.
-        // If no public key is provided, we must pass [""] instead.
-        return [""];
+        return [];
       } else {
         return sanitizedPublicKeys;
       }

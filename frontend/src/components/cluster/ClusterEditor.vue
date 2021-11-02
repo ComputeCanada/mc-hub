@@ -127,7 +127,7 @@
               close
               close-icon="mdi-delete"
               >
-              {{ data.item.split(" ")[2] }}
+              {{ data.item.split(" ").length > 2 ? data.item.split(" ")[2] : data.item.slice(0, 15) + "..." + data.item.slice(-5) }}
               </v-chip>
           </template>
           </v-combobox>
