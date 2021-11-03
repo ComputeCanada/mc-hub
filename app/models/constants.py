@@ -3,7 +3,6 @@ from os import path, environ, getcwd
 # Regular constants
 INSTANCE_CATEGORIES = ["mgmt", "login", "node"]
 STORAGE_SPACES = ["home", "project", "scratch"]
-AUTO_ALLOCATED_IP_LABEL = "Automatic allocation"
 
 # Magic Castle
 MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle.git"

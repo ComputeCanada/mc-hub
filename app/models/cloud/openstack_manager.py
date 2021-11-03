@@ -1,5 +1,5 @@
 from os import environ, path
-from models.constants import INSTANCE_CATEGORIES, AUTO_ALLOCATED_IP_LABEL
+from models.constants import INSTANCE_CATEGORIES
 from re import search, IGNORECASE
 import openstack
 
