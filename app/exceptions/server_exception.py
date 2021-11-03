@@ -18,7 +18,7 @@ class ServerException(Exception):
         :param status_code: The HTTP response status code.
         :param additional_details: Additional details which will be logged but not shown to the user.
         """
-        Exception.__init__(self, message)
+        super().__init__(message)
         self.status_code = status_code
         self.message = message
         logging.error(f"{message} {additional_details}")
@@ -29,7 +29,7 @@ class ServerException(Exception):
 
 class PuppetTimeoutException(ServerException):
     def __init__(self):
-        ServerException.__init__(self, "Puppet provisioning timed out.")
+        super().__init__("Puppet provisioning timed out.")
 
 
 class PlanException(ServerException):
@@ -45,4 +45,4 @@ class PlanException(ServerException):
         :param message: The error message, which will be logged and displayed to the user.
         :param additional_details: Additional details which will be logged but not shown to the user.
         """
-        ServerException.__init__(self, message, additional_details=additional_details)
+        super().__init__(message, additional_details=additional_details)
