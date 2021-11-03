@@ -1,4 +1,3 @@
-from models.cloud.openstack_manager import OpenStackManager
 from models.cloud.dns_manager import DnsManager
 from models.magic_castle.magic_castle_configuration_schema import (
     MagicCastleConfigurationSchema,
@@ -10,7 +9,6 @@ from models.constants import (
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
-    AUTO_ALLOCATED_IP_LABEL,
     TERRAFORM_REQUIRED_VERSION,
 )
 from copy import deepcopy
