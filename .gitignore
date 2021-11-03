@@ -137,3 +137,6 @@ clusters_backup/
 clouds.yaml
 gcloud-key.json
 configuration.json
+.terraform/
+*.backup
+*.lock.hcl
