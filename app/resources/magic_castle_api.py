@@ -15,7 +15,7 @@ class MagicCastleAPI(ApiView):
                 return [
                     {
                         **magic_castle.dump_configuration(planned_only=True),
-                        "hostname": magic_castle.get_hostname(),
+                        "hostname": magic_castle.hostname,
                         "status": magic_castle.get_status().value,
                         "freeipa_passwd": magic_castle.get_freeipa_passwd(),
                         "owner": magic_castle.get_owner_username(),
@@ -26,7 +26,7 @@ class MagicCastleAPI(ApiView):
                 return [
                     {
                         **magic_castle.dump_configuration(planned_only=True),
-                        "hostname": magic_castle.get_hostname(),
+                        "hostname": magic_castle.hostname,
                         "status": magic_castle.get_status().value,
                         "freeipa_passwd": magic_castle.get_freeipa_passwd(),
                     }

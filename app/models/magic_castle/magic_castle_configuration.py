@@ -162,7 +162,7 @@ class MagicCastleConfiguration:
             del main_tf_configuration["module"]["openstack"]["hieradata"]
 
         with open(
-            get_cluster_path(self.get_hostname(), MAIN_TERRAFORM_FILENAME), "w"
+            get_cluster_path(self.hostname, MAIN_TERRAFORM_FILENAME), "w"
         ) as main_terraform_file:
             json.dump(main_tf_configuration, main_terraform_file)
 
@@ -172,7 +172,8 @@ class MagicCastleConfiguration:
         """
         return MagicCastleConfigurationSchema().dump(self.__configuration)
 
-    def get_hostname(self):
+    @property
+    def hostname(self):
         return (
             f"{self.__configuration['cluster_name']}.{self.__configuration['domain']}"
         )

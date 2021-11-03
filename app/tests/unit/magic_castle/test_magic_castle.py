@@ -108,7 +108,7 @@ def test_get_status_errors(database_connection):
 
 
 def test_get_status_not_found(database_connection):
-    magic_castle1 = MagicCastle("nonexisting")
+    magic_castle1 = MagicCastle("nonexisting.sub.example.com")
     assert magic_castle1.get_status() == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
     assert magic_castle2.get_status() == ClusterStatusCode.NOT_FOUND
@@ -151,12 +151,16 @@ def test_dump_configuration_valid(database_connection):
             "nfs": {
                 "home": {"size": 100},
                 "project": {"size": 50},
-                "scratch": {"size": 50}
+                "scratch": {"size": 50},
             }
         },
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
             "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
@@ -172,12 +176,16 @@ def test_dump_configuration_valid(database_connection):
             "nfs": {
                 "home": {"size": 100},
                 "project": {"size": 50},
-                "scratch": {"size": 50}
+                "scratch": {"size": 50},
             }
         },
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
             "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
@@ -213,7 +221,7 @@ def test_dump_configuration_empty_state(database_connection):
         "domain": "calculquebec.cloud",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
-        "image": ""
+        "image": "",
     }
 
 
