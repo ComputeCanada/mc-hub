@@ -442,7 +442,7 @@ def test_get_hostname():
             },
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": '1234\\56789\t "',
-            "hieradata": ""
+            "hieradata": "",
         }
     )
-    assert config.get_hostname() == "foo.calculquebec.cloud"
+    assert config.hostname == "foo.calculquebec.cloud"

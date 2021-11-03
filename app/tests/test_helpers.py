@@ -56,8 +56,6 @@ def database_connection(mocker):
         test_magic_castle_rows_with_owner = [
             (
                 "buildplanning.calculquebec.cloud",
-                "buildplanning",
-                "calculquebec.cloud",
                 "plan_running",
                 "build",
                 "alice@computecanada.ca",
@@ -65,47 +63,35 @@ def database_connection(mocker):
             (
                 "created.calculquebec.cloud",
                 "created",
-                "calculquebec.cloud",
-                "created",
                 "build",
                 "alice@computecanada.ca",
             ),
             (
                 "empty.calculquebec.cloud",
-                "empty",
-                "calculquebec.cloud",
                 "build_error",
                 "none",
                 "bob12.bobby@computecanada.ca",
             ),
             (
                 "empty-state.calculquebec.cloud",
-                "empty-state",
-                "calculquebec.cloud",
                 "build_error",
                 "none",
                 "bob12.bobby@computecanada.ca",
             ),
             (
                 "missingfloatingips.c3.ca",
-                "missingfloatingips",
-                "c3.ca",
                 "build_running",
                 "none",
                 "bob12.bobby@computecanada.ca",
             ),
             (
                 "missingnodes.sub.example.com",
-                "missingnodes",
-                "sub.example.com",
                 "build_error",
                 "none",
                 "bob12.bobby@computecanada.ca",
             ),
             (
                 "valid1.calculquebec.cloud",
-                "valid1",
-                "calculquebec.cloud",
                 "provisioning_success",
                 "destroy",
                 "alice@computecanada.ca",
@@ -114,18 +100,16 @@ def database_connection(mocker):
         test_magic_castle_rows_without_owner = [
             (
                 "noowner.calculquebec.cloud",
-                "noowner",
-                "calculquebec.cloud",
                 "provisioning_success",
                 "destroy",
             ),
         ]
         database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type, owner) values (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO magic_castles (hostname, status, plan_type, owner) values (?, ?, ?, ?)",
             test_magic_castle_rows_with_owner,
         )
         database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type) values (?, ?, ?, ?, ?)",
+            "INSERT INTO magic_castles (hostname, status, plan_type) values (?, ?, ?)",
             test_magic_castle_rows_without_owner,
         )
 

@@ -40,27 +40,29 @@ class MagicCastle:
     """
 
     def __init__(self, hostname=None, owner=None):
-        self.__hostname = hostname
+        self.hostname = hostname
         self.__owner = owner
         self.__configuration = None
         self.__status = None
         self.__plan_type = None
 
-    def get_hostname(self):
-        return self.__hostname
+    @property
+    def hostname(self):
+        return f"{self.cluster_name}.{self.domain}"
 
-    def get_cluster_name(self):
-        return self.__hostname.split(".", 1)[0]
-
-    def get_domain(self):
-        return self.__hostname.split(".", 1)[1]
+    @hostname.setter
+    def hostname(self, value):
+        if value is not None:
+            self.cluster_name, self.domain = value.split(".", 1)
+        else:
+            self.cluster_name, self.domain = None, None
 
     def get_owner(self):
         if self.__owner is None:
             with DatabaseManager.connect() as database_connection:
                 result = database_connection.execute(
                     "SELECT owner FROM magic_castles WHERE hostname = ?",
-                    (self.get_hostname(),),
+                    (self.hostname,),
                 ).fetchone()
             if result:
                 self.__owner = result[0]
@@ -80,7 +82,7 @@ class MagicCastle:
     def set_configuration(self, configuration: dict):
         try:
             self.__configuration = MagicCastleConfiguration.get_from_dict(configuration)
-            self.__hostname = self.__configuration.get_hostname()
+            self.hostname = self.__configuration.hostname
         except ValidationError:
             raise InvalidUsageException(
                 "The magic castle configuration could not be parsed."
@@ -91,7 +93,7 @@ class MagicCastle:
             with DatabaseManager.connect() as database_connection:
                 result = database_connection.execute(
                     "SELECT status FROM magic_castles WHERE hostname = ?",
-                    (self.get_hostname(),),
+                    (self.hostname,),
                 ).fetchone()
             if result:
                 self.__status = ClusterStatusCode(result[0])
@@ -104,7 +106,7 @@ class MagicCastle:
         with DatabaseManager.connect() as database_connection:
             database_connection.execute(
                 "UPDATE magic_castles SET status = ? WHERE hostname = ?",
-                (self.__status.value, self.__hostname),
+                (self.__status.value, self.hostname),
             )
             database_connection.commit()
 
@@ -112,7 +114,7 @@ class MagicCastle:
         print(
             json.dumps(
                 {
-                    "hostname": self.get_hostname(),
+                    "hostname": self.hostname,
                     "status": self.__status.value,
                     "owner": self.get_owner(),
                 }
@@ -135,7 +137,7 @@ class MagicCastle:
         else:
             base_file_name = TERRAFORM_PLAN_LOG_FILENAME
 
-        logs_path = path.join(CLUSTERS_PATH, self.get_hostname())
+        logs_path = path.join(CLUSTERS_PATH, self.hostname)
         old_file_names = []
         with scandir(logs_path) as it:
             for entry in it:
@@ -162,7 +164,7 @@ class MagicCastle:
             with DatabaseManager.connect() as database_connection:
                 result = database_connection.execute(
                     "SELECT plan_type FROM magic_castles WHERE hostname = ?",
-                    (self.get_hostname(),),
+                    (self.hostname,),
                 ).fetchone()
             if result:
                 self.__plan_type = PlanType(result[0])
@@ -175,7 +177,7 @@ class MagicCastle:
         with DatabaseManager.connect() as database_connection:
             database_connection.execute(
                 "UPDATE magic_castles SET plan_type = ? WHERE hostname = ?",
-                (self.__plan_type.value, self.__hostname),
+                (self.__plan_type.value, self.hostname),
             )
             database_connection.commit()
 
@@ -215,12 +217,14 @@ class MagicCastle:
                 in [ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.DESTROY_RUNNING]
                 or not path.exists(self.__get_cluster_path(TERRAFORM_STATE_FILENAME))
             ):
-                self.__configuration = MagicCastleConfiguration.get_from_main_tf_json_file(
-                    self.get_hostname(),
+                self.__configuration = (
+                    MagicCastleConfiguration.get_from_main_tf_json_file(
+                        self.hostname,
+                    )
                 )
             else:
                 self.__configuration = MagicCastleConfiguration.get_from_state_file(
-                    self.get_hostname()
+                    self.hostname
                 )
 
             return self.__configuration.dump()
@@ -286,8 +290,8 @@ class MagicCastle:
         Returns the absolute path of the current cluster folder.
         If sub_path is specified, it is appended to the cluster path.
         """
-        if self.get_hostname():
-            return path.join(CLUSTERS_PATH, self.get_hostname(), sub_path)
+        if self.hostname:
+            return path.join(CLUSTERS_PATH, self.hostname, sub_path)
         else:
             raise FileNotFoundError
 
@@ -323,7 +327,7 @@ class MagicCastle:
                 database_connection.execute(
                     "INSERT INTO magic_castles (hostname, status, plan_type, owner) VALUES (?, ?, ?, ?)",
                     (
-                        self.get_hostname(),
+                        self.hostname,
                         ClusterStatusCode.CREATED.value,
                         plan_type.value,
                         self.get_owner(),
@@ -350,7 +354,7 @@ class MagicCastle:
             self.__update_status(previous_status)
             raise PlanException(
                 "An error occurred while initializing Terraform.",
-                additional_details=f"hostname: {self.get_hostname()}",
+                additional_details=f"hostname: {self.hostname}",
             )
 
         self.__rotate_terraform_logs(apply=False)
@@ -358,7 +362,7 @@ class MagicCastle:
             self.__get_cluster_path(TERRAFORM_PLAN_LOG_FILENAME), "w"
         ) as output_file:
             environment_variables = environ.copy()
-            dns_manager = DnsManager(self.get_domain())
+            dns_manager = DnsManager(self.domain)
             environment_variables.update(dns_manager.get_environment_variables())
             environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
             try:
@@ -408,13 +412,13 @@ class MagicCastle:
                         self.__update_status(previous_status)
                         raise PlanException(
                             "An error occurred while planning changes.",
-                            additional_details=f"hostname: {self.get_hostname()}",
+                            additional_details=f"hostname: {self.hostname}",
                         )
                 else:
                     self.__update_status(previous_status)
                     raise PlanException(
                         "An error occurred while planning changes.",
-                        additional_details=f"hostname: {self.get_hostname()}",
+                        additional_details=f"hostname: {self.hostname}",
                     )
 
         with open(
@@ -437,7 +441,7 @@ class MagicCastle:
                 self.__update_status(previous_status)
                 raise PlanException(
                     "An error occurred while exporting planned changes.",
-                    additional_details=f"hostname: {self.get_hostname()}",
+                    additional_details=f"hostname: {self.hostname}",
                 )
 
         self.__update_status(previous_status)
@@ -463,7 +467,7 @@ class MagicCastle:
                     self.__get_cluster_path(TERRAFORM_APPLY_LOG_FILENAME), "w"
                 ) as output_file:
                     environment_variables = environ.copy()
-                    dns_manager = DnsManager(self.get_domain())
+                    dns_manager = DnsManager(self.domain)
                     environment_variables.update(
                         dns_manager.get_environment_variables()
                     )
@@ -491,14 +495,14 @@ class MagicCastle:
                     with DatabaseManager.connect() as database_connection:
                         database_connection.execute(
                             "DELETE FROM magic_castles WHERE hostname = ?",
-                            (self.get_hostname(),),
+                            (self.hostname,),
                         )
                         database_connection.commit()
                 else:
                     self.__update_status(ClusterStatusCode.PROVISIONING_RUNNING)
 
                 if not destroy:
-                    provisioning_manager = ProvisioningManager(self.get_hostname())
+                    provisioning_manager = ProvisioningManager(self.hostname)
 
                     # Avoid multiple threads polling the same cluster
                     if not provisioning_manager.is_busy():

@@ -3,5 +3,5 @@ CREATE TABLE magic_castles(
     status TEXT NOT NULL,
     plan_type TEXT NOT NULL,
     owner TEXT,
-    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
