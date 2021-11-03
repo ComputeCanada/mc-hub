@@ -321,11 +321,9 @@ class MagicCastle:
         else:
             with DatabaseManager.connect() as database_connection:
                 database_connection.execute(
-                    "INSERT INTO magic_castles (hostname, cluster_name, domain, status, plan_type, owner) VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO magic_castles (hostname, status, plan_type, owner) VALUES (?, ?, ?, ?)",
                     (
                         self.get_hostname(),
-                        self.get_cluster_name(),
-                        self.get_domain(),
                         ClusterStatusCode.CREATED.value,
                         plan_type.value,
                         self.get_owner(),
