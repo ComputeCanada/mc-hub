@@ -109,14 +109,26 @@ class MagicCastleConfiguration:
         with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
             main_tf_configuration = json.load(main_tf)
 
-        configuration["nb_users"] = main_tf_configuration["module"]["openstack"].get("nb_users", 0)
-        configuration["hieradata"] = main_tf_configuration["module"]["openstack"].get("hieradata", "")
-        configuration["guest_passwd"] = main_tf_configuration["module"]["openstack"].get("guest_passwd", "")
-        configuration["volumes"] = main_tf_configuration["module"]["openstack"].get("volumes", {})
-        configuration["public_keys"] = main_tf_configuration["module"]["openstack"].get("public_keys", [])
-        
+        configuration["nb_users"] = main_tf_configuration["module"]["openstack"].get(
+            "nb_users", 0
+        )
+        configuration["hieradata"] = main_tf_configuration["module"]["openstack"].get(
+            "hieradata", ""
+        )
+        configuration["guest_passwd"] = main_tf_configuration["module"][
+            "openstack"
+        ].get("guest_passwd", "")
+        configuration["volumes"] = main_tf_configuration["module"]["openstack"].get(
+            "volumes", {}
+        )
+        configuration["public_keys"] = main_tf_configuration["module"]["openstack"].get(
+            "public_keys", []
+        )
+
         for key, value in configuration["instances"].items():
-            instance = main_tf_configuration["module"]["openstack"]["instances"].get(key, {})
+            instance = main_tf_configuration["module"]["openstack"]["instances"].get(
+                key, {}
+            )
             value["tags"] = instance.get("tags", [])
 
         return cls(configuration)
