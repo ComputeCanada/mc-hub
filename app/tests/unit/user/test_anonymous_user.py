@@ -61,14 +61,12 @@ def test_create_empty_magic_castle(database_connection):
     )
     magic_castle.plan_creation()
     result = database_connection.execute(
-        "SELECT hostname, cluster_name, domain, status, plan_type, owner FROM magic_castles WHERE hostname=?",
+        "SELECT hostname, status, plan_type, owner FROM magic_castles WHERE hostname=?",
         ("anon123.sub.example.com",),
     ).fetchall()
     assert result == [
         (
             "anon123.sub.example.com",
-            "anon123",
-            "sub.example.com",
             "created",
             "build",
             None,
