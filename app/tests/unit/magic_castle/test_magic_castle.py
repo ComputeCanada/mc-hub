@@ -233,14 +233,18 @@ def test_dump_configuration_missing_nodes(database_connection):
         "guest_passwd": "password-123",
         "volumes": {
             "nfs": {
-                "home": {"size": 100} ,
+                "home": {"size": 100},
                 "scratch": {"size": 50},
                 "project": {"size": 50},
             }
         },
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
             "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "sub.example.com",
@@ -254,7 +258,7 @@ def test_dump_configuration_missing_nodes(database_connection):
         "guest_passwd": "password-123",
         "volumes": {
             "nfs": {
-                "home": {"size": 100} ,
+                "home": {"size": 100},
                 "scratch": {"size": 50},
                 "project": {"size": 50},
             }
@@ -280,12 +284,16 @@ def test_dump_configuration_busy(database_connection):
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
             "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
         "volumes": {
             "nfs": {
-                "home": {"size": 50} ,
+                "home": {"size": 50},
                 "scratch": {"size": 1},
                 "project": {"size": 1},
             }
@@ -390,7 +398,7 @@ def test_get_available_resources_valid(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
+            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -400,11 +408,7 @@ def test_get_available_resources_valid(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": [
-                        "mgmt",
-                        "nfs",
-                        "puppet"
-                    ]
+                    "tags": ["mgmt", "nfs", "puppet"],
                 },
                 "login": {
                     "type": [
@@ -415,11 +419,7 @@ def test_get_available_resources_valid(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": [
-                        "login",
-                        "proxy",
-                        "public"
-                    ]
+                    "tags": ["login", "proxy", "public"],
                 },
                 "node": {
                     "type": [
@@ -430,9 +430,7 @@ def test_get_available_resources_valid(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": [
-                        "node"
-                    ]
+                    "tags": ["node"],
                 },
             },
             "volumes": {},
@@ -517,7 +515,7 @@ def test_get_available_resources_empty(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
+            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -527,7 +525,7 @@ def test_get_available_resources_empty(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["mgmt", "nfs", "puppet"]
+                    "tags": ["mgmt", "nfs", "puppet"],
                 },
                 "login": {
                     "type": [
@@ -538,7 +536,7 @@ def test_get_available_resources_empty(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["login", "proxy", "public"]
+                    "tags": ["login", "proxy", "public"],
                 },
                 "node": {
                     "type": [
@@ -549,13 +547,14 @@ def test_get_available_resources_empty(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["node"]
+                    "tags": ["node"],
                 },
             },
-            "volumes": { },
+            "volumes": {},
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
+
 
 def test_get_available_resources_missing_nodes(database_connection):
     """
@@ -646,7 +645,7 @@ def test_get_available_resources_missing_nodes(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
+            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -656,7 +655,7 @@ def test_get_available_resources_missing_nodes(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["mgmt", "nfs", "puppet"]
+                    "tags": ["mgmt", "nfs", "puppet"],
                 },
                 "login": {
                     "type": [
@@ -667,7 +666,7 @@ def test_get_available_resources_missing_nodes(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["login", "proxy", "public"]
+                    "tags": ["login", "proxy", "public"],
                 },
                 "node": {
                     "type": [
@@ -678,10 +677,10 @@ def test_get_available_resources_missing_nodes(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["node"]
+                    "tags": ["node"],
                 },
             },
-            "volumes": { },
+            "volumes": {},
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }
@@ -761,7 +760,7 @@ def test_get_available_resources_not_found(database_connection):
             ]
         },
         "possible_resources": {
-            "image": ['CentOS VGPU', 'CentOS-8 x64', 'centos7'],
+            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
             "instances": {
                 "mgmt": {
                     "type": [
@@ -771,7 +770,7 @@ def test_get_available_resources_not_found(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["mgmt", "nfs", "puppet"]
+                    "tags": ["mgmt", "nfs", "puppet"],
                 },
                 "login": {
                     "type": [
@@ -782,7 +781,7 @@ def test_get_available_resources_not_found(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["login", "proxy", "public"]
+                    "tags": ["login", "proxy", "public"],
                 },
                 "node": {
                     "type": [
@@ -793,10 +792,10 @@ def test_get_available_resources_not_found(database_connection):
                         "g2-c24-112gb-500",
                         "c16-120gb-392",
                     ],
-                    "tags": ["node"]
+                    "tags": ["node"],
                 },
             },
-            "volumes": { },
+            "volumes": {},
             "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
         },
     }

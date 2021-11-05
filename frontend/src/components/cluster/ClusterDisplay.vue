@@ -117,7 +117,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
       scratch: { size: 50 }
     }
   },
-  public_keys: [""],
+  public_keys: [],
   guest_passwd: "",
   hieradata: ""
 });
