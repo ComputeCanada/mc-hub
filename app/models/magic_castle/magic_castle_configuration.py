@@ -55,8 +55,11 @@ class MagicCastleConfiguration:
                     configuration,
                     unknown=marshmallow.EXCLUDE,
                 )
-            except marshmallow.ValidationError:
-                raise ServerException("The cluster configuration is invalid.")
+            except marshmallow.ValidationError as error:
+                raise ServerException(
+                    f"The cluster configuration is invalid.",
+                    additional_details=error.messages,
+                )
 
     @classmethod
     def get_from_dict(cls, configuration_dict):
