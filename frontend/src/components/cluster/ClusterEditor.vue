@@ -432,7 +432,7 @@ export default {
             ClusterStatusCode.DESTROY_ERROR
           ].includes(this.currentStatus))
       );
-    }
+    },
   },
   methods: {
     getPossibleValues(fieldPath) {

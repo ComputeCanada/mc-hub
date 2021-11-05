@@ -75,8 +75,16 @@ def test_create_empty_magic_castle(database_connection, alice):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
