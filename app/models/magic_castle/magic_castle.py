@@ -15,6 +15,9 @@ from exceptions.invalid_usage_exception import *
 from exceptions.server_exception import *
 from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
 from database.database_manager import DatabaseManager
+
+import datetime
+import humanize
 import sqlite3
 import logging
 import json
@@ -45,6 +48,7 @@ class MagicCastle:
         self.__configuration = None
         self.__status = None
         self.__plan_type = None
+        self.created = None
 
     @property
     def hostname(self):
@@ -78,6 +82,17 @@ class MagicCastle:
         if owner:
             return owner.split("@")[0]
         return None
+
+    @property
+    def age(self):
+        if self.created is None:
+            with DatabaseManager.connect() as database_connection:
+                self.created = database_connection.execute(
+                    "SELECT created FROM magic_castles WHERE hostname = ?",
+                    (self.hostname,),
+                ).fetchone()[0]
+        delta = datetime.datetime.now() - self.created
+        return humanize.precisedelta(delta)
 
     def set_configuration(self, configuration: dict):
         try:

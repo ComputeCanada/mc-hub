@@ -11,10 +11,15 @@ class DatabaseConnection:
 
     def __enter__(self) -> sqlite3.Connection:
         try:
-            self.__connection = sqlite3.connect(DATABASE_FILE_PATH)
+            self.__connection = sqlite3.connect(
+                DATABASE_FILE_PATH,
+                detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+            )
         except sqlite3.OperationalError as op_e:
-            raise sqlite3.OperationalError('Could not perform queries on the source database: '
-                                           '{}'.format(DATABASE_FILE_PATH))
+            raise sqlite3.OperationalError(
+                "Could not perform queries on the source database: "
+                "{}".format(DATABASE_FILE_PATH)
+            )
         return self.__connection
 
     def __exit__(self, type, value, traceback):

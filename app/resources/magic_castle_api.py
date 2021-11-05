@@ -19,6 +19,7 @@ class MagicCastleAPI(ApiView):
                         "status": magic_castle.get_status().value,
                         "freeipa_passwd": magic_castle.get_freeipa_passwd(),
                         "owner": magic_castle.get_owner_username(),
+                        "age": magic_castle.age,
                     }
                     for magic_castle in user.get_all_magic_castles()
                 ]
@@ -29,6 +30,7 @@ class MagicCastleAPI(ApiView):
                         "hostname": magic_castle.hostname,
                         "status": magic_castle.get_status().value,
                         "freeipa_passwd": magic_castle.get_freeipa_passwd(),
+                        "age": magic_castle.age,
                     }
                     for magic_castle in user.get_all_magic_castles()
                 ]
