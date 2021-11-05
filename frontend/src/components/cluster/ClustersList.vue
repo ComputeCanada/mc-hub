@@ -173,6 +173,10 @@ export default {
             value: "domain"
           },
           {
+            text: "Age",
+            value: "age"
+          },          
+          {
             text: "Status",
             value: "status"
           },
@@ -194,6 +198,10 @@ export default {
           {
             text: "Domain",
             value: "domain"
+          },
+          {
+            text: "Age",
+            value: "age"
           },
           {
             text: "Status",
