@@ -55,35 +55,25 @@ class AuthenticatedUser(User):
 
         :return: A list of MagicCastle objects
         """
-        if self.is_admin():
-            results = self._database_connection.execute(
-                "SELECT hostname, owner FROM magic_castles"
-            )
-        else:
-            results = self._database_connection.execute(
-                "SELECT hostname, owner FROM magic_castles WHERE owner = ?",
-                (self.edu_person_principal_name,),
-            )
-        return [
-            MagicCastle(hostname=result[0], owner=result[1])
-            for result in results.fetchall()
-        ]
+        query = "SELECT hostname, owner FROM magic_castles"
+        args = ()
+        if not self.is_admin():
+            query = " ".join([query, "WHERE owner = ?"])
+            args += (self.edu_person_principal_name,)
+        results = self._database_connection.execute(query, args)
+        return [MagicCastle(hostname, owner) for hostname, owner in results]
 
     def create_empty_magic_castle(self):
         return MagicCastle(owner=self.edu_person_principal_name)
 
     def get_magic_castle_by_hostname(self, hostname):
-        if self.is_admin():
-            results = self._database_connection.execute(
-                "SELECT hostname, owner FROM magic_castles WHERE hostname = ?",
-                (hostname,),
-            )
-        else:
-            results = self._database_connection.execute(
-                "SELECT hostname, owner FROM magic_castles WHERE owner = ? AND hostname = ?",
-                (self.edu_person_principal_name, hostname),
-            )
-        row = results.fetchone()
+        query = "SELECT hostname, owner FROM magic_castles WHERE hostname = ?"
+        args = (hostname,)
+        if not self.is_admin():
+            query = " ".join([query, "AND owner = ?"])
+            args += (self.edu_person_principal_name,)
+
+        row = self._database_connection.execute(query, args).fetchone()
         if row:
             return MagicCastle(hostname=row[0], owner=row[1])
         else:
