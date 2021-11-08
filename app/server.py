@@ -22,9 +22,10 @@ with DatabaseManager.connect() as database_connection:
 
 app = Flask(__name__)
 
-# Allows all origins on all routes (not safe for production)
+# Allows origins set in config file on all routes
 CORS(
-    app, origins=config["cors_allowed_origins"],
+    app,
+    origins=config["cors_allowed_origins"],
 )
 
 magic_castle_view = MagicCastleAPI.as_view("magic_castle")
