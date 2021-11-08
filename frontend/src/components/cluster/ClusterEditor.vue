@@ -22,6 +22,31 @@
         <v-list-item>
           <v-select v-model="magicCastle.image" :items="getPossibleValues('image')" label="Image" />
         </v-list-item>
+        <v-list-item>
+          <v-menu
+            v-model="magicCastle.expiration_date"
+            :nudge-right="40"
+            transition="scale-transition"
+            offset-y
+            min-width="auto"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-text-field
+                v-model="date"
+                label="Expiration date"
+                prepend-icon="mdi-calendar"
+                readonly
+                v-bind="attrs"
+                v-on="on"
+              ></v-text-field>
+            </template>
+            <v-date-picker
+              v-model="date"
+              @input="menu2 = false"
+              :min="tomorrowDate"
+            ></v-date-picker>
+          </v-menu>
+        </v-list-item>
       </v-list>
       <v-divider />
 
@@ -255,7 +280,9 @@ export default {
       positiveNumberRule: value => (typeof value === "number" && value >= 0) || "Must be a positive number",
       passwordLengthRule: value =>
         value.length >= MINIMUM_PASSWORD_LENGTH ||
-        `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`
+        `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`,
+      nowDate: new Date().toISOString().slice(0,10),
+      tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0,10),
     };
   },
   watch: {
