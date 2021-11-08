@@ -89,6 +89,7 @@ BOB_HEADERS = {
     "sshPublicKey": "ssh-rsa FAKE",
 }
 
+IGNORE_FIELDS = ["age"]
 
 @pytest.fixture
 def client(mocker):
@@ -122,7 +123,13 @@ def test_get_current_user_non_authentified(client):
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles", headers=ALICE_HEADERS)
-    assert res.get_json() == [
+    results = []
+    for result in res.get_json():
+        for field in IGNORE_FIELDS:
+            result.pop(field)
+        results.append(result)
+
+    assert results == [
         {
             "cluster_name": "buildplanning",
             "domain": "calculquebec.cloud",
