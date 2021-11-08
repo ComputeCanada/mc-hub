@@ -15,7 +15,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
         "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]}
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
     },
     "volumes": {
         "nfs": {
@@ -36,7 +36,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
         "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]}
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
     },
     "volumes": {
         "nfs": {
@@ -63,7 +63,7 @@ EXISTING_CLUSTER_STATE = {
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
         "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]}
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
     },
     "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
@@ -95,8 +95,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "c2-7.5gb-31",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
             "volumes": {
@@ -119,8 +127,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "c2-7.5gb-31",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
             "volumes": {
@@ -144,8 +160,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 34,
             "instances": {
-                "mgmt": {"type": "c2-7.5gb-31", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "c2-7.5gb-31",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
             },
             "volumes": {
@@ -172,8 +196,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 17,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
             },
             "volumes": {
@@ -196,8 +228,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
@@ -220,8 +260,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
@@ -244,8 +292,16 @@ def test_get_all_magic_castle_names(client):
             "image": "CentOS-7-x64-2020-11",
             "nb_users": 10,
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "volumes": {
@@ -519,7 +575,8 @@ def test_modify_invalid_status(database_connection, client):
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
     res = client.put(
-        f"/api/magic-castles/{EXISTING_HOSTNAME}", json=EXISTING_CLUSTER_CONFIGURATION,
+        f"/api/magic-castles/{EXISTING_HOSTNAME}",
+        json=EXISTING_CLUSTER_CONFIGURATION,
     )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
@@ -528,7 +585,8 @@ def test_modify_invalid_status(database_connection, client):
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
     res = client.put(
-        f"/api/magic-castles/{EXISTING_HOSTNAME}", json=EXISTING_CLUSTER_CONFIGURATION,
+        f"/api/magic-castles/{EXISTING_HOSTNAME}",
+        json=EXISTING_CLUSTER_CONFIGURATION,
     )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
