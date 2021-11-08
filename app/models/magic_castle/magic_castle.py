@@ -92,7 +92,7 @@ class MagicCastle:
                     (self.hostname,),
                 ).fetchone()[0]
         delta = datetime.datetime.now() - self.created
-        return humanize.precisedelta(delta)
+        return humanize.naturaldelta(delta)
 
     def set_configuration(self, configuration: dict):
         try:
