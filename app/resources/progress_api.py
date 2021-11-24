@@ -8,7 +8,7 @@ class ProgressAPI(ApiView):
     def get(self, user: User, hostname):
         try:
             magic_castle = user.get_magic_castle_by_hostname(hostname)
-            status = magic_castle.get_status()
+            status = magic_castle.status
             progress = magic_castle.get_progress()
             if progress is None:
                 return {"status": status.value}

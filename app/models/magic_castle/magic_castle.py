@@ -41,13 +41,24 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
+    _status = None
+    __owner = None
+    __configuration = None
+    __plan_type = None
+    created = None
+
     def __init__(self, hostname=None, owner=None):
         self.hostname = hostname
-        self.__owner = owner
-        self.__configuration = None
-        self.__status = None
-        self.__plan_type = None
-        self.created = None
+
+        if self.found:
+            try:
+                self.__configuration = MagicCastleConfiguration.get_from_main_file(
+                    self.hostname,
+                )
+            except FileNotFoundError:
+                pass
+        else:
+            self.__owner = owner
 
     @property
     def hostname(self):
@@ -62,15 +73,7 @@ class MagicCastle:
 
     def get_owner(self):
         if self.__owner is None:
-            with DatabaseManager.connect() as database_connection:
-                result = database_connection.execute(
-                    "SELECT owner FROM magic_castles WHERE hostname = ?",
-                    (self.hostname,),
-                ).fetchone()
-            if result:
-                self.__owner = result[0]
-            else:
-                self.__owner = None
+            self.read_db_entry()
         return self.__owner
 
     def get_owner_username(self):
@@ -85,11 +88,7 @@ class MagicCastle:
     @property
     def age(self):
         if self.created is None:
-            with DatabaseManager.connect() as database_connection:
-                self.created = database_connection.execute(
-                    "SELECT created FROM magic_castles WHERE hostname = ?",
-                    (self.hostname,),
-                ).fetchone()[0]
+            self.read_db_entry()
         delta = datetime.datetime.now() - self.created
         return humanize.naturaldelta(delta)
 
@@ -102,25 +101,34 @@ class MagicCastle:
                 "The magic castle configuration could not be parsed."
             )
 
-    def get_status(self) -> ClusterStatusCode:
-        if self.__status is None:
-            with DatabaseManager.connect() as database_connection:
-                result = database_connection.execute(
-                    "SELECT status FROM magic_castles WHERE hostname = ?",
-                    (self.hostname,),
-                ).fetchone()
+    def read_db_entry(self):
+        with DatabaseManager.connect() as database_connection:
+            result = database_connection.execute(
+                "SELECT status, owner, created, plan_type FROM magic_castles WHERE hostname = ?",
+                (self.hostname,),
+            ).fetchone()
             if result:
-                self.__status = ClusterStatusCode(result[0])
+                self._status = ClusterStatusCode(result[0])
+                self.__owner = result[1]
+                self.created = result[2]
+                self.__plan_type = PlanType(result[3])
             else:
-                self.__status = ClusterStatusCode.NOT_FOUND
-        return self.__status
+                self._status = ClusterStatusCode.NOT_FOUND
+                self.__plan_type = PlanType.NONE
 
-    def __update_status(self, status: ClusterStatusCode):
-        self.__status = status
+    @property
+    def status(self) -> ClusterStatusCode:
+        if self._status is None:
+            self.read_db_entry()
+        return self._status
+
+    @status.setter
+    def status(self, status: ClusterStatusCode):
+        self._status = status
         with DatabaseManager.connect() as database_connection:
             database_connection.execute(
                 "UPDATE magic_castles SET status = ? WHERE hostname = ?",
-                (self.__status.value, self.hostname),
+                (self._status.value, self.hostname),
             )
             database_connection.commit()
 
@@ -129,7 +137,7 @@ class MagicCastle:
             json.dumps(
                 {
                     "hostname": self.hostname,
-                    "status": self.__status.value,
+                    "status": self._status.value,
                     "owner": self.get_owner(),
                 }
             ),
@@ -175,15 +183,7 @@ class MagicCastle:
 
     def get_plan_type(self) -> PlanType:
         if self.__plan_type is None:
-            with DatabaseManager.connect() as database_connection:
-                result = database_connection.execute(
-                    "SELECT plan_type FROM magic_castles WHERE hostname = ?",
-                    (self.hostname,),
-                ).fetchone()
-            if result:
-                self.__plan_type = PlanType(result[0])
-            else:
-                self.__plan_type = PlanType.NONE
+            self.read_db_entry()
         return self.__plan_type
 
     def __update_plan_type(self, plan_type: PlanType):
@@ -196,7 +196,7 @@ class MagicCastle:
             database_connection.commit()
 
     def get_progress(self):
-        if self.__not_found():
+        if not self.found:
             raise ClusterNotFoundException
 
         initial_plan = self.__get_plan()
@@ -218,20 +218,16 @@ class MagicCastle:
 
         :return: The configuration dictionary
         """
-        if self.__not_found():
+        if not self.found:
             raise ClusterNotFoundException
 
-        try:
-            config = MagicCastleConfiguration.get_from_main_file(
-                self.hostname,
-            ).dump()
-        except FileNotFoundError:
-            config = {}
-
-        return config
+        if self.__configuration:
+            return self.__configuration.dump()
+        else:
+            return {}
 
     def get_freeipa_passwd(self):
-        if self.__is_busy():
+        if self.is_busy:
             return None
 
         try:
@@ -244,7 +240,7 @@ class MagicCastle:
             return None
 
     def get_allocated_resources(self):
-        if self.__is_busy():
+        if self.is_busy:
             raise BusyClusterException
 
         try:
@@ -272,23 +268,23 @@ class MagicCastle:
 
         return allocated_resources
 
-    def __is_busy(self):
-        return self.get_status() in [
+    @property
+    def is_busy(self):
+        return self.status in [
             ClusterStatusCode.PLAN_RUNNING,
             ClusterStatusCode.BUILD_RUNNING,
             ClusterStatusCode.DESTROY_RUNNING,
         ]
 
-    def __not_found(self):
-        return self.get_status() == ClusterStatusCode.NOT_FOUND
+    @property
+    def found(self):
+        return self.status != ClusterStatusCode.NOT_FOUND
 
-    def __plan_created(self):
-        return self.get_status() != ClusterStatusCode.PLAN_RUNNING and path.exists(
+    @property
+    def plan_created(self):
+        return self.status != ClusterStatusCode.PLAN_RUNNING and path.exists(
             self.__get_cluster_path(TERRAFORM_PLAN_BINARY_FILENAME)
         )
-
-    def __found(self):
-        return self.get_status() != ClusterStatusCode.NOT_FOUND
 
     def __get_cluster_path(self, sub_path=""):
         """
@@ -301,23 +297,23 @@ class MagicCastle:
             raise FileNotFoundError
 
     def plan_creation(self):
-        if self.__found():
+        if self.found:
             raise ClusterExistsException
 
         return self.__plan(destroy=False, existing_cluster=False)
 
     def plan_modification(self):
-        if self.__not_found():
+        if not self.found:
             raise ClusterNotFoundException
-        if self.__is_busy():
+        if self.is_busy:
             raise BusyClusterException
 
         return self.__plan(destroy=False, existing_cluster=True)
 
     def plan_destruction(self):
-        if self.__not_found():
+        if not self.found:
             raise ClusterNotFoundException
-        if self.__is_busy():
+        if self.is_busy:
             raise BusyClusterException
 
         self.__plan(destroy=True, existing_cluster=True)
@@ -326,7 +322,7 @@ class MagicCastle:
         plan_type = PlanType.DESTROY if destroy else PlanType.BUILD
         if existing_cluster:
             self.__remove_existing_plan()
-            previous_status = self.get_status()
+            previous_status = self.status
         else:
             with DatabaseManager.connect() as database_connection:
                 database_connection.execute(
@@ -342,7 +338,7 @@ class MagicCastle:
             mkdir(self.__get_cluster_path())
             previous_status = ClusterStatusCode.CREATED
 
-        self.__update_status(ClusterStatusCode.PLAN_RUNNING)
+        self.status = ClusterStatusCode.PLAN_RUNNING
         self.__update_plan_type(plan_type)
 
         if not destroy:
@@ -356,7 +352,7 @@ class MagicCastle:
                 check=True,
             )
         except CalledProcessError:
-            self.__update_status(previous_status)
+            self.status = previous_status
             raise PlanException(
                 "An error occurred while initializing Terraform.",
                 additional_details=f"hostname: {self.hostname}",
@@ -414,13 +410,13 @@ class MagicCastle:
                         )
                     except CalledProcessError:
                         # terraform plan fails even without refreshing the state
-                        self.__update_status(previous_status)
+                        self.status = previous_status
                         raise PlanException(
                             "An error occurred while planning changes.",
                             additional_details=f"hostname: {self.hostname}",
                         )
                 else:
-                    self.__update_status(previous_status)
+                    self.status = previous_status
                     raise PlanException(
                         "An error occurred while planning changes.",
                         additional_details=f"hostname: {self.hostname}",
@@ -443,23 +439,23 @@ class MagicCastle:
                     check=True,
                 )
             except CalledProcessError:
-                self.__update_status(previous_status)
+                self.status = previous_status
                 raise PlanException(
                     "An error occurred while exporting planned changes.",
                     additional_details=f"hostname: {self.hostname}",
                 )
 
-        self.__update_status(previous_status)
+        self.status = previous_status
 
     def apply(self):
-        if self.__not_found():
+        if not self.found:
             raise ClusterNotFoundException
-        if self.__is_busy():
+        if self.is_busy:
             raise BusyClusterException
-        if not self.__plan_created():
+        if not self.plan_created:
             raise PlanNotCreatedException
 
-        self.__update_status(
+        self.status = (
             ClusterStatusCode.BUILD_RUNNING
             if self.get_plan_type() == PlanType.BUILD
             else ClusterStatusCode.DESTROY_RUNNING
@@ -504,7 +500,7 @@ class MagicCastle:
                         )
                         database_connection.commit()
                 else:
-                    self.__update_status(ClusterStatusCode.PROVISIONING_RUNNING)
+                    self.status = ClusterStatusCode.PROVISIONING_RUNNING
 
                 if not destroy:
                     provisioning_manager = ProvisioningManager(self.hostname)
@@ -517,12 +513,12 @@ class MagicCastle:
                         except PuppetTimeoutException:
                             status_code = ClusterStatusCode.PROVISIONING_ERROR
 
-                        self.__update_status(status_code)
+                        self.status = status_code
 
             except CalledProcessError:
                 logging.info("An error occurred while running terraform apply.")
 
-                self.__update_status(
+                self.status = (
                     ClusterStatusCode.DESTROY_ERROR
                     if destroy
                     else ClusterStatusCode.BUILD_ERROR

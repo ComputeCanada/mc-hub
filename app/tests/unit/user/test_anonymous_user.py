@@ -21,7 +21,7 @@ def test_get_all_magic_castles(database_connection):
         "noowner.calculquebec.cloud",
         "valid1.calculquebec.cloud",
     ]
-    assert [magic_castle.get_status() for magic_castle in all_magic_castles] == [
+    assert [magic_castle.status for magic_castle in all_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
         ClusterStatusCode.BUILD_ERROR,
@@ -87,4 +87,4 @@ def test_get_magic_castle_by_hostname(database_connection):
     magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.get_owner() == "alice@computecanada.ca"
-    assert magic_castle.get_status() == ClusterStatusCode.PROVISIONING_SUCCESS
+    assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
