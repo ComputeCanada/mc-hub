@@ -325,10 +325,8 @@ def test_get_from_dict_empty_hieradata_valid():
     }
 
 
-def test_get_from_main_tf_json_file_valid():
-    config = MagicCastleConfiguration.get_from_main_tf_json_file(
-        "missingnodes.sub.example.com"
-    )
+def test_get_from_main_file_valid():
+    config = MagicCastleConfiguration.get_from_main_file("missingnodes.sub.example.com")
     assert config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
@@ -356,73 +354,14 @@ def test_get_from_main_tf_json_file_valid():
     }
 
 
-def test_get_from_main_tf_json_file_not_found():
+def test_get_from_main_file_not_found():
     with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_main_tf_json_file("empty")
+        MagicCastleConfiguration.get_from_main_file("empty")
     with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_main_tf_json_file("non-existing")
+        MagicCastleConfiguration.get_from_main_file("non-existing")
 
 
-def test_get_from_state_file_missing_nodes():
-    config = MagicCastleConfiguration.get_from_state_file(
-        "missingnodes.sub.example.com"
-    )
-    assert config.dump() == {
-        "cluster_name": "missingnodes",
-        "domain": "sub.example.com",
-        "image": "CentOS-7-x64-2020-11",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
-            "node": {"type": "", "count": 0, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "hieradata": "",
-        "guest_passwd": "password-123",
-    }
-
-
-def test_get_from_state_file_empty():
-    config = MagicCastleConfiguration.get_from_state_file(
-        "empty-state.calculquebec.cloud"
-    )
-    assert config.dump() == {
-        "cluster_name": "empty-state",
-        "domain": "calculquebec.cloud",
-        "image": "",
-        "nb_users": 34,
-        "instances": {
-            "mgmt": {"type": "", "count": 0, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
-            "node": {"type": "", "count": 0, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 73},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "hieradata": "",
-        "guest_passwd": "password-123",
-    }
-
-
-def test_get_from_state_file_not_found():
-    with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_state_file("non-existing")
-
-
-def test_update_main_tf_json_file():
+def test_update_main_file():
     modified_config = MagicCastleConfiguration.get_from_dict(
         {
             "cluster_name": "missingnodes",
@@ -446,8 +385,8 @@ def test_update_main_tf_json_file():
             "guest_passwd": "",
         }
     )
-    modified_config.update_main_tf_json_file()
-    saved_config = MagicCastleConfiguration.get_from_main_tf_json_file(
+    modified_config.update_main_file()
+    saved_config = MagicCastleConfiguration.get_from_main_file(
         "missingnodes.sub.example.com"
     )
     assert saved_config.dump() == {
