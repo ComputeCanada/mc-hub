@@ -19,7 +19,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
         "created.calculquebec.cloud",
         "valid1.calculquebec.cloud",
     ]
-    assert [magic_castle.get_status() for magic_castle in alice_magic_castles] == [
+    assert [magic_castle.status for magic_castle in alice_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
         ClusterStatusCode.PROVISIONING_SUCCESS,
@@ -33,7 +33,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
         "missingfloatingips.c3.ca",
         "missingnodes.sub.example.com",
     ]
-    assert [magic_castle.get_status() for magic_castle in bob_magic_castles] == [
+    assert [magic_castle.status for magic_castle in bob_magic_castles] == [
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_RUNNING,
@@ -52,7 +52,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
         "valid1.calculquebec.cloud",
         "noowner.calculquebec.cloud",
     ]
-    assert [magic_castle.get_status() for magic_castle in admin_magic_castles] == [
+    assert [magic_castle.status for magic_castle in admin_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
         ClusterStatusCode.BUILD_ERROR,
@@ -118,7 +118,7 @@ def test_get_magic_castle_by_hostname(database_connection, alice):
     magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.get_owner() == "alice@computecanada.ca"
-    assert magic_castle.get_status() == ClusterStatusCode.PROVISIONING_SUCCESS
+    assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
 def test_get_magic_castle_by_hostname_admin(database_connection, admin):
@@ -126,7 +126,7 @@ def test_get_magic_castle_by_hostname_admin(database_connection, admin):
     magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.get_owner() == "alice@computecanada.ca"
-    assert magic_castle.get_status() == ClusterStatusCode.PROVISIONING_SUCCESS
+    assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
 def test_get_magic_castle_by_hostname_unauthorized_user(database_connection, bob):

@@ -93,25 +93,25 @@ def test_create_magic_castle_plan_export_fail(database_connection, monkeypatch):
 
 def test_get_status_valid(database_connection):
     created = MagicCastle("created.calculquebec.cloud")
-    assert created.get_status() == ClusterStatusCode.CREATED
+    assert created.status == ClusterStatusCode.CREATED
     buildplanning = MagicCastle("buildplanning.calculquebec.cloud")
-    assert buildplanning.get_status() == ClusterStatusCode.PLAN_RUNNING
+    assert buildplanning.status == ClusterStatusCode.PLAN_RUNNING
     valid1 = MagicCastle("valid1.calculquebec.cloud")
-    assert valid1.get_status() == ClusterStatusCode.PROVISIONING_SUCCESS
+    assert valid1.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
 def test_get_status_errors(database_connection):
     empty = MagicCastle("empty.calculquebec.cloud")
-    assert empty.get_status() == ClusterStatusCode.BUILD_ERROR
+    assert empty.status == ClusterStatusCode.BUILD_ERROR
     missingnodes = MagicCastle("missingnodes.sub.example.com")
-    assert missingnodes.get_status() == ClusterStatusCode.BUILD_ERROR
+    assert missingnodes.status == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_not_found(database_connection):
     magic_castle1 = MagicCastle("nonexisting.sub.example.com")
-    assert magic_castle1.get_status() == ClusterStatusCode.NOT_FOUND
+    assert magic_castle1.status == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
-    assert magic_castle2.get_status() == ClusterStatusCode.NOT_FOUND
+    assert magic_castle2.status == ClusterStatusCode.NOT_FOUND
 
 
 def test_get_plan_type_build(database_connection):
