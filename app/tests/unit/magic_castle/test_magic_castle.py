@@ -310,7 +310,7 @@ def test_dump_configuration_not_found(database_connection):
         magic_castle.dump_configuration()
 
 
-def test_get_available_resources_valid(database_connection):
+def test_get_allocated_resources_valid(database_connection):
     """
     Mock context :
 
@@ -329,234 +329,39 @@ def test_get_available_resources_valid(database_connection):
     1000 - 720 = 280 GiO of volume storage
 
     Therefore, valid1 cluster can use a total of:
-    3 + 100 = 103 instances
-    10 + 301 = 311 vcpus
-    15,360 + 102,400 = 117,760 ram (115 GiO)
-    3 + 28 = 31 volumes
-    200 + 280 = 480 GiO of volume storage
+    3 instances
+    10  vcpus
+    15,360 GiB ram
+    3 volumes
+    200 GiB of volume storage
     """
     magic_castle = MagicCastle("valid1.calculquebec.cloud")
-    assert magic_castle.get_available_resources() == {
-        "quotas": {
-            "instance_count": {"max": 103},
-            "ram": {"max": 117_760},
-            "vcpus": {"max": 311},
-            "volume_count": {"max": 31},
-            "volume_size": {"max": 480},
-        },
-        "resource_details": {
-            "instance_types": [
-                {
-                    "name": "p1-1.5gb",
-                    "vcpus": 1,
-                    "ram": 1_536,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p2-3gb",
-                    "vcpus": 2,
-                    "ram": 3_072,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p4-6gb",
-                    "vcpus": 4,
-                    "ram": 6_144,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "c8-30gb-186",
-                    "vcpus": 8,
-                    "ram": 30_720,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c8-90gb-186",
-                    "vcpus": 8,
-                    "ram": 92_160,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "g2-c24-112gb-500",
-                    "vcpus": 24,
-                    "ram": 114_688,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c16-120gb-392",
-                    "vcpus": 16,
-                    "ram": 122_880,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-            ]
-        },
-        "possible_resources": {
-            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
-            "instances": {
-                "mgmt": {
-                    "type": [
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["node"],
-                },
-            },
-            "volumes": {},
-            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
-        },
+    assert magic_castle.get_allocated_resources() == {
+        "pre_allocated_instance_count": 3,
+        "pre_allocated_ram": 15360,
+        "pre_allocated_cores": 10,
+        "pre_allocated_volume_count": 3,
+        "pre_allocated_volume_size": 200,
     }
 
 
-def test_get_available_resources_empty(database_connection):
+def test_get_allocated_resources_empty(database_connection):
     """
     Mock context :
 
     empty cluster uses 0 vcpus, 0 ram, 0 volume
-
-    openstack's quotas says there currently remains:
-    128 - 28 = 100 instances
-    500 - 199 = 301 vcpus
-    286,720 - 184,320 = 102,400 ram (100 GiO)
-    128 - 100 = 28 volumes
-    1000 - 720 = 280 GiO of volume storage
     """
     magic_castle = MagicCastle("empty.calculquebec.cloud")
-    assert magic_castle.get_available_resources() == {
-        "quotas": {
-            "instance_count": {"max": 100},
-            "ram": {"max": 102_400},
-            "vcpus": {"max": 301},
-            "volume_count": {"max": 28},
-            "volume_size": {"max": 280},
-        },
-        "resource_details": {
-            "instance_types": [
-                {
-                    "name": "p1-1.5gb",
-                    "vcpus": 1,
-                    "ram": 1_536,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p2-3gb",
-                    "vcpus": 2,
-                    "ram": 3_072,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p4-6gb",
-                    "vcpus": 4,
-                    "ram": 6_144,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "c8-30gb-186",
-                    "vcpus": 8,
-                    "ram": 30_720,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c8-90gb-186",
-                    "vcpus": 8,
-                    "ram": 92_160,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "g2-c24-112gb-500",
-                    "vcpus": 24,
-                    "ram": 114_688,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c16-120gb-392",
-                    "vcpus": 16,
-                    "ram": 122_880,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-            ]
-        },
-        "possible_resources": {
-            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
-            "instances": {
-                "mgmt": {
-                    "type": [
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["node"],
-                },
-            },
-            "volumes": {},
-            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
-        },
+    assert magic_castle.get_allocated_resources() == {
+        "pre_allocated_instance_count": 0,
+        "pre_allocated_ram": 0,
+        "pre_allocated_cores": 0,
+        "pre_allocated_volume_count": 0,
+        "pre_allocated_volume_size": 0,
     }
 
 
-def test_get_available_resources_missing_nodes(database_connection):
+def test_get_allocated_resources_missing_nodes(database_connection):
     """
     Mock context :
 
@@ -567,235 +372,28 @@ def test_get_available_resources_missing_nodes(database_connection):
     0 [root disks] + 3 [external volumes] = 3 volumes
     0 + 0 + 0 [root disks]
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
-
-    openstack's quotas says there currently remains:
-    128 - 28 = 100 instances
-    500 - 199 = 301 vcpus
-    286,720 - 184,320 = 102,400 ram (100 GiO)
-    128 - 100 = 28 volumes
-    1000 - 720 = 280 GiO of volume storage
-
-    Therefore, missingnodes cluster can use a total of:
-    0 + 100 = 0 instances
-    0 + 301 = 301 vcpus
-    0 + 102,400 = 102,400 ram (100 GiO)
-    3 + 28 = 31 volumes
-    200 + 280 = 480 GiO of volume storage
     """
     magic_castle = MagicCastle("missingnodes.sub.example.com")
-    assert magic_castle.get_available_resources() == {
-        "quotas": {
-            "instance_count": {"max": 100},
-            "ram": {"max": 102_400},
-            "vcpus": {"max": 301},
-            "volume_count": {"max": 31},
-            "volume_size": {"max": 480},
-        },
-        "resource_details": {
-            "instance_types": [
-                {
-                    "name": "p1-1.5gb",
-                    "vcpus": 1,
-                    "ram": 1_536,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p2-3gb",
-                    "vcpus": 2,
-                    "ram": 3_072,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p4-6gb",
-                    "vcpus": 4,
-                    "ram": 6_144,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "c8-30gb-186",
-                    "vcpus": 8,
-                    "ram": 30_720,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c8-90gb-186",
-                    "vcpus": 8,
-                    "ram": 92_160,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "g2-c24-112gb-500",
-                    "vcpus": 24,
-                    "ram": 114_688,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c16-120gb-392",
-                    "vcpus": 16,
-                    "ram": 122_880,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-            ]
-        },
-        "possible_resources": {
-            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
-            "instances": {
-                "mgmt": {
-                    "type": [
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["node"],
-                },
-            },
-            "volumes": {},
-            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
-        },
+    assert magic_castle.get_allocated_resources() == {
+        "pre_allocated_instance_count": 0,
+        "pre_allocated_ram": 0,
+        "pre_allocated_cores": 0,
+        "pre_allocated_volume_count": 3,
+        "pre_allocated_volume_size": 200,
     }
 
 
-def test_get_available_resources_not_found(database_connection):
+def test_get_allocated_resources_not_found(database_connection):
     """
     Mock context :
 
-    openstack's quotas says there currently remains:
-    128 - 28 = 100 instances
-    500 - 199 = 301 vcpus
-    286,720 - 184,320 = 102,400 ram (100 GiO)
-    128 - 100 = 28 volumes
-    1000 - 720 = 280 GiO of volume storage
+    empty cluster uses 0 vcpus, 0 ram, 0 volume
     """
     magic_castle = MagicCastle()
-    assert magic_castle.get_available_resources() == {
-        "quotas": {
-            "instance_count": {"max": 100},
-            "ram": {"max": 102_400},
-            "vcpus": {"max": 301},
-            "volume_count": {"max": 28},
-            "volume_size": {"max": 280},
-        },
-        "resource_details": {
-            "instance_types": [
-                {
-                    "name": "p1-1.5gb",
-                    "vcpus": 1,
-                    "ram": 1_536,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p2-3gb",
-                    "vcpus": 2,
-                    "ram": 3_072,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "p4-6gb",
-                    "vcpus": 4,
-                    "ram": 6_144,
-                    "required_volume_count": 1,
-                    "required_volume_size": 10,
-                },
-                {
-                    "name": "c8-30gb-186",
-                    "vcpus": 8,
-                    "ram": 30_720,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c8-90gb-186",
-                    "vcpus": 8,
-                    "ram": 92_160,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "g2-c24-112gb-500",
-                    "vcpus": 24,
-                    "ram": 114_688,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-                {
-                    "name": "c16-120gb-392",
-                    "vcpus": 16,
-                    "ram": 122_880,
-                    "required_volume_count": 0,
-                    "required_volume_size": 0,
-                },
-            ]
-        },
-        "possible_resources": {
-            "image": ["CentOS VGPU", "CentOS-8 x64", "centos7"],
-            "instances": {
-                "mgmt": {
-                    "type": [
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {
-                    "type": [
-                        "p2-3gb",
-                        "p4-6gb",
-                        "c8-30gb-186",
-                        "c8-90gb-186",
-                        "g2-c24-112gb-500",
-                        "c16-120gb-392",
-                    ],
-                    "tags": ["node"],
-                },
-            },
-            "volumes": {},
-            "domain": ["calculquebec.cloud", "c3.ca", "sub.example.com"],
-        },
+    assert magic_castle.get_allocated_resources() == {
+        "pre_allocated_instance_count": 0,
+        "pre_allocated_ram": 0,
+        "pre_allocated_cores": 0,
+        "pre_allocated_volume_count": 0,
+        "pre_allocated_volume_size": 0,
     }

@@ -8,7 +8,6 @@ from models.magic_castle.cluster_status_code import ClusterStatusCode
 from models.magic_castle.plan_type import PlanType
 from models.terraform.terraform_state_parser import TerraformStateParser
 from models.terraform.terraform_plan_parser import TerraformPlanParser
-from models.cloud.cloud_manager import CloudManager
 from models.cloud.dns_manager import DnsManager
 from models.puppet.provisioning_manager import ProvisioningManager
 from exceptions.invalid_usage_exception import *
@@ -259,7 +258,7 @@ class MagicCastle:
         except FileNotFoundError:
             return None
 
-    def get_available_resources(self):
+    def get_allocated_resources(self):
         if self.__is_busy():
             raise BusyClusterException
 
@@ -268,19 +267,25 @@ class MagicCastle:
                 self.__get_cluster_path(TERRAFORM_STATE_FILENAME), "r"
             ) as terraform_state_file:
                 state = json.load(terraform_state_file)
+        except FileNotFoundError:
+            allocated_resources = dict(
+                pre_allocated_instance_count=0,
+                pre_allocated_ram=0,
+                pre_allocated_cores=0,
+                pre_allocated_volume_count=0,
+                pre_allocated_volume_size=0,
+            )
+        else:
             parser = TerraformStateParser(state)
-
-            cloud_manager = CloudManager(
+            allocated_resources = dict(
                 pre_allocated_instance_count=parser.get_instance_count(),
                 pre_allocated_ram=parser.get_ram(),
                 pre_allocated_cores=parser.get_cores(),
                 pre_allocated_volume_count=parser.get_volume_count(),
                 pre_allocated_volume_size=parser.get_volume_size(),
             )
-        except FileNotFoundError:
-            cloud_manager = CloudManager()
 
-        return cloud_manager.get_available_resources()
+        return allocated_resources
 
     def __is_busy(self):
         return self.get_status() in [
