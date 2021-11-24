@@ -212,38 +212,23 @@ class MagicCastle:
             terraform_output = ""
         return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
-    def dump_configuration(self, planned_only=False):
+    def dump_configuration(self):
         """
         Returns the Magic Castle configuration dictionary of the current cluster.
 
-        :param planned_only: Set to True to extract configuration exclusively from main.tf.json (runs faster). If set to
-        False, it will attempt to extract the configuration from the terraform state file if available (and otherwise
-        use the main.tf.json file).
         :return: The configuration dictionary
         """
         if self.__not_found():
             raise ClusterNotFoundException
 
         try:
-            if (
-                planned_only
-                or self.get_status()
-                in [ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.DESTROY_RUNNING]
-                or not path.exists(self.__get_cluster_path(TERRAFORM_STATE_FILENAME))
-            ):
-                self.__configuration = (
-                    MagicCastleConfiguration.get_from_main_tf_json_file(
-                        self.hostname,
-                    )
-                )
-            else:
-                self.__configuration = MagicCastleConfiguration.get_from_state_file(
-                    self.hostname
-                )
-
-            return self.__configuration.dump()
+            config = MagicCastleConfiguration.get_from_main_file(
+                self.hostname,
+            ).dump()
         except FileNotFoundError:
-            return dict()
+            config = {}
+
+        return config
 
     def get_freeipa_passwd(self):
         if self.__is_busy():
@@ -361,7 +346,7 @@ class MagicCastle:
         self.__update_plan_type(plan_type)
 
         if not destroy:
-            self.__configuration.update_main_tf_json_file()
+            self.__configuration.update_main_file()
 
         try:
             run(

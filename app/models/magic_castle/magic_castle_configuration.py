@@ -39,7 +39,7 @@ class MagicCastleConfiguration:
     MagicCastleConfiguration is responsible for loading, updating and dumping Magic Castle configurations.
 
     Loading can be done using a raw configuration dictionary (get_from_dict),
-    from a main.tf.json file (get_from_main_tf_json_file), or from a Terraform state file (get_from_state_file).
+    or from a main.tf.json file (get_from_main_file)
 
     All configurations are validated with the configuration schema using the MagicCastleSchema class.
     """
@@ -71,7 +71,7 @@ class MagicCastleConfiguration:
         return cls(configuration)
 
     @classmethod
-    def get_from_main_tf_json_file(cls, hostname):
+    def get_from_main_file(cls, hostname):
         """
         Returns a new MagicCastleConfiguration object with the configuration parsed from the main.tf.json file.
 
@@ -87,45 +87,7 @@ class MagicCastleConfiguration:
 
         return cls(configuration)
 
-    @classmethod
-    def get_from_state_file(cls, hostname):
-        """
-        Returns a new MagicCastleConfiguration object with the configuration parsed from the terraform.tfstate file.
-
-        Note: the `hieradata` field gets parsed from the main.tf.json file instead, because it is not available in the
-        terraform.tfstate file.
-        """
-        with open(
-            get_cluster_path(hostname, TERRAFORM_STATE_FILENAME), "r"
-        ) as terraform_state_file:
-            state = json.load(terraform_state_file)
-        parser = TerraformStateParser(state)
-        configuration = parser.get_partial_configuration()
-
-        # Add cluster_name and domain. When the terraform state file is empty,
-        # these variables must still be parsed correctly to create a valid MagicCastleConfiguration object.
-        [cluster_name, domain] = hostname.split(".", 1)
-        configuration["cluster_name"] = cluster_name
-        configuration["domain"] = domain
-
-        # Add missing parameter to configuration
-        with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
-            main_tf_configuration = json.load(main_tf)
-        main_module = main_tf_configuration["module"]["openstack"]
-
-        configuration["nb_users"] = main_module.get("nb_users", 0)
-        configuration["hieradata"] = main_module.get("hieradata", "")
-        configuration["guest_passwd"] = main_module.get("guest_passwd", "")
-        configuration["volumes"] = main_module.get("volumes", {})
-        configuration["public_keys"] = main_module.get("public_keys", [])
-
-        for key, value in configuration["instances"].items():
-            instance = main_module["instances"].get(key, {})
-            value["tags"] = instance.get("tags", [])
-
-        return cls(configuration)
-
-    def update_main_tf_json_file(self):
+    def update_main_file(self):
         """
         Formats the configuration and writes it to the cluster's main.tf.json file.
         """

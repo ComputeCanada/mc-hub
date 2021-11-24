@@ -14,7 +14,7 @@ class MagicCastleAPI(ApiView):
             if type(user) == AuthenticatedUser:
                 return [
                     {
-                        **magic_castle.dump_configuration(planned_only=True),
+                        **magic_castle.dump_configuration(),
                         "hostname": magic_castle.hostname,
                         "status": magic_castle.get_status().value,
                         "freeipa_passwd": magic_castle.get_freeipa_passwd(),
@@ -26,7 +26,7 @@ class MagicCastleAPI(ApiView):
             else:
                 return [
                     {
-                        **magic_castle.dump_configuration(planned_only=True),
+                        **magic_castle.dump_configuration(),
                         "hostname": magic_castle.hostname,
                         "status": magic_castle.get_status().value,
                         "freeipa_passwd": magic_castle.get_freeipa_passwd(),
