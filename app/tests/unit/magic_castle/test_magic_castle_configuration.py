@@ -326,7 +326,9 @@ def test_get_from_dict_empty_hieradata_valid():
 
 
 def test_get_from_main_file_valid():
-    config = MagicCastleConfiguration.get_from_main_file("missingnodes.sub.example.com")
+    config = MagicCastleConfiguration.get_from_main_file(
+        path.join(MOCK_CLUSTERS_PATH, "missingnodes.sub.example.com", "main.tf.json")
+    )
     assert config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
@@ -385,10 +387,11 @@ def test_update_main_file():
             "guest_passwd": "",
         }
     )
-    modified_config.update_main_file()
-    saved_config = MagicCastleConfiguration.get_from_main_file(
-        "missingnodes.sub.example.com"
+    path_ = path.join(
+        MOCK_CLUSTERS_PATH, "missingnodes.sub.example.com", "main.tf.json"
     )
+    modified_config.update_main_file(path_)
+    saved_config = MagicCastleConfiguration.get_from_main_file(path_)
     assert saved_config.dump() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",

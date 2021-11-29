@@ -96,237 +96,236 @@ def test_get_all_magic_castle_names(client):
             result.pop(field)
         results.append(result)
 
-    assert results == [
-        {
-            "cluster_name": "buildplanning",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 34,
-            "instances": {
-                "mgmt": {
-                    "type": "c2-7.5gb-31",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
+    assert results[0] == {
+        "cluster_name": "buildplanning",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 34,
+        "instances": {
+            "mgmt": {
+                "type": "c2-7.5gb-31",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
             },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 73},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
             },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "hostname": "buildplanning.calculquebec.cloud",
-            "status": "plan_running",
-            "freeipa_passwd": None,
+            "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
         },
-        {
-            "cluster_name": "created",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 34,
-            "instances": {
-                "mgmt": {
-                    "type": "c2-7.5gb-31",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 73},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
-            },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "hostname": "created.calculquebec.cloud",
-            "status": "created",
-            "freeipa_passwd": None,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 73},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
-        {
-            "hostname": "empty-state.calculquebec.cloud",
-            "cluster_name": "empty-state",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 34,
-            "instances": {
-                "mgmt": {
-                    "type": "c2-7.5gb-31",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "hostname": "buildplanning.calculquebec.cloud",
+        "status": "plan_running",
+        "freeipa_passwd": None,
+    }
+    assert results[1] == {
+        "cluster_name": "created",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 34,
+        "instances": {
+            "mgmt": {
+                "type": "c2-7.5gb-31",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
             },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 73},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
             },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "status": "build_error",
-            "freeipa_passwd": None,
+            "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
         },
-        {
-            "hostname": "empty.calculquebec.cloud",
-            "status": "build_error",
-            "freeipa_passwd": None,
+        "volumes": {
+            "nfs": {
+                "home": {"size": 73},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
-        {
-            "cluster_name": "missingfloatingips",
-            "domain": "c3.ca",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "hostname": "created.calculquebec.cloud",
+        "status": "created",
+        "freeipa_passwd": None,
+    }
+    assert results[2] == {
+        "hostname": "empty-state.calculquebec.cloud",
+        "cluster_name": "empty-state",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 34,
+        "instances": {
+            "mgmt": {
+                "type": "c2-7.5gb-31",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
             },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 50},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
             },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "hostname": "missingfloatingips.c3.ca",
-            "status": "build_running",
-            "freeipa_passwd": None,
+            "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
         },
-        {
-            "cluster_name": "missingnodes",
-            "domain": "sub.example.com",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 10,
-            "instances": {
-                "mgmt": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 100},
-                    "project": {"size": 50},
-                    "scratch": {"size": 50},
-                }
-            },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "hostname": "missingnodes.sub.example.com",
-            "status": "build_error",
-            "freeipa_passwd": "FAKE",
+        "volumes": {
+            "nfs": {
+                "home": {"size": 73},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
-        {
-            "cluster_name": "noowner",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 10,
-            "instances": {
-                "mgmt": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "status": "build_error",
+        "freeipa_passwd": None,
+    }
+    assert results[3] == {
+        "hostname": "empty.calculquebec.cloud",
+        "status": "build_error",
+        "freeipa_passwd": None,
+    }
+    assert results[4] == {
+        "cluster_name": "missingfloatingips",
+        "domain": "c3.ca",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 17,
+        "instances": {
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
             },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 100},
-                    "project": {"size": 50},
-                    "scratch": {"size": 50},
-                }
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
             },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "hostname": "noowner.calculquebec.cloud",
-            "status": "provisioning_success",
-            "freeipa_passwd": "FAKE",
+            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
-        {
-            "cluster_name": "valid1",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 10,
-            "instances": {
-                "mgmt": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 100},
-                    "project": {"size": 50},
-                    "scratch": {"size": 50},
-                }
-            },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": "password-123",
-            "hieradata": "",
-            "hostname": "valid1.calculquebec.cloud",
-            "status": "provisioning_success",
-            "freeipa_passwd": "FAKE",
+        "volumes": {
+            "nfs": {
+                "home": {"size": 50},
+                "project": {"size": 1},
+                "scratch": {"size": 1},
+            }
         },
-    ]
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "hostname": "missingfloatingips.c3.ca",
+        "status": "build_running",
+        "freeipa_passwd": None,
+    }
+
+    assert results[5] == {
+        "cluster_name": "missingnodes",
+        "domain": "sub.example.com",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 10,
+        "instances": {
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+        },
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
+        },
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "hostname": "missingnodes.sub.example.com",
+        "status": "build_error",
+        "freeipa_passwd": "FAKE",
+    }
+    assert results[6] == {
+        "cluster_name": "noowner",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 10,
+        "instances": {
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+        },
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
+        },
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "hostname": "noowner.calculquebec.cloud",
+        "status": "provisioning_success",
+        "freeipa_passwd": "FAKE",
+    }
+    assert results[7] == {
+        "cluster_name": "valid1",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2020-11",
+        "nb_users": 10,
+        "instances": {
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+        },
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
+        },
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+        "hostname": "valid1.calculquebec.cloud",
+        "status": "provisioning_success",
+        "freeipa_passwd": "FAKE",
+    }
     assert res.status_code == 200
 
 

@@ -12,12 +12,15 @@ from models.cloud.dns_manager import DnsManager
 from models.puppet.provisioning_manager import ProvisioningManager
 from exceptions.invalid_usage_exception import *
 from exceptions.server_exception import *
-from models.constants import TERRAFORM_STATE_FILENAME, CLUSTERS_PATH
+from models.constants import (
+    MAIN_TERRAFORM_FILENAME,
+    TERRAFORM_STATE_FILENAME,
+    CLUSTERS_PATH,
+)
 from database.database_manager import DatabaseManager
 
 import datetime
 import humanize
-import sqlite3
 import logging
 import json
 
@@ -47,17 +50,15 @@ class MagicCastle:
     __plan_type = None
     created = None
     _path = None
+    _main_file = None
 
     def __init__(self, hostname=None, owner=None):
         self.hostname = hostname
-
-        if self.found:
-            try:
-                self.__configuration = MagicCastleConfiguration.get_from_main_file(
-                    self.hostname,
-                )
-            except FileNotFoundError:
-                pass
+        self.read_db_entry()
+        if self._main_file and path.exists(self._main_file):
+            self.__configuration = MagicCastleConfiguration.get_from_main_file(
+                self._main_file
+            )
         else:
             self.__owner = owner
 
@@ -67,12 +68,15 @@ class MagicCastle:
 
     @hostname.setter
     def hostname(self, value):
+
         if value is not None:
             self.cluster_name, self.domain = value.split(".", 1)
             self._path = path.join(CLUSTERS_PATH, self.hostname)
+            self._main_file = path.join(self._path, MAIN_TERRAFORM_FILENAME)
         else:
             self.cluster_name, self.domain = None, None
             self._path = None
+            self._main_file = None
 
     def get_owner(self):
         if self.__owner is None:
@@ -336,7 +340,7 @@ class MagicCastle:
         self.__update_plan_type(plan_type)
 
         if not destroy:
-            self.__configuration.update_main_file()
+            self.__configuration.update_main_file(self._main_file)
 
         try:
             run(
