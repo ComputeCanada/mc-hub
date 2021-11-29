@@ -117,7 +117,7 @@ def test_get_magic_castle_by_hostname(database_connection, alice):
     user = alice(database_connection)
     magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.get_owner() == "alice@computecanada.ca"
+    assert magic_castle.owner.id == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
@@ -125,7 +125,7 @@ def test_get_magic_castle_by_hostname_admin(database_connection, admin):
     user = admin(database_connection)
     magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.get_owner() == "alice@computecanada.ca"
+    assert magic_castle.owner.id == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 

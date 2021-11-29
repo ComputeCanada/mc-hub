@@ -34,6 +34,15 @@ TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
 
+class Owner:
+    def __init__(self, id=None):
+        self.id = id
+        if self.id:
+            self.username = self.id.split("@")[0]
+        else:
+            self.username = None
+
+
 class MagicCastle:
     """
     Magic Castle is the class that manages everything related to the state of a Magic Castle cluster.
@@ -45,7 +54,7 @@ class MagicCastle:
     """
 
     _status = None
-    __owner = None
+    _owner = None
     __configuration = None
     __plan_type = None
     created = None
@@ -60,7 +69,7 @@ class MagicCastle:
                 self._main_file
             )
         else:
-            self.__owner = owner
+            self._owner = Owner(owner)
 
     @property
     def hostname(self):
@@ -78,19 +87,11 @@ class MagicCastle:
             self._path = None
             self._main_file = None
 
-    def get_owner(self):
-        if self.__owner is None:
+    @property
+    def owner(self):
+        if self._owner is None:
             self.read_db_entry()
-        return self.__owner
-
-    def get_owner_username(self):
-        """
-        MC Hub stores username in the form of eduPersonPrincipalName.
-        """
-        owner = self.get_owner()
-        if owner:
-            return owner.split("@")[0]
-        return None
+        return self._owner
 
     @property
     def age(self):
@@ -116,12 +117,13 @@ class MagicCastle:
             ).fetchone()
             if result:
                 self._status = ClusterStatusCode(result[0])
-                self.__owner = result[1]
+                self._owner = Owner(result[1])
                 self.created = result[2]
                 self.__plan_type = PlanType(result[3])
             else:
                 self._status = ClusterStatusCode.NOT_FOUND
                 self.__plan_type = PlanType.NONE
+                self._owner = Owner(None)
 
     @property
     def status(self) -> ClusterStatusCode:
@@ -145,7 +147,7 @@ class MagicCastle:
                 {
                     "hostname": self.hostname,
                     "status": self._status.value,
-                    "owner": self.get_owner(),
+                    "owner": self.owner.id,
                 }
             ),
             flush=True,
@@ -230,6 +232,16 @@ class MagicCastle:
             return self.__configuration.dump()
         else:
             return {}
+
+    def dump_state(self):
+        return {
+            **self.dump_configuration(),
+            "hostname": self.hostname,
+            "status": self.status.value,
+            "freeipa_passwd": self.get_freeipa_passwd(),
+            "owner": self.owner.username,
+            "age": self.age,
+        }
 
     def get_freeipa_passwd(self):
         if self.is_busy:
@@ -329,7 +341,7 @@ class MagicCastle:
                         self.hostname,
                         ClusterStatusCode.CREATED.value,
                         plan_type.value,
-                        self.get_owner(),
+                        self.owner.id,
                     ),
                 )
                 database_connection.commit()

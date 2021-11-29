@@ -69,6 +69,10 @@ EXISTING_CLUSTER_STATE = {
     "public_keys": ["ssh-rsa FAKE"],
     "image": "CentOS-7-x64-2020-11",
     "hieradata": "",
+    "status": "provisioning_success",
+    "owner": "alice",
+    "hostname": "valid1.calculquebec.cloud",
+    "freeipa_passwd": "FAKE",
 }
 
 IGNORE_FIELDS = ["age"]
@@ -127,6 +131,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "buildplanning.calculquebec.cloud",
         "status": "plan_running",
         "freeipa_passwd": None,
+        "owner": "alice",
     }
     assert results[1] == {
         "cluster_name": "created",
@@ -159,6 +164,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "created.calculquebec.cloud",
         "status": "created",
         "freeipa_passwd": None,
+        "owner": "alice",
     }
     assert results[2] == {
         "hostname": "empty-state.calculquebec.cloud",
@@ -191,11 +197,13 @@ def test_get_all_magic_castle_names(client):
         "hieradata": "",
         "status": "build_error",
         "freeipa_passwd": None,
+        "owner": "bob12.bobby",
     }
     assert results[3] == {
         "hostname": "empty.calculquebec.cloud",
         "status": "build_error",
         "freeipa_passwd": None,
+        "owner": None,
     }
     assert results[4] == {
         "cluster_name": "missingfloatingips",
@@ -228,6 +236,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "missingfloatingips.c3.ca",
         "status": "build_running",
         "freeipa_passwd": None,
+        "owner": "bob12.bobby",
     }
 
     assert results[5] == {
@@ -261,6 +270,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "missingnodes.sub.example.com",
         "status": "build_error",
         "freeipa_passwd": "FAKE",
+        "owner": "bob12.bobby",
     }
     assert results[6] == {
         "cluster_name": "noowner",
@@ -293,6 +303,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "noowner.calculquebec.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
+        "owner": None,
     }
     assert results[7] == {
         "cluster_name": "valid1",
@@ -325,6 +336,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "valid1.calculquebec.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
+        "owner": "alice",
     }
     assert res.status_code == 200
 
@@ -332,7 +344,10 @@ def test_get_all_magic_castle_names(client):
 # GET /api/magic-castles/<hostname>
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}")
-    assert res.get_json() == EXISTING_CLUSTER_STATE
+    state = res.get_json()
+    for field in IGNORE_FIELDS:
+        state.pop(field)
+    assert state == EXISTING_CLUSTER_STATE
     assert res.status_code == 200
 
 
