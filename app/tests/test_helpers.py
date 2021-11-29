@@ -155,11 +155,9 @@ def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture(autouse=True)
 def mock_clusters_path(mocker):
+    mocker.patch("models.constants.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
     mocker.patch(
-        "models.magic_castle.magic_castle.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH
-    )
-    mocker.patch(
-        "models.magic_castle.magic_castle_configuration.CLUSTERS_PATH",
+        "models.magic_castle.magic_castle.CLUSTERS_PATH",
         new=MOCK_CLUSTERS_PATH,
     )
 

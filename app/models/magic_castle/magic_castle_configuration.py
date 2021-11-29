@@ -2,23 +2,16 @@ from models.cloud.dns_manager import DnsManager
 from models.magic_castle.magic_castle_configuration_schema import (
     MagicCastleConfigurationSchema,
 )
-from models.terraform.terraform_state_parser import TerraformStateParser
 from models.constants import (
     MAGIC_CASTLE_MODULE_SOURCE,
     MAGIC_CASTLE_VERSION_TAG,
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
-    TERRAFORM_STATE_FILENAME,
-    CLUSTERS_PATH,
     TERRAFORM_REQUIRED_VERSION,
 )
 from copy import deepcopy
-from os import path
 import json
 import marshmallow
 from exceptions.server_exception import ServerException
-
-
-MAIN_TERRAFORM_FILENAME = "main.tf.json"
 
 IGNORED_CONFIGURATION_FIELDS = [
     "source",
@@ -28,10 +21,6 @@ IGNORED_CONFIGURATION_FIELDS = [
     # Legacy fields
     "puppetenv_rev",
 ]
-
-
-def get_cluster_path(hostname, sub_path):
-    return path.join(CLUSTERS_PATH, hostname, sub_path)
 
 
 class MagicCastleConfiguration:
@@ -71,14 +60,14 @@ class MagicCastleConfiguration:
         return cls(configuration)
 
     @classmethod
-    def get_from_main_file(cls, hostname):
+    def get_from_main_file(cls, filename):
         """
         Returns a new MagicCastleConfiguration object with the configuration parsed from the main.tf.json file.
 
-        :param hostname: the hostname of the cluster.
+        :param filename: path to the main.tf.json file
         :return: The MagicCastleConfiguration object associated with the cluster.
         """
-        with open(get_cluster_path(hostname, MAIN_TERRAFORM_FILENAME), "r") as main_tf:
+        with open(filename, "r") as main_tf:
             main_tf_configuration = json.load(main_tf)
         configuration = main_tf_configuration["module"]["openstack"]
 
@@ -87,7 +76,7 @@ class MagicCastleConfiguration:
 
         return cls(configuration)
 
-    def update_main_file(self):
+    def update_main_file(self, filename):
         """
         Formats the configuration and writes it to the cluster's main.tf.json file.
         """
@@ -110,14 +99,12 @@ class MagicCastleConfiguration:
 
         # Magic Castle does not support an empty string in the hieradata field
         if (
-            main_tf_configuration["module"]["openstack"].get("hieradata") is not None
+            "hieradata" in main_tf_configuration["module"]["openstack"]
             and len(main_tf_configuration["module"]["openstack"]["hieradata"]) == 0
         ):
             del main_tf_configuration["module"]["openstack"]["hieradata"]
 
-        with open(
-            get_cluster_path(self.hostname, MAIN_TERRAFORM_FILENAME), "w"
-        ) as main_terraform_file:
+        with open(filename, "w") as main_terraform_file:
             json.dump(main_tf_configuration, main_terraform_file)
 
     def dump(self):
