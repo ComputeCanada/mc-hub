@@ -2,38 +2,14 @@ from flask import request
 from resources.api_view import ApiView
 from exceptions.invalid_usage_exception import InvalidUsageException
 from models.user.user import User
-from models.user.authenticated_user import AuthenticatedUser
 
 
 class MagicCastleAPI(ApiView):
     def get(self, user: User, hostname):
         if hostname:
-            magic_castle = user.get_magic_castle_by_hostname(hostname)
-            return magic_castle.dump_configuration()
+            return user.get_magic_castle_by_hostname(hostname).dump_state()
         else:
-            if type(user) == AuthenticatedUser:
-                return [
-                    {
-                        **magic_castle.dump_configuration(),
-                        "hostname": magic_castle.hostname,
-                        "status": magic_castle.status.value,
-                        "freeipa_passwd": magic_castle.get_freeipa_passwd(),
-                        "owner": magic_castle.get_owner_username(),
-                        "age": magic_castle.age,
-                    }
-                    for magic_castle in user.get_all_magic_castles()
-                ]
-            else:
-                return [
-                    {
-                        **magic_castle.dump_configuration(),
-                        "hostname": magic_castle.hostname,
-                        "status": magic_castle.status.value,
-                        "freeipa_passwd": magic_castle.get_freeipa_passwd(),
-                        "age": magic_castle.age,
-                    }
-                    for magic_castle in user.get_all_magic_castles()
-                ]
+            return [mc.dump_state() for mc in user.get_all_magic_castles()]
 
     def post(self, user: User, hostname, apply=False):
         if apply:

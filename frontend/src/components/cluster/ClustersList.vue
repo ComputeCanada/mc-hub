@@ -162,8 +162,7 @@ export default {
   },
   computed: {
     headers() {
-      if (this.magicCastles.some(magicCastle => "owner" in magicCastle)) {
-        return [
+      let base_headers = [
           {
             text: "Cluster name",
             value: "cluster_name"
@@ -180,38 +179,17 @@ export default {
             text: "Status",
             value: "status"
           },
-          {
-            text: "Owner",
-            value: "owner"
-          },
-          {
-            text: "",
-            value: "data-table-expand"
-          }
-        ];
+      ];
+      let end_headers = [
+        {
+          text: "",
+          value: "data-table-expand"
+        }
+      ];
+      if (this.magicCastles.some(magicCastle => "owner" in magicCastle && magicCastle.owner != null)) {
+        return base_headers.concat([{text: "Owner", value: "owner"}], end_headers);
       } else {
-        return [
-          {
-            text: "Cluster name",
-            value: "cluster_name"
-          },
-          {
-            text: "Domain",
-            value: "domain"
-          },
-          {
-            text: "Age",
-            value: "age"
-          },
-          {
-            text: "Status",
-            value: "status"
-          },
-          {
-            text: "",
-            value: "data-table-expand"
-          }
-        ];
+        return base_headers.concat(end_headers);
       }
     }
   },
