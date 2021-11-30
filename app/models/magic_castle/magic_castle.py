@@ -55,7 +55,7 @@ class MagicCastle:
 
     _status = None
     _owner = None
-    __configuration = None
+    _configuration = None
     __plan_type = None
     created = None
     _path = None
@@ -65,7 +65,7 @@ class MagicCastle:
         self.hostname = hostname
         self.read_db_entry()
         if self._main_file and path.exists(self._main_file):
-            self.__configuration = MagicCastleConfiguration.get_from_main_file(
+            self._configuration = MagicCastleConfiguration.get_from_main_file(
                 self._main_file
             )
         else:
@@ -102,12 +102,14 @@ class MagicCastle:
 
     def set_configuration(self, configuration: dict):
         try:
-            self.__configuration = MagicCastleConfiguration.get_from_dict(configuration)
-            self.hostname = self.__configuration.hostname
+            self._configuration = MagicCastleConfiguration(configuration)
         except ValidationError:
             raise InvalidUsageException(
                 "The magic castle configuration could not be parsed."
             )
+        self.hostname = (
+            f"{self._configuration.cluster_name}.{self._configuration.domain}"
+        )
 
     def read_db_entry(self):
         with DatabaseManager.connect() as database_connection:
@@ -228,8 +230,8 @@ class MagicCastle:
         if not self.found:
             raise ClusterNotFoundException
 
-        if self.__configuration:
-            return self.__configuration.dump()
+        if self._configuration:
+            return self._configuration.to_dict()
         else:
             return {}
 
@@ -352,7 +354,7 @@ class MagicCastle:
         self.__update_plan_type(plan_type)
 
         if not destroy:
-            self.__configuration.update_main_file(self._main_file)
+            self._configuration.update_main_file(self._main_file)
 
         try:
             run(
