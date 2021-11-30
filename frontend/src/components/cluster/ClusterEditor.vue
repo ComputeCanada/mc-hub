@@ -24,7 +24,6 @@
         </v-list-item>
         <v-list-item>
           <v-menu
-            v-model="magicCastle.expiration_date"
             :nudge-right="40"
             transition="scale-transition"
             offset-y
@@ -32,7 +31,7 @@
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
-                v-model="date"
+                v-model="magicCastle.expiration_date"
                 label="Expiration date"
                 prepend-icon="mdi-calendar"
                 readonly
@@ -41,7 +40,7 @@
               ></v-text-field>
             </template>
             <v-date-picker
-              v-model="date"
+              v-model="magicCastle.expiration_date"
               @input="menu2 = false"
               :min="tomorrowDate"
             ></v-date-picker>
