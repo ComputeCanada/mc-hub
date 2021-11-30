@@ -60,6 +60,7 @@ class MagicCastle:
     created = None
     _path = None
     _main_file = None
+    expiration_date = None
 
     def __init__(self, hostname=None, owner=None):
         self.hostname = hostname
@@ -115,7 +116,7 @@ class MagicCastle:
     def read_db_entry(self):
         with DatabaseManager.connect() as database_connection:
             result = database_connection.execute(
-                "SELECT status, owner, created, plan_type FROM magic_castles WHERE hostname = ?",
+                "SELECT status, owner, created, plan_type, expiration_date FROM magic_castles WHERE hostname = ?",
                 (self.hostname,),
             ).fetchone()
             if result:
@@ -123,6 +124,7 @@ class MagicCastle:
                 self._owner = Owner(result[1])
                 self.created = result[2]
                 self.__plan_type = PlanType(result[3])
+                self.expiration_date = result[4]
             else:
                 self._status = ClusterStatusCode.NOT_FOUND
                 self.__plan_type = PlanType.NONE
@@ -244,6 +246,7 @@ class MagicCastle:
             "freeipa_passwd": self.get_freeipa_passwd(),
             "owner": self.owner.username,
             "age": self.age,
+            "expiration_date": self.expiration_date,
         }
 
     def get_freeipa_passwd(self):
@@ -339,12 +342,13 @@ class MagicCastle:
         else:
             with DatabaseManager.connect() as database_connection:
                 database_connection.execute(
-                    "INSERT INTO magic_castles (hostname, status, plan_type, owner) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date) VALUES (?, ?, ?, ?, ?)",
                     (
                         self.hostname,
                         ClusterStatusCode.CREATED.value,
                         plan_type.value,
                         self.owner.id,
+                        self.expiration_date,
                     ),
                 )
                 database_connection.commit()
