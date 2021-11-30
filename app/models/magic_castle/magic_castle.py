@@ -101,6 +101,7 @@ class MagicCastle:
         return humanize.naturaldelta(delta)
 
     def set_configuration(self, configuration: dict):
+        self.expiration_date = configuration.pop("expiration_date", None)
         try:
             self._configuration = MagicCastleConfiguration(configuration)
         except ValidationError:
