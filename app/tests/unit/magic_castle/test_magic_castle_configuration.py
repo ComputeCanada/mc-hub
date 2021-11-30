@@ -5,36 +5,11 @@ from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 def test_constructor_none():
-    config = MagicCastleConfiguration()
-    assert config.dump() == {}
+    assert MagicCastleConfiguration().to_dict() == {}
 
 
 def test_constructor_valid():
-    config = MagicCastleConfiguration(
-        {
-            "cluster_name": "foo-123",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 50},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
-            },
-            "public_keys": [""],
-            "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
-            "jupyterhub::enable_otp_auth: false",
-            "guest_passwd": '1234\\56789\t "',
-        }
-    )
-    assert config.dump() == {
+    CONFIG_DICT = {
         "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2020-11",
@@ -56,32 +31,11 @@ def test_constructor_valid():
         "jupyterhub::enable_otp_auth: false",
         "guest_passwd": '1234\\56789\t "',
     }
+    assert MagicCastleConfiguration(CONFIG_DICT).to_dict() == CONFIG_DICT
 
 
-def test_constructor_no_hieradata_valid():
-    config = MagicCastleConfiguration(
-        {
-            "cluster_name": "foo-123",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1},
-                "login": {"type": "p4-6gb", "count": 1},
-                "node": {"type": "p2-3gb", "count": 3},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 50},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
-            },
-            "public_keys": [""],
-            "guest_passwd": '1234\\56789\t "',
-        }
-    )
-    assert config.dump() == {
+def test_constructor_empty_hieradata_valid():
+    CONFIG_DICT = {
         "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2020-11",
@@ -99,9 +53,10 @@ def test_constructor_no_hieradata_valid():
             }
         },
         "public_keys": [""],
-        "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
+        "hieradata": "",
     }
+    assert MagicCastleConfiguration(CONFIG_DICT).to_dict() == CONFIG_DICT
 
 
 def test_constructor_invalid_cluster_name():
@@ -208,44 +163,17 @@ def test_constructor_invalid_domain():
 
 
 def test_get_from_dict_valid():
-    config = MagicCastleConfiguration.get_from_dict(
-        {
-            "cluster_name": "foo",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 50},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
-            },
-            "public_keys": [""],
-            "hieradata": 'profile::base::admin_email: "me@example.org"',
-            "guest_passwd": '1234\\56789\t "',
-        }
-    )
-    assert config.dump() == {
+    CONFIG_DICT = {
         "cluster_name": "foo",
         "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
             "login": {
                 "type": "p4-6gb",
                 "count": 1,
@@ -264,47 +192,21 @@ def test_get_from_dict_valid():
         "hieradata": 'profile::base::admin_email: "me@example.org"',
         "guest_passwd": '1234\\56789\t "',
     }
+    assert MagicCastleConfiguration(CONFIG_DICT).to_dict() == CONFIG_DICT
 
 
 def test_get_from_dict_empty_hieradata_valid():
-    config = MagicCastleConfiguration.get_from_dict(
-        {
-            "cluster_name": "foo",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["mgmt", "nfs", "puppet"],
-                },
-                "login": {
-                    "type": "p4-6gb",
-                    "count": 1,
-                    "tags": ["login", "proxy", "public"],
-                },
-                "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 50},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
-            },
-            "public_keys": [""],
-            "hieradata": "",
-            "guest_passwd": '1234\\56789\t "',
-        }
-    )
-    assert config.dump() == {
+    CONFIG_DICT = {
         "cluster_name": "foo",
         "domain": "calculquebec.cloud",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
             "login": {
                 "type": "p4-6gb",
                 "count": 1,
@@ -323,13 +225,15 @@ def test_get_from_dict_empty_hieradata_valid():
         "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
     }
+    config = MagicCastleConfiguration(CONFIG_DICT)
+    assert config.to_dict() == CONFIG_DICT
 
 
 def test_get_from_main_file_valid():
     config = MagicCastleConfiguration.get_from_main_file(
         path.join(MOCK_CLUSTERS_PATH, "missingnodes.sub.example.com", "main.tf.json")
     )
-    assert config.dump() == {
+    assert config.to_dict() == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
         "image": "CentOS-7-x64-2020-11",
@@ -364,35 +268,7 @@ def test_get_from_main_file_not_found():
 
 
 def test_update_main_file():
-    modified_config = MagicCastleConfiguration.get_from_dict(
-        {
-            "cluster_name": "missingnodes",
-            "domain": "sub.example.com",
-            "image": "CentOS-7-x64-2020-11",
-            "nb_users": 30,
-            "instances": {
-                "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
-                "node": {"type": "", "count": 12, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 400},
-                    "project": {"size": 12},
-                    "scratch": {"size": 50},
-                }
-            },
-            "public_keys": ["ssh-rsa FOOBAR"],
-            "hieradata": "",
-            "guest_passwd": "",
-        }
-    )
-    path_ = path.join(
-        MOCK_CLUSTERS_PATH, "missingnodes.sub.example.com", "main.tf.json"
-    )
-    modified_config.update_main_file(path_)
-    saved_config = MagicCastleConfiguration.get_from_main_file(path_)
-    assert saved_config.dump() == {
+    CONFIG_DICT = {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
         "image": "CentOS-7-x64-2020-11",
@@ -414,8 +290,16 @@ def test_update_main_file():
         "guest_passwd": "",
     }
 
+    modified_config = MagicCastleConfiguration(CONFIG_DICT)
+    path_ = path.join(
+        MOCK_CLUSTERS_PATH, "missingnodes.sub.example.com", "main.tf.json"
+    )
+    modified_config.update_main_file(path_)
+    saved_config = MagicCastleConfiguration.get_from_main_file(path_)
+    assert saved_config.to_dict() == CONFIG_DICT
 
-def test_get_hostname():
+
+def test_properties():
     config = MagicCastleConfiguration(
         {
             "cluster_name": "foo",
@@ -439,4 +323,5 @@ def test_get_hostname():
             "hieradata": "",
         }
     )
-    assert config.hostname == "foo.calculquebec.cloud"
+    assert config.cluster_name == "foo"
+    assert config.domain == "calculquebec.cloud"

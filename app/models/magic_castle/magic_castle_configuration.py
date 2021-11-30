@@ -27,7 +27,7 @@ class MagicCastleConfiguration:
     """
     MagicCastleConfiguration is responsible for loading, updating and dumping Magic Castle configurations.
 
-    Loading can be done using a raw configuration dictionary (get_from_dict),
+    Loading can be done using a raw configuration dictionary (__init__),
     or from a main.tf.json file (get_from_main_file)
 
     All configurations are validated with the configuration schema using the MagicCastleSchema class.
@@ -37,10 +37,10 @@ class MagicCastleConfiguration:
         """
         Initializes a MagicCastleConfiguration and validates the configuration schema, if present.
         """
-        self.__configuration = None
+        self._configuration = {}
         if configuration:
             try:
-                self.__configuration = MagicCastleConfigurationSchema().load(
+                self._configuration = MagicCastleConfigurationSchema().load(
                     configuration,
                     unknown=marshmallow.EXCLUDE,
                 )
@@ -49,15 +49,6 @@ class MagicCastleConfiguration:
                     f"The cluster configuration is invalid.",
                     additional_details=error.messages,
                 )
-
-    @classmethod
-    def get_from_dict(cls, configuration_dict):
-        """
-        Returns a new MagicCastleConfiguration object with the configuration given as a parameter.
-        """
-        configuration = deepcopy(configuration_dict)
-
-        return cls(configuration)
 
     @classmethod
     def get_from_main_file(cls, filename):
@@ -89,32 +80,27 @@ class MagicCastleConfiguration:
                     "generate_ssh_key": True,
                     "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
                     "config_version": MAGIC_CASTLE_VERSION_TAG,
-                    **deepcopy(self.__configuration),
+                    **self.to_dict(),
                 }
             },
         }
         main_tf_configuration["module"].update(
-            DnsManager(self.__configuration["domain"]).get_magic_castle_configuration()
+            DnsManager(self._configuration["domain"]).get_magic_castle_configuration()
         )
-
-        # Magic Castle does not support an empty string in the hieradata field
-        if (
-            "hieradata" in main_tf_configuration["module"]["openstack"]
-            and len(main_tf_configuration["module"]["openstack"]["hieradata"]) == 0
-        ):
-            del main_tf_configuration["module"]["openstack"]["hieradata"]
 
         with open(filename, "w") as main_terraform_file:
             json.dump(main_tf_configuration, main_terraform_file)
 
-    def dump(self):
+    def to_dict(self):
         """
-        Dumps the configuration dictionnary.
+        Returns the configuration dictionnary.
         """
-        return MagicCastleConfigurationSchema().dump(self.__configuration)
+        return deepcopy(self._configuration)
 
     @property
-    def hostname(self):
-        return (
-            f"{self.__configuration['cluster_name']}.{self.__configuration['domain']}"
-        )
+    def cluster_name(self):
+        return self._configuration["cluster_name"]
+
+    @property
+    def domain(self):
+        return self._configuration["domain"]
