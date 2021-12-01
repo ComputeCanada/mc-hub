@@ -54,6 +54,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
 EXISTING_CLUSTER_STATE = {
     "cluster_name": "valid1",
     "nb_users": 10,
+    "expiration_date": None,
     "guest_passwd": "password-123",
     "volumes": {
         "nfs": {
@@ -137,6 +138,7 @@ def test_get_all_magic_castle_names(client):
     assert results[0] == {
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -170,6 +172,7 @@ def test_get_all_magic_castle_names(client):
     assert results[1] == {
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -203,6 +206,7 @@ def test_get_all_magic_castle_names(client):
     assert results[2] == {
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {

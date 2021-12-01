@@ -64,13 +64,17 @@ class MagicCastle:
 
     def __init__(self, hostname=None, owner=None):
         self.hostname = hostname
-        self.read_db_entry()
+        exists = self.read_db_entry()
+        if exists:
+            if owner is not None and self.owner.id != owner:
+                raise ClusterNotFoundException
+        else:
+            self._owner = Owner(owner)
+
         if self._main_file and path.exists(self._main_file):
             self._configuration = MagicCastleConfiguration.get_from_main_file(
                 self._main_file
             )
-        else:
-            self._owner = Owner(owner)
 
     @property
     def hostname(self):
@@ -129,6 +133,7 @@ class MagicCastle:
                 self._status = ClusterStatusCode.NOT_FOUND
                 self.__plan_type = PlanType.NONE
                 self._owner = Owner(None)
+            return bool(result)
 
     @property
     def status(self) -> ClusterStatusCode:

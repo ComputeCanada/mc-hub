@@ -45,12 +45,12 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
     assert [magic_castle.hostname for magic_castle in admin_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
-        "empty.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
+        "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.sub.example.com",
-        "valid1.calculquebec.cloud",
         "noowner.calculquebec.cloud",
+        "valid1.calculquebec.cloud",
     ]
     assert [magic_castle.status for magic_castle in admin_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,

@@ -1,5 +1,4 @@
 from models.user.user import User
-from exceptions.invalid_usage_exception import ClusterNotFoundException
 from models.magic_castle.magic_castle import MagicCastle
 from models.configuration import config
 
@@ -43,10 +42,7 @@ class AuthenticatedUser(User):
         return self.ssh_public_key.split(";")
 
     def is_admin(self):
-        try:
-            return self.edu_person_principal_name in config["admins"]
-        except KeyError:
-            return False
+        return self.edu_person_principal_name in config.get("admins", [])
 
     def get_all_magic_castles(self):
         """
@@ -55,26 +51,20 @@ class AuthenticatedUser(User):
 
         :return: A list of MagicCastle objects
         """
-        query = "SELECT hostname, owner FROM magic_castles"
+        query = "SELECT hostname FROM magic_castles"
         args = ()
         if not self.is_admin():
             query = " ".join([query, "WHERE owner = ?"])
             args += (self.edu_person_principal_name,)
         results = self._database_connection.execute(query, args)
-        return [MagicCastle(hostname, owner) for hostname, owner in results]
+        return [MagicCastle(hostname) for hostname, in results]
 
     def create_empty_magic_castle(self):
         return MagicCastle(owner=self.edu_person_principal_name)
 
     def get_magic_castle_by_hostname(self, hostname):
-        query = "SELECT hostname, owner FROM magic_castles WHERE hostname = ?"
-        args = (hostname,)
         if not self.is_admin():
-            query = " ".join([query, "AND owner = ?"])
-            args += (self.edu_person_principal_name,)
-
-        row = self._database_connection.execute(query, args).fetchone()
-        if row:
-            return MagicCastle(hostname=row[0], owner=row[1])
+            owner = self.edu_person_principal_name
         else:
-            raise ClusterNotFoundException
+            owner = None
+        return MagicCastle(hostname=hostname, owner=owner)
