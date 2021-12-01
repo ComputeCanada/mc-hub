@@ -73,6 +73,7 @@ EXISTING_CLUSTER_STATE = {
     "owner": "alice",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
+    "expiration_date": None,
 }
 
 IGNORE_FIELDS = ["age"]
@@ -103,6 +104,7 @@ def test_get_all_magic_castle_names(client):
     assert results[0] == {
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -136,6 +138,7 @@ def test_get_all_magic_castle_names(client):
     assert results[1] == {
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -170,6 +173,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "empty-state.calculquebec.cloud",
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -203,11 +207,13 @@ def test_get_all_magic_castle_names(client):
         "hostname": "empty.calculquebec.cloud",
         "status": "build_error",
         "freeipa_passwd": None,
-        "owner": None,
+        "owner": "bob12.bobby",
+        "expiration_date": None,
     }
     assert results[4] == {
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
@@ -242,6 +248,7 @@ def test_get_all_magic_castle_names(client):
     assert results[5] == {
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
@@ -275,6 +282,7 @@ def test_get_all_magic_castle_names(client):
     assert results[6] == {
         "cluster_name": "noowner",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
@@ -308,6 +316,7 @@ def test_get_all_magic_castle_names(client):
     assert results[7] == {
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
+        "expiration_date": None,
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
