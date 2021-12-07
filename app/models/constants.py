@@ -13,6 +13,7 @@ MAGIC_CASTLE_VERSION_TAG = "11.7"
 TERRAFORM_REQUIRED_VERSION = ">= 0.15.2"
 
 # Paths and filenames
+DEFAULT_CLOUD = environ.get("OS_CLOUD", "openstack")
 RUN_PATH = environ.get("MCH_RUN_PATH", getcwd())
 CLUSTERS_PATH = environ.get("MCH_CLUSTERS_PATH", path.join(RUN_PATH, "clusters"))
 APP_PATH = environ.get("MCH_APP_PATH", path.join(RUN_PATH, "app"))

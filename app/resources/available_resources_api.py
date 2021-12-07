@@ -1,14 +1,17 @@
 from resources.api_view import ApiView
 from models.cloud.cloud_manager import CloudManager
 from models.user.user import User
+from models.constants import DEFAULT_CLOUD
 
 
 class AvailableResourcesApi(ApiView):
-    def get(self, user: User, hostname):
+    def get(self, user: User, hostname, cloud_id):
         allocated_resources = {}
         if hostname:
-            allocated_resources = user.get_magic_castle_by_hostname(
-                hostname
-            ).get_allocated_resources()
-        cloud = CloudManager(**allocated_resources)
+            mc = user.get_magic_castle_by_hostname(hostname)
+            cloud_id = mc.cloud_id
+            allocated_resources = mc.get_allocated_resources()
+        if cloud_id is None:
+            cloud_id = DEFAULT_CLOUD
+        cloud = CloudManager(cloud_id=cloud_id, **allocated_resources)
         return cloud.get_available_resources()

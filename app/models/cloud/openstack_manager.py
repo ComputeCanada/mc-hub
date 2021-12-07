@@ -30,6 +30,7 @@ class OpenStackManager:
 
     def __init__(
         self,
+        cloud_id,
         *,
         pre_allocated_instance_count=0,
         pre_allocated_cores=0,
@@ -37,7 +38,7 @@ class OpenStackManager:
         pre_allocated_volume_count=0,
         pre_allocated_volume_size=0,
     ):
-        self.__connection = openstack.connect()
+        self.__connection = openstack.connect(cloud=cloud_id)
         self.__project_id = self.__connection.current_project_id
 
         self.__pre_allocated_instance_count = pre_allocated_instance_count
@@ -51,15 +52,6 @@ class OpenStackManager:
         self.__network_quotas = None
 
         self.__available_flavors = None
-
-    @staticmethod
-    def test_connection():
-        """
-        Attempts to connect to the OpenStack API and raises an exception if the connection fails.
-        """
-        if not path.isfile(OPENSTACK_CONFIG_PATH):
-            raise FileNotFoundError(f"The {OPENSTACK_CONFIG_FILENAME} was not found.")
-        openstack.connect()
 
     def get_available_resources(self):
         return {
