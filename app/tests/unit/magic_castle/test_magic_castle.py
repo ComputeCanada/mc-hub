@@ -34,8 +34,7 @@ VALID_CLUSTER_CONFIGURATION = {
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_magic_castle_plan_valid(database_connection):
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
-    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
-    cluster.plan_creation()
+    cluster.plan_creation(VALID_CLUSTER_CONFIGURATION)
 
 
 def test_create_magic_castle_init_fail(database_connection, monkeypatch):
@@ -45,11 +44,10 @@ def test_create_magic_castle_init_fail(database_connection, monkeypatch):
 
     monkeypatch.setattr("models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
-    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
     with pytest.raises(
         PlanException, match="An error occurred while initializing Terraform."
     ):
-        cluster.plan_creation()
+        cluster.plan_creation(VALID_CLUSTER_CONFIGURATION)
 
 
 def test_create_magic_castle_plan_fail(database_connection, monkeypatch):
@@ -65,11 +63,10 @@ def test_create_magic_castle_plan_fail(database_connection, monkeypatch):
 
     monkeypatch.setattr("models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
-    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
     with pytest.raises(
         PlanException, match="An error occurred while planning changes."
     ):
-        cluster.plan_creation()
+        cluster.plan_creation(VALID_CLUSTER_CONFIGURATION)
 
 
 def test_create_magic_castle_plan_export_fail(database_connection, monkeypatch):
@@ -84,11 +81,10 @@ def test_create_magic_castle_plan_export_fail(database_connection, monkeypatch):
 
     monkeypatch.setattr("models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
-    cluster.set_configuration(VALID_CLUSTER_CONFIGURATION)
     with pytest.raises(
         PlanException, match="An error occurred while exporting planned changes."
     ):
-        cluster.plan_creation()
+        cluster.plan_creation(VALID_CLUSTER_CONFIGURATION)
 
 
 def test_get_status_valid(database_connection):

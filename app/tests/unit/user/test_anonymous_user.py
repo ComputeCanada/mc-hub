@@ -37,7 +37,7 @@ def test_get_all_magic_castles(database_connection):
 def test_create_empty_magic_castle(database_connection):
     user = AnonymousUser(database_connection)
     magic_castle = user.create_empty_magic_castle()
-    magic_castle.set_configuration(
+    magic_castle.plan_creation(
         {
             "cluster_name": "anon123",
             "domain": "sub.example.com",
@@ -67,7 +67,6 @@ def test_create_empty_magic_castle(database_connection):
             "guest_passwd": "",
         }
     )
-    magic_castle.plan_creation()
     result = database_connection.execute(
         "SELECT hostname, status, plan_type, owner FROM magic_castles WHERE hostname=?",
         ("anon123.sub.example.com",),
