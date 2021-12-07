@@ -317,17 +317,39 @@ class MagicCastle:
             path.join(self._path, TERRAFORM_PLAN_BINARY_FILENAME)
         )
 
-    def plan_creation(self):
+    def plan_creation(self, data):
         if self.found:
             raise ClusterExistsException
+        self.set_configuration(data)
+
+        with DatabaseManager.connect() as database_connection:
+            database_connection.execute(
+                "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date) VALUES (?, ?, ?, ?, ?)",
+                (
+                    self.hostname,
+                    ClusterStatusCode.CREATED.value,
+                    PlanType.BUILD.value,
+                    self.owner.id,
+                    self.expiration_date,
+                ),
+            )
+            database_connection.commit()
 
         return self.__plan(destroy=False, existing_cluster=False)
 
-    def plan_modification(self):
+    def plan_modification(self, data):
         if not self.found:
             raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
+        self.set_configuration(data)
+
+        with DatabaseManager.connect() as database_connection:
+            database_connection.execute(
+                "UPDATE magic_castles SET expiration_date = ? WHERE hostname = ?",
+                (self.expiration_date, self.hostname),
+            )
+            database_connection.commit()
 
         return self.__plan(destroy=False, existing_cluster=True)
 
@@ -345,18 +367,6 @@ class MagicCastle:
             self.__remove_existing_plan()
             previous_status = self.status
         else:
-            with DatabaseManager.connect() as database_connection:
-                database_connection.execute(
-                    "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date) VALUES (?, ?, ?, ?, ?)",
-                    (
-                        self.hostname,
-                        ClusterStatusCode.CREATED.value,
-                        plan_type.value,
-                        self.owner.id,
-                        self.expiration_date,
-                    ),
-                )
-                database_connection.commit()
             mkdir(self._path)
             previous_status = ClusterStatusCode.CREATED
 
