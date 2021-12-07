@@ -6,15 +6,11 @@ from resources.progress_api import ProgressAPI
 from resources.available_resources_api import AvailableResourcesApi
 from resources.user_api import UserAPI
 from flask_cors import CORS
-from models.cloud.openstack_manager import OpenStackManager
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
 from models.configuration import config
 
 from models.constants import DIST_PATH
-
-# Exit with an error if the clouds.yaml is not found or the OpenStack API can't be reached
-OpenStackManager.test_connection()
 
 # Update the database schema to the latest version
 with DatabaseManager.connect() as database_connection:
@@ -58,7 +54,7 @@ available_resources_view = AvailableResourcesApi.as_view("available_resources")
 app.add_url_rule(
     "/api/available-resources",
     view_func=available_resources_view,
-    defaults={"hostname": None},
+    defaults={"hostname": None, "cloud_id": None},
     methods=["GET"],
 )
 app.add_url_rule(

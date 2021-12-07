@@ -16,6 +16,7 @@ from models.constants import (
     MAIN_TERRAFORM_FILENAME,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
+    DEFAULT_CLOUD,
 )
 from database.database_manager import DatabaseManager
 
@@ -23,9 +24,6 @@ import datetime
 import humanize
 import logging
 import json
-
-
-DEFAULT_CLOUD = environ.get("OS_CLOUD", "openstack")
 
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
@@ -61,6 +59,7 @@ class MagicCastle:
     _path = None
     _main_file = None
     expiration_date = None
+    cloud_id = None
 
     def __init__(self, hostname=None, owner=None):
         self.hostname = hostname
@@ -105,6 +104,7 @@ class MagicCastle:
 
     def set_configuration(self, configuration: dict):
         self.expiration_date = configuration.pop("expiration_date", None)
+        self.cloud_id = configuration.pop("cloud_id", DEFAULT_CLOUD)
         try:
             self._configuration = MagicCastleConfiguration(configuration)
         except ValidationError:
@@ -127,6 +127,7 @@ class MagicCastle:
                 self.created = result[2]
                 self.__plan_type = PlanType(result[3])
                 self.expiration_date = result[4]
+                self.cloud_id = DEFAULT_CLOUD
             else:
                 self._status = ClusterStatusCode.NOT_FOUND
                 self.__plan_type = PlanType.NONE
@@ -385,7 +386,7 @@ class MagicCastle:
             environment_variables = environ.copy()
             dns_manager = DnsManager(self.domain)
             environment_variables.update(dns_manager.get_environment_variables())
-            environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
+            environment_variables["OS_CLOUD"] = self.cloud_id
             try:
                 run(
                     [
@@ -489,7 +490,7 @@ class MagicCastle:
                     environment_variables.update(
                         dns_manager.get_environment_variables()
                     )
-                    environment_variables["OS_CLOUD"] = DEFAULT_CLOUD
+                    environment_variables["OS_CLOUD"] = self.cloud_id
                     if destroy:
                         environment_variables["TF_WARN_OUTPUT_ERRORS"] = "1"
                     run(
