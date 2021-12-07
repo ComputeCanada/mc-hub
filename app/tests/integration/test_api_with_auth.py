@@ -1,4 +1,5 @@
 from server import app
+from models.constants import DEFAULT_CLOUD
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *  # noqa;
 import pytest
@@ -30,6 +31,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "guest_passwd": "",
 }
 EXISTING_CLUSTER_CONFIGURATION = {
+    "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "domain": "calculquebec.cloud",
     "image": "CentOS-7-x64-2020-11",
@@ -52,6 +54,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
 }
 
 EXISTING_CLUSTER_STATE = {
+    "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "nb_users": 10,
     "expiration_date": None,
@@ -136,6 +139,7 @@ def test_get_all_magic_castle_names(client):
         results.append(result)
 
     assert results[0] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": None,
@@ -170,6 +174,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "alice",
     }
     assert results[1] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": None,
@@ -204,6 +209,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "alice",
     }
     assert results[2] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": None,

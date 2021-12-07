@@ -1,5 +1,6 @@
 from server import app
 from models.magic_castle.cluster_status_code import ClusterStatusCode
+from models.constants import DEFAULT_CLOUD
 from tests.test_helpers import *
 from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
@@ -50,6 +51,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "hieradata": "",
 }
 EXISTING_CLUSTER_STATE = {
+    "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "nb_users": 10,
     "guest_passwd": "password-123",
@@ -102,6 +104,7 @@ def test_get_all_magic_castle_names(client):
         results.append(result)
 
     assert results[0] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": None,
@@ -136,6 +139,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "alice",
     }
     assert results[1] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": None,
@@ -170,6 +174,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "alice",
     }
     assert results[2] == {
+        "cloud_id": DEFAULT_CLOUD,
         "hostname": "empty-state.calculquebec.cloud",
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
@@ -204,6 +209,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "bob12.bobby",
     }
     assert results[3] == {
+        "cloud_id": DEFAULT_CLOUD,
         "hostname": "empty.calculquebec.cloud",
         "status": "build_error",
         "freeipa_passwd": None,
@@ -211,6 +217,7 @@ def test_get_all_magic_castle_names(client):
         "expiration_date": None,
     }
     assert results[4] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
         "expiration_date": None,
@@ -246,6 +253,7 @@ def test_get_all_magic_castle_names(client):
     }
 
     assert results[5] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
         "expiration_date": None,
@@ -280,6 +288,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "bob12.bobby",
     }
     assert results[6] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "noowner",
         "domain": "calculquebec.cloud",
         "expiration_date": None,
@@ -314,6 +323,7 @@ def test_get_all_magic_castle_names(client):
         "owner": None,
     }
     assert results[7] == {
+        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": None,

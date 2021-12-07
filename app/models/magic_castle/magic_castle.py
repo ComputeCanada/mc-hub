@@ -251,6 +251,7 @@ class MagicCastle:
             "owner": self.owner.username,
             "age": self.age,
             "expiration_date": self.expiration_date,
+            "cloud_id": self.cloud_id,
         }
 
     def get_freeipa_passwd(self):
