@@ -335,7 +335,7 @@ class MagicCastle:
             )
             database_connection.commit()
 
-        return self.__plan(destroy=False, existing_cluster=False)
+        self.__plan(destroy=False, existing_cluster=False)
 
     def plan_modification(self, data):
         if not self.found:
@@ -351,7 +351,7 @@ class MagicCastle:
             )
             database_connection.commit()
 
-        return self.__plan(destroy=False, existing_cluster=True)
+        self.__plan(destroy=False, existing_cluster=True)
 
     def plan_destruction(self):
         if not self.found:
