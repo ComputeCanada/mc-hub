@@ -5,7 +5,7 @@ from models.constants import DEFAULT_CLOUD
 
 
 class AvailableResourcesApi(ApiView):
-    def get(self, user: User, hostname, cloud_id):
+    def get(self, user: User, hostname, cloud_id=None):
         allocated_resources = {}
         if hostname:
             mc = user.get_magic_castle_by_hostname(hostname)

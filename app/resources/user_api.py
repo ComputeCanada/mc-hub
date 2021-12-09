@@ -7,5 +7,6 @@ class UserAPI(ApiView):
         return {
             "full_name": user.full_name,
             "username": user.username,
-            "public_keys": user.public_keys
+            "public_keys": user.public_keys,
+            "projects": user.projects,
         }
