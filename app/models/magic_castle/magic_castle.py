@@ -104,7 +104,7 @@ class MagicCastle:
 
     def set_configuration(self, configuration: dict):
         self.expiration_date = configuration.pop("expiration_date", None)
-        self.cloud_id = configuration.pop("cloud_id", DEFAULT_CLOUD)
+        self.cloud_id = configuration.pop("cloud_id")
         try:
             self._configuration = MagicCastleConfiguration(configuration)
         except ValidationError:
