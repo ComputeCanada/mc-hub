@@ -344,21 +344,9 @@ export default {
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
       this.magicCastle.instances["login"].tags = ["login", "proxy", "public"];
       this.magicCastle.instances["node"].tags = ["node"];
+      this.magicCastle.public_keys = this.user.public_keys.filter(key => key.match(SSH_PUBLIC_KEY_REGEX));
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
-  },
-  mounted() {
-    if (!this.existingCluster) {
-      let public_keys = [];
-      try {
-        public_keys = this.user.public_keys;
-      } catch (e) {
-        console.log("User SSH public keys be found");
-      }
-      if (public_keys != null ) {
-        this.magicCastle.public_keys = public_keys.filter(key => key.match(SSH_PUBLIC_KEY_REGEX));
-      }
-    }
   },
   beforeDestroy() {
     this.$disableUnloadConfirmation();
@@ -495,13 +483,13 @@ export default {
       this.$emit("apply");
     },
     async changeCloudProject() {
-      let availableResources = undefined;
+      this.quotas = null;
       this.magicCastle.instances.mgmt.type = null;
       this.magicCastle.instances.login.type = null;
       this.magicCastle.instances.node.type = null;
       this.magicCastle.image = null;
 
-      availableResources = (await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)).data;
+      let availableResources = (await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)).data;
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
       this.resourceDetails = availableResources.resource_details;
