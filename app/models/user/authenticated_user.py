@@ -47,7 +47,8 @@ class AuthenticatedUser(User):
     @property
     def projects(self):
         results = self._database_connection.execute(
-            "SELECT projects FROM users WHERE owner = ?", self.edu_person_principal_name
+            "SELECT projects FROM users WHERE username = ?",
+            self.edu_person_principal_name,
         )
         if results:
             return json.loads(results[0][0])
