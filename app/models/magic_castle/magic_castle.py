@@ -118,7 +118,7 @@ class MagicCastle:
     def read_db_entry(self):
         with DatabaseManager.connect() as database_connection:
             result = database_connection.execute(
-                "SELECT status, owner, created, plan_type, expiration_date FROM magic_castles WHERE hostname = ?",
+                "SELECT status, owner, created, plan_type, expiration_date, cloud_id FROM magic_castles WHERE hostname = ?",
                 (self.hostname,),
             ).fetchone()
             if result:
@@ -127,7 +127,7 @@ class MagicCastle:
                 self.created = result[2]
                 self.__plan_type = PlanType(result[3])
                 self.expiration_date = result[4]
-                self.cloud_id = DEFAULT_CLOUD
+                self.cloud_id = result[5]
             else:
                 self._status = ClusterStatusCode.NOT_FOUND
                 self.__plan_type = PlanType.NONE
@@ -324,13 +324,14 @@ class MagicCastle:
 
         with DatabaseManager.connect() as database_connection:
             database_connection.execute(
-                "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date, cloud_id) VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     self.hostname,
                     ClusterStatusCode.CREATED.value,
                     PlanType.BUILD.value,
                     self.owner.id,
                     self.expiration_date,
+                    self.cloud_id,
                 ),
             )
             database_connection.commit()
