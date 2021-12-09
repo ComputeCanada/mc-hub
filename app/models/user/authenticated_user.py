@@ -1,6 +1,9 @@
+import json
+
 from models.user.user import User
 from models.magic_castle.magic_castle import MagicCastle
 from models.configuration import config
+from models.constants import DEFAULT_CLOUD
 
 
 class AuthenticatedUser(User):
@@ -40,6 +43,15 @@ class AuthenticatedUser(User):
     @property
     def public_keys(self):
         return self.ssh_public_key.split(";")
+
+    @property
+    def projects(self):
+        results = self._database_connection.execute(
+            "SELECT projects FROM users WHERE owner = ?", self.edu_person_principal_name
+        )
+        if results:
+            return json.loads(results[0][0])
+        return [DEFAULT_CLOUD]
 
     def is_admin(self):
         return self.edu_person_principal_name in config.get("admins", [])

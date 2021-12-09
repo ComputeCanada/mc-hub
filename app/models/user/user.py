@@ -1,6 +1,8 @@
+import sqlite3
+
 from typing import List
 from models.magic_castle.magic_castle import MagicCastle
-import sqlite3
+from models.constants import DEFAULT_CLOUD
 
 
 class User:
@@ -19,6 +21,10 @@ class User:
     def public_keys(self):
         return None
 
+    @property
+    def projects(self):
+        return [DEFAULT_CLOUD]
+
     def get_all_magic_castles(self) -> List[MagicCastle]:
         raise NotImplementedError
 
@@ -27,4 +33,3 @@ class User:
 
     def get_magic_castle_by_hostname(self, hostname) -> MagicCastle:
         raise NotImplementedError
-
