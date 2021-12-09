@@ -49,7 +49,7 @@ class AuthenticatedUser(User):
         results = self._database_connection.execute(
             "SELECT projects FROM users WHERE username = ?",
             (self.edu_person_principal_name,),
-        )
+        ).fetchone()
         if results:
             return json.loads(results[0][0])
         return [DEFAULT_CLOUD]
