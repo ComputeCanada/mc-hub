@@ -51,7 +51,7 @@ class AuthenticatedUser(User):
             (self.edu_person_principal_name,),
         ).fetchone()
         if results:
-            return json.loads(results[0][0])
+            return json.loads(results[0])
         return [DEFAULT_CLOUD]
 
     def is_admin(self):
