@@ -496,6 +496,11 @@ export default {
     },
     async changeCloudProject() {
       let availableResources = undefined;
+      this.magicCastle.instances.mgmt.type = null;
+      this.magicCastle.instances.login.type = null;
+      this.magicCastle.instances.node.type = null;
+      this.magicCastle.image = null;
+
       availableResources = (await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)).data;
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
