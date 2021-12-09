@@ -77,11 +77,11 @@ class OpenStackManager:
                     "type": [
                         flavor.name for flavor in self.__get_available_flavors(category)
                     ],
-                    "tags": self.__get_available_tags(category)
+                    "tags": self.__get_available_tags(category),
                 }
                 for category in INSTANCE_CATEGORIES
             },
-            "volumes": { },
+            "volumes": {},
         }
 
     def __get_resource_details(self):
@@ -132,9 +132,9 @@ class OpenStackManager:
 
     def __get_available_tags(self, category=None):
         tags = {
-            'mgmt' : ['mgmt', 'nfs', 'puppet'],
-            'login' : ['login', 'proxy', 'public'],
-            'node' : ['node'],
+            "mgmt": ["mgmt", "nfs", "puppet"],
+            "login": ["login", "proxy", "public"],
+            "node": ["node"],
         }
         return tags[category]
 

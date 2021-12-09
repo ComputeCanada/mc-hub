@@ -5,8 +5,7 @@ CREATE TABLE magic_castles(
     owner TEXT,
     created TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime')),
     expiration_date TEXT
-)
-
+);
 CREATE TABLE users(
     username TEXT PRIMARY KEY NOT NULL,
     projects TEXT
