@@ -16,6 +16,13 @@
               </v-list-item-content>
               <status-chip :status="currentStatus" />
             </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
+                <v-list-item-title>{{ magicCastle.cloud_id }}</v-list-item-title>
+              </v-list-item-content>
+              <status-chip :status="currentStatus" />
+            </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
           <cluster-editor
