@@ -19,7 +19,7 @@
             <v-list-item>
               <v-list-item-content>
                 <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
-                <v-list-item-title>{{ magicCastle.cloud_id }}</v-list-item-title>
+                <v-list-item-title>{{ cloud_id }}</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
@@ -229,6 +229,13 @@ export default {
     },
     applyRunning() {
       return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
+    },
+    cloud_id() {
+      try {
+        return this.magicCastle.cloud_id;
+      } catch (e) {
+        return null;
+      }
     }
   },
   methods: {
