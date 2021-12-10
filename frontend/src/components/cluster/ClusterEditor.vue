@@ -4,6 +4,14 @@
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item v-if="!existingCluster">
+          <v-select
+            v-model="magicCastle.cloud_id"
+            :items="user.projects"
+            label="Cloud project"
+            @change="changeCloudProject"
+          />
+        </v-list-item>
+        <v-list-item v-if="!existingCluster">
           <v-text-field
             v-model="magicCastle.cluster_name"
             label="Cluster name"
@@ -484,6 +492,9 @@ export default {
     },
     apply() {
       this.$emit("apply");
+    },
+    changeCloudProject() {
+      console.log(this.magicCastle.cloud_id);
     }
   }
 };
