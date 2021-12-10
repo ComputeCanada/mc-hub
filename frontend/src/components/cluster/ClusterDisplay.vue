@@ -177,7 +177,6 @@ export default {
     };
   },
   async created() {
-    this.user = (await UserRepository.getCurrent()).data;
     if (this.existingCluster) {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
@@ -193,9 +192,12 @@ export default {
         } else {
           await this.planDestruction();
         }
+      } else {
+        this.user = (await UserRepository.getCurrent()).data;
       }
       this.startStatusPolling();
     } else {
+      this.user = (await UserRepository.getCurrent()).data;
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       await this.loadAvailableResources();
     }
