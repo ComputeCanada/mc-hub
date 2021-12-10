@@ -220,7 +220,6 @@ jupyterhub::enable_otp_auth: false'
 import { cloneDeep, isEqual } from "lodash";
 import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
-import UserRepository from "@/repositories/UserRepository";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import FlavorSelect from "./FlavorSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
@@ -262,7 +261,10 @@ export default {
     },
     currentStatus: {
       type: String
-    }
+    },
+    user: {
+      type: Object
+    },
   },
   data: function() {
     return {
@@ -315,6 +317,7 @@ export default {
         this.magicCastle.instances.node.type = possibleResources.instances.node.type[0];
         this.initialMagicCastle.instances.node.type = possibleResources.instances.node.type[0];
       }
+
     },
     dirtyForm(dirty) {
       if (dirty) {
@@ -326,6 +329,7 @@ export default {
   },
   created() {
     if (!this.existingCluster) {
+      this.magicCastle.cloud_id = this.user.projects[0];
       this.magicCastle.cluster_name = generatePetName();
       this.magicCastle.guest_passwd = generatePassword();
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
@@ -334,11 +338,11 @@ export default {
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
-  async mounted() {
+  mounted() {
     if (!this.existingCluster) {
       let public_keys = [];
       try {
-        public_keys = (await UserRepository.getCurrent()).data.public_keys;
+        public_keys = this.user.public_keys;
       } catch (e) {
         console.log("User SSH public keys be found");
       }
