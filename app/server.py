@@ -62,6 +62,17 @@ app.add_url_rule(
     view_func=available_resources_view,
     methods=["GET"],
 )
+app.add_url_rule(
+    "/api/available-resources/host/<string:hostname>",
+    view_func=available_resources_view,
+    methods=["GET"],
+)
+app.add_url_rule(
+    "/api/available-resources/cloud/<string:cloud_id>",
+    view_func=available_resources_view,
+    defaults={"hostname": None},
+    methods=["GET"],
+)
 
 user_view = UserAPI.as_view("user")
 app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
