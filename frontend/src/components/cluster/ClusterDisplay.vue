@@ -26,6 +26,7 @@
             :current-status="currentStatus"
             :possible-resources="possibleResources"
             :resource-details="resourceDetails"
+            :user="user"
             :quotas="quotas"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
           />
@@ -90,6 +91,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
+import UserRepository from "../../repositories/UserRepository";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "",
@@ -164,10 +166,12 @@ export default {
       magicCastle: null,
       quotas: null,
       resourceDetails: null,
-      possibleResources: null
+      possibleResources: null,
+      user: null,
     };
   },
   async created() {
+    this.user = (await UserRepository.getCurrent()).data;
     if (this.existingCluster) {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
