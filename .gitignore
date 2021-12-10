@@ -140,3 +140,7 @@ configuration.json
 .terraform/
 *.backup
 *.lock.hcl
+*backup/
+*_test/
+*_env/
+run/
