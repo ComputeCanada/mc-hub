@@ -231,6 +231,7 @@ import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import FlavorSelect from "./FlavorSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
+import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 
 const MB_PER_GB = 1024;
 const MINIMUM_PASSWORD_LENGTH = 8;
@@ -493,11 +494,15 @@ export default {
     apply() {
       this.$emit("apply");
     },
-    changeCloudProject() {
-      console.log(this.magicCastle.cloud_id);
+    async changeCloudProject() {
+      let availableResources = undefined;
+      availableResources = (await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)).data;
+      this.possibleResources = availableResources.possible_resources;
+      this.quotas = availableResources.quotas;
+      this.resourceDetails = availableResources.resource_details;
     }
   }
-};
+}
 </script>
 <style scoped>
 .hieradata-editor {
