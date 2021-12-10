@@ -97,7 +97,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
-import UserRepository from "../../repositories/UserRepository";
+import UserRepository from "@/repositories/UserRepository";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "",
