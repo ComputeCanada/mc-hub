@@ -75,7 +75,7 @@ EXISTING_CLUSTER_STATE = {
     "owner": "alice",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
-    "expiration_date": None,
+    "expiration_date": "2029-01-01",
 }
 
 IGNORE_FIELDS = ["age"]
@@ -91,7 +91,12 @@ def client(mocker):
 # GET /api/users/me
 def test_get_current_user(client):
     res = client.get(f"/api/users/me")
-    assert res.get_json() == {"full_name": None, "username": None, "public_keys": None}
+    assert res.get_json() == {
+        "full_name": None,
+        "username": None,
+        "public_keys": None,
+        "projects": [DEFAULT_CLOUD],
+    }
 
 
 # GET /api/magic_castle
@@ -107,7 +112,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -142,7 +147,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -178,7 +183,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "empty-state.calculquebec.cloud",
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -214,13 +219,13 @@ def test_get_all_magic_castle_names(client):
         "status": "build_error",
         "freeipa_passwd": None,
         "owner": "bob12.bobby",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
     }
     assert results[4] == {
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 17,
         "instances": {
@@ -256,7 +261,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "missingnodes",
         "domain": "sub.example.com",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
@@ -291,7 +296,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "noowner",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
@@ -326,7 +331,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {

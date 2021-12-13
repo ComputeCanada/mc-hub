@@ -5,6 +5,7 @@ from shutil import rmtree, copytree
 from database.schema_manager import SchemaManager
 from database.database_manager import DatabaseManager
 from models.user.authenticated_user import AuthenticatedUser
+from models.constants import DEFAULT_CLOUD
 from typing import Callable
 import pytest
 import sqlite3
@@ -59,42 +60,56 @@ def database_connection(mocker):
                 "plan_running",
                 "build",
                 "alice@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
             (
                 "created.calculquebec.cloud",
                 "created",
                 "build",
                 "alice@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
             (
                 "empty.calculquebec.cloud",
                 "build_error",
                 "none",
                 "bob12.bobby@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
             (
                 "empty-state.calculquebec.cloud",
                 "build_error",
                 "none",
                 "bob12.bobby@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
             (
                 "missingfloatingips.c3.ca",
                 "build_running",
                 "none",
                 "bob12.bobby@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
             (
                 "missingnodes.sub.example.com",
                 "build_error",
                 "none",
                 "bob12.bobby@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
             (
                 "valid1.calculquebec.cloud",
                 "provisioning_success",
                 "destroy",
                 "alice@computecanada.ca",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
         ]
         test_magic_castle_rows_without_owner = [
@@ -102,14 +117,16 @@ def database_connection(mocker):
                 "noowner.calculquebec.cloud",
                 "provisioning_success",
                 "destroy",
+                "2029-01-01",
+                DEFAULT_CLOUD,
             ),
         ]
         database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, status, plan_type, owner) values (?, ?, ?, ?)",
+            "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date, cloud_id) values (?, ?, ?, ?, ?, ?)",
             test_magic_castle_rows_with_owner,
         )
         database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, status, plan_type) values (?, ?, ?)",
+            "INSERT INTO magic_castles (hostname, status, plan_type, expiration_date, cloud_id) values (?, ?, ?, ?, ?)",
             test_magic_castle_rows_without_owner,
         )
 
