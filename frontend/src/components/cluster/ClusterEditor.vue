@@ -356,7 +356,24 @@ export default {
       return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     },
     dirtyForm() {
-      return !this.existingCluster || !isEqual(this.initialMagicCastle, this.magicCastle);
+      if (this.existingCluster) {
+        if(this.initialMagicCastle === null) {
+            return false;
+        }
+        return !(
+          isEqual(this.initialMagicCastle.cloud_id, this.magicCastle.cloud_id) &&
+          isEqual(this.initialMagicCastle.cluster_name, this.magicCastle.cluster_name) &&
+          isEqual(this.initialMagicCastle.domain, this.magicCastle.domain) &&
+          isEqual(this.initialMagicCastle.image, this.magicCastle.image) &&
+          isEqual(this.initialMagicCastle.instances, this.magicCastle.instances) &&
+          isEqual(this.initialMagicCastle.volumes, this.magicCastle.volumes) &&
+          isEqual(this.initialMagicCastle.public_keys, this.magicCastle.public_keys) &&
+          isEqual(this.initialMagicCastle.guest_passwd, this.magicCastle.guest_passwd) &&
+          isEqual(this.initialMagicCastle.nb_users, this.magicCastle.nb_users) &&
+          isEqual(this.initialMagicCastle.hieradata, this.magicCastle.hieradata)
+        )
+      }
+      return true;
     },
     clusterName() {
       return this.hostname.split(".")[0];
