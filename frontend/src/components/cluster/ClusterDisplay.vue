@@ -366,7 +366,6 @@ export default {
     async applyCluster() {
       try {
         await MagicCastleRepository.apply(this.hostname);
-        this.unloadCluster();
         this.startStatusPolling();
       } catch (e) {
         this.showError(e.response.data.message);
