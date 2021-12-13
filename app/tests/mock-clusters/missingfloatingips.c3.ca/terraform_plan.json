@@ -2648,7 +2648,7 @@
                                     "min_disk_gb": 0,
                                     "min_ram_mb": 0,
                                     "most_recent": false,
-                                    "name": "CentOS-7-x64-2020-11",
+                                    "name": "CentOS-7-x64-2021-11",
                                     "owner": "3c3b4fb0ff154c65992f9b5f1aed44ea",
                                     "properties": null,
                                     "protected": true,
@@ -2843,7 +2843,7 @@
                             "constant_value": "password-123"
                         },
                         "image": {
-                            "constant_value": "CentOS-7-x64-2020-11"
+                            "constant_value": "CentOS-7-x64-2021-11"
                         },
                         "instances": {
                             "constant_value": {
