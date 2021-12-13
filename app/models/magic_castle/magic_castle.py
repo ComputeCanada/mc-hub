@@ -485,26 +485,27 @@ class MagicCastle:
         if not self.plan_created:
             raise PlanNotCreatedException
 
-        self.status = (
-            ClusterStatusCode.BUILD_RUNNING
-            if self.get_plan_type() == PlanType.BUILD
-            else ClusterStatusCode.DESTROY_RUNNING
-        )
+        plan_type = self.get_plan_type()
+        if plan_type == PlanType.BUILD:
+            self.status = ClusterStatusCode.BUILD_RUNNING
+            destroy = False
+        elif plan_type == PlanType.DESTROY:
+            self.status = ClusterStatusCode.DESTROY_RUNNING
+            destroy = True
+        else:
+            raise PlanNotCreatedException
 
-        def terraform_apply(destroy: bool):
+        def terraform_apply():
+            self.__rotate_terraform_logs(apply=True)
+            env = environ.copy()
+            env["OS_CLOUD"] = self.cloud_id
+            env.update(DnsManager(self.domain).get_environment_variables())
+            if destroy:
+                env["TF_WARN_OUTPUT_ERRORS"] = "1"
             try:
-                self.__rotate_terraform_logs(apply=True)
                 with open(
                     path.join(self._path, TERRAFORM_APPLY_LOG_FILENAME), "w"
                 ) as output_file:
-                    environment_variables = environ.copy()
-                    dns_manager = DnsManager(self.domain)
-                    environment_variables.update(
-                        dns_manager.get_environment_variables()
-                    )
-                    environment_variables["OS_CLOUD"] = self.cloud_id
-                    if destroy:
-                        environment_variables["TF_WARN_OUTPUT_ERRORS"] = "1"
                     run(
                         [
                             "terraform",
@@ -518,8 +519,15 @@ class MagicCastle:
                         stdout=output_file,
                         stderr=output_file,
                         check=True,
-                        env=environment_variables,
+                        env=env,
                     )
+            except CalledProcessError:
+                logging.info("An error occurred while running terraform apply.")
+                if destroy:
+                    self.status = ClusterStatusCode.DESTROY_ERROR
+                else:
+                    self.status = ClusterStatusCode.BUILD_ERROR
+            else:
                 if destroy:
                     # Removes the content of the cluster's folder, even if not empty
                     rmtree(self._path, ignore_errors=True)
@@ -531,38 +539,26 @@ class MagicCastle:
                         database_connection.commit()
                 else:
                     self.status = ClusterStatusCode.PROVISIONING_RUNNING
-
-                if not destroy:
                     provisioning_manager = ProvisioningManager(self.hostname)
 
                     # Avoid multiple threads polling the same cluster
                     if not provisioning_manager.is_busy():
                         try:
                             provisioning_manager.poll_until_success()
-                            status_code = ClusterStatusCode.PROVISIONING_SUCCESS
                         except PuppetTimeoutException:
-                            status_code = ClusterStatusCode.PROVISIONING_ERROR
-
-                        self.status = status_code
-
-            except CalledProcessError:
-                logging.info("An error occurred while running terraform apply.")
-
-                self.status = (
-                    ClusterStatusCode.DESTROY_ERROR
-                    if destroy
-                    else ClusterStatusCode.BUILD_ERROR
-                )
+                            self.status = ClusterStatusCode.PROVISIONING_ERROR
+                        else:
+                            self.status = ClusterStatusCode.PROVISIONING_SUCCESS
             finally:
                 self.__remove_existing_plan()
 
-        destroy = self.get_plan_type() == PlanType.DESTROY
-        terraform_apply_thread = Thread(target=terraform_apply, args=(destroy,))
-        terraform_apply_thread.start()
+        Thread(
+            target=terraform_apply,
+        ).start()
 
     def __remove_existing_plan(self):
+        self.__update_plan_type(PlanType.NONE)
         try:
-            self.__update_plan_type(PlanType.NONE)
             # Remove existing plan, if it exists
             remove(path.join(self._path, TERRAFORM_PLAN_BINARY_FILENAME))
             remove(path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME))
@@ -575,7 +571,6 @@ class MagicCastle:
             with open(
                 path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME), "r"
             ) as plan_file:
-                plan_object = json.load(plan_file)
-            return plan_object
+                return json.load(plan_file)
         except (FileNotFoundError, json.decoder.JSONDecodeError):
             return None
