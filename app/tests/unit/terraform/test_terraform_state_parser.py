@@ -103,6 +103,7 @@ def test_get_volume_size_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
     assert parser.get_volume_size() == 200
 
+
 def test_get_configuration_valid(valid_state):
     parser = TerraformStateParser(valid_state)
     assert parser.get_partial_configuration() == {
@@ -111,7 +112,7 @@ def test_get_configuration_valid(valid_state):
             "login": {"type": "p4-6gb", "count": 1},
             "node": {"type": "p2-3gb", "count": 1},
         },
-        "image": "CentOS-7-x64-2020-11",
+        "image": "CentOS-7-x64-2021-11",
     }
 
 
@@ -135,5 +136,5 @@ def test_get_configuration_missing_nodes(missing_nodes_state):
             "login": {"type": "", "count": 0},
             "node": {"type": "", "count": 0},
         },
-        "image": "CentOS-7-x64-2020-11",
+        "image": "CentOS-7-x64-2021-11",
     }

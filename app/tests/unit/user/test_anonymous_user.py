@@ -43,7 +43,7 @@ def test_create_empty_magic_castle(database_connection):
             "cloud_id": DEFAULT_CLOUD,
             "cluster_name": "anon123",
             "domain": "sub.example.com",
-            "image": "CentOS-7-x64-2020-11",
+            "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
                 "mgmt": {

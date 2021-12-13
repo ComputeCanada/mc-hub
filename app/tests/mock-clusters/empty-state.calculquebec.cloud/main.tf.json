@@ -10,7 +10,7 @@
             "config_version": "11.7",
             "cluster_name": "empty-state",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2020-11",
+            "image": "CentOS-7-x64-2021-11",
             "nb_users": 34,
             "instances": {
                 "mgmt": {
