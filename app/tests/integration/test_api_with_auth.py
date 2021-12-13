@@ -57,7 +57,7 @@ EXISTING_CLUSTER_STATE = {
     "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "nb_users": 10,
-    "expiration_date": None,
+    "expiration_date": "2029-01-01",
     "guest_passwd": "password-123",
     "volumes": {
         "nfs": {
@@ -114,12 +114,14 @@ def test_get_current_user_authentified(client):
         "full_name": "Alice Tremblay",
         "username": "alice",
         "public_keys": ["ssh-rsa FAKE"],
+        "projects": [DEFAULT_CLOUD],
     }
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
     assert res.get_json() == {
         "full_name": "Bob Rodriguez",
         "username": "bob12.bobby",
         "public_keys": ["ssh-rsa FAKE"],
+        "projects": [DEFAULT_CLOUD],
     }
 
 
@@ -142,7 +144,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -177,7 +179,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 34,
         "instances": {
@@ -212,7 +214,7 @@ def test_get_all_magic_castle_names(client):
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
-        "expiration_date": None,
+        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2020-11",
         "nb_users": 10,
         "instances": {
