@@ -1,3 +1,4 @@
+from models.constants import DEFAULT_CLOUD
 from models.user.anonymous_user import AnonymousUser
 from models.magic_castle.cluster_status_code import ClusterStatusCode
 from tests.test_helpers import *  # noqa
@@ -39,6 +40,7 @@ def test_create_empty_magic_castle(database_connection):
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
         {
+            "cloud_id": DEFAULT_CLOUD,
             "cluster_name": "anon123",
             "domain": "sub.example.com",
             "image": "CentOS-7-x64-2020-11",
