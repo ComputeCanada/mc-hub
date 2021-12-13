@@ -1,8 +1,11 @@
 import pytest
+
 from server import app
 from time import time, sleep
 from os import path
 from random import randrange
+
+from models.constants import DEFAULT_CLOUD
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
@@ -56,6 +59,7 @@ def test_plan_creation(client):
     res = client.post(
         f"/api/magic-castles",
         json={
+            "cloud_id": DEFAULT_CLOUD,
             "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
@@ -67,8 +71,16 @@ def test_plan_creation(client):
                 }
             },
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
             },
             "domain": "calculquebec.cloud",
@@ -126,7 +138,11 @@ def test_create_success(client):
         },
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
             "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
@@ -156,8 +172,16 @@ def test_plan_modify(client):
                 }
             },
             "instances": {
-                "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+                "mgmt": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["mgmt", "nfs", "puppet"],
+                },
+                "login": {
+                    "type": "p4-6gb",
+                    "count": 1,
+                    "tags": ["login", "proxy", "public"],
+                },
                 "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
             },
             "domain": "calculquebec.cloud",
@@ -208,7 +232,11 @@ def test_modify_success(client):
         },
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
             "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
         },
         "domain": "calculquebec.cloud",
