@@ -363,7 +363,6 @@ class MagicCastle:
         self.__plan(destroy=True, existing_cluster=True)
 
     def __plan(self, *, destroy, existing_cluster):
-        plan_type = PlanType.DESTROY if destroy else PlanType.BUILD
         if existing_cluster:
             self.__remove_existing_plan()
             previous_status = self.status
@@ -371,11 +370,14 @@ class MagicCastle:
             mkdir(self._path)
             previous_status = ClusterStatusCode.CREATED
 
+        if destroy:
+            plan_type = PlanType.DESTROY
+        else:
+            plan_type = PlanType.BUILD
+            self._configuration.update_main_file(self._main_file)
+
         self.status = ClusterStatusCode.PLAN_RUNNING
         self.__update_plan_type(plan_type)
-
-        if not destroy:
-            self._configuration.update_main_file(self._main_file)
 
         try:
             run(
