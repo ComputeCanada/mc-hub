@@ -94,7 +94,7 @@ def test_get_current_user(client):
     assert res.get_json() == {
         "full_name": None,
         "username": None,
-        "public_keys": None,
+        "public_keys": [],
         "projects": [DEFAULT_CLOUD],
     }
 

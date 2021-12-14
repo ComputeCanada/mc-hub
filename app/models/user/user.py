@@ -19,7 +19,7 @@ class User:
 
     @property
     def public_keys(self):
-        return None
+        return []
 
     @property
     def projects(self):
