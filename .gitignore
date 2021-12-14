@@ -144,3 +144,4 @@ configuration.json
 *_test/
 *_env/
 run/
+*.db
