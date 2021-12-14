@@ -13,6 +13,11 @@ const vuetify = new Vuetify();
 localVue.use(Vuetify);
 localVue.use(UnloadConfirmation, { router });
 
+const DEFAULT_USER = Object.freeze({
+  projects: ["arbutus:training"],
+  public_keys: [],
+});
+
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "",
   domain: "calculquebec.cloud",
@@ -151,6 +156,7 @@ describe("ClusterEditor", () => {
         possibleResources: cloneDeep(DEFAULT_POSSIBLE_RESOURCES),
         quotas: cloneDeep(DEFAULT_QUOTAS),
         resourceDetails: cloneDeep(DEFAULT_RESOURCE_DETAILS),
+        user: cloneDeep(DEFAULT_USER),
         ...customizableProps
       }
     });
