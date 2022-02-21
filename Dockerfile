@@ -12,7 +12,7 @@ RUN npm run build
 
 FROM python:3.9-alpine3.14 as base-server
 
-ENV TERRAFORM_VERSION 1.0.9
+ENV TERRAFORM_VERSION 1.1.6
 ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
 ## EXTERNAL DEPENDENCIES
