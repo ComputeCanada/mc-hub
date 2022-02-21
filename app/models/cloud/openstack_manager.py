@@ -67,6 +67,7 @@ class OpenStackManager:
             "vcpus": {"max": self.__get_available_vcpus()},
             "volume_count": {"max": self.__get_available_volume_count()},
             "volume_size": {"max": self.__get_available_volume_size()},
+            "ips": {"max": self.__get_non_allocated_floating_ip_count()},
         }
 
     def __get_possible_resources(self):

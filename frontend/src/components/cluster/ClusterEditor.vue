@@ -408,6 +408,9 @@ export default {
     instanceCountMax() {
       return this.quotas ? this.quotas.instance_count.max : 0;
     },
+    ipsCountMax() {
+      return this.quotas ? this.quotas.ips.max : 0;
+    },
     ramGbUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
