@@ -1,12 +1,12 @@
 {
     "terraform": {
-        "required_version": ">= 0.13.4"
+        "required_version": ">= 1.1.0"
     },
     "module": {
         "openstack": {
-            "source": "/home/mcu/magic_castle-openstack-11.7/openstack",
+            "source": "/home/mcu/magic_castle-openstack-11.8/openstack",
             "generate_ssh_key": true,
-            "puppetenv_rev": "11.7",
+            "puppetenv_rev": "11.8",
             "cluster_name": "buildplanning",
             "domain": "calculquebec.cloud",
             "image": "CentOS-7-x64-2021-11",

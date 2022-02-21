@@ -1,13 +1,13 @@
 {
     "terraform": {
-        "required_version": ">= 0.13.4"
+        "required_version": ">= 1.1.0"
     },
     "module": {
         "openstack": {
-            "source": "git::https://github.com/ComputeCanada/magic_castle.git//openstack?ref=11.7",
+            "source": "git::https://github.com/ComputeCanada/magic_castle.git//openstack?ref=11.8",
             "generate_ssh_key": true,
             "config_git_url": "https://github.com/ComputeCanada/puppet-magic_castle.git",
-            "config_version": "11.7",
+            "config_version": "11.8",
             "cluster_name": "missingfloatingips",
             "domain": "c3.ca",
             "image": "CentOS-7-x64-2021-11",

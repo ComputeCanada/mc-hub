@@ -9,8 +9,8 @@ MAGIC_CASTLE_MODULE_SOURCE = "git::https://github.com/ComputeCanada/magic_castle
 MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
     "https://github.com/ComputeCanada/puppet-magic_castle.git"
 )
-MAGIC_CASTLE_VERSION_TAG = "11.7"
-TERRAFORM_REQUIRED_VERSION = ">= 0.15.2"
+MAGIC_CASTLE_VERSION_TAG = "11.8"
+TERRAFORM_REQUIRED_VERSION = ">= 1.1.0"
 
 # Paths and filenames
 DEFAULT_CLOUD = environ.get("OS_CLOUD", "openstack")
