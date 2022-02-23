@@ -58,7 +58,7 @@ const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
     login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },
     node: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] }
   },
-  volumes: { },
+  volumes: {},
   domain: ["calculquebec.cloud", "c3.ca"]
 });
 
@@ -67,7 +67,8 @@ const DEFAULT_QUOTAS = Object.freeze({
   ram: { max: 221184 },
   vcpus: { max: 224 },
   volume_count: { max: 114 },
-  volume_size: { max: 490 }
+  volume_size: { max: 490 },
+  ips: { max: 3 },
 });
 
 const DEFAULT_RESOURCE_DETAILS = Object.freeze({
