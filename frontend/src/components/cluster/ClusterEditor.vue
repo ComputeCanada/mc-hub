@@ -508,13 +508,13 @@ export default {
     volumeCountRule() {
       return (
         this.volumeCountUsed <= this.volumeCountMax ||
-        "Number of volumes exceeds maximum"
+        "Volume number quota exceeded"
       );
     },
     volumeSizeRule() {
       return (
         this.volumeSizeUsed <= this.volumeSizeMax ||
-        "Volume storage exceeds maximum"
+        "Volume size quota exceeded"
       );
     },
     publicKeysRule() {
