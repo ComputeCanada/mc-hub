@@ -98,18 +98,17 @@
       <v-list>
         <div :key="id" v-for="id in DEFAULT_INSTANCE_PREFIX">
           <v-list-item>
-            <v-col cols="12" sm="1" class="pt-0">
+            <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
                 v-model.number="magicCastle.instances[id].count"
                 type="number"
                 prefix="x"
-                :rules="[ramRule, coreRule, publicIpRule]"
                 dir="rtl"
                 min="0"
                 reverse
               />
             </v-col>
-            <v-col cols="12" sm="3" class="pt-0">
+            <v-col cols="12" sm="2" class="pt-0">
               <v-text-field :value="id" label="hostname prefix" readonly />
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
@@ -125,7 +124,7 @@
                 v-model="magicCastle.instances[id].tags"
                 :items="TAGS"
                 label="tags"
-                :rules="[ramRule, coreRule, publicIpTagsRule]"
+                :rules="[publicTagRule(id)]"
                 multiple
               ></v-combobox>
             </v-col>
@@ -534,24 +533,13 @@ export default {
       return this.quotas ? this.quotas.instance_count.max : 0;
     },
     ipsCountMax() {
-      // return this.quotas ? this.quotas.ips.max : 0;
-      return 0;
-    },
-    ipsUsed() {
-      return this.instances.reduce(
-        (acc, instance) =>
-          acc + instance.count * Number(instance.tags.includes("public")),
-        0
-      );
+      return this.quotas ? this.quotas.ips.max : 0;
     },
     ramRule() {
-      return this.ramGbUsed <= this.ramGbMax || "Ram exceeds quota";
+      return this.ramGbUsed <= this.ramGbMax || "Ram quota exceeded";
     },
     coreRule() {
-      return this.vcpuUsed <= this.vcpuMax || "Cores exceeds quota";
-    },
-    publicIpRule() {
-      return this.ipsUsed <= this.ipsCountMax || "Public IPs exceed quota";
+      return this.vcpuUsed <= this.vcpuMax || "Core quota exceeded";
     },
     ramGbUsed() {
       return this.usedResourcesLoaded
@@ -634,8 +622,23 @@ export default {
     },
   },
   methods: {
-    publicIpTagsRule(v) {
-      return !v.includes("public") || this.publicIpRule;
+    publicTagRule(id) {
+      var self = this;
+      return function (tags) {
+        if (
+          self.magicCastle.instances[id].count > 0 &&
+          tags.includes("public")
+        ) {
+          return (
+            self.instances.reduce(
+              (acc, instance) =>
+                acc + instance.count * Number(instance.tags.includes("public")),
+              0
+            ) <= self.ipsCountMax || "Public IP quota exceeded"
+          );
+        }
+        return true;
+      };
     },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
