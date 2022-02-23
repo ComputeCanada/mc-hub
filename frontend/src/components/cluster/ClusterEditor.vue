@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-form v-model="validForm">
+    <v-form ref="form" v-model="validForm">
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item v-if="!existingCluster">
@@ -103,7 +103,7 @@
                 v-model.number="magicCastle.instances[id].count"
                 type="number"
                 prefix="x"
-                :rules="instanceRules"
+                :rules="[ramRule, coreRule, publicIpRule]"
                 dir="rtl"
                 min="0"
                 reverse
@@ -117,7 +117,7 @@
                 :flavors="getPossibleValues(`instances.${id}.type`)"
                 v-model="magicCastle.instances[id].type"
                 label="Type"
-                :rules="instanceRules"
+                :rules="[ramRule, coreRule]"
               />
             </v-col>
             <v-col cols="12" sm="5" class="pt-0">
@@ -125,6 +125,7 @@
                 v-model="magicCastle.instances[id].tags"
                 :items="TAGS"
                 label="tags"
+                :rules="[ramRule, coreRule, publicIpTagsRule]"
                 multiple
               ></v-combobox>
             </v-col>
@@ -444,6 +445,9 @@ export default {
     }
     this.initialMagicCastle = cloneDeep(this.magicCastle);
   },
+  updated() {
+    this.$refs.form.validate();
+  },
   beforeDestroy() {
     this.$disableUnloadConfirmation();
   },
@@ -502,12 +506,6 @@ export default {
         "Invalid domain provided"
       );
     },
-    instanceRules() {
-      return [
-        this.ramGbUsed <= this.ramGbMax || "Ram exceeds maximum",
-        this.vcpuUsed <= this.vcpuMax || "Cores exceeds maximum",
-      ];
-    },
     volumeCountRule() {
       return (
         this.volumeCountUsed <= this.volumeCountMax ||
@@ -536,7 +534,24 @@ export default {
       return this.quotas ? this.quotas.instance_count.max : 0;
     },
     ipsCountMax() {
-      return this.quotas ? this.quotas.ips.max : 0;
+      // return this.quotas ? this.quotas.ips.max : 0;
+      return 0;
+    },
+    ipsUsed() {
+      return this.instances.reduce(
+        (acc, instance) =>
+          acc + instance.count * Number(instance.tags.includes("public")),
+        0
+      );
+    },
+    ramRule() {
+      return this.ramGbUsed <= this.ramGbMax || "Ram exceeds quota";
+    },
+    coreRule() {
+      return this.vcpuUsed <= this.vcpuMax || "Cores exceeds quota";
+    },
+    publicIpRule() {
+      return this.ipsUsed <= this.ipsCountMax || "Public IPs exceed quota";
     },
     ramGbUsed() {
       return this.usedResourcesLoaded
@@ -619,6 +634,9 @@ export default {
     },
   },
   methods: {
+    publicIpTagsRule(v) {
+      return !v.includes("public") || this.publicIpRule;
+    },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
         return [];
@@ -640,6 +658,9 @@ export default {
     },
     apply() {
       this.$emit("apply");
+    },
+    async generateGuestPassword() {
+      this.magicCastle.guest_passwd = generatePassword();
     },
     async changeCloudProject() {
       this.quotas = null;
