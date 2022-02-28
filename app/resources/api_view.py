@@ -63,11 +63,11 @@ def compute_current_user(route_handler):
     :param route_handler: The Flask route handler function.
     :return: The decorator that modifies the route handler to have the current user as a parameter.
     """
-
+    auth_type = AuthType(config.get("auth_type", "NONE"))
+    admin_ips = config.get("admin_ips", [])
     def decorator(*args, **kwargs):
-        auth_type = AuthType(config.get("auth_type") or "NONE")
         with DatabaseManager.connect() as database_connection:
-            if auth_type == AuthType.SAML:
+            if not request.remote_addr in admin_ips and auth_type == AuthType.SAML:
                 try:
                     # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
                     # Therefore, special characters and accents in givenName and surname are not correctly decoded.
