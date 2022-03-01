@@ -63,9 +63,12 @@ def compute_current_user(route_handler):
     :param route_handler: The Flask route handler function.
     :return: The decorator that modifies the route handler to have the current user as a parameter.
     """
-    auth_type = AuthType(config.get("auth_type", "NONE"))
     admin_ips = config.get("admin_ips", [])
     def decorator(*args, **kwargs):
+        # While the AuthType won't change during the life of the application
+        # defining auth_type in compute_current_user context leads to problem
+        # with the unit tests where both NONE and SAML are used.
+        auth_type = AuthType(config.get("auth_type", "NONE"))
         with DatabaseManager.connect() as database_connection:
             if not request.remote_addr in admin_ips and auth_type == AuthType.SAML:
                 try:
