@@ -2,8 +2,8 @@ import json
 
 from . user import User
 from .. magic_castle.magic_castle import MagicCastle
-from .. configuration import config
-from .. constants import DEFAULT_CLOUD
+from ... configuration import config
+from ... constants import DEFAULT_CLOUD
 
 
 class AuthenticatedUser(User):

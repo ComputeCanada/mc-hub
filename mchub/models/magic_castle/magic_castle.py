@@ -19,7 +19,7 @@ from .. terraform.terraform_state_parser import TerraformStateParser
 from .. terraform.terraform_plan_parser import TerraformPlanParser
 from .. cloud.dns_manager import DnsManager
 from .. puppet.provisioning_manager import ProvisioningManager
-from .. constants import (
+from ... constants import (
     MAIN_TERRAFORM_FILENAME,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,

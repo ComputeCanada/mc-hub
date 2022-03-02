@@ -3,7 +3,7 @@ import pytest
 from copy import deepcopy
 from subprocess import CalledProcessError
 
-from mchub.models.constants import DEFAULT_CLOUD
+from mchub.constants import DEFAULT_CLOUD
 from mchub.models.magic_castle.magic_castle import MagicCastle
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType

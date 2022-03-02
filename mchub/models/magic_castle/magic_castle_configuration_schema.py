@@ -2,9 +2,8 @@ import re
 
 from marshmallow import Schema, fields, validate
 
-from .. constants import INSTANCE_CATEGORIES
 from .. cloud.dns_manager import DnsManager
-
+from ... constants import INSTANCE_CATEGORIES
 
 def validate_cluster_name(cluster_name):
     # Must follow RFC 1035's subdomain naming rules: https://tools.ietf.org/html/rfc1035#section-2.3.1

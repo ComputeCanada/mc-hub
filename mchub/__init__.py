@@ -3,10 +3,10 @@ from os import path as os_path
 from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
 
+from . configuration import config
+from . constants import DIST_PATH
 from . database.schema_manager import SchemaManager
 from . database.database_manager import DatabaseManager
-from . models.configuration import config
-from . models.constants import DIST_PATH
 from . resources.magic_castle_api import MagicCastleAPI
 from . resources.progress_api import ProgressAPI
 from . resources.available_resources_api import AvailableResourcesApi

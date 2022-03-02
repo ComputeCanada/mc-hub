@@ -1,6 +1,6 @@
 import pytest
 
-from mchub.models.constants import DEFAULT_CLOUD
+from mchub.constants import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
 

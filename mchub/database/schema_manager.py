@@ -3,7 +3,7 @@ import sqlite3
 from os import listdir, path
 from os.path import isfile
 
-from .. models.constants import SCHEMA_MIGRATIONS_DIRECTORY
+from .. constants import SCHEMA_MIGRATIONS_DIRECTORY
 
 class SchemaManager:
     """
