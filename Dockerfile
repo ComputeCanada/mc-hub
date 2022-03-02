@@ -1,6 +1,6 @@
 ## FRONTEND BUILD STAGE
 
-FROM node:14-alpine3.14 as frontend-build-stage
+FROM node:14-bullseye as frontend-build-stage
 
 WORKDIR /frontend
 ADD frontend/package*.json ./
@@ -69,4 +69,4 @@ ADD tests /home/mcu/tests
 ## Vue Js frontend src
 COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
-CMD flask run
+CMD python -m gunicorn --workers 5 --bind 0.0.0.0:5000 mchub:app
