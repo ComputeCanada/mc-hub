@@ -5,7 +5,7 @@ import tests
 
 
 from os import path
-from app.models.terraform.terraform_state_parser import TerraformStateParser
+from mchub.models.terraform.terraform_state_parser import TerraformStateParser
 
 from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 

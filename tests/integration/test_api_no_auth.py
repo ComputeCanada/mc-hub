@@ -1,6 +1,6 @@
-from app.models.magic_castle.cluster_status_code import ClusterStatusCode
-from app.models.constants import DEFAULT_CLOUD
-from app import app
+from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+from mchub.models.constants import DEFAULT_CLOUD
+from mchub import app
 
 from .. test_helpers import *
 from .. mocks.configuration.config_mock import config_auth_none_mock  # noqa;

@@ -3,7 +3,7 @@ import pytest
 import tests
 import json
 
-from app.models.terraform.terraform_plan_parser import TerraformPlanParser
+from mchub.models.terraform.terraform_plan_parser import TerraformPlanParser
 
 from ... test_helpers import *  # noqa
 from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;

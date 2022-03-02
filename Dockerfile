@@ -41,7 +41,7 @@ RUN mkdir -p /home/mcu/credentials && chown -R mcu:mcu /home/mcu/credentials
 USER mcu
 WORKDIR /home/mcu
 ADD .terraformrc /home/mcu
-RUN mkdir /home/mcu/app
+RUN mkdir /home/mcu/mchub
 RUN mkdir /home/mcu/tests
 RUN mkdir /home/mcu/clusters
 
@@ -52,7 +52,7 @@ RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
 ADD requirements.txt .
 RUN pip install -r requirements.txt --user
 
-ENV FLASK_APP=app
+ENV FLASK_APP=mchub
 
 # For storing clouds.yaml configuration
 RUN mkdir -p /home/mcu/.config/openstack
@@ -63,7 +63,7 @@ FROM base-server as production-server
 ## APPLICATION CODE
 
 ## Python backend src
-ADD app /home/mcu/app
+ADD mchub /home/mcu/mchub
 ADD tests /home/mcu/tests
 
 ## Vue Js frontend src

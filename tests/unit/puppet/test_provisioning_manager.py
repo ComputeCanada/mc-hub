@@ -4,8 +4,8 @@ import pytest
 
 from requests.exceptions import ConnectionError
 
-from app.models.puppet.provisioning_manager import ProvisioningManager
-from app.exceptions.server_exception import PuppetTimeoutException
+from mchub.models.puppet.provisioning_manager import ProvisioningManager
+from mchub.exceptions.server_exception import PuppetTimeoutException
 
 PROVISIONED_HOSTNAME = "provisioned.example.com"
 
@@ -13,13 +13,13 @@ PROVISIONED_HOSTNAME = "provisioned.example.com"
 @pytest.fixture(autouse=True)
 def mock_max_provisioning_time(mocker):
     # MAX_PROVISIONING_TIME = 1 second
-    mocker.patch("app.models.puppet.provisioning_manager.MAX_PROVISIONING_TIME", new=1)
+    mocker.patch("mchub.models.puppet.provisioning_manager.MAX_PROVISIONING_TIME", new=1)
 
 
 @pytest.fixture(autouse=True)
 def mock_poll_interval(mocker):
     # POLL_INTERVAL = 1 second
-    mocker.patch("app.models.puppet.provisioning_manager.POLL_INTERVAL", new=1)
+    mocker.patch("mchub.models.puppet.provisioning_manager.POLL_INTERVAL", new=1)
 
 
 @pytest.fixture(autouse=True)

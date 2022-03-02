@@ -3,12 +3,12 @@ import pytest
 from copy import deepcopy
 from subprocess import CalledProcessError
 
-from app.models.constants import DEFAULT_CLOUD
-from app.models.magic_castle.magic_castle import MagicCastle
-from app.models.magic_castle.cluster_status_code import ClusterStatusCode
-from app.models.magic_castle.plan_type import PlanType
-from app.exceptions.invalid_usage_exception import ClusterNotFoundException
-from app.exceptions.server_exception import PlanException
+from mchub.models.constants import DEFAULT_CLOUD
+from mchub.models.magic_castle.magic_castle import MagicCastle
+from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+from mchub.models.magic_castle.plan_type import PlanType
+from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
+from mchub.exceptions.server_exception import PlanException
 
 from ... test_helpers import *  # noqa;
 from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
@@ -49,7 +49,7 @@ def test_create_magic_castle_init_fail(database_connection, monkeypatch):
         if process_args == ["terraform", "init", "-no-color", "-input=false"]:
             raise CalledProcessError(1, "terraform init")
 
-    monkeypatch.setattr("app.models.magic_castle.magic_castle.run", fake_run)
+    monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
     with pytest.raises(
         PlanException, match="An error occurred while initializing Terraform."
@@ -68,7 +68,7 @@ def test_create_magic_castle_plan_fail(database_connection, monkeypatch):
         ]:
             raise CalledProcessError(1, "terraform plan")
 
-    monkeypatch.setattr("app.models.magic_castle.magic_castle.run", fake_run)
+    monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
     with pytest.raises(
         PlanException, match="An error occurred while planning changes."
@@ -86,7 +86,7 @@ def test_create_magic_castle_plan_export_fail(database_connection, monkeypatch):
         ]:
             raise CalledProcessError(1, "terraform show")
 
-    monkeypatch.setattr("app.models.magic_castle.magic_castle.run", fake_run)
+    monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle("a-123-45.calculquebec.cloud")
     with pytest.raises(
         PlanException, match="An error occurred while exporting planned changes."

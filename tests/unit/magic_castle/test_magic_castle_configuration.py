@@ -1,5 +1,5 @@
-from app.exceptions.server_exception import ServerException
-from app.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+from mchub.exceptions.server_exception import ServerException
+from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
 
 
 from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;

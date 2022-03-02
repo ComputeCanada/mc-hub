@@ -1,8 +1,8 @@
 import pytest
 
-from app.models.constants import DEFAULT_CLOUD
-from app.models.user.anonymous_user import AnonymousUser
-from app.models.magic_castle.cluster_status_code import ClusterStatusCode
+from mchub.models.constants import DEFAULT_CLOUD
+from mchub.models.user.anonymous_user import AnonymousUser
+from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
 from ... test_helpers import *  # noqa
 from ... mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
