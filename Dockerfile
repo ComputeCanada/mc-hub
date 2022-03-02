@@ -42,16 +42,17 @@ USER mcu
 WORKDIR /home/mcu
 ADD .terraformrc /home/mcu
 RUN mkdir /home/mcu/app
+RUN mkdir /home/mcu/tests
 RUN mkdir /home/mcu/clusters
 
 ## Terraform plugin caching setup
 RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
 
 ## Python requirements
-ADD app/requirements.txt ./app
-RUN pip install -r app/requirements.txt --user
+ADD requirements.txt .
+RUN pip install -r requirements.txt --user
 
-ENV FLASK_APP=app/server.py
+ENV FLASK_APP=app
 
 # For storing clouds.yaml configuration
 RUN mkdir -p /home/mcu/.config/openstack
@@ -63,7 +64,9 @@ FROM base-server as production-server
 
 ## Python backend src
 ADD app /home/mcu/app
+ADD tests /home/mcu/tests
+
 ## Vue Js frontend src
 COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
-CMD python app/server.py
+CMD flask run
