@@ -1,7 +1,10 @@
 import time
-from exceptions.server_exception import PuppetTimeoutException
+
 import requests
+
 from requests.exceptions import ConnectionError
+
+from ... exceptions.server_exception import PuppetTimeoutException
 
 MAX_PROVISIONING_TIME = 3600
 POLL_INTERVAL = 30

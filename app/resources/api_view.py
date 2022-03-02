@@ -1,17 +1,21 @@
+import json
+
 from flask import request
 from flask.views import MethodView
 from flask import make_response
-from database.database_manager import DatabaseManager
-from models.auth_type import AuthType
-from models.user.anonymous_user import AnonymousUser
-from models.configuration import config
-from models.user.authenticated_user import AuthenticatedUser
-from exceptions.invalid_usage_exception import (
+
+from .. database.database_manager import DatabaseManager
+from .. models.auth_type import AuthType
+from .. models.user.anonymous_user import AnonymousUser
+from .. models.configuration import config
+from .. models.user.authenticated_user import AuthenticatedUser
+from .. exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
 )
-from exceptions.server_exception import *
-import json
+from .. exceptions.server_exception import *
+
+
 
 DEFAULT_RESPONSE_CODE = 200
 

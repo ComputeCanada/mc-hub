@@ -1,9 +1,11 @@
-from server import app
-from models.magic_castle.cluster_status_code import ClusterStatusCode
-from models.constants import DEFAULT_CLOUD
-from tests.test_helpers import *
-from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+import pytest
 
+from app.models.constants import DEFAULT_CLOUD
+from app.models.magic_castle.cluster_status_code import ClusterStatusCode
+from app import app
+
+from .. test_helpers import *  # noqa;
+from .. mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
 EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
@@ -21,15 +23,16 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "volumes": {
         "nfs": {
             "home": {"size": 100},
-            "project": {"size": 50},
             "scratch": {"size": 50},
+            "project": {"size": 50},
         }
     },
     "public_keys": [],
-    "guest_passwd": "",
     "hieradata": "",
+    "guest_passwd": "",
 }
 EXISTING_CLUSTER_CONFIGURATION = {
+    "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "domain": "calculquebec.cloud",
     "image": "CentOS-7-x64-2021-11",
@@ -42,24 +45,26 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "volumes": {
         "nfs": {
             "home": {"size": 100},
-            "project": {"size": 50},
             "scratch": {"size": 50},
+            "project": {"size": 50},
         }
     },
-    "public_keys": [],
-    "guest_passwd": "",
+    "public_keys": [""],
     "hieradata": "",
+    "guest_passwd": "password-123",
 }
+
 EXISTING_CLUSTER_STATE = {
     "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "nb_users": 10,
+    "expiration_date": "2029-01-01",
     "guest_passwd": "password-123",
     "volumes": {
         "nfs": {
             "home": {"size": 100},
-            "project": {"size": 50},
             "scratch": {"size": 50},
+            "project": {"size": 50},
         }
     },
     "instances": {
@@ -69,13 +74,28 @@ EXISTING_CLUSTER_STATE = {
     },
     "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
-    "image": "CentOS-7-x64-2021-11",
     "hieradata": "",
+    "image": "CentOS-7-x64-2021-11",
     "status": "provisioning_success",
     "owner": "alice",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
-    "expiration_date": "2029-01-01",
+}
+
+ALICE_HEADERS = {
+    "eduPersonPrincipalName": "alice@computecanada.ca",
+    "givenName": "Alice",
+    "surname": "Tremblay",
+    "mail": "alice.tremblay@example.com",
+    "sshPublicKey": "ssh-rsa FAKE",
+}
+
+BOB_HEADERS = {
+    "eduPersonPrincipalName": "bob12.bobby@computecanada.ca",
+    "givenName": "Bob",
+    "surname": "Rodriguez",
+    "mail": "bob-rodriguez435@example.com",
+    "sshPublicKey": "ssh-rsa FAKE",
 }
 
 IGNORE_FIELDS = ["age"]
@@ -89,19 +109,32 @@ def client(mocker):
 
 
 # GET /api/users/me
-def test_get_current_user(client):
-    res = client.get(f"/api/users/me")
+def test_get_current_user_authentified(client):
+    res = client.get(f"/api/users/me", headers=ALICE_HEADERS)
     assert res.get_json() == {
-        "full_name": None,
-        "username": None,
-        "public_keys": [],
+        "full_name": "Alice Tremblay",
+        "username": "alice",
+        "public_keys": ["ssh-rsa FAKE"],
+        "projects": [DEFAULT_CLOUD],
+    }
+    res = client.get(f"/api/users/me", headers=BOB_HEADERS)
+    assert res.get_json() == {
+        "full_name": "Bob Rodriguez",
+        "username": "bob12.bobby",
+        "public_keys": ["ssh-rsa FAKE"],
         "projects": [DEFAULT_CLOUD],
     }
 
 
+# GET /api/users/me
+def test_get_current_user_non_authentified(client):
+    res = client.get(f"/api/users/me")
+    assert res.get_json() == {"message": "You need to be authenticated."}
+
+
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
-    res = client.get(f"/api/magic-castles")
+    res = client.get(f"/api/magic-castles", headers=ALICE_HEADERS)
     results = []
     for result in res.get_json():
         for field in IGNORE_FIELDS:
@@ -180,155 +213,6 @@ def test_get_all_magic_castle_names(client):
     }
     assert results[2] == {
         "cloud_id": DEFAULT_CLOUD,
-        "hostname": "empty-state.calculquebec.cloud",
-        "cluster_name": "empty-state",
-        "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 34,
-        "instances": {
-            "mgmt": {
-                "type": "c2-7.5gb-31",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "c1-7.5gb-30", "count": 5, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 73},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "hieradata": "",
-        "status": "build_error",
-        "freeipa_passwd": None,
-        "owner": "bob12.bobby",
-    }
-    assert results[3] == {
-        "cloud_id": DEFAULT_CLOUD,
-        "hostname": "empty.calculquebec.cloud",
-        "status": "build_error",
-        "freeipa_passwd": None,
-        "owner": "bob12.bobby",
-        "expiration_date": "2029-01-01",
-    }
-    assert results[4] == {
-        "cloud_id": DEFAULT_CLOUD,
-        "cluster_name": "missingfloatingips",
-        "domain": "c3.ca",
-        "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 50},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "hieradata": "",
-        "hostname": "missingfloatingips.c3.ca",
-        "status": "build_running",
-        "freeipa_passwd": None,
-        "owner": "bob12.bobby",
-    }
-
-    assert results[5] == {
-        "cloud_id": DEFAULT_CLOUD,
-        "cluster_name": "missingnodes",
-        "domain": "sub.example.com",
-        "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "hieradata": "",
-        "hostname": "missingnodes.sub.example.com",
-        "status": "build_error",
-        "freeipa_passwd": "FAKE",
-        "owner": "bob12.bobby",
-    }
-    assert results[6] == {
-        "cloud_id": DEFAULT_CLOUD,
-        "cluster_name": "noowner",
-        "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "hieradata": "",
-        "hostname": "noowner.calculquebec.cloud",
-        "status": "provisioning_success",
-        "freeipa_passwd": "FAKE",
-        "owner": None,
-    }
-    assert results[7] == {
-        "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -365,9 +249,24 @@ def test_get_all_magic_castle_names(client):
     assert res.status_code == 200
 
 
+def test_get_all_magic_castles_unauthenticated(client):
+    # No authentication header at all
+    res = client.get(f"/api/magic-castles")
+    assert res.get_json() == {"message": "You need to be authenticated."}
+    assert res.status_code != 200
+
+    # Missing some authentication headers
+    res = client.get(
+        f"/api/magic-castles",
+        headers={"eduPersonPrincipalName": "alice@computecanada.ca"},
+    )
+    assert res.get_json() == {"message": "You need to be authenticated."}
+    assert res.status_code != 200
+
+
 # GET /api/magic-castles/<hostname>
 def test_get_state_existing(client):
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}")
+    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     state = res.get_json()
     for field in IGNORE_FIELDS:
         state.pop(field)
@@ -376,7 +275,17 @@ def test_get_state_existing(client):
 
 
 def test_get_state_non_existing(client):
-    res = client.get(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}")
+    res = client.get(
+        f"/api/magic-castles/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
+    )
+    assert res.get_json() == {"message": "This cluster does not exist."}
+    assert res.status_code != 200
+
+
+def test_get_state_not_owned(client):
+    res = client.get(
+        f"/api/magic-castles/missingfloatingips.c3.ca", headers=ALICE_HEADERS
+    )
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
@@ -384,7 +293,9 @@ def test_get_state_non_existing(client):
 # GET /api/magic-castles/<hostname>/status
 @pytest.mark.skip(reason="source of truth is currently false")
 def test_get_status(mocker, client):
-    res = client.get(f"/api/magic-castles/missingfloatingips.c3.ca/status")
+    res = client.get(
+        f"/api/magic-castles/missingfloatingips.c3.ca/status", headers=BOB_HEADERS
+    )
     assert res.get_json() == {
         "status": "build_running",
         "progress": [
@@ -553,57 +464,75 @@ def test_get_status(mocker, client):
 
 
 def test_get_status_code(client, database_connection):
-    res = client.get(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castles/{NON_EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "not_found"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "build_running"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.PROVISIONING_SUCCESS
     )
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "provisioning_success"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_ERROR
     )
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "build_error"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "destroy_running"
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_ERROR
     )
-    res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
+    res = client.get(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
+    )
     assert res.get_json()["status"] == "destroy_error"
 
 
 # DELETE /api/magic-castles/<hostname>
 def test_delete_invalid_status(database_connection, client):
-    res = client.delete(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}")
+    res = client.delete(
+        f"/api/magic-castles/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
+    )
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
     )
-    res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
+    res = client.delete(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS
+    )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
     modify_cluster_status(
         database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
     )
-    res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
+    res = client.delete(
+        f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS
+    )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
@@ -613,6 +542,7 @@ def test_modify_invalid_status(database_connection, client):
     res = client.put(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,
+        headers=ALICE_HEADERS,
     )
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
@@ -623,6 +553,7 @@ def test_modify_invalid_status(database_connection, client):
     res = client.put(
         f"/api/magic-castles/{EXISTING_HOSTNAME}",
         json=EXISTING_CLUSTER_CONFIGURATION,
+        headers=ALICE_HEADERS,
     )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
@@ -633,6 +564,7 @@ def test_modify_invalid_status(database_connection, client):
     res = client.put(
         f"/api/magic-castles/{EXISTING_HOSTNAME}",
         json=EXISTING_CLUSTER_CONFIGURATION,
+        headers=ALICE_HEADERS,
     )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200

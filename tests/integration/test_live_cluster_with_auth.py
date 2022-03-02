@@ -1,11 +1,11 @@
 import pytest
 
-from server import app
+from app import app
 from time import time, sleep
 from os import path
 from random import randrange
 
-from models.constants import DEFAULT_CLOUD
+from app.models.constants import DEFAULT_CLOUD
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
@@ -49,7 +49,7 @@ def disable_provisionning_polling(mocker):
     To avoid this behaviour, we mock ProvisioningManager.is_busy.
     """
     mocker.patch(
-        "models.puppet.provisioning_manager.ProvisioningManager.is_busy",
+        "app.models.puppet.provisioning_manager.ProvisioningManager.is_busy",
         return_value=True,
     )
 

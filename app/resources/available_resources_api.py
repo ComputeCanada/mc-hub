@@ -1,7 +1,7 @@
-from resources.api_view import ApiView
-from models.cloud.cloud_manager import CloudManager
-from models.user.user import User
-from models.constants import DEFAULT_CLOUD
+from .. resources.api_view import ApiView
+from .. models.cloud.cloud_manager import CloudManager
+from .. models.user.user import User
+from .. models.constants import DEFAULT_CLOUD
 
 
 class AvailableResourcesApi(ApiView):

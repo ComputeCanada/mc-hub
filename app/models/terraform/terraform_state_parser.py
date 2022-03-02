@@ -1,6 +1,6 @@
 from jsonpath_ng.ext import parse
-from models.constants import INSTANCE_CATEGORIES, STORAGE_SPACES
 
+from .. constants import INSTANCE_CATEGORIES, STORAGE_SPACES
 
 def default(default_value):
     """

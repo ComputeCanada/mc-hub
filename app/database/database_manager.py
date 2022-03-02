@@ -1,6 +1,6 @@
 import sqlite3
 from os import path
-from models.constants import DATABASE_PATH, DATABASE_FILENAME
+from .. models.constants import DATABASE_PATH, DATABASE_FILENAME
 
 DATABASE_FILE_PATH = path.join(DATABASE_PATH, DATABASE_FILENAME)
 

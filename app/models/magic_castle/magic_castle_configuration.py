@@ -1,17 +1,22 @@
-from models.cloud.dns_manager import DnsManager
-from models.magic_castle.magic_castle_configuration_schema import (
+import json
+
+import marshmallow
+
+from copy import deepcopy
+
+from . magic_castle_configuration_schema import (
     MagicCastleConfigurationSchema,
 )
-from models.constants import (
+
+from .. cloud.dns_manager import DnsManager
+from .. constants import (
     MAGIC_CASTLE_MODULE_SOURCE,
     MAGIC_CASTLE_VERSION_TAG,
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
     TERRAFORM_REQUIRED_VERSION,
 )
-from copy import deepcopy
-import json
-import marshmallow
-from exceptions.server_exception import ServerException
+
+from ... exceptions.server_exception import ServerException
 
 IGNORED_CONFIGURATION_FIELDS = [
     "source",

@@ -1,5 +1,5 @@
-from models.user.user import User
-from models.magic_castle.magic_castle import MagicCastle
+from . user import User
+from .. magic_castle.magic_castle import MagicCastle
 
 
 class AnonymousUser(User):

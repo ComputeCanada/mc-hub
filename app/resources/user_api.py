@@ -1,5 +1,5 @@
-from resources.api_view import ApiView
-from models.user.user import User
+from . api_view import ApiView
+from .. models.user.user import User
 
 
 class UserAPI(ApiView):

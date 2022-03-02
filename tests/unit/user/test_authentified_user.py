@@ -1,9 +1,11 @@
-from models.constants import DEFAULT_CLOUD
-from models.magic_castle.cluster_status_code import ClusterStatusCode
-from exceptions.invalid_usage_exception import ClusterNotFoundException
-from tests.test_helpers import *  # noqa
 import pytest
-from tests.mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+
+from app.models.constants import DEFAULT_CLOUD
+from app.models.magic_castle.cluster_status_code import ClusterStatusCode
+from app.exceptions.invalid_usage_exception import ClusterNotFoundException
+
+from ... test_helpers import *  # noqa
+from ... mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
 def test_full_name(database_connection, alice, bob, admin):

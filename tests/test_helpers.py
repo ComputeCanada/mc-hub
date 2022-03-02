@@ -1,14 +1,18 @@
-from tests.mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
+import pytest
+import sqlite3
+
 from pathlib import Path
 from os import path
 from shutil import rmtree, copytree
-from database.schema_manager import SchemaManager
-from database.database_manager import DatabaseManager
-from models.user.authenticated_user import AuthenticatedUser
-from models.constants import DEFAULT_CLOUD
 from typing import Callable
-import pytest
-import sqlite3
+
+
+from app.database.schema_manager import SchemaManager
+from app.database.database_manager import DatabaseManager
+from app.models.user.authenticated_user import AuthenticatedUser
+from app.models.constants import DEFAULT_CLOUD
+
+from . mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -30,7 +34,7 @@ def teardown_mock_clusters(cluster_names):
 @pytest.fixture(autouse=True)
 def database_connection(mocker):
     # Using an in-memory database for faster unit tests with less disk IO
-    mocker.patch("database.database_manager.DATABASE_FILE_PATH", new=":memory:")
+    mocker.patch("app.database.database_manager.DATABASE_FILE_PATH", new=":memory:")
 
     with DatabaseManager.connect() as database_connection:
         # The database :memory: only exist within a single connection.
@@ -46,7 +50,7 @@ def database_connection(mocker):
                 pass
 
         mocker.patch(
-            "database.database_manager.DatabaseManager.connect",
+            "app.database.database_manager.DatabaseManager.connect",
             return_value=MockDatabaseConnection(),
         )
 
@@ -172,9 +176,9 @@ def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture(autouse=True)
 def mock_clusters_path(mocker):
-    mocker.patch("models.constants.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
+    mocker.patch("app.models.constants.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
     mocker.patch(
-        "models.magic_castle.magic_castle.CLUSTERS_PATH",
+        "app.models.magic_castle.magic_castle.CLUSTERS_PATH",
         new=MOCK_CLUSTERS_PATH,
     )
 
@@ -208,11 +212,11 @@ def disable_provisionning_polling(mocker):
     To avoid this behaviour, we mock ProvisioningManager.is_busy.
     """
     mocker.patch(
-        "models.puppet.provisioning_manager.ProvisioningManager.is_busy",
+        "app.models.puppet.provisioning_manager.ProvisioningManager.is_busy",
         return_value=True,
     )
 
 
 @pytest.fixture
 def fake_successful_subprocess_run(mocker):
-    mocker.patch("models.magic_castle.magic_castle.run", return_value=None)
+    mocker.patch("app.models.magic_castle.magic_castle.run", return_value=None)

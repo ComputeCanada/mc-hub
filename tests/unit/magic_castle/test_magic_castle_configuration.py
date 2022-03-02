@@ -1,8 +1,9 @@
-from models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
-from tests.test_helpers import *  # noqa;
-from exceptions.server_exception import ServerException
-from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from app.exceptions.server_exception import ServerException
+from app.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
 
+
+from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ... test_helpers import *  # noqa;
 
 def test_constructor_none():
     assert MagicCastleConfiguration().to_dict() == {}

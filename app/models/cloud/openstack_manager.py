@@ -1,7 +1,9 @@
-from os import environ, path
-from models.constants import INSTANCE_CATEGORIES
-from re import search, IGNORECASE
 import openstack
+
+from os import environ, path
+from re import search, IGNORECASE
+
+from .. constants import INSTANCE_CATEGORIES
 
 CENTOS_VALID_IMAGES = r"centos"
 OTHER_VALID_IMAGES = r"almalinux|rocky"

@@ -1,9 +1,11 @@
-from models.constants import DEFAULT_CLOUD
-from models.user.anonymous_user import AnonymousUser
-from models.magic_castle.cluster_status_code import ClusterStatusCode
-from tests.test_helpers import *  # noqa
-from tests.mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 import pytest
+
+from app.models.constants import DEFAULT_CLOUD
+from app.models.user.anonymous_user import AnonymousUser
+from app.models.magic_castle.cluster_status_code import ClusterStatusCode
+
+from ... test_helpers import *  # noqa
+from ... mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
 def test_full_name(database_connection):

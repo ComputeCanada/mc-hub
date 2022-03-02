@@ -6,7 +6,7 @@ from os import path
 
 from marshmallow import Schema, fields, ValidationError
 
-from models.constants import CONFIGURATION_FILE_PATH, CONFIGURATION_FILENAME
+from . constants import CONFIGURATION_FILE_PATH, CONFIGURATION_FILENAME
 
 class Configuration(Schema):
     auth_type = fields.Str(required=True)

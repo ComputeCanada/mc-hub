@@ -1,9 +1,10 @@
-from tests.test_helpers import *  # noqa;
-from models.cloud.dns_manager import DnsManager
-from models.constants import MAGIC_CASTLE_MODULE_SOURCE, MAGIC_CASTLE_VERSION_TAG
 import pytest
-from tests.mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
+from app.models.cloud.dns_manager import DnsManager
+from app.models.constants import MAGIC_CASTLE_MODULE_SOURCE, MAGIC_CASTLE_VERSION_TAG
+
+from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ... test_helpers import *  # noqa;
 
 def test_initialize_disallowed_domain():
     with pytest.raises(KeyError):

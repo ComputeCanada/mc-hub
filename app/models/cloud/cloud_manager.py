@@ -1,5 +1,5 @@
-from models.cloud.openstack_manager import OpenStackManager
-from models.cloud.dns_manager import DnsManager
+from .. cloud.openstack_manager import OpenStackManager
+from .. cloud.dns_manager import DnsManager
 
 
 class CloudManager:

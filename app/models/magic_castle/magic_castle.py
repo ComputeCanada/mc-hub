@@ -1,29 +1,36 @@
+import datetime
+import json
+import logging
+
+import humanize
+
 from os import path, environ, mkdir, remove, scandir, rename
 from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
+
 from marshmallow import ValidationError
-from models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
-from models.magic_castle.cluster_status_code import ClusterStatusCode
-from models.magic_castle.plan_type import PlanType
-from models.terraform.terraform_state_parser import TerraformStateParser
-from models.terraform.terraform_plan_parser import TerraformPlanParser
-from models.cloud.dns_manager import DnsManager
-from models.puppet.provisioning_manager import ProvisioningManager
-from exceptions.invalid_usage_exception import *
-from exceptions.server_exception import *
-from models.constants import (
+
+from . magic_castle_configuration import MagicCastleConfiguration
+from . cluster_status_code import ClusterStatusCode
+from . plan_type import PlanType
+
+from .. terraform.terraform_state_parser import TerraformStateParser
+from .. terraform.terraform_plan_parser import TerraformPlanParser
+from .. cloud.dns_manager import DnsManager
+from .. puppet.provisioning_manager import ProvisioningManager
+from .. constants import (
     MAIN_TERRAFORM_FILENAME,
     TERRAFORM_STATE_FILENAME,
     CLUSTERS_PATH,
     DEFAULT_CLOUD,
 )
-from database.database_manager import DatabaseManager
 
-import datetime
-import humanize
-import logging
-import json
+from ... exceptions.invalid_usage_exception import *
+from ... exceptions.server_exception import *
+
+from ... database.database_manager import DatabaseManager
+
 
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
