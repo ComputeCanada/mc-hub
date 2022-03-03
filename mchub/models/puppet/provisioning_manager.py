@@ -19,10 +19,11 @@ class ProvisioningManager:
 
     def check_online(self):
         try:
-            return all ((
-                requests.get(f"https://jupyter.{self.hostname}").status_code == 200,
-                requests.get(f"https://ipa.{self.hostname}").status_code == 200,
-                requests.get(f"https://mokey.{self.hostname}").status_code == 200,
-            ))
+            return (
+                requests.get(f"https://jupyter.{self.hostname}").status_code == 200 and
+                requests.get(f"https://ipa.{self.hostname}").status_code == 200     and
+                requests.get(f"https://mokey.{self.hostname}").status_code == 200
+            )
+
         except ConnectionError:
             return False

@@ -34,10 +34,11 @@ RUN mkdir /home/mcu/mchub
 RUN mkdir /home/mcu/tests
 
 ## Python requirements
-ADD requirements.txt .
+ADD poetry.lock pyproject.toml /home/mcu/
 RUN python3 -m venv /home/mcu/venv
-RUN /home/mcu/venv/bin/pip install --upgrade pip
-RUN /home/mcu/venv/bin/pip install -r requirements.txt
+ENV VIRTUAL_ENV=/home/mcu/venv
+RUN /home/mcu/venv/bin/pip install poetry
+RUN /home/mcu/venv/bin/poetry install
 
 ## Python backend src
 ADD mchub /home/mcu/mchub
@@ -73,3 +74,4 @@ COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
 
 CMD /home/mcu/venv/bin/python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
+#CMD /home/mcu/venv/bin/python -m mchub.wsgi
