@@ -2,7 +2,7 @@
 name = "mc-hub"
 version = "9.0.0"
 description = ""
-authors = ["Félix-Antoine Fortin <felix-antoine.fortin@calculquebec.ca>"]
+authors = ["Frédéric Fortier-Chouinard", "Félix-Antoine Fortin <felix-antoine.fortin@calculquebec.ca>"]
 license = "BSD 3"
 
 [tool.poetry.dependencies]
