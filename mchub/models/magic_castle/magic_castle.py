@@ -18,7 +18,7 @@ from . plan_type import PlanType
 from .. terraform.terraform_state_parser import TerraformStateParser
 from .. terraform.terraform_plan_parser import TerraformPlanParser
 from .. cloud.dns_manager import DnsManager
-from .. puppet.provisioning_manager import ProvisioningManager
+from .. puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING_TIME
 from ... constants import (
     MAIN_TERRAFORM_FILENAME,
     TERRAFORM_STATE_FILENAME,
@@ -145,6 +145,13 @@ class MagicCastle:
     def status(self) -> ClusterStatusCode:
         if self._status is None:
             self.read_db_entry()
+
+        if self._status == ClusterStatusCode.PROVISIONING_RUNNING:
+            if ProvisioningManager(self.hostname).check_online():
+                self.status = ClusterStatusCode.PROVISIONING_SUCCESS
+            elif MAX_PROVISIONING_TIME < (datetime.datetime.now() - self.created).total_seconds() :
+                self.status = ClusterStatusCode.PROVISIONING_ERROR
+
         return self._status
 
     @status.setter
@@ -548,16 +555,6 @@ class MagicCastle:
                         database_connection.commit()
                 else:
                     self.status = ClusterStatusCode.PROVISIONING_RUNNING
-                    provisioning_manager = ProvisioningManager(self.hostname)
-
-                    # Avoid multiple threads polling the same cluster
-                    if not provisioning_manager.is_busy():
-                        try:
-                            provisioning_manager.poll_until_success()
-                        except PuppetTimeoutException:
-                            self.status = ClusterStatusCode.PROVISIONING_ERROR
-                        else:
-                            self.status = ClusterStatusCode.PROVISIONING_SUCCESS
             finally:
                 self.__remove_existing_plan()
 
