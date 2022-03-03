@@ -22,8 +22,7 @@ from .. puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING
 from ... constants import (
     MAIN_TERRAFORM_FILENAME,
     TERRAFORM_STATE_FILENAME,
-    CLUSTERS_PATH,
-    DEFAULT_CLOUD,
+    CLUSTERS_PATH
 )
 
 from ... exceptions.invalid_usage_exception import *
