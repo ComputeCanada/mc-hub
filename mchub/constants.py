@@ -1,5 +1,9 @@
 from os import path, environ, getcwd
 
+from openstack.config.loader import OpenStackConfig
+
+ALL_CLOUD_ID = [cloud.name for cloud in OpenStackConfig().get_all_clouds()]
+
 # Regular constants
 INSTANCE_CATEGORIES = ["mgmt", "login", "node"]
 STORAGE_SPACES = ["home", "project", "scratch"]
@@ -13,7 +17,7 @@ MAGIC_CASTLE_VERSION_TAG = "11.8"
 TERRAFORM_REQUIRED_VERSION = ">= 1.1.0"
 
 # Paths and filenames
-DEFAULT_CLOUD = environ.get("OS_CLOUD", "openstack")
+DEFAULT_CLOUD = environ.get("OS_CLOUD", ALL_CLOUD_ID[0])
 RUN_PATH = environ.get("MCH_RUN_PATH", getcwd())
 CLUSTERS_PATH = environ.get("MCH_CLUSTERS_PATH", path.join(RUN_PATH, "clusters"))
 APP_PATH = environ.get("MCH_APP_PATH", path.join(RUN_PATH, "mchub"))
