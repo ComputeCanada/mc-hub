@@ -38,23 +38,23 @@ jobs:
       - name: Run backend regular tests
         if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
         run: |
-          docker run --rm --publish 5000:5000 \
-          --env MCH_RUN_PATH=/home/mcu \
+          docker run \
+          --rm \
           --mount "type=volume,source=database,target=/home/mcu/database" \
           --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
           --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
           --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-            -w /home/mcu "$IMAGE_NAME" python -m pytest;
+          -w /home/mcu "$IMAGE_NAME" /home/mcu/venv/bin/python -m pytest;
       - name: Run backend extended tests (including live cluster tests)
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         run: |
-          docker run --rm --publish 5000:5000 \
-          --env MCH_RUN_PATH=/home/mcu \
+          docker run \
+          --rm \
           --mount "type=volume,source=database,target=/home/mcu/database" \
           --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
           --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
           --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-             -w /home/mcu "$IMAGE_NAME" python -m pytest -x -vv --build-live-cluster;
+          -w /home/mcu "$IMAGE_NAME" /home/mcu/venv/bin/python -m pytest -x -vv --build-live-cluster;
 
       # - name: Debug with tmate on failure
       #   if: ${{ failure() }}
