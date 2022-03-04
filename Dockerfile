@@ -21,15 +21,12 @@ RUN apk --no-cache add git \
 
 ## Magic Castle User
 RUN adduser -D mcu
-
-# Set mcu as the owner of the SQLite database volume
-RUN mkdir -p /home/mcu/database && chown -R mcu:mcu /home/mcu/database
-
-# Set mcu as the owner of the credentials directory
-RUN mkdir -p /home/mcu/credentials && chown -R mcu:mcu /home/mcu/credentials
+RUN mkdir -p /home/mcu && chown -R mcu:mcu /home/mcu
 
 USER mcu
 WORKDIR /home/mcu
+RUN mkdir /home/mcu/databsase
+RUN mkdir /home/mcu/credentials
 RUN mkdir /home/mcu/mchub
 RUN mkdir /home/mcu/tests
 
@@ -43,6 +40,8 @@ RUN /home/mcu/venv/bin/poetry install
 ## Python backend src
 ADD mchub /home/mcu/mchub
 ADD tests /home/mcu/tests
+
+ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
 
 FROM base-server as cleanup-daemon
 
@@ -74,7 +73,6 @@ RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
 ## Vue Js frontend src
 COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
-ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
 ENV MAGIC_CASTLE_PATH=../../magic_castle
 ENV MAGIC_CASTLE_VERSION=11.8
 

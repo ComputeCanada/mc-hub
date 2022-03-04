@@ -33,6 +33,15 @@ services:
     environment:
       - MCHUB_HOST=api
       - MCHUB_PORT=5000
+    volumes:
+      - type: bind
+        source: ./run/configuration.json
+        target: /home/mcu/configuration.json
+        read_only: true
+      - type: bind
+        source: ./run/clouds.yaml
+        target: /home/mcu/credentials/clouds.yaml
+        read_only: true
 
 volumes:
   database:

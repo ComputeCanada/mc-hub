@@ -8,6 +8,9 @@ from requests import get, delete, post
 from requests.exceptions import RequestException
 from requests.compat import urljoin
 
+from .. configuration import config
+from .. models.auth_type import AuthType
+
 MC_API_PATH = "api/magic-castles"
 MC_EXPIRATON_FORMAT = "%Y-%m-%d"
 
@@ -17,11 +20,15 @@ def main(host="127.0.0.1", port=5000, interval=3600):
     host = f"http://{host}:{port}"
     mc_api = urljoin(host, MC_API_PATH)
     logging.info(f"Connecting to {mc_api}")
+    headers = {}
+    if AuthType.TOKEN in config["auth_type"]:
+        headers["Authorization"] = f"token {config['token']}"
     while True:
         now = datetime.now()
         logging.info(f"Looking for expired clusters at {now}")
+
         try:
-            clusters = get(mc_api).json()
+            clusters = get(mc_api, headers=headers).json()
         except RequestException as e:
             logging.warning("Could not reach the API - 30 seconds pause.")
             time.sleep(30)
@@ -40,13 +47,13 @@ def main(host="127.0.0.1", port=5000, interval=3600):
                 apply_api = urljoin(f"{host_api}/", "apply")
                 logging.info(f"Cluster {hostname} is expired - deleting")
                 try:
-                    delete(host_api)
+                    delete(host_api, headers=headers)
                 except RequestException as e:
                     logging.error(f"Error while planning {cluster['hostname']} deletion - {e}")
                     continue
 
                 try:
-                    post(apply_api)
+                    post(apply_api, headers=headers)
                 except RequestException as e:
                     logging.error(f"Error while deleting {cluster['hostname']} deletion - {e}")
             else:
