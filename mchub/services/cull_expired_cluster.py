@@ -29,14 +29,14 @@ def main(host="127.0.0.1", port=5000, interval=3600):
         except Exception as e:
             clusters = []
             logging.error(e)
-    
+
         for cluster in clusters:
             exp_date = datetime.strptime(cluster["expiration_date"], MC_EXPIRATON_FORMAT)
             if exp_date < now:
-                logging.info(f"Cluster {hostname} is expired - deleting")
                 hostname = cluster["hostname"]
                 host_api = urljoin(f"{mc_api}/", hostname)
                 apply_api = urljoin(f"{host_api}/", "apply")
+                logging.info(f"Cluster {hostname} is expired - deleting")
                 try:
                     delete(host_api)
                 except RequestException as e:
