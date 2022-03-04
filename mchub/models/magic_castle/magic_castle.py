@@ -389,6 +389,10 @@ class MagicCastle:
             plan_type = PlanType.BUILD
             self._configuration.update_main_file(self._main_file)
 
+        if destroy and self.status == ClusterStatusCode.CREATED:
+            self.delete()
+            return
+
         self.status = ClusterStatusCode.PLAN_RUNNING
         self.__update_plan_type(plan_type)
 
@@ -544,14 +548,7 @@ class MagicCastle:
                     self.status = ClusterStatusCode.BUILD_ERROR
             else:
                 if destroy:
-                    # Removes the content of the cluster's folder, even if not empty
-                    rmtree(self._path, ignore_errors=True)
-                    with DatabaseManager.connect() as database_connection:
-                        database_connection.execute(
-                            "DELETE FROM magic_castles WHERE hostname = ?",
-                            (self.hostname,),
-                        )
-                        database_connection.commit()
+                    self.delete()
                 else:
                     self.status = ClusterStatusCode.PROVISIONING_RUNNING
             finally:
@@ -560,6 +557,16 @@ class MagicCastle:
         Thread(
             target=terraform_apply,
         ).start()
+
+    def delete(self):
+        # Removes the content of the cluster's folder, even if not empty
+        rmtree(self._path, ignore_errors=True)
+        with DatabaseManager.connect() as database_connection:
+            database_connection.execute(
+                "DELETE FROM magic_castles WHERE hostname = ?",
+                (self.hostname,),
+            )
+            database_connection.commit()
 
     def __remove_existing_plan(self):
         self.__update_plan_type(PlanType.NONE)
