@@ -2,7 +2,7 @@ import pytest
 
 from mchub.constants import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
-from mchub import app
+from mchub import create_app
 
 from .. test_helpers import *  # noqa;
 from .. mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
@@ -103,6 +103,7 @@ IGNORE_FIELDS = ["age"]
 
 @pytest.fixture
 def client(mocker):
+    app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client

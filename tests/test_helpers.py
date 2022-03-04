@@ -205,18 +205,6 @@ def mock_openstack_manager(mocker):
     mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
 
 
-@pytest.fixture(autouse=True)
-def disable_provisionning_polling(mocker):
-    """
-    ProvisioningManager continues polling the cluster status at the end of the tests.
-    To avoid this behaviour, we mock ProvisioningManager.is_busy.
-    """
-    mocker.patch(
-        "mchub.models.puppet.provisioning_manager.ProvisioningManager.is_busy",
-        return_value=True,
-    )
-
-
 @pytest.fixture
 def fake_successful_subprocess_run(mocker):
     mocker.patch("mchub.models.magic_castle.magic_castle.run", return_value=None)

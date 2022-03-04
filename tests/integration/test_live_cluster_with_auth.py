@@ -1,6 +1,6 @@
 import pytest
 
-from mchub import app
+from mchub import create_app
 from time import time, sleep
 from os import path
 from random import randrange
@@ -37,21 +37,10 @@ JOHN_DOE_HEADERS = {
 
 @pytest.fixture
 def client(mocker):
+    app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
-
-
-@pytest.fixture(autouse=True)
-def disable_provisionning_polling(mocker):
-    """
-    ProvisioningManager continues polling the cluster status at the end of the tests.
-    To avoid this behaviour, we mock ProvisioningManager.is_busy.
-    """
-    mocker.patch(
-        "mchub.models.puppet.provisioning_manager.ProvisioningManager.is_busy",
-        return_value=True,
-    )
 
 
 @pytest.mark.build_live_cluster
