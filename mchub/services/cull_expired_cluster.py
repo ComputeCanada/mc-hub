@@ -31,6 +31,8 @@ def main(host="127.0.0.1", port=5000, interval=3600):
             logging.error(e)
 
         for cluster in clusters:
+            if cluster["expiration_date"] is None:
+                continue
             exp_date = datetime.strptime(cluster["expiration_date"], MC_EXPIRATON_FORMAT)
             if exp_date < now:
                 hostname = cluster["hostname"]
