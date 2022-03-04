@@ -396,19 +396,20 @@ class MagicCastle:
         self.status = ClusterStatusCode.PLAN_RUNNING
         self.__update_plan_type(plan_type)
 
-        try:
-            run(
-                ["terraform", "init", "-no-color", "-input=false"],
-                cwd=self._path,
-                capture_output=True,
-                check=True,
-            )
-        except CalledProcessError:
-            self.status = previous_status
-            raise PlanException(
-                "An error occurred while initializing Terraform.",
-                additional_details=f"hostname: {self.hostname}",
-            )
+        if not existing_cluster:
+            try:
+                run(
+                    ["terraform", "init", "-no-color", "-input=false"],
+                    cwd=self._path,
+                    capture_output=True,
+                    check=True,
+                )
+            except CalledProcessError:
+                self.status = previous_status
+                raise PlanException(
+                    "An error occurred while initializing Terraform.",
+                    additional_details=f"hostname: {self.hostname}",
+                )
 
         self.__rotate_terraform_logs(apply=False)
         with open(

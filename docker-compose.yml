@@ -22,6 +22,9 @@ services:
       - type: volume
         source: database
         target: /home/mcu/database
+      - type: volume
+        source: terraform-plugin-cache
+        target: /home/mcu/.terraform.d/plugin-cache
     user: mcu
   cleanup:
     build:
@@ -33,3 +36,4 @@ services:
 
 volumes:
   database:
+  terraform-plugin-cache:
