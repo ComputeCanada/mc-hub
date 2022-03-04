@@ -52,15 +52,18 @@ CMD /home/mcu/venv/bin/python -m mchub.services.cull_expired_cluster
 FROM base-server as production-server
 
 ENV TERRAFORM_VERSION 1.1.6
-ENV TERRAFORM_URL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
 ## EXTERNAL DEPENDENCIES
 
 # Terraform
 USER root
-RUN curl ${TERRAFORM_URL} -o terraform_linux_amd64.zip && \
-    unzip terraform_linux_amd64.zip -d /usr/local/bin && \
-    rm terraform_linux_amd64.zip
+RUN case "$(apk --print-arch)" in \
+    aarch64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip" ;; \
+    x86_64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" ;; \
+    esac; \
+    curl -L ${TERRAFORM_URL} -o terraform.zip && \
+    unzip terraform.zip -d /usr/local/bin && \
+    rm terraform.zip
 
 USER mcu
 RUN mkdir /home/mcu/clusters
