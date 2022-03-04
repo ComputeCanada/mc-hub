@@ -180,6 +180,7 @@
             append-icon
             clearable
             deletable-chips
+            :rules="[publicKeysRule]"
             hint="Paste a key then press enter. Only the comment section will be displayed."
           >
             <template v-slot:selection="data">
@@ -517,13 +518,6 @@ export default {
         "Volume size quota exceeded"
       );
     },
-    publicKeysRule() {
-      return (
-        this.magicCastle.public_keys.every(
-          (publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null
-        ) || "Invalid SSH public key"
-      );
-    },
     instanceCountUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce((acc, instance) => acc + instance.count, 0)
@@ -658,6 +652,16 @@ export default {
       } else {
         return defaultValue;
       }
+    },
+    publicKeysRule(values) {
+      if (values instanceof Array && values.length == 0) {
+        return "Required - Paste a key then press enter. Only the comment section will be displayed.";
+      }
+      return (
+        this.magicCastle.public_keys.every(
+          (publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null
+        ) || "Invalid SSH public key"
+      );
     },
     apply() {
       this.$emit("apply");
