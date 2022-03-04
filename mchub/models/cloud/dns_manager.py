@@ -1,5 +1,5 @@
 from ... configuration import config
-from ... constants import MAGIC_CASTLE_MODULE_SOURCE, MAGIC_CASTLE_VERSION_TAG
+from ... constants import MAGIC_CASTLE_SOURCE
 
 
 class DnsManager:
@@ -31,7 +31,7 @@ class DnsManager:
         if self.__dns_provider:
             magic_castle_configuration = {
                 "dns": {
-                    "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//dns/{self.__dns_provider}?ref={MAGIC_CASTLE_VERSION_TAG}",
+                    "source": MAGIC_CASTLE_SOURCE['dns'][self.__dns_provider],
                     "name": "${module.openstack.cluster_name}",
                     "domain": "${module.openstack.domain}",
                     "public_instances": "${module.openstack.public_instances}",

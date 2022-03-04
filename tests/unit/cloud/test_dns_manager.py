@@ -1,6 +1,6 @@
 import pytest
 
-from mchub.constants import MAGIC_CASTLE_MODULE_SOURCE, MAGIC_CASTLE_VERSION_TAG
+from mchub.constants import MAGIC_CASTLE_SOURCE
 from mchub.models.cloud.dns_manager import DnsManager
 
 from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
@@ -39,7 +39,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
     assert DnsManager("calculquebec.cloud").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",
-            "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//dns/cloudflare?ref={MAGIC_CASTLE_VERSION_TAG}",
+            "source": MAGIC_CASTLE_SOURCE["dns"]["cloudflare"],
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
             "public_instances": "${module.openstack.public_instances}",
@@ -52,7 +52,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
             "email": "you@example.com",
             "project": "your-project-name",
             "zone_name": "your-zone-name",
-            "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//dns/gcloud?ref={MAGIC_CASTLE_VERSION_TAG}",
+            "source": MAGIC_CASTLE_SOURCE["dns"]["gcloud"],
             "name": "${module.openstack.cluster_name}",
             "domain": "${module.openstack.domain}",
             "public_instances": "${module.openstack.public_instances}",

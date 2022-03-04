@@ -10,8 +10,8 @@ from . magic_castle_configuration_schema import (
 
 from .. cloud.dns_manager import DnsManager
 from ... constants import (
-    MAGIC_CASTLE_MODULE_SOURCE,
-    MAGIC_CASTLE_VERSION_TAG,
+    MAGIC_CASTLE_SOURCE,
+    MAGIC_CASTLE_VERSION,
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
     TERRAFORM_REQUIRED_VERSION,
 )
@@ -81,10 +81,10 @@ class MagicCastleConfiguration:
             "terraform": {"required_version": TERRAFORM_REQUIRED_VERSION},
             "module": {
                 "openstack": {
-                    "source": f"{MAGIC_CASTLE_MODULE_SOURCE}//openstack?ref={MAGIC_CASTLE_VERSION_TAG}",
+                    "source": MAGIC_CASTLE_SOURCE["openstack"],
                     "generate_ssh_key": True,
                     "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
-                    "config_version": MAGIC_CASTLE_VERSION_TAG,
+                    "config_version": MAGIC_CASTLE_VERSION,
                     **self.to_dict(),
                 }
             },
