@@ -8,6 +8,7 @@ def create_app():
     from . configuration.env import DIST_PATH
     from . database.schema_manager import SchemaManager
     from . database.database_manager import DatabaseManager
+    from . database.cleanup_manager import CleanupManager
     from . resources.magic_castle_api import MagicCastleAPI
     from . resources.progress_api import ProgressAPI
     from . resources.available_resources_api import AvailableResourcesApi
@@ -16,6 +17,7 @@ def create_app():
     # Update the database schema to the latest version
     with DatabaseManager.connect() as database_connection:
         SchemaManager(database_connection).update_schema()
+        CleanupManager(database_connection).clean_state()
 
     app = Flask(__name__)
 
