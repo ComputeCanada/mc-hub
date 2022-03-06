@@ -6,7 +6,7 @@ An example `configuration.json` is shown below.
 
 ```json
 {
-  "auth_type": "NONE",
+  "auth_type": ["NONE"],
   "admins": [],
   "cors_allowed_origins": ["https://mc-hub.example.com"],
   "domains": {

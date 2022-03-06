@@ -6,9 +6,11 @@ from os import path
 
 from marshmallow import Schema, fields, ValidationError, post_load
 
-from . constants import CONFIGURATION_FILE_PATH, CONFIGURATION_FILENAME
-from . models.auth_type import AuthType
+from . env import CONFIGURATION_FILE_PATH
+from .. models.auth_type import AuthType
 
+CONFIGURATION_FILENAME = "configuration.json"
+DATABASE_FILENAME = "database.db"
 
 class ConfigurationSchema(Schema):
     auth_type = fields.List(fields.Str(required=True))

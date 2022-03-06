@@ -3,14 +3,10 @@ import openstack
 from os import environ, path
 from re import search, IGNORECASE
 
-from ... constants import INSTANCE_CATEGORIES
+from ... configuration.magic_castle import INSTANCE_CATEGORIES
 
 CENTOS_VALID_IMAGES = r"centos"
 OTHER_VALID_IMAGES = r"almalinux|rocky"
-OPENSTACK_CONFIG_FILENAME = "clouds.yaml"
-OPENSTACK_CONFIG_PATH = path.join(
-    environ["HOME"], ".config", "openstack", OPENSTACK_CONFIG_FILENAME
-)
 
 # Magic Castle requires 10 GB on the root disk for each node.
 # Otherwise, it creates and mounts an external volume of 10 GB.

@@ -9,7 +9,7 @@ from . magic_castle_configuration_schema import (
 )
 
 from .. cloud.dns_manager import DnsManager
-from ... constants import (
+from ... configuration.magic_castle import (
     MAGIC_CASTLE_SOURCE,
     MAGIC_CASTLE_VERSION,
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,

@@ -1,6 +1,6 @@
 import pytest
 
-from mchub.constants import MAGIC_CASTLE_SOURCE
+from mchub.configuration.magic_castle import MAGIC_CASTLE_SOURCE
 from mchub.models.cloud.dns_manager import DnsManager
 
 from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;

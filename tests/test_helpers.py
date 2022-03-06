@@ -7,7 +7,7 @@ from shutil import rmtree, copytree
 from typing import Callable
 
 
-from mchub.constants import DEFAULT_CLOUD
+from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.database.schema_manager import SchemaManager
 from mchub.database.database_manager import DatabaseManager
 from mchub.models.user.authenticated_user import AuthenticatedUser
@@ -176,7 +176,7 @@ def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture(autouse=True)
 def mock_clusters_path(mocker):
-    mocker.patch("mchub.constants.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
+    mocker.patch("mchub.configuration.env.CLUSTERS_PATH", new=MOCK_CLUSTERS_PATH)
     mocker.patch(
         "mchub.models.magic_castle.magic_castle.CLUSTERS_PATH",
         new=MOCK_CLUSTERS_PATH,

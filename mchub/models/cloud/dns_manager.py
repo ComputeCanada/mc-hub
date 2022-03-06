@@ -1,5 +1,5 @@
 from ... configuration import config
-from ... constants import MAGIC_CASTLE_SOURCE
+from ... configuration.magic_castle import MAGIC_CASTLE_SOURCE
 
 
 class DnsManager:

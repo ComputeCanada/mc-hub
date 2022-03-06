@@ -1,6 +1,7 @@
 import sqlite3
 from os import path
-from .. constants import DATABASE_PATH, DATABASE_FILENAME
+from .. configuration.env import DATABASE_PATH
+from .. configuration import DATABASE_FILENAME
 
 DATABASE_FILE_PATH = path.join(DATABASE_PATH, DATABASE_FILENAME)
 

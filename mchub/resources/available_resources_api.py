@@ -1,4 +1,4 @@
-from .. constants import DEFAULT_CLOUD
+from .. configuration.cloud import DEFAULT_CLOUD
 from .. resources.api_view import ApiView
 from .. models.cloud.cloud_manager import CloudManager
 from .. models.user.user import User

@@ -1,6 +1,6 @@
 from jsonpath_ng.ext import parse
 
-from ... constants import INSTANCE_CATEGORIES, STORAGE_SPACES
+from ... configuration.magic_castle import INSTANCE_CATEGORIES
 
 def default(default_value):
     """

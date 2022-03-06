@@ -5,7 +5,7 @@ from time import time, sleep
 from os import path
 from random import randrange
 
-from mchub.constants import DEFAULT_CLOUD
+from mchub.configuration.cloud import DEFAULT_CLOUD
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster

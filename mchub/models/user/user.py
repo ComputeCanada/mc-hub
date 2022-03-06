@@ -3,7 +3,7 @@ import sqlite3
 from typing import List
 
 from .. magic_castle.magic_castle import MagicCastle
-from ... constants import DEFAULT_CLOUD
+from ... configuration.cloud import DEFAULT_CLOUD
 
 class User:
     def __init__(self, database_connection: sqlite3.Connection):

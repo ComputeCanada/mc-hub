@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 def create_app():
     from . configuration import config
-    from . constants import DIST_PATH
+    from . configuration.env import DIST_PATH
     from . database.schema_manager import SchemaManager
     from . database.database_manager import DatabaseManager
     from . resources.magic_castle_api import MagicCastleAPI

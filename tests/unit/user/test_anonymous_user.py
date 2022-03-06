@@ -1,6 +1,6 @@
 import pytest
 
-from mchub.constants import DEFAULT_CLOUD
+from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.user.anonymous_user import AnonymousUser
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
