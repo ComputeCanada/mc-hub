@@ -1,4 +1,6 @@
 import pytest
+from mchub.models.auth_type import AuthType
+
 
 """
 To use the configuration mock, simply import one of the two mock configurations, depending
@@ -47,7 +49,7 @@ BASE_CONFIGURATION = {
 @pytest.fixture(autouse=True)
 def config_auth_saml_mock(mocker):
     configuration = BASE_CONFIGURATION
-    configuration["auth_type"] = "SAML"
+    configuration["auth_type"] = [AuthType.SAML]
     mocker.patch(
         "mchub.models.user.authenticated_user.config", new=configuration,
     )
@@ -62,7 +64,7 @@ def config_auth_saml_mock(mocker):
 @pytest.fixture(autouse=True)
 def config_auth_none_mock(mocker):
     configuration = BASE_CONFIGURATION
-    configuration["auth_type"] = "NONE"
+    configuration["auth_type"] = [AuthType.NONE]
     mocker.patch(
         "mchub.models.user.authenticated_user.config", new=configuration,
     )
