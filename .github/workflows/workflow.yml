@@ -58,7 +58,7 @@ jobs:
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         working-directory: ./run
         run: |
-          venv/bin/python -m pytest -x -vv --build-live-cluster;
+          venv/bin/python -m pytest -x -vv --build-live-cluster ../;
       # - name: Debug with tmate on failure
       #   if: ${{ failure() }}
       #   uses: mxschmitt/action-tmate@v3
