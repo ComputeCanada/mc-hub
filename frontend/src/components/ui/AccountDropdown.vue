@@ -21,7 +21,7 @@ import UserRepository from "@/repositories/UserRepository";
 export default {
   data() {
     return {
-      currentUser: { full_name: null, username: null }
+      currentUser: { full_name: null, username: null, public_keys: [] }
     };
   },
   async created() {

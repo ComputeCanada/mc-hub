@@ -13,45 +13,52 @@ const vuetify = new Vuetify();
 localVue.use(Vuetify);
 localVue.use(UnloadConfirmation, { router });
 
+const DEFAULT_USER = Object.freeze({
+  projects: ["arbutus:training"],
+  public_keys: [],
+});
+
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
-  cluster_name: "phoenix",
+  cluster_name: "",
   domain: "calculquebec.cloud",
-  image: "CentOS-7-x64-2019-07",
+  image: "CentOS-7-x64-2021-11",
   nb_users: 10,
   instances: {
     mgmt: {
       type: "p4-6gb",
-      count: 1
+      count: 1,
+      tags: ["mgmt", "puppet", "nfs"]
     },
     login: {
       type: "p2-3gb",
-      count: 1
+      count: 1,
+      tags: ["login", "public", "proxy"]
     },
     node: {
       type: "p1-1.5gb",
-      count: 5
+      count: 5,
+      tags: ["node"]
     }
   },
-  storage: {
-    type: "nfs",
-    home_size: 100,
-    project_size: 50,
-    scratch_size: 20.6
+  volumes: {
+    nfs: {
+      home: { size: 100 },
+      project: { size: 50 },
+      scratch: { size: 20.6 },
+    }
   },
-  public_keys: [""],
-  guest_passwd: "",
-  os_floating_ips: []
+  public_keys: [],
+  guest_passwd: ""
 });
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
-  image: ["centos7", "centos7-updated", "CentOS-7-x64-2019-07", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
+  image: ["centos7", "centos7-updated", "CentOS-7-x64-2021-11", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
   instances: {
     mgmt: { type: ["p4-6gb", "c64-256gb-10"] },
     login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },
     node: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] }
   },
-  os_floating_ips: ["206.12.94.21"],
-  storage: { type: ["nfs"] },
+  volumes: {},
   domain: ["calculquebec.cloud", "c3.ca"]
 });
 
@@ -60,7 +67,8 @@ const DEFAULT_QUOTAS = Object.freeze({
   ram: { max: 221184 },
   vcpus: { max: 224 },
   volume_count: { max: 114 },
-  volume_size: { max: 490 }
+  volume_size: { max: 490 },
+  ips: { max: 3 },
 });
 
 const DEFAULT_RESOURCE_DETAILS = Object.freeze({
@@ -149,6 +157,7 @@ describe("ClusterEditor", () => {
         possibleResources: cloneDeep(DEFAULT_POSSIBLE_RESOURCES),
         quotas: cloneDeep(DEFAULT_QUOTAS),
         resourceDetails: cloneDeep(DEFAULT_RESOURCE_DETAILS),
+        user: cloneDeep(DEFAULT_USER),
         ...customizableProps
       }
     });

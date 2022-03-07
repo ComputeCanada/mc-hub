@@ -14,8 +14,8 @@ services:
         source: .
         target: /workspace
       - type: bind
-        source: ./app
-        target: /home/mcu/app
+        source: ./mchub
+        target: /home/mcu/mchub
         read_only: true
       - type: volume
         source: vscode-extensions
@@ -23,4 +23,4 @@ services:
     user: mcu
 
 volumes:
-  vscode-extensions: 
+  vscode-extensions:

@@ -1,7 +1,6 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@magic-castle/mc-hub",
+  "version": "0.5.0",
   "scripts": {
     "serve": "vue-cli-service serve",
     "test:unit": "vue-cli-service test:unit",
@@ -9,7 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@vue/cli-service": "^4.4.0",
+    "@vue/cli-service": "^4.5.14",
     "axios": "^0.21.1",
     "core-js": "^3.6.4",
     "js-yaml": "^4.0.0",

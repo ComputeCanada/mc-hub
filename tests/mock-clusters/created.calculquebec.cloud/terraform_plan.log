@@ -1,0 +1,759 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # module.openstack.openstack_blockstorage_volume_v3.volumes["mgmt1-nfs-home"] will be created
+  + resource "openstack_blockstorage_volume_v3" "volumes" {
+      + attachment        = (known after apply)
+      + availability_zone = (known after apply)
+      + description       = "created mgmt1-nfs-home"
+      + id                = (known after apply)
+      + metadata          = (known after apply)
+      + name              = "created-mgmt1-nfs-home"
+      + region            = (known after apply)
+      + size              = 73
+      + volume_type       = (known after apply)
+    }
+
+  # module.openstack.openstack_blockstorage_volume_v3.volumes["mgmt1-nfs-project"] will be created
+  + resource "openstack_blockstorage_volume_v3" "volumes" {
+      + attachment        = (known after apply)
+      + availability_zone = (known after apply)
+      + description       = "created mgmt1-nfs-project"
+      + id                = (known after apply)
+      + metadata          = (known after apply)
+      + name              = "created-mgmt1-nfs-project"
+      + region            = (known after apply)
+      + size              = 1
+      + volume_type       = (known after apply)
+    }
+
+  # module.openstack.openstack_blockstorage_volume_v3.volumes["mgmt1-nfs-scratch"] will be created
+  + resource "openstack_blockstorage_volume_v3" "volumes" {
+      + attachment        = (known after apply)
+      + availability_zone = (known after apply)
+      + description       = "created mgmt1-nfs-scratch"
+      + id                = (known after apply)
+      + metadata          = (known after apply)
+      + name              = "created-mgmt1-nfs-scratch"
+      + region            = (known after apply)
+      + size              = 1
+      + volume_type       = (known after apply)
+    }
+
+  # module.openstack.openstack_compute_floatingip_associate_v2.fip["login1"] will be created
+  + resource "openstack_compute_floatingip_associate_v2" "fip" {
+      + floating_ip = (known after apply)
+      + id          = (known after apply)
+      + instance_id = (known after apply)
+      + region      = (known after apply)
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["login1"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "p4-6gb"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-login1"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["mgmt1"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "c2-7.5gb-31"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-mgmt1"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["node1"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "c1-7.5gb-30"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-node1"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["node2"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "c1-7.5gb-30"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-node2"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["node3"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "c1-7.5gb-30"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-node3"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["node4"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "c1-7.5gb-30"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-node4"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_instance_v2.instances["node5"] will be created
+  + resource "openstack_compute_instance_v2" "instances" {
+      + access_ip_v4        = (known after apply)
+      + access_ip_v6        = (known after apply)
+      + all_metadata        = (known after apply)
+      + all_tags            = (known after apply)
+      + availability_zone   = (known after apply)
+      + flavor_id           = (known after apply)
+      + flavor_name         = "c1-7.5gb-30"
+      + force_delete        = false
+      + id                  = (known after apply)
+      + image_id            = "4cade8a8-d7df-40e8-8bd3-f58e2e17b523"
+      + image_name          = (known after apply)
+      + key_pair            = "created-key"
+      + name                = "created-node5"
+      + power_state         = "active"
+      + region              = (known after apply)
+      + security_groups     = (known after apply)
+      + stop_before_destroy = false
+      + user_data           = (known after apply)
+
+      + network {
+          + access_network = false
+          + fixed_ip_v4    = (known after apply)
+          + fixed_ip_v6    = (known after apply)
+          + floating_ip    = (known after apply)
+          + mac            = (known after apply)
+          + name           = (known after apply)
+          + port           = (known after apply)
+          + uuid           = (known after apply)
+        }
+    }
+
+  # module.openstack.openstack_compute_keypair_v2.keypair will be created
+  + resource "openstack_compute_keypair_v2" "keypair" {
+      + fingerprint = (known after apply)
+      + id          = (known after apply)
+      + name        = "created-key"
+      + private_key = (known after apply)
+      + public_key  = "ssh-rsa FAKE"
+      + region      = (known after apply)
+    }
+
+  # module.openstack.openstack_compute_secgroup_v2.secgroup will be created
+  + resource "openstack_compute_secgroup_v2" "secgroup" {
+      + description = "created security group"
+      + id          = (known after apply)
+      + name        = "created-secgroup"
+      + region      = (known after apply)
+
+      + rule {
+          + from_port   = -1
+          + id          = (known after apply)
+          + ip_protocol = "icmp"
+          + self        = true
+          + to_port     = -1
+        }
+      + rule {
+          + from_port   = 1
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = true
+          + to_port     = 65535
+        }
+      + rule {
+          + from_port   = 1
+          + id          = (known after apply)
+          + ip_protocol = "udp"
+          + self        = true
+          + to_port     = 65535
+        }
+      + rule {
+          + cidr        = "0.0.0.0/0"
+          + from_port   = 22
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = false
+          + to_port     = 22
+        }
+      + rule {
+          + cidr        = "0.0.0.0/0"
+          + from_port   = 443
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = false
+          + to_port     = 443
+        }
+      + rule {
+          + cidr        = "0.0.0.0/0"
+          + from_port   = 50000
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = false
+          + to_port     = 51000
+        }
+      + rule {
+          + cidr        = "0.0.0.0/0"
+          + from_port   = 7512
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = false
+          + to_port     = 7512
+        }
+      + rule {
+          + cidr        = "0.0.0.0/0"
+          + from_port   = 80
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = false
+          + to_port     = 80
+        }
+      + rule {
+          + cidr        = "54.237.254.192/29"
+          + from_port   = 2811
+          + id          = (known after apply)
+          + ip_protocol = "tcp"
+          + self        = false
+          + to_port     = 2811
+        }
+    }
+
+  # module.openstack.openstack_compute_volume_attach_v2.attachments["mgmt1-nfs-home"] will be created
+  + resource "openstack_compute_volume_attach_v2" "attachments" {
+      + device      = (known after apply)
+      + id          = (known after apply)
+      + instance_id = (known after apply)
+      + region      = (known after apply)
+      + volume_id   = (known after apply)
+    }
+
+  # module.openstack.openstack_compute_volume_attach_v2.attachments["mgmt1-nfs-project"] will be created
+  + resource "openstack_compute_volume_attach_v2" "attachments" {
+      + device      = (known after apply)
+      + id          = (known after apply)
+      + instance_id = (known after apply)
+      + region      = (known after apply)
+      + volume_id   = (known after apply)
+    }
+
+  # module.openstack.openstack_compute_volume_attach_v2.attachments["mgmt1-nfs-scratch"] will be created
+  + resource "openstack_compute_volume_attach_v2" "attachments" {
+      + device      = (known after apply)
+      + id          = (known after apply)
+      + instance_id = (known after apply)
+      + region      = (known after apply)
+      + volume_id   = (known after apply)
+    }
+
+  # module.openstack.openstack_networking_floatingip_v2.fip["login1"] will be created
+  + resource "openstack_networking_floatingip_v2" "fip" {
+      + address    = (known after apply)
+      + all_tags   = (known after apply)
+      + dns_domain = (known after apply)
+      + dns_name   = (known after apply)
+      + fixed_ip   = (known after apply)
+      + id         = (known after apply)
+      + pool       = "Public-Network"
+      + port_id    = (known after apply)
+      + region     = (known after apply)
+      + subnet_id  = (known after apply)
+      + tenant_id  = (known after apply)
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["login1"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-login1-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["mgmt1"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-mgmt1-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["node1"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-node1-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["node2"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-node2-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["node3"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-node3-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["node4"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-node4-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.openstack_networking_port_v2.nic["node5"] will be created
+  + resource "openstack_networking_port_v2" "nic" {
+      + admin_state_up         = (known after apply)
+      + all_fixed_ips          = (known after apply)
+      + all_security_group_ids = (known after apply)
+      + all_tags               = (known after apply)
+      + device_id              = (known after apply)
+      + device_owner           = (known after apply)
+      + dns_assignment         = (known after apply)
+      + dns_name               = (known after apply)
+      + id                     = (known after apply)
+      + mac_address            = (known after apply)
+      + name                   = "created-node5-port"
+      + network_id             = "f2b11478-de5c-4610-8646-a39142a91f0a"
+      + port_security_enabled  = (known after apply)
+      + qos_policy_id          = (known after apply)
+      + region                 = (known after apply)
+      + security_group_ids     = (known after apply)
+      + tenant_id              = (known after apply)
+
+      + binding {
+          + host_id     = (known after apply)
+          + profile     = (known after apply)
+          + vif_details = (known after apply)
+          + vif_type    = (known after apply)
+          + vnic_type   = (known after apply)
+        }
+
+      + fixed_ip {
+          + subnet_id = "b70582fc-c0f6-45fa-a022-e45affb90106"
+        }
+    }
+
+  # module.openstack.module.cluster_config.null_resource.deploy_hieradata[0] will be created
+  + resource "null_resource" "deploy_hieradata" {
+      + id       = (known after apply)
+      + triggers = (known after apply)
+    }
+
+  # module.openstack.module.cluster_config.random_string.freeipa_passwd will be created
+  + resource "random_string" "freeipa_passwd" {
+      + id          = (known after apply)
+      + length      = 16
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + result      = (known after apply)
+      + special     = false
+      + upper       = true
+    }
+
+  # module.openstack.module.cluster_config.random_string.munge_key will be created
+  + resource "random_string" "munge_key" {
+      + id          = (known after apply)
+      + length      = 32
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + result      = (known after apply)
+      + special     = false
+      + upper       = true
+    }
+
+  # module.openstack.module.cluster_config.random_uuid.consul_token will be created
+  + resource "random_uuid" "consul_token" {
+      + id     = (known after apply)
+      + result = (known after apply)
+    }
+
+  # module.openstack.module.instance_config.random_string.puppetserver_password will be created
+  + resource "random_string" "puppetserver_password" {
+      + id          = (known after apply)
+      + length      = 32
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + result      = (known after apply)
+      + special     = false
+      + upper       = true
+    }
+
+  # module.openstack.module.instance_config.tls_private_key.rsa_hostkeys["login"] will be created
+  + resource "tls_private_key" "rsa_hostkeys" {
+      + algorithm                  = "RSA"
+      + ecdsa_curve                = "P224"
+      + id                         = (known after apply)
+      + private_key_pem            = (sensitive value)
+      + public_key_fingerprint_md5 = (known after apply)
+      + public_key_openssh         = (known after apply)
+      + public_key_pem             = (known after apply)
+      + rsa_bits                   = 4096
+    }
+
+  # module.openstack.module.instance_config.tls_private_key.rsa_hostkeys["mgmt"] will be created
+  + resource "tls_private_key" "rsa_hostkeys" {
+      + algorithm                  = "RSA"
+      + ecdsa_curve                = "P224"
+      + id                         = (known after apply)
+      + private_key_pem            = (sensitive value)
+      + public_key_fingerprint_md5 = (known after apply)
+      + public_key_openssh         = (known after apply)
+      + public_key_pem             = (known after apply)
+      + rsa_bits                   = 4096
+    }
+
+  # module.openstack.module.instance_config.tls_private_key.rsa_hostkeys["node"] will be created
+  + resource "tls_private_key" "rsa_hostkeys" {
+      + algorithm                  = "RSA"
+      + ecdsa_curve                = "P224"
+      + id                         = (known after apply)
+      + private_key_pem            = (sensitive value)
+      + public_key_fingerprint_md5 = (known after apply)
+      + public_key_openssh         = (known after apply)
+      + public_key_pem             = (known after apply)
+      + rsa_bits                   = 4096
+    }
+
+  # module.openstack.module.instance_config.tls_private_key.ssh[0] will be created
+  + resource "tls_private_key" "ssh" {
+      + algorithm                  = "RSA"
+      + ecdsa_curve                = "P224"
+      + id                         = (known after apply)
+      + private_key_pem            = (sensitive value)
+      + public_key_fingerprint_md5 = (known after apply)
+      + public_key_openssh         = (known after apply)
+      + public_key_pem             = (known after apply)
+      + rsa_bits                   = 4096
+    }
+
+Plan: 33 to add, 0 to change, 0 to destroy.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: terraform_plan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "terraform_plan"

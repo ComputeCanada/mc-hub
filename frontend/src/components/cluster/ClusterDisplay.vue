@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-container>
-      <v-card max-width="650" class="mx-auto" :loading="loading">
+      <v-card max-width="800" class="mx-auto" :loading="loading">
         <template #progress>
           <v-progress-linear :indeterminate="progress === 0" :value="progress" />
         </template>
@@ -16,6 +16,12 @@
               </v-list-item-content>
               <status-chip :status="currentStatus" />
             </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
+                <v-list-item-title>{{ cloud_id }}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
           <cluster-editor
@@ -26,6 +32,7 @@
             :current-status="currentStatus"
             :possible-resources="possibleResources"
             :resource-details="resourceDetails"
+            :user="user"
             :quotas="quotas"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
           />
@@ -90,9 +97,10 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
+import UserRepository from "@/repositories/UserRepository";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
-  cluster_name: "phoenix",
+  cluster_name: "",
   domain: null,
   image: null,
   nb_users: 10,
@@ -110,16 +118,16 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
       count: 1
     }
   },
-  storage: {
-    type: "nfs",
-    home_size: 100,
-    project_size: 50,
-    scratch_size: 50
+  volumes: {
+    nfs: {
+      home: { size: 100 },
+      project: { size: 50 },
+      scratch: { size: 50 }
+    }
   },
-  public_keys: [""],
+  public_keys: [],
   guest_passwd: "",
-  hieradata: "",
-  os_floating_ips: []
+  hieradata: ""
 });
 
 const POLL_STATUS_INTERVAL = 1000;
@@ -164,7 +172,8 @@ export default {
       magicCastle: null,
       quotas: null,
       resourceDetails: null,
-      possibleResources: null
+      possibleResources: null,
+      user: null,
     };
   },
   async created() {
@@ -174,7 +183,7 @@ export default {
       } else if (this.destroy) {
         const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
         if (status == ClusterStatusCode.CREATED) {
-          /* 
+          /*
           The initial plan was created, but the cluster was never built.
           We don't show a confirmation because no resource has been created.
           */
@@ -183,14 +192,14 @@ export default {
         } else {
           await this.planDestruction();
         }
+      } else {
+        this.user = (await UserRepository.getCurrent()).data;
       }
       this.startStatusPolling();
     } else {
+      this.user = (await UserRepository.getCurrent()).data;
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
       await this.loadAvailableResources();
-      if (this.possibleResources.os_floating_ips.length === 0) {
-        this.showError("There is no floating IP available right now.");
-      }
     }
   },
   beforeDestroy() {
@@ -222,6 +231,13 @@ export default {
     },
     applyRunning() {
       return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
+    },
+    cloud_id() {
+      try {
+        return this.magicCastle.cloud_id;
+      } catch (e) {
+        return null;
+      }
     }
   },
   methods: {
@@ -350,7 +366,6 @@ export default {
     async applyCluster() {
       try {
         await MagicCastleRepository.apply(this.hostname);
-        this.unloadCluster();
         this.startStatusPolling();
       } catch (e) {
         this.showError(e.response.data.message);

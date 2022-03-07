@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "mc-hub"
+version = "9.0.0"
+description = ""
+authors = ["Frédéric Fortier-Chouinard", "Félix-Antoine Fortin <felix-antoine.fortin@calculquebec.ca>"]
+license = "BSD 3"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Flask = "^2.0.3"
+humanize = "^4.0.0"
+pytest = "^7.0.1"
+pytest-flask = "^1.2.0"
+marshmallow = "^3.14.1"
+gunicorn = {extras = ["gevent"], version = "^20.1.0"}
+openstacksdk = "^0.61.0"
+jsonpath-ng = "^1.5.3"
+Flask-Cors = "^3.0.10"
+pytest-mock = "^3.7.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

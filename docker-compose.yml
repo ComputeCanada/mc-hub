@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  web:
+  api:
     build:
       context: .
       target: production-server
@@ -9,22 +9,36 @@ services:
       - 5000:5000
     volumes:
       - type: bind
-        source: ./clusters_backup
+        source: ./run/clusters
         target: /home/mcu/clusters
       - type: bind
-        source: ./configuration.json
+        source: ./run/configuration.json
         target: /home/mcu/configuration.json
+        read_only: true
+      - type: bind
+        source: ./run/clouds.yaml
+        target: /home/mcu/credentials/clouds.yaml
+        read_only: true
       - type: volume
         source: database
         target: /home/mcu/database
-      - type: bind
-        source: ./gcloud-key.json
-        target: /home/mcu/credentials/gcloud-key.json
-      - type: bind
-        source: ./clouds.yaml
-        target: /home/mcu/.config/openstack/clouds.yaml
-        read_only: true
+      - type: volume
+        source: terraform-plugin-cache
+        target: /home/mcu/.terraform.d/plugin-cache
     user: mcu
+  cleanup:
+    build:
+      context: .
+      target: cleanup-daemon
+    environment:
+      - MCHUB_HOST=api
+      - MCHUB_PORT=5000
+    volumes:
+      - type: bind
+        source: ./run/configuration.json
+        target: /home/mcu/configuration.json
+        read_only: true
 
 volumes:
   database:
+  terraform-plugin-cache:
