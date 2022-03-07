@@ -84,7 +84,7 @@ IGNORE_FIELDS = ["age"]
 
 @pytest.fixture
 def client(mocker):
-    app = create_app()
+    app = create_app(clean_status=False)
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client

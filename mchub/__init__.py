@@ -3,7 +3,7 @@ from os import path as os_path
 from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
 
-def create_app():
+def create_app(clean_status=True):
     from . configuration import config
     from . configuration.env import DIST_PATH
     from . database.schema_manager import SchemaManager
@@ -17,7 +17,8 @@ def create_app():
     # Update the database schema to the latest version
     with DatabaseManager.connect() as database_connection:
         SchemaManager(database_connection).update_schema()
-        CleanupManager(database_connection).clean_state()
+        if clean_status:
+            CleanupManager(database_connection).clean_status()
 
     app = Flask(__name__)
 

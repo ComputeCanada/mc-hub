@@ -6,8 +6,8 @@ class CleanupManager:
     def __init__(self, database_connection: sqlite3.Connection):
         self.db_connection = database_connection
 
-    def clean_state(self):
-        """Look for cluster states that are running and default
+    def clean_status(self):
+        """Look for cluster status that are running and default
         back to a stable state. Applicable when booting the app
         when and there is definetely no state running.
         """
