@@ -23,6 +23,42 @@ jobs:
         run: (cd frontend && npm ci)
       - name: Run frontend unit tests
         run: (cd frontend && npm run test:unit)
+  backend:
+    runs-on: ubuntu-20.04
+    name: Test backend
+    steps:
+      - uses: actions/checkout@v2
+      - name: Create run folder
+        run: mkdir run
+      - name: Decrypt secret files
+        run: |
+          FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
+          for file_name in "${FILE_NAMES[@]}"
+          do
+            gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
+              --output "./run/$file_name" "./.github/secrets/$file_name.gpg"
+          done
+        env:
+          DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
+      - name: Create virtualenv
+        working-directory: ./run
+        run: |
+          python3 -m venv venv
+          venv/bin/pip install poetry
+          VIRTUAL_ENV=$PWD/venv venv/bin/poetry install .
+      - name: Run backend regular tests
+        if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
+        working-directory: ./run
+        run: |
+          venv/bin/python -m pytest ../
+      - name: Run backend extended tests (including live cluster tests)
+        if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
+        working-directory: ./run
+        run: |
+          venv/bin/python -m pytest -x -vv --build-live-cluster;
+      # - name: Debug with tmate on failure
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
   container:
     runs-on: ubuntu-20.04
     name: Build container
@@ -30,46 +66,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build Docker image
         run: docker build --tag "$IMAGE_NAME" --target production-server .
-  main:
-    runs-on: ubuntu-20.04
-    name: Backend test and deploy
-    steps:
-      - uses: actions/checkout@v2
-      - name: Decrypt secret files
-        run: |
-          FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
-          for file_name in "${FILE_NAMES[@]}"
-          do
-            gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
-              --output "./$file_name" "./.github/secrets/$file_name.gpg"
-          done
-        env:
-          DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
-      - name: Run backend regular tests
-        if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
-        run: |
-          docker run \
-          --rm \
-          --mount "type=volume,source=database,target=/home/mcu/database" \
-          --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
-          --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
-          --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-          -w /home/mcu "$IMAGE_NAME" /home/mcu/venv/bin/python -m pytest;
-      - name: Run backend extended tests (including live cluster tests)
-        if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
-        run: |
-          docker run \
-          --rm \
-          --mount "type=volume,source=database,target=/home/mcu/database" \
-          --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
-          --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
-          --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-          -w /home/mcu "$IMAGE_NAME" /home/mcu/venv/bin/python -m pytest -x -vv --build-live-cluster;
-
-      # - name: Debug with tmate on failure
-      #   if: ${{ failure() }}
-      #   uses: mxschmitt/action-tmate@v3
-
       - name: Deploy to Docker Hub
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
