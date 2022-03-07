@@ -29,7 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Create run folder
-        run: mkdir run
+        run: |
+          mkdir -p run
+          mkdir -p run/database
+          mkdir -p run/clusters
       - name: Decrypt secret files
         run: |
           FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
