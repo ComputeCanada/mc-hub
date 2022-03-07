@@ -14,9 +14,25 @@ env:
   RUN_LIVE_CLUSTER_TESTS: ${{ (github.event.inputs.force_build_live_cluster == 'yes' || startsWith(github.ref, 'refs/tags/v')) && 'true' || 'false' }}
 
 jobs:
+  frontend:
+    runs-on: ubuntu-20.04
+    name: Test frontend
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install NPM dependencies
+        run: (cd frontend && npm ci)
+      - name: Run frontend unit tests
+        run: (cd frontend && npm run test:unit)
+  container:
+    runs-on: ubuntu-20.04
+    name: Build container
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: docker build --tag "$IMAGE_NAME" --target production-server .
   main:
     runs-on: ubuntu-20.04
-    name: Build, test and deploy
+    name: Backend test and deploy
     steps:
       - uses: actions/checkout@v2
       - name: Decrypt secret files
@@ -29,12 +45,6 @@ jobs:
           done
         env:
           DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
-      - name: Install NPM dependencies
-        run: (cd frontend && npm ci)
-      - name: Run frontend unit tests
-        run: (cd frontend && npm run test:unit)
-      - name: Build Docker image
-        run: docker build --tag "$IMAGE_NAME" --target production-server .
       - name: Run backend regular tests
         if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
         run: |
