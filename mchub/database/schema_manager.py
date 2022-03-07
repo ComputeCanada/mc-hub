@@ -3,7 +3,7 @@ import sqlite3
 from os import listdir, path
 from os.path import isfile
 
-from .. configuration.env import SCHEMA_MIGRATIONS_DIRECTORY
+SCHEMA_MIGRATIONS_DIRECTORY = path.join(path.dirname(__file__), 'migrations')
 
 class SchemaManager:
     """
