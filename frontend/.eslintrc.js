@@ -8,7 +8,7 @@ module.exports = {
   extends: ["plugin:vue/essential", "eslint:recommended", "@vue/prettier"],
 
   parserOptions: {
-    parser: "babel-eslint"
+    parser: "@babel/eslint-parser"
   },
 
   rules: {
@@ -22,6 +22,12 @@ module.exports = {
       env: {
         jest: true
       }
+    },
+    {
+      files: ['src/views/**/*.vue'],
+      rules: {
+        'vue/multi-word-component-names': 0,
+      },
     }
   ]
 };
