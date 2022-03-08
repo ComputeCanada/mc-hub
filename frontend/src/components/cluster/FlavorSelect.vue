@@ -1,6 +1,5 @@
 <template>
-  <!-- eslint-disable vue/no-mutating-props -->
-  <v-select :items="items" v-model="value" label="type" :rules="rules">
+  <v-select :items="items" v-model="selected" label="type" :rules="rules">
     <template #item="{ item }">
       <v-list-item-content v-if="typeof item !== 'undefined'">
         <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -43,9 +42,17 @@ export default {
       default: () => [],
     },
   },
+  data() {
+    return {
+      selected: this.value,
+    };
+  },
   watch: {
-    value(newValue) {
+    selected: function (newValue) {
       this.$emit("input", newValue);
+    },
+    value: function (newValue) {
+      this.selected = newValue;
     },
   },
   computed: {
