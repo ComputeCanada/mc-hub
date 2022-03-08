@@ -319,7 +319,6 @@ export default {
       type: Object,
       required: true,
     },
-    hostname: String,
     existingCluster: {
       type: Boolean,
       required: true,
@@ -499,9 +498,6 @@ export default {
         );
       }
       return true;
-    },
-    clusterName() {
-      return this.hostname.split(".")[0];
     },
     domainRule() {
       return (
