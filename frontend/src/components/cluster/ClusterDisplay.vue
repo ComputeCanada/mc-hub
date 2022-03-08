@@ -40,7 +40,6 @@
             :magic-castle="magicCastle"
             :current-status="currentStatus"
             :user="user"
-            :quotas="quotas"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
             @loading="loading = $event"
           />
