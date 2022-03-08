@@ -1,6 +1,6 @@
 from . user import User
 from .. magic_castle.magic_castle import MagicCastle
-
+from ... configuration.cloud import ALL_CLOUD_ID
 
 class AnonymousUser(User):
     """
@@ -9,6 +9,10 @@ class AnonymousUser(User):
 
     def __init__(self, database_connection):
         super().__init__(database_connection)
+
+    @property
+    def projects(self):
+        return ALL_CLOUD_ID
 
     def get_all_magic_castles(self):
         """

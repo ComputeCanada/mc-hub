@@ -3,7 +3,6 @@ import sqlite3
 from typing import List
 
 from .. magic_castle.magic_castle import MagicCastle
-from ... configuration.cloud import DEFAULT_CLOUD
 
 class User:
     def __init__(self, database_connection: sqlite3.Connection):
@@ -23,7 +22,7 @@ class User:
 
     @property
     def projects(self):
-        return [DEFAULT_CLOUD]
+        return []
 
     def get_all_magic_castles(self) -> List[MagicCastle]:
         raise NotImplementedError
