@@ -320,10 +320,6 @@ export default {
       required: true,
     },
     hostname: String,
-    loading: {
-      type: Boolean,
-      required: true,
-    },
     existingCluster: {
       type: Boolean,
       required: true,
@@ -358,6 +354,7 @@ export default {
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
         .toISOString()
         .slice(0, 10),
+      loading: false,
       quotas: null,
       possibleResources: null,
       resourceDetails: null,
@@ -691,12 +688,16 @@ export default {
     },
 
     async loadCloudResources() {
+      this.loading = true;
+      this.$emit("loading", this.loading);
       let availableResources = (
         await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)
       ).data;
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
       this.resourceDetails = availableResources.resource_details;
+      this.loading = false;
+      this.$emit("loading", this.loading);
     },
   },
 };

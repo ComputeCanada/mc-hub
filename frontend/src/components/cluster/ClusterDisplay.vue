@@ -36,13 +36,13 @@
           </v-list>
           <cluster-editor
             v-if="magicCastle && !applyRunning"
-            :loading="loading"
             :existing-cluster="existingCluster"
             :magic-castle="magicCastle"
             :current-status="currentStatus"
             :user="user"
             :quotas="quotas"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
+            @loading="loading = $event"
           />
           <template v-else-if="resourcesChanges.length > 0 && applyRunning">
             <cluster-resources
@@ -189,6 +189,7 @@ export default {
       resourcesChanges: [],
       magicCastle: null,
       user: null,
+      loading: false,
     };
   },
   async created() {
@@ -222,9 +223,6 @@ export default {
     this.stopStatusPolling();
   },
   computed: {
-    loading() {
-      return false;
-    },
     busy() {
       return [
         ClusterStatusCode.DESTROY_RUNNING,
