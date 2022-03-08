@@ -1,6 +1,7 @@
 <template>
+  <!-- eslint-disable vue/no-mutating-props -->
   <v-select :items="items" v-model="value" label="type" :rules="rules">
-    <template #item="{item}">
+    <template #item="{ item }">
       <v-list-item-content v-if="typeof item !== 'undefined'">
         <v-list-item-title>{{ item.text }}</v-list-item-title>
         <v-list-item-subtitle>{{ item.description }}</v-list-item-subtitle>
@@ -10,61 +11,67 @@
 </template>
 
 <script>
-const FLAVOR_REGEX = /^(?:g(?<gpu>[0-9]+)(?:-(?<gpu_ram>[0-9.]+)gb)?-)?[pc](?<cpu>[0-9]+)-(?:(?<ram>[0-9.]+)gb)(?:-(?<disk>[0-9.]+))?/;
+const FLAVOR_REGEX =
+  /^(?:g(?<gpu>[0-9]+)(?:-(?<gpu_ram>[0-9.]+)gb)?-)?[pc](?<cpu>[0-9]+)-(?:(?<ram>[0-9.]+)gb)(?:-(?<disk>[0-9.]+))?/;
 const FLAVOR_CATEGORIES = [
   {
     prefix: "p",
-    name: "Persistent storage flavors"
+    name: "Persistent storage flavors",
   },
   {
     prefix: "c",
-    name: "Compute flavors"
+    name: "Compute flavors",
   },
   {
     prefix: "g",
-    name: "GPU flavors"
-  }
+    name: "GPU flavors",
+  },
 ];
 export default {
   name: "FlavorSelect",
   props: {
     value: {
       type: String,
-      required: true
+      required: true,
     },
     flavors: {
       type: Array,
-      required: true
+      required: true,
     },
     rules: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   watch: {
     value(newValue) {
       this.$emit("input", newValue);
-    }
+    },
   },
   computed: {
     items() {
       let items = [];
       FLAVOR_CATEGORIES.forEach(({ prefix, name }) => {
-        const flavors = this.flavors.filter(flavor => flavor.startsWith(prefix));
+        const flavors = this.flavors.filter((flavor) =>
+          flavor.startsWith(prefix)
+        );
         if (flavors.length > 0) {
           if (items.length > 0) {
             items.push({ divider: true });
           }
           items.push({ header: name });
           items = items.concat(
-            flavors.map(flavor => {
-              return { text: flavor, description: this.getFlavorDescription(flavor) };
+            flavors.map((flavor) => {
+              return {
+                text: flavor,
+                description: this.getFlavorDescription(flavor),
+              };
             })
           );
         }
       });
       return items;
-    }
+    },
   },
   methods: {
     getFlavorDescription(flavorName) {
@@ -81,12 +88,14 @@ export default {
       descriptionElements.push(`${namedGroupMatches.cpu} vCPU`);
       descriptionElements.push(`${namedGroupMatches.ram} GB RAM`);
       if (typeof namedGroupMatches["disk"] !== "undefined") {
-        descriptionElements.push(`${namedGroupMatches.disk} GB ephemeral storage`);
+        descriptionElements.push(
+          `${namedGroupMatches.disk} GB ephemeral storage`
+        );
       }
 
       return descriptionElements.join(", ");
-    }
-  }
+    },
+  },
 };
 </script>
 

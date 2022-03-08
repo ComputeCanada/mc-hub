@@ -4,6 +4,7 @@
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item v-if="!existingCluster">
+          <!-- eslint-disable vue/no-mutating-props -->
           <v-select
             v-model="magicCastle.cloud_id"
             :items="user.projects"
@@ -377,6 +378,7 @@ export default {
         this.magicCastle.domain === null &&
         possibleResources.domain.length > 0
       ) {
+        // eslint-disable-next-line vue/no-mutating-props
         this.magicCastle.domain = possibleResources.domain[0];
         this.initialMagicCastle.domain = possibleResources.domain[0];
       }
@@ -390,6 +392,7 @@ export default {
         const image = possibleResources.image.filter((image) =>
           image.match(/^(?!CentOS-8|centos8).*$/i)
         )[0];
+        // eslint-disable-next-line vue/no-mutating-props
         this.magicCastle.image = image;
         this.initialMagicCastle.image = image;
       }
@@ -399,6 +402,7 @@ export default {
         this.magicCastle.instances.login.type === null &&
         possibleResources.instances.login.type.length > 0
       ) {
+        // eslint-disable-next-line vue/no-mutating-props
         this.magicCastle.instances.login.type =
           possibleResources.instances.login.type[0];
         this.initialMagicCastle.instances.login.type =
@@ -408,6 +412,7 @@ export default {
         this.magicCastle.instances.mgmt.type === null &&
         possibleResources.instances.mgmt.type.length > 0
       ) {
+        // eslint-disable-next-line vue/no-mutating-props
         this.magicCastle.instances.mgmt.type =
           possibleResources.instances.mgmt.type[0];
         this.initialMagicCastle.instances.mgmt.type =
@@ -417,6 +422,7 @@ export default {
         this.magicCastle.instances.node.type === null &&
         possibleResources.instances.node.type.length > 0
       ) {
+        // eslint-disable-next-line vue/no-mutating-props
         this.magicCastle.instances.node.type =
           possibleResources.instances.node.type[0];
         this.initialMagicCastle.instances.node.type =
@@ -433,12 +439,19 @@ export default {
   },
   created() {
     if (!this.existingCluster) {
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.cloud_id = this.user.projects[0];
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.cluster_name = generatePetName();
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.guest_passwd = generatePassword();
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.instances["login"].tags = ["login", "proxy", "public"];
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.instances["node"].tags = ["node"];
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.public_keys = this.user.public_keys.filter((key) =>
         key.match(SSH_PUBLIC_KEY_REGEX)
       );
@@ -667,20 +680,29 @@ export default {
       this.$emit("apply");
     },
     async generateGuestPassword() {
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.guest_passwd = generatePassword();
     },
     async changeCloudProject() {
+      // eslint-disable-next-line vue/no-mutating-props
       this.quotas = null;
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.instances.mgmt.type = null;
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.instances.login.type = null;
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.instances.node.type = null;
+      // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.image = null;
 
       let availableResources = (
         await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)
       ).data;
+      // eslint-disable-next-line vue/no-mutating-props
       this.possibleResources = availableResources.possible_resources;
+      // eslint-disable-next-line vue/no-mutating-props
       this.quotas = availableResources.quotas;
+      // eslint-disable-next-line vue/no-mutating-props
       this.resourceDetails = availableResources.resource_details;
     },
   },
