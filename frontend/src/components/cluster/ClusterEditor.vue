@@ -574,13 +574,20 @@ export default {
           self.localSpecs.instances[id].count > 0 &&
           tags.includes("public")
         ) {
-          return (
-            self.instances.reduce(
-              (acc, instance) =>
-                acc + instance.count * Number(instance.tags.includes("public")),
-              0
-            ) <= self.ipsCountMax || "Public IP quota exceeded"
-          );
+          let newPublicIP = 0;
+          for (let key in self.localSpecs.instances) {
+            if (self.localSpecs.instances[key].tags.includes("public")) {
+              newPublicIP += self.localSpecs.instances[key].count;
+            }
+          }
+          if (self.existingCluster) {
+            for (let key in self.initialSpecs.instances) {
+              if (self.initialSpecs.instances[key].tags.includes("public")) {
+                newPublicIP -= self.initialSpecs.instances[key].count;
+              }
+            }
+          }
+          return newPublicIP <= self.ipsCountMax || "Public IP quota exceeded";
         }
         return true;
       };
