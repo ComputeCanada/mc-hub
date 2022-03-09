@@ -108,12 +108,12 @@ describe("ClusterEditor", () => {
 
   it("magicCastleGuestPasswordNonExisting", async () => {
     const clusterEditorWrapperNew = await getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
-    expect(clusterEditorWrapperNew.vm.magicCastle.guest_passwd.length).toBe(12);
+    expect(clusterEditorWrapperNew.vm.specs.guest_passwd.length).toBe(12);
   });
 
   it("magicCastleGuestPasswordExisting", async () => {
     const clusterEditorWrapperExisting = await getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
-    expect(clusterEditorWrapperExisting.vm.magicCastle.guest_passwd.length).toBe(0);
+    expect(clusterEditorWrapperExisting.vm.specs.guest_passwd.length).toBe(0);
   });
 
   it("ramGbUsed", async () => {
@@ -180,7 +180,7 @@ describe("ClusterEditor", () => {
       router,
       vuetify,
       propsData: {
-        magicCastle: cloneDeep(DEFAULT_MAGIC_CASTLE),
+        specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
         user: cloneDeep(DEFAULT_USER),
         ...customizableProps
       }
