@@ -58,7 +58,11 @@
       <br />
       <br />Don't forget to destroy it when you are done!
     </message-dialog>
-    <message-dialog v-model="provisioningRunningDialog" type="success">
+    <message-dialog
+      v-model="provisioningRunningDialog"
+      type="success"
+      :callback="goHome"
+    >
       The cloud resources have been allocated. Provisioning has started.
     </message-dialog>
     <message-dialog v-model="errorDialog" type="error">{{
@@ -252,6 +256,10 @@ export default {
     },
   },
   methods: {
+    goHome() {
+      this.unloadCluster();
+      this.$router.push("/");
+    },
     updateProgress(progress) {
       this.progress = progress;
     },
@@ -279,8 +287,7 @@ export default {
           }
           if (!this.busy) {
             if (status == ClusterStatusCode.NOT_FOUND) {
-              this.unloadCluster();
-              this.$router.push("/");
+              this.goHome();
             } else {
               await Promise.all([this.loadCluster()]);
             }

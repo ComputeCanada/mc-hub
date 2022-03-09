@@ -1,5 +1,10 @@
 <template>
-  <v-dialog :value="value" @input="input" max-width="400" :persistent="persistent">
+  <v-dialog
+    :value="value"
+    @input="input"
+    max-width="400"
+    :persistent="persistent"
+  >
     <v-card :loading="loading">
       <v-card-title v-if="type === 'success'">Success</v-card-title>
       <v-card-title v-else-if="type === 'loading'">Loading</v-card-title>
@@ -22,35 +27,39 @@ export default {
   props: {
     value: {
       type: Boolean,
-      required: true
+      required: true,
     },
     type: {
       type: String,
       required: true,
-      validator: value => ["error", "success", "loading"].includes(value)
+      validator: (value) => ["error", "success", "loading"].includes(value),
     },
     persistent: {
       type: Boolean,
-      default: false
+      default: false,
     },
     noClose: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    callback: Function,
   },
   computed: {
     loading() {
       return this.type === "loading";
-    }
+    },
   },
   methods: {
     close() {
       this.$emit("input", false);
+      if (this.callback != null) {
+        this.callback();
+      }
     },
     input(value) {
       this.$emit("input", value);
-    }
-  }
+    },
+  },
 };
 </script>
 
