@@ -440,11 +440,24 @@ export default {
       ].includes(this.currentStatus);
     },
     dirtyForm() {
+      const keysToCheck = [
+        "volumes",
+        "nb_users",
+        "domain",
+        "cluster_name",
+        "hieradata",
+        "image",
+        "public_keys",
+        "guest_passwd",
+        "instances",
+        "expiration_date",
+        "cloud_id",
+      ];
       if (this.existingCluster) {
         if (this.initialSpecs === null) {
           return false;
         }
-        return Object.keys(this.localSpecs).some(
+        return keysToCheck.some(
           (key) => !isEqual(this.initialSpecs[key], this.localSpecs[key])
         );
       }
