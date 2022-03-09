@@ -363,59 +363,40 @@ export default {
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
-      if (
-        this.magicCastle.domain === null &&
-        possibleResources.domain.length > 0
-      ) {
-        // eslint-disable-next-line vue/no-mutating-props
-        this.magicCastle.domain = possibleResources.domain[0];
-        this.initialMagicCastle.domain = possibleResources.domain[0];
+      if (this.magicCastle.domain === null) {
+        try {
+          // eslint-disable-next-line vue/no-mutating-props
+          this.magicCastle.domain = possibleResources.domain[0];
+          this.initialMagicCastle.domain = possibleResources.domain[0];
+        } catch (err) {
+          console.log("No domain available");
+        }
       }
 
-      // Images
-      if (
-        this.magicCastle.image === null &&
-        possibleResources.image.length > 0
-      ) {
-        // MC is not compatible with CentOS 8 currently. Therefore, we choose another image by default.
-        const image = possibleResources.image.filter((image) =>
-          image.match(/^(?!CentOS-8|centos8).*$/i)
-        )[0];
-        // eslint-disable-next-line vue/no-mutating-props
-        this.magicCastle.image = image;
-        this.initialMagicCastle.image = image;
+      // Image
+      if (this.magicCastle.image === null) {
+        try {
+          // eslint-disable-next-line vue/no-mutating-props
+          this.magicCastle.image = possibleResources.image[0];
+          this.initialMagicCastle.image = possibleResources.image[0];
+        } catch (err) {
+          console.log("No image available");
+        }
       }
 
-      // Instance types
-      if (
-        this.magicCastle.instances.login.type === null &&
-        possibleResources.instances.login.type.length > 0
-      ) {
-        // eslint-disable-next-line vue/no-mutating-props
-        this.magicCastle.instances.login.type =
-          possibleResources.instances.login.type[0];
-        this.initialMagicCastle.instances.login.type =
-          possibleResources.instances.login.type[0];
-      }
-      if (
-        this.magicCastle.instances.mgmt.type === null &&
-        possibleResources.instances.mgmt.type.length > 0
-      ) {
-        // eslint-disable-next-line vue/no-mutating-props
-        this.magicCastle.instances.mgmt.type =
-          possibleResources.instances.mgmt.type[0];
-        this.initialMagicCastle.instances.mgmt.type =
-          possibleResources.instances.mgmt.type[0];
-      }
-      if (
-        this.magicCastle.instances.node.type === null &&
-        possibleResources.instances.node.type.length > 0
-      ) {
-        // eslint-disable-next-line vue/no-mutating-props
-        this.magicCastle.instances.node.type =
-          possibleResources.instances.node.type[0];
-        this.initialMagicCastle.instances.node.type =
-          possibleResources.instances.node.type[0];
+      // Instance type
+      for (let key in this.magicCastle.instances) {
+        if (this.magicCastle.instances[key].type === null) {
+          try {
+            // eslint-disable-next-line vue/no-mutating-props
+            this.magicCastle.instances[key].type =
+              possibleResources.instances[key].type[0];
+            this.initialMagicCastle.instances[key].type =
+              possibleResources.instances[key].type[0];
+          } catch (err) {
+            console.log("No instance type available for " + key);
+          }
+        }
       }
     },
     dirtyForm(dirty) {
@@ -672,12 +653,10 @@ export default {
     },
     async changeCloudProject() {
       this.quotas = null;
-      // eslint-disable-next-line vue/no-mutating-props
-      this.magicCastle.instances.mgmt.type = null;
-      // eslint-disable-next-line vue/no-mutating-props
-      this.magicCastle.instances.login.type = null;
-      // eslint-disable-next-line vue/no-mutating-props
-      this.magicCastle.instances.node.type = null;
+      for (let key in this.magicCastle.instances) {
+        // eslint-disable-next-line vue/no-mutating-props
+        this.magicCastle.instances[key].type = null;
+      }
       // eslint-disable-next-line vue/no-mutating-props
       this.magicCastle.image = null;
       await this.loadCloudResources();
