@@ -5,6 +5,8 @@ import Vuetify from "vuetify";
 import Vue from "vue";
 import router from "@/router";
 import { cloneDeep } from "lodash";
+import moxios from 'moxios';
+import Repository from "@/repositories/Repository";
 
 Vue.use(Vuetify);
 
@@ -81,85 +83,114 @@ const DEFAULT_RESOURCE_DETAILS = Object.freeze({
 });
 
 describe("ClusterEditor", () => {
-  it("magicCastleGuestPassword", () => {
-    const clusterEditorWrapperNew = getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
-    const clusterEditorWrapperExisting = getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
 
-    expect(clusterEditorWrapperNew.vm.magicCastle.guest_passwd.length).toBe(12);
-    expect(clusterEditorWrapperExisting.vm.magicCastle.guest_passwd.length).toBe(0);
+  beforeEach(function () {
+    // import and pass your custom axios instance to this method
+    moxios.install(Repository)
+    moxios.wait(function () {
+      let request = moxios.requests.mostRecent();
+      request.respondWith({
+        status: 200,
+        response: {
+          'possible_resources': DEFAULT_POSSIBLE_RESOURCES,
+          'quotas': DEFAULT_QUOTAS,
+          'resource_details': DEFAULT_RESOURCE_DETAILS
+        }
+      })
+    })
+  })
+
+  afterEach(function () {
+    // import and pass your custom axios instance to this method
+    moxios.uninstall(Repository)
+  })
+
+
+  it("magicCastleGuestPasswordNonExisting", async () => {
+    const clusterEditorWrapperNew = await getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
+    expect(clusterEditorWrapperNew.vm.specs.guest_passwd.length).toBe(12);
   });
 
-  it("ramGbUsed", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("magicCastleGuestPasswordExisting", async () => {
+    const clusterEditorWrapperExisting = await getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
+    expect(clusterEditorWrapperExisting.vm.specs.guest_passwd.length).toBe(0);
+  });
+
+  it("ramGbUsed", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // used = 6 + 3 + 1.5 * 5 GB = 16.5 GB
     expect(clusterEditorWrapper.vm.ramGbUsed).toBe(16.5);
   });
 
-  it("ramGbMax", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("ramGbMax", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // available = 221184 MB = 216 GB
     expect(clusterEditorWrapper.vm.ramGbMax).toBe(216);
   });
 
-  it("vcpuUsed", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("vcpuUsed", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // used = 4 + 2 + 1 * 5
     expect(clusterEditorWrapper.vm.vcpuUsed).toBe(11);
   });
 
-  it("vcpuMax", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("vcpuMax", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // available = 224
     expect(clusterEditorWrapper.vm.vcpuMax).toBe(224);
   });
 
-  it("volumeCountUsed", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("volumeCountUsed", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // used = 3 (storage volumes) + 1 (login) + 5 (node)
     expect(clusterEditorWrapper.vm.volumeCountUsed).toBe(9);
   });
 
-  it("volumeCountMax", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("volumeCountMax", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // available = 114
     expect(clusterEditorWrapper.vm.volumeCountMax).toBe(114);
   });
 
-  it("volumeSizeUsed", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("volumeSizeUsed", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // used = 100 + 50 + 20.6 (storage volumes) + 10 (login) + 5 * 8 (node)
     expect(clusterEditorWrapper.vm.volumeSizeUsed).toBe(220.6);
   });
 
-  it("volumeSizeMax", () => {
-    const clusterEditorWrapper = getDefaultClusterEditorWrapper();
+  it("volumeSizeMax", async () => {
+    const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 
     // available = 490
     expect(clusterEditorWrapper.vm.volumeSizeMax).toBe(490);
   });
 
-  const getDefaultClusterEditorWrapper = (
+  const getDefaultClusterEditorWrapper = async (
     customizableProps = { loading: false, existingCluster: true, hostname: "test1.calculquebec.cloud" }
   ) => {
-    return mount(ClusterEditor, {
+    let wrapper = mount(ClusterEditor, {
       localVue,
       router,
       vuetify,
       propsData: {
-        magicCastle: cloneDeep(DEFAULT_MAGIC_CASTLE),
-        possibleResources: cloneDeep(DEFAULT_POSSIBLE_RESOURCES),
-        quotas: cloneDeep(DEFAULT_QUOTAS),
-        resourceDetails: cloneDeep(DEFAULT_RESOURCE_DETAILS),
+        specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
         user: cloneDeep(DEFAULT_USER),
         ...customizableProps
       }
     });
+    // ClusterEditor created() is async, called during mount and calls loadCloudResources.
+    // However, I have yet found a way to await on created(). To move on with the tests,
+    // we need the values of possibleResources, availableResources and quotas to be set.
+    // Therefore, the solution for now is to call loadCloudResources again and await the
+    // results.
+    await wrapper.vm.loadCloudResources();
+    return wrapper;
   };
 });

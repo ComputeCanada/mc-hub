@@ -5,7 +5,7 @@
       <v-list class="pt-0">
         <v-list-item v-if="!existingCluster">
           <v-select
-            v-model="magicCastle.cloud_id"
+            v-model="localSpecs.cloud_id"
             :items="user.projects"
             label="Cloud project"
             @change="changeCloudProject"
@@ -13,7 +13,7 @@
         </v-list-item>
         <v-list-item v-if="!existingCluster">
           <v-text-field
-            v-model="magicCastle.cluster_name"
+            v-model="localSpecs.cluster_name"
             label="Cluster name"
             :rules="[clusterNameRegexRule]"
             validate-on-blur
@@ -21,7 +21,7 @@
         </v-list-item>
         <v-list-item v-if="!existingCluster">
           <v-select
-            v-model="magicCastle.domain"
+            v-model="localSpecs.domain"
             :items="getPossibleValues('domain')"
             label="Domain"
             :rules="[domainRule]"
@@ -29,7 +29,7 @@
         </v-list-item>
         <v-list-item>
           <v-select
-            v-model="magicCastle.image"
+            v-model="localSpecs.image"
             :items="getPossibleValues('image')"
             label="Image"
           />
@@ -43,7 +43,7 @@
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
-                v-model="magicCastle.expiration_date"
+                v-model="localSpecs.expiration_date"
                 label="Expiration date"
                 prepend-icon="mdi-calendar"
                 readonly
@@ -52,7 +52,7 @@
               ></v-text-field>
             </template>
             <v-date-picker
-              v-model="magicCastle.expiration_date"
+              v-model="localSpecs.expiration_date"
               @input="menu2 = false"
               :min="tomorrowDate"
             ></v-date-picker>
@@ -100,7 +100,7 @@
           <v-list-item>
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
-                v-model.number="magicCastle.instances[id].count"
+                v-model.number="localSpecs.instances[id].count"
                 type="number"
                 prefix="x"
                 dir="rtl"
@@ -114,14 +114,14 @@
             <v-col cols="12" sm="3" class="pt-0">
               <flavor-select
                 :flavors="getPossibleValues(`instances.${id}.type`)"
-                v-model="magicCastle.instances[id].type"
+                v-model="localSpecs.instances[id].type"
                 label="Type"
                 :rules="[ramRule, coreRule]"
               />
             </v-col>
             <v-col cols="12" sm="5" class="pt-0">
               <v-combobox
-                v-model="magicCastle.instances[id].tags"
+                v-model="localSpecs.instances[id].tags"
                 :items="TAGS"
                 label="tags"
                 :rules="[publicTagRule(id)]"
@@ -153,7 +153,7 @@
             </v-col>
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
-                v-model.number="magicCastle.volumes.nfs[id].size"
+                v-model.number="localSpecs.volumes.nfs[id].size"
                 type="number"
                 label="size"
                 prefix="GB"
@@ -173,7 +173,7 @@
       <v-list>
         <v-list-item>
           <v-combobox
-            v-model="magicCastle.public_keys"
+            v-model="localSpecs.public_keys"
             label="SSH Keys"
             multiple
             chips
@@ -202,7 +202,7 @@
         </v-list-item>
         <v-list-item>
           <v-text-field
-            v-model.number="magicCastle.nb_users"
+            v-model.number="localSpecs.nb_users"
             type="number"
             label="Number of guest users"
             min="0"
@@ -210,7 +210,7 @@
         </v-list-item>
         <v-list-item>
           <v-text-field
-            v-model="magicCastle.guest_passwd"
+            v-model="localSpecs.guest_passwd"
             label="Guest password"
             :rules="[passwordLengthRule]"
           />
@@ -254,7 +254,7 @@
               </span>
 
               <code-editor
-                v-model="magicCastle.hieradata"
+                v-model="localSpecs.hieradata"
                 language="yaml"
                 placeholder='profile::base::admin_email: "me@example.org"
 jupyterhub::enable_otp_auth: false'
@@ -314,27 +314,13 @@ export default {
     ResourceUsageDisplay,
   },
   props: {
-    magicCastle: {
+    specs: {
       type: Object,
-      required: true,
-    },
-    hostname: String,
-    loading: {
-      type: Boolean,
       required: true,
     },
     existingCluster: {
       type: Boolean,
       required: true,
-    },
-    quotas: {
-      type: Object,
-    },
-    resourceDetails: {
-      type: Object,
-    },
-    possibleResources: {
-      type: Object,
     },
     currentStatus: {
       type: String,
@@ -349,7 +335,7 @@ export default {
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
       TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node"],
       validForm: true,
-      initialMagicCastle: null,
+      initialSpecs: null,
 
       clusterNameRegexRule: (value) =>
         value.match(CLUSTER_NAME_REGEX) !== null ||
@@ -366,61 +352,47 @@ export default {
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
         .toISOString()
         .slice(0, 10),
+      loading: false,
+      quotas: null,
+      possibleResources: null,
+      resourceDetails: null,
     };
   },
   watch: {
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
-
       // Domain
-      if (
-        this.magicCastle.domain === null &&
-        possibleResources.domain.length > 0
-      ) {
-        this.magicCastle.domain = possibleResources.domain[0];
-        this.initialMagicCastle.domain = possibleResources.domain[0];
+      if (this.localSpecs.domain === null) {
+        try {
+          this.localSpecs.domain = possibleResources.domain[0];
+          this.initialSpecs.domain = possibleResources.domain[0];
+        } catch (err) {
+          console.log("No domain available");
+        }
       }
 
-      // Images
-      if (
-        this.magicCastle.image === null &&
-        possibleResources.image.length > 0
-      ) {
-        // MC is not compatible with CentOS 8 currently. Therefore, we choose another image by default.
-        const image = possibleResources.image.filter((image) =>
-          image.match(/^(?!CentOS-8|centos8).*$/i)
-        )[0];
-        this.magicCastle.image = image;
-        this.initialMagicCastle.image = image;
+      // Image
+      if (this.localSpecs.image === null) {
+        try {
+          this.localSpecs.image = possibleResources.image[0];
+          this.initialSpecs.image = possibleResources.image[0];
+        } catch (err) {
+          console.log("No image available");
+        }
       }
 
-      // Instance types
-      if (
-        this.magicCastle.instances.login.type === null &&
-        possibleResources.instances.login.type.length > 0
-      ) {
-        this.magicCastle.instances.login.type =
-          possibleResources.instances.login.type[0];
-        this.initialMagicCastle.instances.login.type =
-          possibleResources.instances.login.type[0];
-      }
-      if (
-        this.magicCastle.instances.mgmt.type === null &&
-        possibleResources.instances.mgmt.type.length > 0
-      ) {
-        this.magicCastle.instances.mgmt.type =
-          possibleResources.instances.mgmt.type[0];
-        this.initialMagicCastle.instances.mgmt.type =
-          possibleResources.instances.mgmt.type[0];
-      }
-      if (
-        this.magicCastle.instances.node.type === null &&
-        possibleResources.instances.node.type.length > 0
-      ) {
-        this.magicCastle.instances.node.type =
-          possibleResources.instances.node.type[0];
-        this.initialMagicCastle.instances.node.type =
-          possibleResources.instances.node.type[0];
+      // Instance type
+      for (let key in this.localSpecs.instances) {
+        if (this.localSpecs.instances[key].type === null) {
+          try {
+            this.localSpecs.instances[key].type =
+              possibleResources.instances[key].type[0];
+            this.initialSpecs.instances[key].type =
+              possibleResources.instances[key].type[0];
+          } catch (err) {
+            console.log("No instance type available for " + key);
+          }
+        }
       }
     },
     dirtyForm(dirty) {
@@ -431,19 +403,20 @@ export default {
       }
     },
   },
-  created() {
+  async created() {
     if (!this.existingCluster) {
-      this.magicCastle.cloud_id = this.user.projects[0];
-      this.magicCastle.cluster_name = generatePetName();
-      this.magicCastle.guest_passwd = generatePassword();
-      this.magicCastle.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
-      this.magicCastle.instances["login"].tags = ["login", "proxy", "public"];
-      this.magicCastle.instances["node"].tags = ["node"];
-      this.magicCastle.public_keys = this.user.public_keys.filter((key) =>
+      this.localSpecs.cloud_id = this.user.projects[0];
+      this.localSpecs.cluster_name = generatePetName();
+      this.localSpecs.guest_passwd = generatePassword();
+      this.localSpecs.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
+      this.localSpecs.instances["login"].tags = ["login", "proxy", "public"];
+      this.localSpecs.instances["node"].tags = ["node"];
+      this.localSpecs.public_keys = this.user.public_keys.filter((key) =>
         key.match(SSH_PUBLIC_KEY_REGEX)
       );
     }
-    this.initialMagicCastle = cloneDeep(this.magicCastle);
+    this.initialSpecs = cloneDeep(this.localSpecs);
+    await this.loadCloudResources();
   },
   updated() {
     this.$refs.form.validate();
@@ -452,6 +425,14 @@ export default {
     this.$disableUnloadConfirmation();
   },
   computed: {
+    localSpecs: {
+      get() {
+        return this.specs;
+      },
+      set(localSpecs) {
+        this.$emit("input", localSpecs);
+      },
+    },
     applyRunning() {
       return [
         ClusterStatusCode.DESTROY_RUNNING,
@@ -460,49 +441,19 @@ export default {
     },
     dirtyForm() {
       if (this.existingCluster) {
-        if (this.initialMagicCastle === null) {
+        if (this.initialSpecs === null) {
           return false;
         }
-        return !(
-          isEqual(
-            this.initialMagicCastle.cloud_id,
-            this.magicCastle.cloud_id
-          ) &&
-          isEqual(
-            this.initialMagicCastle.cluster_name,
-            this.magicCastle.cluster_name
-          ) &&
-          isEqual(this.initialMagicCastle.domain, this.magicCastle.domain) &&
-          isEqual(this.initialMagicCastle.image, this.magicCastle.image) &&
-          isEqual(
-            this.initialMagicCastle.instances,
-            this.magicCastle.instances
-          ) &&
-          isEqual(this.initialMagicCastle.volumes, this.magicCastle.volumes) &&
-          isEqual(
-            this.initialMagicCastle.public_keys,
-            this.magicCastle.public_keys
-          ) &&
-          isEqual(
-            this.initialMagicCastle.guest_passwd,
-            this.magicCastle.guest_passwd
-          ) &&
-          isEqual(
-            this.initialMagicCastle.nb_users,
-            this.magicCastle.nb_users
-          ) &&
-          isEqual(this.initialMagicCastle.hieradata, this.magicCastle.hieradata)
+        return Object.keys(this.localSpecs).some(
+          (key) => !isEqual(this.initialSpecs[key], this.localSpecs[key])
         );
       }
       return true;
     },
-    clusterName() {
-      return this.hostname.split(".")[0];
-    },
     domainRule() {
       return (
         (this.possibleResources &&
-          this.possibleResources.domain.includes(this.magicCastle.domain)) ||
+          this.possibleResources.domain.includes(this.localSpecs.domain)) ||
         "Invalid domain provided"
       );
     },
@@ -569,7 +520,7 @@ export default {
               instance.count *
                 this.getInstanceDetail(instance.type, "required_volume_count"),
             0
-          ) + Object.keys(this.magicCastle.volumes["nfs"]).length
+          ) + Object.keys(this.localSpecs.volumes["nfs"]).length
         : 0;
     },
     volumeCountMax() {
@@ -578,9 +529,9 @@ export default {
     volumeSizeUsed() {
       return this.usedResourcesLoaded
         ? this.instancesVolumeSizeUsed +
-            this.magicCastle.volumes["nfs"]["home"].size +
-            this.magicCastle.volumes["nfs"]["project"].size +
-            this.magicCastle.volumes["nfs"]["scratch"].size
+            this.localSpecs.volumes["nfs"]["home"].size +
+            this.localSpecs.volumes["nfs"]["project"].size +
+            this.localSpecs.volumes["nfs"]["scratch"].size
         : 0;
     },
     volumeSizeMax() {
@@ -596,10 +547,10 @@ export default {
       );
     },
     instances() {
-      return this.magicCastle ? Object.values(this.magicCastle.instances) : [];
+      return this.localSpecs ? Object.values(this.localSpecs.instances) : [];
     },
     usedResourcesLoaded() {
-      return this.magicCastle !== null && this.resourceDetails !== null;
+      return this.localSpecs !== null && this.resourceDetails !== null;
     },
     applyButtonEnabled() {
       return (
@@ -620,7 +571,7 @@ export default {
       var self = this;
       return function (tags) {
         if (
-          self.magicCastle.instances[id].count > 0 &&
+          self.localSpecs.instances[id].count > 0 &&
           tags.includes("public")
         ) {
           return (
@@ -658,7 +609,7 @@ export default {
         return "Required - Paste a key then press enter. Only the comment section will be displayed.";
       }
       return (
-        this.magicCastle.public_keys.every(
+        this.localSpecs.public_keys.every(
           (publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null
         ) || "Invalid SSH public key"
       );
@@ -667,21 +618,28 @@ export default {
       this.$emit("apply");
     },
     async generateGuestPassword() {
-      this.magicCastle.guest_passwd = generatePassword();
+      this.localSpecs.guest_passwd = generatePassword();
     },
     async changeCloudProject() {
       this.quotas = null;
-      this.magicCastle.instances.mgmt.type = null;
-      this.magicCastle.instances.login.type = null;
-      this.magicCastle.instances.node.type = null;
-      this.magicCastle.image = null;
+      for (let key in this.localSpecs.instances) {
+        this.localSpecs.instances[key].type = null;
+      }
+      this.localSpecs.image = null;
+      await this.loadCloudResources();
+    },
 
+    async loadCloudResources() {
+      this.loading = true;
+      this.$emit("loading", this.loading);
       let availableResources = (
-        await AvailableResourcesRepository.getCloud(this.magicCastle.cloud_id)
+        await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)
       ).data;
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
       this.resourceDetails = availableResources.resource_details;
+      this.loading = false;
+      this.$emit("loading", this.loading);
     },
   },
 };
