@@ -37,7 +37,7 @@
           <cluster-editor
             v-if="magicCastle && !applyRunning"
             :existing-cluster="existingCluster"
-            :magic-castle="magicCastle"
+            :specs="magicCastle"
             :current-status="currentStatus"
             :user="user"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
