@@ -35,7 +35,7 @@
             />
           </v-list>
           <cluster-editor
-            v-if="magicCastle && !applyRunning"
+            v-if="magicCastle && !applyRunning && !clusterDestructionDialog"
             :existing-cluster="existingCluster"
             :specs="magicCastle"
             :current-status="currentStatus"
