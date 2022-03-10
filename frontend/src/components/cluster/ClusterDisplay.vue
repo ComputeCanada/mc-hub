@@ -8,9 +8,16 @@
             :value="progress"
           />
         </template>
-        <v-card-title v-if="existingCluster" class="mx-auto pl-8"
+        <v-card-title
+          v-if="existingCluster && !localDestroy"
+          class="mx-auto pl-8"
           >Magic Castle Modification</v-card-title
         >
+        <v-card-title
+          v-else-if="existingCluster && localDestroy"
+          class="mx-auto pl-8"
+          >Magic Castle Destruction
+        </v-card-title>
         <v-card-title v-else class="mx-auto pl-8"
           >Magic Castle Creation</v-card-title
         >
@@ -35,7 +42,7 @@
             />
           </v-list>
           <cluster-editor
-            v-if="magicCastle && !applyRunning && !clusterDestructionDialog"
+            v-if="magicCastle && !applyRunning && !localDestroy"
             :existing-cluster="existingCluster"
             :specs="magicCastle"
             :current-status="currentStatus"
@@ -193,9 +200,11 @@ export default {
       magicCastle: null,
       user: null,
       loading: false,
+      localDestroy: false,
     };
   },
   async created() {
+    this.localDestroy = this.destroy;
     if (this.existingCluster) {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
@@ -224,6 +233,12 @@ export default {
   },
   beforeDestroy() {
     this.stopStatusPolling();
+  },
+  watch: {
+    clusterDestructionDialog(val) {
+      this.localDestroy = val;
+      this.clusterDestructionDialog = val;
+    },
   },
   computed: {
     busy() {
