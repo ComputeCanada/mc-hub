@@ -56,19 +56,9 @@ def create_app(clean_status=True):
 
     available_resources_view = AvailableResourcesApi.as_view("available_resources")
     app.add_url_rule(
-        "/api/available-resources",
-        view_func=available_resources_view,
-        defaults={"hostname": None, "cloud_id": None},
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/api/available-resources/<string:hostname>",
-        view_func=available_resources_view,
-        methods=["GET"],
-    )
-    app.add_url_rule(
         "/api/available-resources/host/<string:hostname>",
         view_func=available_resources_view,
+        defaults={"cloud_id": None},
         methods=["GET"],
     )
     app.add_url_rule(

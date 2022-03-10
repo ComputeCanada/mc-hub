@@ -433,6 +433,9 @@ export default {
         this.$emit("input", localSpecs);
       },
     },
+    hostname() {
+      return this.localSpecs.cluster_name + "." + this.localSpecs.domain;
+    },
     applyRunning() {
       return [
         ClusterStatusCode.DESTROY_RUNNING,
@@ -652,9 +655,16 @@ export default {
     async loadCloudResources() {
       this.loading = true;
       this.$emit("loading", this.loading);
-      let availableResources = (
-        await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)
-      ).data;
+      let availableResources = null;
+      if (this.existingCluster) {
+        availableResources = (
+          await AvailableResourcesRepository.getHost(this.hostname)
+        ).data;
+      } else {
+        availableResources = (
+          await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)
+        ).data;
+      }
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
       this.resourceDetails = availableResources.resource_details;
