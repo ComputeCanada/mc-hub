@@ -6,12 +6,13 @@ class CloudManager:
     def __init__(self, cloud_id, **kwargs):
         self.manager = OpenStackManager(cloud_id=cloud_id, **kwargs)
 
-    def get_available_resources(self):
+    @property
+    def available_resources(self):
         """
         Retrieves the available cloud resources including resources from OpenStack
         and available domains.
         """
-        available_resources = self.manager.get_available_resources()
+        available_resources = self.manager.available_resources
         available_resources["possible_resources"][
             "domain"
         ] = DnsManager.get_available_domains()
