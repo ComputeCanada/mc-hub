@@ -23,7 +23,7 @@
               </v-list-item-content>
               <status-chip :status="currentStatus" />
             </v-list-item>
-            <v-list-item>
+            <v-list-item v-if="cloud_id">
               <v-list-item-content>
                 <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
                 <v-list-item-title>{{ cloud_id }}</v-list-item-title>
