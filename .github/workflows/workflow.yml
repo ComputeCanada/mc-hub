@@ -47,6 +47,7 @@ jobs:
         working-directory: ./run
         run: |
           python3 -m venv venv
+          venv/bin/pip install --upgrade pip
           venv/bin/pip install poetry
           VIRTUAL_ENV=$PWD/venv venv/bin/poetry install
       - name: Run backend regular tests
