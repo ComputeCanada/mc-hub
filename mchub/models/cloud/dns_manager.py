@@ -1,5 +1,5 @@
 from ... configuration import config
-from ... configuration.magic_castle import MAGIC_CASTLE_SOURCE
+from ... configuration.magic_castle import MAGIC_CASTLE_SOURCE, MAGIC_CASTLE_ACME_KEY_PEM
 
 
 class DnsManager:
@@ -44,6 +44,9 @@ class DnsManager:
                     "magic_castle_configuration"
                 ]
             )
+            if MAGIC_CASTLE_ACME_KEY_PEM != "":
+                magic_castle_configuration["dns"]["acme_key_pem"] = f"${{file(\"{MAGIC_CASTLE_ACME_KEY_PEM}\")}}"
+
             return magic_castle_configuration
         else:
             return {}

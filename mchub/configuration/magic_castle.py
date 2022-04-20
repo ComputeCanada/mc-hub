@@ -30,3 +30,5 @@ else:
             "gcloud" : path.join(MAGIC_CASTLE_PATH, "dns", "gcloud")
         }
     }
+
+MAGIC_CASTLE_ACME_KEY_PEM = environ.get("MAGIC_CASTLE_ACME_KEY_PEM", "")
