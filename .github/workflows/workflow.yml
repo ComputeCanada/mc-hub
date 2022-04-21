@@ -54,11 +54,13 @@ jobs:
         if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
         working-directory: ./run
         run: |
+          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest ../
       - name: Run backend extended tests (including live cluster tests)
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         working-directory: ./run
         run: |
+          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest -x -vv --build-live-cluster ../;
       # - name: Debug with tmate on failure
       #   if: ${{ failure() }}
