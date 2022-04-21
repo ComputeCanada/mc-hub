@@ -413,14 +413,13 @@ class MagicCastle:
                 )
 
         self.__rotate_terraform_logs(apply=False)
-        with open(
-            path.join(self._path, TERRAFORM_PLAN_LOG_FILENAME), "w"
-        ) as output_file:
-            environment_variables = environ.copy()
-            dns_manager = DnsManager(self.domain)
-            environment_variables.update(dns_manager.get_environment_variables())
-            environment_variables["OS_CLOUD"] = self.cloud_id
-            try:
+        environment_variables = environ.copy()
+        dns_manager = DnsManager(self.domain)
+        environment_variables.update(dns_manager.get_environment_variables())
+        environment_variables["OS_CLOUD"] = self.cloud_id
+        plan_log = path.join(self._path, TERRAFORM_PLAN_LOG_FILENAME)
+        try:
+            with open(plan_log, "w") as output_file:
                 run(
                     [
                         "terraform",
@@ -437,17 +436,16 @@ class MagicCastle:
                     stderr=output_file,
                     check=True,
                 )
-            except CalledProcessError:
-                self.status = previous_status
-                raise PlanException(
-                    "An error occurred while planning changes.",
-                    additional_details=f"hostname: {self.hostname}",
-                )
+        except CalledProcessError:
+            self.status = previous_status
+            raise PlanException(
+                "An error occurred while planning changes.",
+                additional_details=f"hostname: {self.hostname}",
+            )
 
-        with open(
-            path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME), "w"
-        ) as output_file:
-            try:
+        plan_json_path = path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME)
+        try:
+            with open(plan_json_path, "w") as output_file:
                 run(
                     [
                         "terraform",
@@ -460,12 +458,12 @@ class MagicCastle:
                     stdout=output_file,
                     check=True,
                 )
-            except CalledProcessError:
-                self.status = previous_status
-                raise PlanException(
-                    "An error occurred while exporting planned changes.",
-                    additional_details=f"hostname: {self.hostname}",
-                )
+        except CalledProcessError:
+            self.status = previous_status
+            raise PlanException(
+                "An error occurred while exporting planned changes.",
+                additional_details=f"hostname: {self.hostname}",
+            )
 
         self.status = previous_status
 
