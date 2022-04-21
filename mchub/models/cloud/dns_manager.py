@@ -11,27 +11,28 @@ class DnsManager:
     """
 
     def __init__(self, domain):
-        self.__domain = domain
-        self.__dns_provider = config["domains"][domain].get("dns_provider")
+        self.domain = domain
+        self.provider = config["domains"][domain].get("dns_provider")
+        self.module = config["dns_providers"][self.provider]["module"]
 
     @staticmethod
     def get_available_domains():
         return list(config["domains"].keys())
 
     def get_dns_provider(self):
-        return self.__dns_provider
+        return self.provider
 
     def get_environment_variables(self):
-        if self.__dns_provider:
-            return config["dns_providers"][self.__dns_provider]["environment_variables"]
+        if self.provider:
+            return config["dns_providers"][self.provider]["environment_variables"]
         else:
             return {}
 
     def get_magic_castle_configuration(self):
-        if self.__dns_provider:
+        if self.provider:
             magic_castle_configuration = {
                 "dns": {
-                    "source": MAGIC_CASTLE_SOURCE['dns'][self.__dns_provider],
+                    "source": MAGIC_CASTLE_SOURCE['dns'][self.module],
                     "name": "${module.openstack.cluster_name}",
                     "domain": "${module.openstack.domain}",
                     "public_instances": "${module.openstack.public_instances}",
@@ -40,7 +41,7 @@ class DnsManager:
                 }
             }
             magic_castle_configuration["dns"].update(
-                config["dns_providers"][self.__dns_provider][
+                config["dns_providers"][self.provider][
                     "magic_castle_configuration"
                 ]
             )
