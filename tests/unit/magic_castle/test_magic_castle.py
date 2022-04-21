@@ -59,12 +59,9 @@ def test_create_magic_castle_init_fail(database_connection, monkeypatch):
 
 def test_create_magic_castle_plan_fail(database_connection, monkeypatch):
     def fake_run(process_args, *args, **kwargs):
-        if process_args[:5] == [
+        if process_args[:2] == [
             "terraform",
             "plan",
-            "-input=false",
-            "-no-color",
-            "-destroy=false",
         ]:
             raise CalledProcessError(1, "terraform plan")
 
