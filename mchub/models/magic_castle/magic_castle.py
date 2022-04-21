@@ -427,6 +427,7 @@ class MagicCastle:
                         "plan",
                         "-input=false",
                         "-no-color",
+                        "-refresh=" + ("true" if destroy else "false"),
                         "-destroy=" + ("true" if destroy else "false"),
                         "-out=" + path.join(self._path, TERRAFORM_PLAN_BINARY_FILENAME),
                     ],
@@ -437,41 +438,11 @@ class MagicCastle:
                     check=True,
                 )
             except CalledProcessError:
-                if destroy:
-                    # Terraform returns an error if we try to destroy a cluster when the image
-                    # it was created with does not exist anymore (e.g. CentOS-7-x64-2021-11). In these cases,
-                    # not refreshing the terraform state (refresh=false) solves the issue.
-                    try:
-                        run(
-                            [
-                                "terraform",
-                                "plan",
-                                "-refresh=false",
-                                "-input=false",
-                                "-no-color",
-                                "-destroy=" + ("true" if destroy else "false"),
-                                "-out="
-                                + path.join(self._path, TERRAFORM_PLAN_BINARY_FILENAME),
-                            ],
-                            cwd=self._path,
-                            env=environment_variables,
-                            stdout=output_file,
-                            stderr=output_file,
-                            check=True,
-                        )
-                    except CalledProcessError:
-                        # terraform plan fails even without refreshing the state
-                        self.status = previous_status
-                        raise PlanException(
-                            "An error occurred while planning changes.",
-                            additional_details=f"hostname: {self.hostname}",
-                        )
-                else:
-                    self.status = previous_status
-                    raise PlanException(
-                        "An error occurred while planning changes.",
-                        additional_details=f"hostname: {self.hostname}",
-                    )
+                self.status = previous_status
+                raise PlanException(
+                    "An error occurred while planning changes.",
+                    additional_details=f"hostname: {self.hostname}",
+                )
 
         with open(
             path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME), "w"
