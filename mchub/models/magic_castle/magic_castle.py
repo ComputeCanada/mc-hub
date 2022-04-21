@@ -438,9 +438,11 @@ class MagicCastle:
                 )
         except CalledProcessError:
             self.status = previous_status
+            with open(plan_log, "r") as input_file:
+                log = input_file.read()
             raise PlanException(
                 "An error occurred while planning changes.",
-                additional_details=f"hostname: {self.hostname}",
+                additional_details=f"hostname: {self.hostname}\nlog: {log}",
             )
 
         plan_json_path = path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME)
