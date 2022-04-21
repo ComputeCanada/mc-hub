@@ -15,7 +15,6 @@ def test_get_available_domains():
     assert [
         "calculquebec.cloud",
         "c3.ca",
-        "sub.example.com",
     ] == DnsManager.get_available_domains()
 
 
@@ -29,10 +28,6 @@ def test_get_environment_variables_with_dns_provider():
         "GOOGLE_CREDENTIALS": "/home/mcu/credentials/gcloud-service-account.json",
         "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-service-account.json",
     }
-
-
-def test_get_environment_variables_no_dns_provider():
-    assert DnsManager("sub.example.com").get_environment_variables() == {}
 
 
 def test_get_magic_castle_configuration_with_dns_provider():
@@ -60,7 +55,3 @@ def test_get_magic_castle_configuration_with_dns_provider():
             "sudoer_username": "${module.openstack.accounts.sudoer.username}",
         }
     }
-
-
-def test_get_magic_castle_configuration_no_dns_provider():
-    assert DnsManager("sub.example.com").get_magic_castle_configuration() == {}

@@ -262,7 +262,7 @@ def test_get_all_magic_castle_names(client):
     assert results[5] == {
         "cloud_id": DEFAULT_CLOUD,
         "cluster_name": "missingnodes",
-        "domain": "sub.example.com",
+        "domain": "c3.ca",
         "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 10,
@@ -289,7 +289,7 @@ def test_get_all_magic_castle_names(client):
         "public_keys": ["ssh-rsa FAKE"],
         "guest_passwd": "password-123",
         "hieradata": "",
-        "hostname": "missingnodes.sub.example.com",
+        "hostname": "missingnodes.c3.ca",
         "status": "build_error",
         "freeipa_passwd": "FAKE",
         "owner": "bob12.bobby",

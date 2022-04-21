@@ -30,7 +30,7 @@ def empty_state():
 
 @pytest.fixture
 def missing_nodes_state():
-    return load_state("missingnodes.sub.example.com")
+    return load_state("missingnodes.c3.ca")
 
 
 def test_get_instance_count_valid(valid_state):

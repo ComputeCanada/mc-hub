@@ -103,12 +103,12 @@ def test_get_status_valid(database_connection):
 def test_get_status_errors(database_connection):
     empty = MagicCastle("empty.calculquebec.cloud")
     assert empty.status == ClusterStatusCode.BUILD_ERROR
-    missingnodes = MagicCastle("missingnodes.sub.example.com")
+    missingnodes = MagicCastle("missingnodes.c3.ca")
     assert missingnodes.status == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_not_found(database_connection):
-    magic_castle1 = MagicCastle("nonexisting.sub.example.com")
+    magic_castle1 = MagicCastle("nonexisting.c3.ca")
     assert magic_castle1.status == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
     assert magic_castle2.status == ClusterStatusCode.NOT_FOUND
@@ -229,7 +229,7 @@ def test_dump_configuration_empty_state(database_connection):
 
 @pytest.mark.skip(reason="BROKEN")
 def test_dump_configuration_missing_nodes(database_connection):
-    magic_castle = MagicCastle("missingnodes.sub.example.com")
+    magic_castle = MagicCastle("missingnodes.c3.ca")
     assert magic_castle.dump_configuration() == {
         "cluster_name": "missingnodes",
         "nb_users": 10,
@@ -250,7 +250,7 @@ def test_dump_configuration_missing_nodes(database_connection):
             },
             "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
         },
-        "domain": "sub.example.com",
+        "domain": "c3.ca",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2021-11",
@@ -271,7 +271,7 @@ def test_dump_configuration_missing_nodes(database_connection):
             "login": {"type": "", "count": 0, "tags": ["login", "proxy", "public"]},
             "node": {"type": "", "count": 0, "tags": ["node"]},
         },
-        "domain": "sub.example.com",
+        "domain": "c3.ca",
         "hieradata": "",
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2021-11",
@@ -376,7 +376,7 @@ def test_get_allocated_resources_missing_nodes(database_connection):
     0 + 0 + 0 [root disks]
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
     """
-    magic_castle = MagicCastle("missingnodes.sub.example.com")
+    magic_castle = MagicCastle("missingnodes.c3.ca")
     assert magic_castle.get_allocated_resources() == {
         "pre_allocated_instance_count": 0,
         "pre_allocated_ram": 0,

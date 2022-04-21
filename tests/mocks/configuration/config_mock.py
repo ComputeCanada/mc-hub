@@ -18,12 +18,12 @@ from tests.mocks.configuration.config_mock import config_auth_none_mock
 BASE_CONFIGURATION = {
     "admins": ["the-admin@computecanada.ca"],
     "domains": {
-        "calculquebec.cloud": {"dns_provider": "cloudflare"},
-        "c3.ca": {"dns_provider": "gcloud"},
-        "sub.example.com": {},
+        "calculquebec.cloud": {"dns_provider": "cf1"},
+        "c3.ca": {"dns_provider": "gcloud1"},
     },
     "dns_providers": {
-        "cloudflare": {
+        "cf1": {
+            "module": "cloudflare",
             "magic_castle_configuration": {"email": "you@example.com"},
             "environment_variables": {
                 "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
@@ -31,7 +31,8 @@ BASE_CONFIGURATION = {
                 "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN",
             },
         },
-        "gcloud": {
+        "gcloud1": {
+            "module": "gcloud",
             "magic_castle_configuration": {
                 "email": "you@example.com",
                 "project": "your-project-name",

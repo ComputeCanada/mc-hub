@@ -34,7 +34,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
         "empty.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
         "missingfloatingips.c3.ca",
-        "missingnodes.sub.example.com",
+        "missingnodes.c3.ca",
     ]
     assert [magic_castle.status for magic_castle in bob_magic_castles] == [
         ClusterStatusCode.BUILD_ERROR,
@@ -51,7 +51,7 @@ def test_get_all_magic_castles(database_connection, alice, bob, admin):
         "empty-state.calculquebec.cloud",
         "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
-        "missingnodes.sub.example.com",
+        "missingnodes.c3.ca",
         "noowner.calculquebec.cloud",
         "valid1.calculquebec.cloud",
     ]
@@ -75,7 +75,7 @@ def test_create_empty_magic_castle(database_connection, alice):
         {
             "cloud_id": DEFAULT_CLOUD,
             "cluster_name": "alice123",
-            "domain": "sub.example.com",
+            "domain": "c3.ca",
             "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
@@ -104,11 +104,11 @@ def test_create_empty_magic_castle(database_connection, alice):
     )
     result = database_connection.execute(
         "SELECT hostname, status, plan_type, owner FROM magic_castles WHERE hostname=?",
-        ("alice123.sub.example.com",),
+        ("alice123.c3.ca",),
     ).fetchall()
     assert result == [
         (
-            "alice123.sub.example.com",
+            "alice123.c3.ca",
             "created",
             "build",
             "alice@computecanada.ca",

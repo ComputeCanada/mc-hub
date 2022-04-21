@@ -20,7 +20,7 @@ def test_get_all_magic_castles(database_connection):
         "empty-state.calculquebec.cloud",
         "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
-        "missingnodes.sub.example.com",
+        "missingnodes.c3.ca",
         "noowner.calculquebec.cloud",
         "valid1.calculquebec.cloud",
     ]
@@ -44,7 +44,7 @@ def test_create_empty_magic_castle(database_connection):
         {
             "cloud_id": DEFAULT_CLOUD,
             "cluster_name": "anon123",
-            "domain": "sub.example.com",
+            "domain": "c3.ca",
             "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
@@ -73,11 +73,11 @@ def test_create_empty_magic_castle(database_connection):
     )
     result = database_connection.execute(
         "SELECT hostname, status, plan_type, owner FROM magic_castles WHERE hostname=?",
-        ("anon123.sub.example.com",),
+        ("anon123.c3.ca",),
     ).fetchall()
     assert result == [
         (
-            "anon123.sub.example.com",
+            "anon123.c3.ca",
             "created",
             "build",
             None,

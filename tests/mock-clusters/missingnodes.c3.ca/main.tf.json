@@ -9,7 +9,7 @@
             "config_git_url": "https://github.com/ComputeCanada/puppet-magic_castle.git",
             "config_version": "11.8",
             "cluster_name": "missingnodes",
-            "domain": "sub.example.com",
+            "domain": "c3.ca",
             "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
