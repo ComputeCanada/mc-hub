@@ -231,7 +231,7 @@ class MagicCastle:
         if not self.found:
             raise ClusterNotFoundException
 
-        initial_plan = self.__get_plan()
+        initial_plan = self.load_plan()
         if initial_plan is None:
             return None
         try:
@@ -551,7 +551,7 @@ class MagicCastle:
             # Must be a new cluster, without existing plans
             pass
 
-    def __get_plan(self):
+    def load_plan(self):
         try:
             with open(
                 path.join(self._path, TERRAFORM_PLAN_JSON_FILENAME), "r"
