@@ -25,7 +25,7 @@ RUN mkdir -p /home/mcu && chown -R mcu:mcu /home/mcu
 
 USER mcu
 WORKDIR /home/mcu
-RUN mkdir /home/mcu/databsase
+RUN mkdir /home/mcu/database
 RUN mkdir /home/mcu/credentials
 RUN mkdir /home/mcu/mchub
 RUN mkdir /home/mcu/tests
