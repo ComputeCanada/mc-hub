@@ -81,5 +81,6 @@ RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MA
     mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
     rm magic_castle.tar.gz
 
-CMD /home/mcu/venv/bin/python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
+CMD /home/mcu/venv/bin/python -m mchub.schema_update --clean && \
+    /home/mcu/venv/bin/python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
 #CMD /home/mcu/venv/bin/python -m mchub.wsgi

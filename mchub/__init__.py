@@ -3,22 +3,13 @@ from os import path as os_path
 from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
 
-def create_app(clean_status=True):
+def create_app():
     from . configuration import config
     from . configuration.env import DIST_PATH
-    from . database.schema_manager import SchemaManager
-    from . database.database_manager import DatabaseManager
-    from . database.cleanup_manager import CleanupManager
     from . resources.magic_castle_api import MagicCastleAPI
     from . resources.progress_api import ProgressAPI
     from . resources.available_resources_api import AvailableResourcesApi
     from . resources.user_api import UserAPI    
-
-    # Update the database schema to the latest version
-    with DatabaseManager.connect() as database_connection:
-        SchemaManager(database_connection).update_schema()
-        if clean_status:
-            CleanupManager(database_connection).clean_status()
 
     app = Flask(__name__)
 
