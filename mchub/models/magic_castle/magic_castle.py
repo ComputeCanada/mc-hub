@@ -4,7 +4,7 @@ import logging
 
 import humanize
 
-from os import path, environ, mkdir, remove, scandir, rename
+from os import path, environ, mkdir, remove, scandir, rename, symlink
 from subprocess import run, CalledProcessError
 from shutil import rmtree
 from threading import Thread
@@ -23,6 +23,7 @@ from .. puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING
 from ... configuration.magic_castle import (
     MAIN_TERRAFORM_FILENAME,
     TERRAFORM_STATE_FILENAME,
+    MAGIC_CASTLE_PATH,
 )
 from ... configuration.env import CLUSTERS_PATH
 
@@ -382,6 +383,15 @@ class MagicCastle:
             previous_status = self.status
         else:
             mkdir(self._path)
+            if MAGIC_CASTLE_PATH[:3] != "git":
+                symlink(
+                    path.join(MAGIC_CASTLE_PATH, "openstack"),
+                    path.join(self._path, "openstack"),
+                )
+                symlink(
+                    path.join(MAGIC_CASTLE_PATH, "dns"),
+                    path.join( self._path, "dns"),
+                )
             previous_status = ClusterStatusCode.CREATED
 
         if destroy:
