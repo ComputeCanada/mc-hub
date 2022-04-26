@@ -37,7 +37,7 @@ JOHN_DOE_HEADERS = {
 
 @pytest.fixture
 def client(mocker):
-    app = create_app(clean_status=False)
+    app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
