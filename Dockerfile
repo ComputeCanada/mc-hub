@@ -73,12 +73,12 @@ RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
 ## Vue Js frontend src
 COPY --from=frontend-build-stage /frontend/dist /home/mcu/dist
 
-ENV MAGIC_CASTLE_PATH=../../magic_castle
+ENV MAGIC_CASTLE_PATH=/home/mcu/magic_castle
 ENV MAGIC_CASTLE_VERSION=11.9.0
 
 RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz -o magic_castle.tar.gz && \
     tar xvf magic_castle.tar.gz && \
-    mv magic_castle-* /home/mcu/magic_castle && \
+    mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
     rm magic_castle.tar.gz
 
 CMD /home/mcu/venv/bin/python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"

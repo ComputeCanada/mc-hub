@@ -1,5 +1,7 @@
 from os import environ, path
 
+from .env import CLUSTERS_PATH
+
 TERRAFORM_STATE_FILENAME = "terraform.tfstate"
 MAIN_TERRAFORM_FILENAME = "main.tf.json"
 
@@ -23,11 +25,15 @@ if MAGIC_CASTLE_PATH == "git":
         }
     }
 else:
+    # Terraform only accepts relative path from the current module
+    # but it is easier to define it as an absolute path from a admin
+    # perspective
+    relative_path = path.relpath(MAGIC_CASTLE_PATH, path.join(CLUSTERS_PATH, 'cluster'))
     MAGIC_CASTLE_SOURCE = {
-        "openstack" : path.join(MAGIC_CASTLE_PATH, "openstack"),
+        "openstack" : path.join(relative_path, "openstack"),
         "dns" : {
-            "cloudflare" : path.join(MAGIC_CASTLE_PATH, "dns", "cloudflare"),
-            "gcloud" : path.join(MAGIC_CASTLE_PATH, "dns", "gcloud")
+            "cloudflare" : path.join(relative_path, "dns", "cloudflare"),
+            "gcloud" : path.join(relative_path, "dns", "gcloud")
         }
     }
 
