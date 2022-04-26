@@ -1,8 +1,9 @@
 import pytest
+import tempfile
 
 from mchub import create_app
 from time import time, sleep
-from os import path
+from os import path, remove, rmdir
 from random import randrange
 
 from mchub.configuration.cloud import DEFAULT_CLOUD
@@ -42,6 +43,27 @@ def client(mocker):
     with app.test_client() as client:
         yield client
 
+
+def setup_module(module):
+    from mchub.configuration import magic_castle
+    from mchub.database import database_manager, schema_manager
+
+    # Create temporary directory to store test database
+    tmpdirname = tempfile.mkdtemp()
+    # Patch database location
+    db_filename = path.join(tmpdirname, 'database.db')
+    magic_castle.DATABASE_FILE_PATH = db_filename
+    database_manager.DATABASE_FILE_PATH = db_filename
+
+    # Force creation of database through schema update
+    with database_manager.DatabaseManager.connect() as database_connection:
+        schema_manager.SchemaManager(database_connection).update_schema()
+
+def teardown_module(module):
+    # delete temporary database file and folder
+    from mchub.configuration.magic_castle import DATABASE_FILE_PATH
+    remove(DATABASE_FILE_PATH)
+    rmdir(path.dirname(DATABASE_FILE_PATH))
 
 @pytest.mark.build_live_cluster
 def test_plan_creation(client):
