@@ -13,15 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added a timestamp to identify when the cluster was created
 - Added the age of the clusters in the cluster list
 - Added a configuration to make the MC source local instead of always from git
-- 
+- Added support for pre-generated ACME private key
+- Added a clean-up manager to renew cluster state when service is shutdown
+- Added token authentication
 
 ### Changed
 - Bumped MC to 11.9.1
+- Bumped npm to 14
 - Refactor the entire node UI to match MC 11 format
 - Removed ability to select a floating-ip
 - Renamed most of methods starting with `__`
 - Refactor the code to be able to run the app with gunicorn
 - Removed terraform.tfstate as a source of information
+- Replaced requirements.txt by poetry pyproject.toml
 
 ### Fixed
 
@@ -308,7 +312,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added the list of existing clusters
 - Added a progress display for all cluster creation, modification and destruction
-- Added a confirmation box of terraform plan before creating, modifying or destroying a cluster 
+- Added a confirmation box of terraform plan before creating, modifying or destroying a cluster
 - Added a confirmation box when exiting the page with unsaved modifications
 - Added cluster name validation
 - Added a pie chart for the instances count quota
