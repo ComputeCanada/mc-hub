@@ -3,6 +3,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v9.0.0] 2022-05-03
+
+### Added
+- Added expiration date widget
+- Added `cull_expired_cluster.py` to remove expired clusters
+- Added ability to switch between OpenStack cloud projects using a widget
+- Added a table to the database the define a user-projects relationship
+- Added a timestamp to identify when the cluster was created
+- Added the age of the clusters in the cluster list
+- Added a configuration to make the MC source local instead of always from git
+- 
+
+### Changed
+- Bumped MC to 11.9.1
+- Refactor the entire node UI to match MC 11 format
+- Removed ability to select a floating-ip
+- Renamed most of methods starting with `__`
+- Refactor the code to be able to run the app with gunicorn
+- Removed terraform.tfstate as a source of information
+
+### Fixed
+
 ## [v8.0.0] 2021-05-01
 
 ### Added
