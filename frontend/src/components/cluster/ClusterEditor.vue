@@ -96,7 +96,7 @@
         </v-list-item>
       </v-list>
       <v-list>
-        <div :key="id" v-for="id in DEFAULT_INSTANCE_PREFIX">
+        <div :key="id" v-for="id in Object.keys(localSpecs.instances)">
           <v-list-item>
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
@@ -331,7 +331,6 @@ export default {
   },
   data: function () {
     return {
-      DEFAULT_INSTANCE_PREFIX: ["mgmt", "login", "node"],
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
       TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node"],
       validForm: true,
@@ -408,9 +407,6 @@ export default {
       this.localSpecs.cloud_id = this.user.projects[0];
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
-      this.localSpecs.instances["mgmt"].tags = ["mgmt", "nfs", "puppet"];
-      this.localSpecs.instances["login"].tags = ["login", "proxy", "public"];
-      this.localSpecs.instances["node"].tags = ["node"];
       this.localSpecs.public_keys = this.user.public_keys.filter((key) =>
         key.match(SSH_PUBLIC_KEY_REGEX)
       );

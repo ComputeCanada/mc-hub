@@ -129,14 +129,17 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
     mgmt: {
       type: null,
       count: 1,
+      tags: ["mgmt", "nfs", "puppet"],
     },
     login: {
       type: null,
       count: 1,
+      tags: ["login", "proxy", "public"],
     },
     node: {
       type: null,
       count: 1,
+      tags: ["node"],
     },
   },
   volumes: {
