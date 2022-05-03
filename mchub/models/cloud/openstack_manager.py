@@ -3,8 +3,6 @@ import openstack
 from os import environ, path
 from re import search, IGNORECASE
 
-from ... configuration.magic_castle import INSTANCE_CATEGORIES
-
 CENTOS_VALID_IMAGES = r"centos"
 OTHER_VALID_IMAGES = r"almalinux|rocky"
 
@@ -89,13 +87,12 @@ class OpenStackManager:
         return {
             "image": self.images,
             "instances": {
-                category: {
+                tag: {
                     "type": [
-                        flavor.name for flavor in self.available_flavors if validate_flavor(category, flavor)
+                        flavor.name for flavor in self.available_flavors if validate_flavor(tag, flavor)
                     ],
-                    "tags": self.available_tags[category],
                 }
-                for category in INSTANCE_CATEGORIES
+                for tag in INSTANCE_MINIMUM_REQUIREMENTS
             },
             "volumes": {},
         }

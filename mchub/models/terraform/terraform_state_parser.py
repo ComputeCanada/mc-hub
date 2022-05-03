@@ -1,7 +1,5 @@
 from jsonpath_ng.ext import parse
 
-from ... configuration.magic_castle import INSTANCE_CATEGORIES
-
 def default(default_value):
     """
     This decorator allows a function that normally throws an exception to return a default value instead.
@@ -31,17 +29,6 @@ class TerraformStateParser:
 
     def __init__(self, tf_state: object):
         self.tf_state = tf_state
-
-    def get_partial_configuration(self):
-        """
-        Gets some of the information required for a MagicCastleConfiguration object.
-
-        :return: The dictionary containing the partial configuration.
-        """
-        return {
-            "image": self.__get_image(),
-            "instances": self.__get_instances()
-        }
 
     def get_instance_count(self) -> int:
         parser = parse(
@@ -105,29 +92,6 @@ class TerraformStateParser:
     def __get_image(self):
         parser = parse("resources[?name=image].instances[0].attributes.name")
         return parser.find(self.tf_state)[0].value
-
-    def __get_instances(self):
-        @default("")
-        def get_instance_type(instance_category):
-            parser = parse(
-                f'resources[?type="openstack_compute_instance_v2" & name="instances"].instances[?index_key="{instance_category}1"].attributes.flavor_name'
-            )
-            return parser.find(self.tf_state)[0].value
-
-        @default(0)
-        def get_instance_count(instance_category):
-            parser = parse(
-                f'resources[?type="openstack_compute_instance_v2" & name="instances"].instances[*].index_key'
-            )
-            return sum(key.value.startswith(instance_category) for key in parser.find(self.tf_state))
-
-        return {
-            instance_category: {
-                "type": get_instance_type(instance_category),
-                "count": get_instance_count(instance_category),
-            }
-            for instance_category in INSTANCE_CATEGORIES
-        }
 
     @default(None)
     def get_freeipa_passwd(self):

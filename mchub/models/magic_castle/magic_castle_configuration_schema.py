@@ -3,7 +3,6 @@ import re
 from marshmallow import Schema, fields, validate
 
 from .. cloud.dns_manager import DnsManager
-from ... configuration.magic_castle import INSTANCE_CATEGORIES
 
 def validate_cluster_name(cluster_name):
     # Must follow RFC 1035's subdomain naming rules: https://tools.ietf.org/html/rfc1035#section-2.3.1
@@ -24,7 +23,7 @@ class MagicCastleConfigurationSchema(Schema):
     image = fields.Str(required=True)
     nb_users = fields.Int(required=True)
     instances = fields.Dict(
-        keys=fields.Str(validate=validate.OneOf(INSTANCE_CATEGORIES)),
+        keys=fields.Str(),
         values=fields.Dict(type=fields.Str(), count=fields.Int(), tags=fields.List(fields.Str())),
         required=True,
     )

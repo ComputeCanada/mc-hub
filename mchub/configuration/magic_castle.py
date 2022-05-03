@@ -4,7 +4,6 @@ TERRAFORM_STATE_FILENAME = "terraform.tfstate"
 MAIN_TERRAFORM_FILENAME = "main.tf.json"
 
 # Regular constants
-INSTANCE_CATEGORIES = ["mgmt", "login", "node"]
 STORAGE_SPACES = ["home", "project", "scratch"]
 
 MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
