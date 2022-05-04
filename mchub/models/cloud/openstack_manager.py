@@ -11,7 +11,7 @@ OTHER_VALID_IMAGES = r"almalinux|rocky"
 MINIMUM_ROOT_DISK_SIZE = 10
 
 # Magic Castle requires the following specs for each instance category
-INSTANCE_MINIMUM_REQUIREMENTS = {
+TAG_MINIMUM_REQUIREMENTS = {
     "mgmt": {
         "ram": 6144,
         "vcpus": 2
@@ -26,10 +26,10 @@ INSTANCE_MINIMUM_REQUIREMENTS = {
     },
 }
 
-def validate_flavor(category, flavor):
+def validate_flavor(tag, flavor):
     return (
-        flavor.vcpus >= INSTANCE_MINIMUM_REQUIREMENTS[category]["vcpus"] and
-        flavor.ram   >= INSTANCE_MINIMUM_REQUIREMENTS[category]["ram"]
+        flavor.vcpus >= TAG_MINIMUM_REQUIREMENTS[tag]["vcpus"] and
+        flavor.ram   >= TAG_MINIMUM_REQUIREMENTS[tag]["ram"]
     )
 
 class OpenStackManager:
@@ -86,14 +86,13 @@ class OpenStackManager:
     def possible_resources(self):
         return {
             "image": self.images,
-            "instances": {
-                tag: {
-                    "type": [
-                        flavor.name for flavor in self.available_flavors if validate_flavor(tag, flavor)
-                    ],
-                }
-                for tag in INSTANCE_MINIMUM_REQUIREMENTS
+            "tag_flavors": {
+                tag: [
+                    flavor.name for flavor in self.available_flavors if validate_flavor(tag, flavor)
+                ]
+                for tag in TAG_MINIMUM_REQUIREMENTS
             },
+            "flavors": [flavor.name for flavor in self.available_flavors],
             "volumes": {},
         }
 

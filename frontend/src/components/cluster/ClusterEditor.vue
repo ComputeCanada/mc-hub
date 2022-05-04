@@ -113,7 +113,7 @@
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
               <flavor-select
-                :flavors="getPossibleValues(`instances.${id}.type`)"
+                :flavors="getFlavors(localSpecs.instances[id].tags)"
                 v-model="localSpecs.instances[id].type"
                 label="Type"
                 :rules="[ramRule, coreRule]"
@@ -385,9 +385,9 @@ export default {
         if (this.localSpecs.instances[key].type === null) {
           try {
             this.localSpecs.instances[key].type =
-              possibleResources.instances[key].type[0];
+              possibleResources.tag_flavors[key][0];
             this.initialSpecs.instances[key].type =
-              possibleResources.instances[key].type[0];
+              possibleResources.tag_flavors[key][0];
           } catch (err) {
             console.log("No instance type available for " + key);
           }
@@ -603,6 +603,23 @@ export default {
         }
         return true;
       };
+    },
+    getFlavors(tags) {
+      if (this.possibleResources === null) {
+        return [];
+      }
+      // Retrieve all available flavors
+      // Then filter based on the selected tags
+      let inst_flavor = this.possibleResources["flavors"];
+      for (const tag of tags) {
+        if (tag in this.possibleResources["tag_flavors"]) {
+          const tag_flavors = new Set(
+            this.possibleResources["tag_flavors"][tag]
+          );
+          inst_flavor = inst_flavor.filter((x) => tag_flavors.has(x));
+        }
+      }
+      return inst_flavor;
     },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
