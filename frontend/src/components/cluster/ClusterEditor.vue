@@ -98,6 +98,11 @@
       <v-list>
         <div :key="id" v-for="id in Object.keys(localSpecs.instances)">
           <v-list-item>
+            <v-col cols="12" sm="1" class="pt-0">
+              <v-btn @click="rmInstanceRow(id)" fab dark x-small color="error">
+                <v-icon dark> mdi-minus </v-icon>
+              </v-btn>
+            </v-col>
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
                 v-model.number="localSpecs.instances[id].count"
@@ -119,7 +124,7 @@
                 :rules="[ramRule, coreRule]"
               />
             </v-col>
-            <v-col cols="12" sm="5" class="pt-0">
+            <v-col cols="12" sm="4" class="pt-0">
               <v-combobox
                 v-model="localSpecs.instances[id].tags"
                 :items="TAGS"
@@ -129,6 +134,11 @@
               ></v-combobox>
             </v-col>
           </v-list-item>
+        </div>
+        <div class="text-center">
+          <v-btn @click="addInstanceRow" color="primary" class="ma-2">
+            Add instance row
+          </v-btn>
         </div>
       </v-list>
       <v-divider />
@@ -647,6 +657,18 @@ export default {
           (publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null
         ) || "Invalid SSH public key"
       );
+    },
+    rmInstanceRow(id) {
+      this.$delete(this.localSpecs.instances, id);
+    },
+    addInstanceRow() {
+      const index = Object.keys(this.localSpecs.instances).length;
+      const stub = {
+        type: null,
+        count: 1,
+        tags: ["node"],
+      };
+      this.$set(this.localSpecs.instances, `node${index}`, stub);
     },
     apply() {
       this.$emit("apply");
