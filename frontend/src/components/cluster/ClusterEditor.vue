@@ -114,7 +114,12 @@
               />
             </v-col>
             <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field :value="id" label="hostname prefix" readonly />
+              <v-text-field
+                :value="id"
+                label="hostname prefix"
+                v-on:change="changeHostnamePrefix(id, $event)"
+                :rules="[hostnamePrefixRule(id)]"
+              />
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
               <type-select
@@ -589,6 +594,20 @@ export default {
     },
   },
   methods: {
+    changeHostnamePrefix(oldKey, newKey) {
+      if (newKey != "" && !(newKey in this.localSpecs.instances)) {
+        const instances = this.localSpecs.instances;
+        let new_instances = {};
+        for (const key of Object.keys(instances)) {
+          if (key == oldKey) {
+            new_instances[newKey] = instances[oldKey];
+          } else {
+            new_instances[key] = instances[key];
+          }
+        }
+        this.localSpecs.instances = new_instances;
+      }
+    },
     publicTagRule(id) {
       var self = this;
       return function (tags) {
@@ -648,6 +667,18 @@ export default {
         return defaultValue;
       }
     },
+    hostnamePrefixRule(id) {
+      var self = this;
+      return function (value) {
+        if (value == "") {
+          return "Hostname prefix cannot be empty";
+        }
+        if (value != id && value in self.localSpecs.instances) {
+          return "Hostname prefix must be unique";
+        }
+        return true;
+      };
+    },
     publicKeysRule(values) {
       if (values instanceof Array && values.length == 0) {
         return "Required - Paste a key then press enter. Only the comment section will be displayed.";
@@ -662,13 +693,23 @@ export default {
       this.$delete(this.localSpecs.instances, id);
     },
     addInstanceRow() {
-      const index = Object.keys(this.localSpecs.instances).length;
+      const alphabet = "abcdefghijklmnopqrstuvwxyz";
+      const key = Object.keys(this.localSpecs.instances);
+      let prefix = key[key.length - 1];
+      let suffix = "";
+      if (prefix.indexOf("-") != -1) {
+        const prefix_split = prefix.split("-", 2);
+        prefix = prefix_split[0];
+        suffix = alphabet[(alphabet.indexOf(prefix_split[1]) + 1) % 26];
+      } else {
+        suffix = "a";
+      }
       const stub = {
         type: null,
         count: 1,
         tags: ["node"],
       };
-      this.$set(this.localSpecs.instances, `node${index}`, stub);
+      this.$set(this.localSpecs.instances, `${prefix}-${suffix}`, stub);
     },
     apply() {
       this.$emit("apply");
