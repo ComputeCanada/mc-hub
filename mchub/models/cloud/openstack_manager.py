@@ -86,13 +86,13 @@ class OpenStackManager:
     def possible_resources(self):
         return {
             "image": self.images,
-            "tag_flavors": {
+            "tag_types": {
                 tag: [
                     flavor.name for flavor in self.available_flavors if validate_flavor(tag, flavor)
                 ]
                 for tag in TAG_MINIMUM_REQUIREMENTS
             },
-            "flavors": [flavor.name for flavor in self.available_flavors],
+            "types": [flavor.name for flavor in self.available_flavors],
             "volumes": {},
         }
 

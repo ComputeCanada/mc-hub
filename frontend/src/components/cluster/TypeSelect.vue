@@ -10,30 +10,30 @@
 </template>
 
 <script>
-const FLAVOR_REGEX =
+const TYPE_REGEX =
   /^(?:g(?<gpu>[0-9]+)(?:-(?<gpu_ram>[0-9.]+)gb)?-)?[pc](?<cpu>[0-9]+)-(?:(?<ram>[0-9.]+)gb)(?:-(?<disk>[0-9.]+))?/;
-const FLAVOR_CATEGORIES = [
+const TYPE_CATEGORIES = [
   {
     prefix: "p",
-    name: "Persistent storage flavors",
+    name: "Persistent storage types",
   },
   {
     prefix: "c",
-    name: "Compute flavors",
+    name: "Compute types",
   },
   {
     prefix: "g",
-    name: "GPU flavors",
+    name: "GPU types",
   },
 ];
 export default {
-  name: "FlavorSelect",
+  name: "TypeSelect",
   props: {
     value: {
       type: String,
       required: true,
     },
-    flavors: {
+    types: {
       type: Array,
       required: true,
     },
@@ -58,20 +58,18 @@ export default {
   computed: {
     items() {
       let items = [];
-      FLAVOR_CATEGORIES.forEach(({ prefix, name }) => {
-        const flavors = this.flavors.filter((flavor) =>
-          flavor.startsWith(prefix)
-        );
-        if (flavors.length > 0) {
+      TYPE_CATEGORIES.forEach(({ prefix, name }) => {
+        const types = this.types.filter((type) => type.startsWith(prefix));
+        if (types.length > 0) {
           if (items.length > 0) {
             items.push({ divider: true });
           }
           items.push({ header: name });
           items = items.concat(
-            flavors.map((flavor) => {
+            types.map((type) => {
               return {
-                text: flavor,
-                description: this.getFlavorDescription(flavor),
+                text: type,
+                description: this.getTypeDescription(type),
               };
             })
           );
@@ -81,8 +79,8 @@ export default {
     },
   },
   methods: {
-    getFlavorDescription(flavorName) {
-      const namedGroupMatches = flavorName.match(FLAVOR_REGEX).groups;
+    getTypeDescription(typeName) {
+      const namedGroupMatches = typeName.match(TYPE_REGEX).groups;
 
       let descriptionElements = [];
       if (typeof namedGroupMatches["gpu"] !== "undefined") {
