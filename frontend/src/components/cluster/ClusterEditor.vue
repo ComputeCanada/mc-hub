@@ -101,25 +101,30 @@
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
                 v-model.number="localSpecs.instances[id].count"
-                type="number"
-                prefix="x"
-                dir="rtl"
+                label="count"
                 min="0"
-                reverse
+                type="number"
+                append-outer-icon="mdi-close"
+                :rules="[countRule]"
               />
             </v-col>
             <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field :value="id" label="hostname prefix" readonly />
+              <v-text-field
+                :value="id"
+                label="hostname prefix"
+                v-on:change="changeHostnamePrefix(id, $event)"
+                :rules="[hostnamePrefixRule(id)]"
+              />
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
-              <flavor-select
-                :flavors="getPossibleValues(`instances.${id}.type`)"
+              <type-select
+                :types="getTypes(localSpecs.instances[id].tags)"
                 v-model="localSpecs.instances[id].type"
                 label="Type"
                 :rules="[ramRule, coreRule]"
               />
             </v-col>
-            <v-col cols="12" sm="5" class="pt-0">
+            <v-col cols="12" sm="4" class="pt-0">
               <v-combobox
                 v-model="localSpecs.instances[id].tags"
                 :items="TAGS"
@@ -128,7 +133,17 @@
                 multiple
               ></v-combobox>
             </v-col>
+            <v-col cols="12" sm="1" class="pt-0">
+              <v-btn @click="rmInstanceRow(id)" text icon small color="error">
+                <v-icon> mdi-delete </v-icon>
+              </v-btn>
+            </v-col>
           </v-list-item>
+        </div>
+        <div class="text-center">
+          <v-btn @click="addInstanceRow" color="primary" class="ma-2">
+            Add instance row
+          </v-btn>
         </div>
       </v-list>
       <v-divider />
@@ -296,7 +311,7 @@ import { cloneDeep, isEqual } from "lodash";
 import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
-import FlavorSelect from "./FlavorSelect";
+import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 
@@ -310,7 +325,7 @@ export default {
   name: "ClusterEditor",
   components: {
     CodeEditor,
-    FlavorSelect,
+    TypeSelect,
     ResourceUsageDisplay,
   },
   props: {
@@ -384,12 +399,14 @@ export default {
       for (let key in this.localSpecs.instances) {
         if (this.localSpecs.instances[key].type === null) {
           try {
-            this.localSpecs.instances[key].type =
-              possibleResources.instances[key].type[0];
-            this.initialSpecs.instances[key].type =
-              possibleResources.instances[key].type[0];
+            const type = this.getTypes(this.localSpecs.instances[key].tags)[0];
+            this.localSpecs.instances[key].type = type;
+            if (key in this.initialSpecs.instances) {
+              this.initialSpecs.instances[key].type = type;
+            }
           } catch (err) {
             console.log("No instance type available for " + key);
+            console.log(err);
           }
         }
       }
@@ -579,6 +596,20 @@ export default {
     },
   },
   methods: {
+    changeHostnamePrefix(oldKey, newKey) {
+      if (newKey != "" && !(newKey in this.localSpecs.instances)) {
+        const instances = this.localSpecs.instances;
+        const new_instances = {};
+        for (const key of Object.keys(instances)) {
+          if (key == oldKey) {
+            new_instances[newKey] = instances[oldKey];
+          } else {
+            new_instances[key] = instances[key];
+          }
+        }
+        this.localSpecs.instances = new_instances;
+      }
+    },
     publicTagRule(id) {
       var self = this;
       return function (tags) {
@@ -604,6 +635,21 @@ export default {
         return true;
       };
     },
+    getTypes(tags) {
+      if (this.possibleResources === null) {
+        return [];
+      }
+      // Retrieve all available types
+      // Then filter based on the selected tags
+      let inst_types = this.possibleResources["types"];
+      for (const tag of tags) {
+        if (tag in this.possibleResources["tag_types"]) {
+          const tag_types = new Set(this.possibleResources["tag_types"][tag]);
+          inst_types = inst_types.filter((x) => tag_types.has(x));
+        }
+      }
+      return inst_types;
+    },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
         return [];
@@ -623,6 +669,24 @@ export default {
         return defaultValue;
       }
     },
+    countRule(value) {
+      return value !== "" || "cannot be empty";
+    },
+    hostnamePrefixRule(id) {
+      var self = this;
+      return function (value) {
+        if (value == "") {
+          return "cannot be empty";
+        }
+        if (value != id && value in self.localSpecs.instances) {
+          return "must be unique";
+        }
+        if (!/^[a-z][a-z0-9-]*$/.test(value)) {
+          return "must match [a-z][-a-z0-9]*";
+        }
+        return true;
+      };
+    },
     publicKeysRule(values) {
       if (values instanceof Array && values.length == 0) {
         return "Required - Paste a key then press enter. Only the comment section will be displayed.";
@@ -632,6 +696,57 @@ export default {
           (publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null
         ) || "Invalid SSH public key"
       );
+    },
+    rmInstanceRow(id) {
+      this.$delete(this.localSpecs.instances, id);
+    },
+    addInstanceRow() {
+      const alphabet = "abcdefghijklmnopqrstuvwxyz";
+      const keys = Object.keys(this.localSpecs.instances);
+      const all_tags = new Set(
+        Array.prototype.concat(
+          ...keys.map((x) => this.localSpecs.instances[x].tags)
+        )
+      );
+      let new_row_key;
+      const stub = { count: 0, type: null, tags: [] };
+
+      // All tags are filled, move on to copying the last row
+      if (!all_tags.has("mgmt")) {
+        new_row_key = "mgmt";
+        stub["count"] = 1;
+        stub["tags"] = ["mgmt", "puppet", "nfs"];
+        stub["type"] = this.getTypes(stub["tags"])[0];
+      } else if (!all_tags.has("login")) {
+        new_row_key = "login";
+        stub["count"] = 1;
+        stub["tags"] = ["login", "proxy", "public"];
+        stub["type"] = this.getTypes(stub["tags"])[0];
+      } else if (!all_tags.has("node")) {
+        new_row_key = "node";
+        stub["count"] = 1;
+        stub["tags"] = ["node"];
+        stub["type"] = this.getTypes(stub["tags"])[0];
+      } else {
+        const key = keys[keys.length - 1];
+        let prefix;
+        let suffix;
+        if (key.indexOf("-") != -1) {
+          const prefix_split = key.split("-", 2);
+          prefix = prefix_split[0];
+          suffix = alphabet[(alphabet.indexOf(prefix_split[1]) + 1) % 26];
+        } else {
+          prefix = key;
+          suffix = "a";
+        }
+        const stub_tags = this.localSpecs.instances[key].tags;
+        const stub_type = this.localSpecs.instances[key].type;
+        stub["count"] = 1;
+        stub["type"] = stub_type;
+        stub["tags"] = stub_tags;
+        new_row_key = `${prefix}-${suffix}`;
+      }
+      this.$set(this.localSpecs.instances, new_row_key, stub);
     },
     apply() {
       this.$emit("apply");
