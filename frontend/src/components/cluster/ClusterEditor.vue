@@ -599,7 +599,7 @@ export default {
     changeHostnamePrefix(oldKey, newKey) {
       if (newKey != "" && !(newKey in this.localSpecs.instances)) {
         const instances = this.localSpecs.instances;
-        let new_instances = {};
+        const new_instances = {};
         for (const key of Object.keys(instances)) {
           if (key == oldKey) {
             new_instances[newKey] = instances[oldKey];
