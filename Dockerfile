@@ -17,7 +17,8 @@ RUN apk --no-cache add git \
     build-base \
     libffi-dev \
     openssl-dev \
-    cargo
+    cargo \
+    bash
 
 ## Magic Castle User
 RUN adduser -D mcu
