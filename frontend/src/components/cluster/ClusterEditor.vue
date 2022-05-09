@@ -98,19 +98,14 @@
       <v-list>
         <div :key="id" v-for="id in Object.keys(localSpecs.instances)">
           <v-list-item>
-            <v-col cols="12" sm="1" class="pt-0">
-              <v-btn @click="rmInstanceRow(id)" fab dark x-small color="error">
-                <v-icon dark> mdi-minus </v-icon>
-              </v-btn>
-            </v-col>
             <v-col cols="12" sm="2" class="pt-0">
               <v-text-field
                 v-model.number="localSpecs.instances[id].count"
-                type="number"
-                prefix="x"
-                dir="rtl"
+                label="count"
                 min="0"
-                reverse
+                type="number"
+                append-outer-icon="mdi-close"
+                :rules="[countRule]"
               />
             </v-col>
             <v-col cols="12" sm="2" class="pt-0">
@@ -137,6 +132,11 @@
                 :rules="[publicTagRule(id)]"
                 multiple
               ></v-combobox>
+            </v-col>
+            <v-col cols="12" sm="1" class="pt-0">
+              <v-btn @click="rmInstanceRow(id)" text icon small color="error">
+                <v-icon> mdi-delete </v-icon>
+              </v-btn>
             </v-col>
           </v-list-item>
         </div>
@@ -399,12 +399,14 @@ export default {
       for (let key in this.localSpecs.instances) {
         if (this.localSpecs.instances[key].type === null) {
           try {
-            this.localSpecs.instances[key].type =
-              possibleResources.tag_types[key][0];
-            this.initialSpecs.instances[key].type =
-              possibleResources.tag_types[key][0];
+            const type = this.getTypes(this.localSpecs.instances[key].tags)[0];
+            this.localSpecs.instances[key].type = type;
+            if (key in this.initialSpecs.instances) {
+              this.initialSpecs.instances[key].type = type;
+            }
           } catch (err) {
             console.log("No instance type available for " + key);
+            console.log(err);
           }
         }
       }
@@ -667,14 +669,20 @@ export default {
         return defaultValue;
       }
     },
+    countRule(value) {
+      return value !== "" || "cannot be empty";
+    },
     hostnamePrefixRule(id) {
       var self = this;
       return function (value) {
         if (value == "") {
-          return "Hostname prefix cannot be empty";
+          return "cannot be empty";
         }
         if (value != id && value in self.localSpecs.instances) {
-          return "Hostname prefix must be unique";
+          return "must be unique";
+        }
+        if (!/^[a-z][a-z0-9-]*$/.test(value)) {
+          return "must match [a-z][-a-z0-9]*";
         }
         return true;
       };
@@ -694,22 +702,51 @@ export default {
     },
     addInstanceRow() {
       const alphabet = "abcdefghijklmnopqrstuvwxyz";
-      const key = Object.keys(this.localSpecs.instances);
-      let prefix = key[key.length - 1];
-      let suffix = "";
-      if (prefix.indexOf("-") != -1) {
-        const prefix_split = prefix.split("-", 2);
-        prefix = prefix_split[0];
-        suffix = alphabet[(alphabet.indexOf(prefix_split[1]) + 1) % 26];
+      const keys = Object.keys(this.localSpecs.instances);
+      const all_tags = new Set(
+        Array.prototype.concat(
+          ...keys.map((x) => this.localSpecs.instances[x].tags)
+        )
+      );
+      let new_row_key;
+      const stub = { count: 0, type: null, tags: [] };
+
+      // All tags are filled, move on to copying the last row
+      if (!all_tags.has("mgmt")) {
+        new_row_key = "mgmt";
+        stub["count"] = 1;
+        stub["tags"] = ["mgmt", "puppet", "nfs"];
+        stub["type"] = this.getTypes(stub["tags"])[0];
+      } else if (!all_tags.has("login")) {
+        new_row_key = "login";
+        stub["count"] = 1;
+        stub["tags"] = ["login", "proxy", "public"];
+        stub["type"] = this.getTypes(stub["tags"])[0];
+      } else if (!all_tags.has("node")) {
+        new_row_key = "node";
+        stub["count"] = 1;
+        stub["tags"] = ["node"];
+        stub["type"] = this.getTypes(stub["tags"])[0];
       } else {
-        suffix = "a";
+        const key = keys[keys.length - 1];
+        let prefix;
+        let suffix;
+        if (key.indexOf("-") != -1) {
+          const prefix_split = key.split("-", 2);
+          prefix = prefix_split[0];
+          suffix = alphabet[(alphabet.indexOf(prefix_split[1]) + 1) % 26];
+        } else {
+          prefix = key;
+          suffix = "a";
+        }
+        const stub_tags = this.localSpecs.instances[key].tags;
+        const stub_type = this.localSpecs.instances[key].type;
+        stub["count"] = 1;
+        stub["type"] = stub_type;
+        stub["tags"] = stub_tags;
+        new_row_key = `${prefix}-${suffix}`;
       }
-      const stub = {
-        type: null,
-        count: 1,
-        tags: ["node"],
-      };
-      this.$set(this.localSpecs.instances, `${prefix}-${suffix}`, stub);
+      this.$set(this.localSpecs.instances, new_row_key, stub);
     },
     apply() {
       this.$emit("apply");
