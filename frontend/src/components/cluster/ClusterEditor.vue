@@ -179,6 +179,7 @@
                   :items="Object.keys(localSpecs.volumes)"
                   :value="tag"
                   label="tag"
+                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
                 ></v-combobox>
                 <!-- <v-text-field :value="tag" label="tag" readonly /> -->
               </v-col>
@@ -188,11 +189,12 @@
                   label="volume name"
                   v-on:change="changeVolumeName(id, $event)"
                   :rules="[volumeNameRule(id)]"
+                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="2" class="pt-0">
                 <v-text-field
-                  v-model.number="localSpecs.volumes.nfs[id].size"
+                  v-model.number="localSpecs.volumes[tag][id].size"
                   type="number"
                   label="size"
                   prefix="GB"
@@ -204,10 +206,18 @@
                   min="0"
                   dir="rtl"
                   reverse
+                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="1" class="pt-0">
-                <v-btn @click="rmVolumeRow(id)" text icon small color="error">
+                <v-btn
+                  @click="rmVolumeRow(id)"
+                  text
+                  icon
+                  small
+                  color="error"
+                  :disabled="existingCluster && id in initialSpecs.volumes.nfs"
+                >
                   <v-icon> mdi-delete </v-icon>
                 </v-btn>
               </v-col>
@@ -842,7 +852,8 @@ export default {
           key = `volume1`;
         }
       }
-      this.$set(this.localSpecs.volumes["nfs"], key, this.VOLUME_STUB);
+      const stub = Object.assign({}, this.VOLUME_STUB);
+      this.$set(this.localSpecs.volumes["nfs"], key, stub);
     },
     rmVolumeRow(id) {
       this.$delete(this.localSpecs.volumes["nfs"], id);
