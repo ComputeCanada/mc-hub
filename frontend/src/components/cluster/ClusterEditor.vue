@@ -178,6 +178,11 @@
                 reverse
               />
             </v-col>
+            <v-col cols="12" sm="1" class="pt-0">
+              <v-btn @click="rmVolumeRow(id)" text icon small color="error">
+                <v-icon> mdi-delete </v-icon>
+              </v-btn>
+            </v-col>
           </v-list-item>
         </div>
         <v-divider />
