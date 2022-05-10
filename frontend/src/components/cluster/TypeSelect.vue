@@ -31,7 +31,6 @@ export default {
   props: {
     value: {
       type: String,
-      required: true,
     },
     types: {
       type: Array,

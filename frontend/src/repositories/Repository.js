@@ -4,7 +4,7 @@ const baseURL = process.env.VUE_APP_API_URL || "/api";
 const axiosInstance = axios.create({ baseURL });
 let sessionExpired = false;
 
-axiosInstance.interceptors.response.use((response)=> {
+axiosInstance.interceptors.response.use((response) => {
     return response;
 }, (error) => {
     if (typeof error.response === "undefined") {
@@ -13,6 +13,7 @@ axiosInstance.interceptors.response.use((response)=> {
             // error in the redirection to the identity provider's login portal.
             // Note: Other network problems, such as disconnects, may cause the same behaviour.
             sessionExpired = true;
+            console.log(error);
             alert("Your session expired. Please refresh the page.");
 
             // Remove any page reload confirmation dialog
