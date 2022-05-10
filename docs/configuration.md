@@ -51,7 +51,7 @@ Either `"NONE"` or `"SAML"`.
 
 This entry is set to `"NONE"` by default. This means that your app doesn't require users to be authenticated, or has an authentication mechanism which is hidden from MC Hub. This value is what the vast majority of users should be using.
 
-If you are using a SAML authentication mechanism, you can set `auth_type` to `"SAML"`. In this case, you will need to setup a reverse proxy that sends the following headers (corresponding to LDAP entries) to MC Hub: `eduPersonPrincipalName`, `givenName`, `surname` and `mail`. With SAML authentication, each cluster is owned by a user, represented by its `eduPersonPrincipalName`. For more information on how to setup SAML authentication, read [Adding SAML Authentication and HTTPS to MC Hub](https://github.com/ComputeCanada/magic_castle-ui/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
+If you are using a SAML authentication mechanism, you can set `auth_type` to `"SAML"`. In this case, you will need to setup a reverse proxy that sends the following headers (corresponding to LDAP entries) to MC Hub: `eduPersonPrincipalName`, `givenName`, `surname` and `mail`. With SAML authentication, each cluster is owned by a user, represented by its `eduPersonPrincipalName`. For more information on how to setup SAML authentication, read [Adding SAML Authentication and HTTPS to MC Hub](https://github.com/ComputeCanada/mc-hub/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
 
 ### `admins` (optional)
 

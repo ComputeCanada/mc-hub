@@ -43,21 +43,21 @@ Read the section on the [JSON Configuration](./docs/configuration.md) for more i
 
 ## Running the pre-built Docker image
 
-1. Run the [latest image](https://hub.docker.com/repository/docker/fredericfc/magic_castle-ui) of MC Hub. This command binds the port 5000 from the container's Flask server to the host's port 80. You may change port 80 to another port. Also change `v5.0.2` for the latest version of MC Hub in the following command.
+1. Run the [latest image](https://hub.docker.com/repository/docker/cmdntrf/mc-hub) of MC Hub. This command binds the port 5000 from the container's Flask server to the host's port 8080. You may change port 8080 to another port. Also change `v9.1.2` for the latest version of MC Hub in the following command.
    
    If you are not using the Google Cloud DNS provider, remove the line `--mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \`.
 
    ```shell script
-   docker run --rm -p 80:5000 \
+   docker run --rm -p 8080:5000 \
      --mount "type=volume,source=database,target=/home/mcu/database" \
      --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
      --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
-     fredericfc/magic_castle-ui:v5.0.2
+     cmdntrf/mc-hb:v9.1.2
    ```
 
-2. Navigate to `http://localhost:80` and start building clusters!
+2. Navigate to `http://localhost:8080` and start building clusters!
 3. Kill the container when you are done.
    ```
    docker kill <CONTAINER ID>
@@ -86,8 +86,8 @@ created clusters in the directory.
 
 ### Option 1. Deploying with an Ansible playbook (recommended)
 
-Use [Ansible MC Hub](https://github.com/ComputeCanada/ansible-mcui).
+Use [Ansible MC Hub](https://github.com/ComputeCanada/ansible-mc-hub).
 
 ### Option 2. Configuring the server manually
 
-Check out the [wiki page](https://github.com/ComputeCanada/magic_castle-ui/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).
+Check out the [wiki page](https://github.com/ComputeCanada/mc-hub/wiki/Adding-SAML-Authentication-and-HTTPS-to-Magic-Castle-UI).

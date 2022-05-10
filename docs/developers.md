@@ -10,7 +10,7 @@
 
 Clone this repository.
 ```shell script
-git clone https://github.com/ComputeCanada/magic_castle-ui.git
+git clone https://github.com/ComputeCanada/mc-hub.git
 ```
 Then, run the development Docker container. This documentation shows two ways of achieving this: with a regular setup or with VS Code.
 

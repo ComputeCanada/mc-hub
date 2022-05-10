@@ -10,7 +10,7 @@ on:
         default: "no"
 
 env:
-  IMAGE_NAME: "fredericfc/magic_castle-ui"
+  IMAGE_NAME: "cmdntrf/mc-hub"
   RUN_LIVE_CLUSTER_TESTS: ${{ (github.event.inputs.force_build_live_cluster == 'yes' || startsWith(github.ref, 'refs/tags/v')) && 'true' || 'false' }}
 
 jobs:
