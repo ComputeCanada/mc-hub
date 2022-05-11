@@ -17,8 +17,8 @@ export default {
     title: { type: String, required: true },
     suffix: {
       type: String,
-      default: ""
-    }
+      default: "",
+    },
   },
   computed: {
     usagePercentage() {
@@ -30,8 +30,8 @@ export default {
     },
     usageColor() {
       return this.usagePercentage < 100 ? "green" : "red";
-    }
-  }
+    },
+  },
 };
 </script>
 

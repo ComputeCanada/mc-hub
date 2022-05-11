@@ -28,19 +28,10 @@
           />
         </v-list-item>
         <v-list-item>
-          <v-select
-            v-model="localSpecs.image"
-            :items="getPossibleValues('image')"
-            label="Image"
-          />
+          <v-select v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
         </v-list-item>
         <v-list-item>
-          <v-menu
-            :nudge-right="40"
-            transition="scale-transition"
-            offset-y
-            min-width="auto"
-          >
+          <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
                 v-model="localSpecs.expiration_date"
@@ -65,33 +56,16 @@
       <v-list class="pt-0">
         <v-list-item>
           <v-col cols="12" sm="3">
-            <resource-usage-display
-              :max="instanceCountMax"
-              :used="instanceCountUsed"
-              title="Instances"
-            />
+            <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
           </v-col>
           <v-col cols="12" sm="3">
-            <resource-usage-display
-              :max="ramGbMax"
-              :used="ramGbUsed"
-              title="RAM"
-              suffix="GB"
-            />
+            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
           </v-col>
           <v-col cols="12" sm="3">
-            <resource-usage-display
-              :max="vcpuMax"
-              :used="vcpuUsed"
-              title="cores"
-            />
+            <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
           </v-col>
           <v-col cols="12" sm="3">
-            <resource-usage-display
-              :max="volumeCountMax"
-              :used="volumeCountUsed"
-              title="volumes"
-            />
+            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
           </v-col>
         </v-list-item>
       </v-list>
@@ -141,9 +115,7 @@
           </v-list-item>
         </div>
         <div class="text-center">
-          <v-btn @click="addInstanceRow" color="primary" class="ma-2">
-            Add instance row
-          </v-btn>
+          <v-btn @click="addInstanceRow" color="primary" class="ma-2"> Add instance row </v-btn>
         </div>
       </v-list>
       <v-divider />
@@ -152,19 +124,10 @@
         <v-list-item>
           <v-spacer></v-spacer>
           <v-col cols="12" sm="3">
-            <resource-usage-display
-              :max="volumeSizeMax"
-              :used="volumeSizeUsed"
-              title="volume storage"
-              suffix="GB"
-            />
+            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
           </v-col>
           <v-col cols="12" sm="3">
-            <resource-usage-display
-              :max="volumeCountMax"
-              :used="volumeCountUsed"
-              title="volumes"
-            />
+            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
           </v-col>
           <v-spacer></v-spacer>
         </v-list-item>
@@ -198,11 +161,7 @@
                   type="number"
                   label="size"
                   prefix="GB"
-                  :rules="[
-                    volumeCountRule,
-                    volumeSizeRule,
-                    greaterThanZeroRule,
-                  ]"
+                  :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
                   min="0"
                   dir="rtl"
                   reverse
@@ -226,9 +185,7 @@
           </div>
         </div>
         <div class="text-center">
-          <v-btn @click="addVolumeRow" color="primary" class="ma-2">
-            Add volume row
-          </v-btn>
+          <v-btn @click="addVolumeRow" color="primary" class="ma-2"> Add volume row </v-btn>
         </div>
         <v-divider />
       </v-list>
@@ -266,27 +223,13 @@
           </v-combobox>
         </v-list-item>
         <v-list-item>
-          <v-text-field
-            v-model.number="localSpecs.nb_users"
-            type="number"
-            label="Number of guest users"
-            min="0"
-          />
+          <v-text-field v-model.number="localSpecs.nb_users" type="number" label="Number of guest users" min="0" />
         </v-list-item>
         <v-list-item>
-          <v-text-field
-            v-model="localSpecs.guest_passwd"
-            label="Guest password"
-            :rules="[passwordLengthRule]"
-          />
+          <v-text-field v-model="localSpecs.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                v-bind="attrs"
-                v-on="on"
-                @click="generateGuestPassword()"
-              >
+              <v-btn icon v-bind="attrs" v-on="on" @click="generateGuestPassword()">
                 <v-icon>mdi-refresh</v-icon>
               </v-btn>
             </template>
@@ -296,9 +239,7 @@
         <v-list-group prepend-icon="mdi-script-text-outline">
           <template #activator>
             <v-list-item-content>
-              <v-list-item-title
-                >Additional puppet configuration (optional)</v-list-item-title
-              >
+              <v-list-item-title>Additional puppet configuration (optional)</v-list-item-title>
             </v-list-item-content>
           </template>
           <v-list-item>
@@ -331,26 +272,9 @@ jupyterhub::enable_otp_auth: false'
 
       <!-- Apply and cancel -->
       <div class="text-center">
-        <p v-if="!validForm" class="error--text">
-          Some form fields are invalid.
-        </p>
-        <v-btn
-          @click="apply"
-          color="primary"
-          class="ma-2"
-          :disabled="!applyButtonEnabled"
-          large
-          >Apply</v-btn
-        >
-        <v-btn
-          to="/"
-          class="ma-2"
-          :disabled="loading"
-          large
-          outlined
-          color="primary"
-          >Cancel</v-btn
-        >
+        <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
+        <v-btn @click="apply" color="primary" class="ma-2" :disabled="!applyButtonEnabled" large>Apply</v-btn>
+        <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
       </div>
     </v-form>
   </div>
@@ -405,18 +329,13 @@ export default {
       clusterNameRegexRule: (value) =>
         value.match(CLUSTER_NAME_REGEX) !== null ||
         "Must contain lowercase alphanumeric characters and start with a letter. It can also include dashes.",
-      greaterThanZeroRule: (value) =>
-        (typeof value === "number" && value > 0) || "Must be greater than zero",
-      positiveNumberRule: (value) =>
-        (typeof value === "number" && value >= 0) ||
-        "Must be a positive number",
+      greaterThanZeroRule: (value) => (typeof value === "number" && value > 0) || "Must be greater than zero",
+      positiveNumberRule: (value) => (typeof value === "number" && value >= 0) || "Must be a positive number",
       passwordLengthRule: (value) =>
         value.length >= MINIMUM_PASSWORD_LENGTH ||
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`,
       nowDate: new Date().toISOString().slice(0, 10),
-      tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
-        .toISOString()
-        .slice(0, 10),
+      tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       loading: false,
       quotas: null,
       possibleResources: null,
@@ -475,9 +394,7 @@ export default {
       this.localSpecs.cloud_id = this.user.projects[0];
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
-      this.localSpecs.public_keys = this.user.public_keys.filter((key) =>
-        key.match(SSH_PUBLIC_KEY_REGEX)
-      );
+      this.localSpecs.public_keys = this.user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
     }
     this.initialSpecs = cloneDeep(this.localSpecs);
     await this.loadCloudResources();
@@ -501,10 +418,7 @@ export default {
       return this.localSpecs.cluster_name + "." + this.localSpecs.domain;
     },
     applyRunning() {
-      return [
-        ClusterStatusCode.DESTROY_RUNNING,
-        ClusterStatusCode.BUILD_RUNNING,
-      ].includes(this.currentStatus);
+      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     },
     dirtyForm() {
       const keysToCheck = [
@@ -524,35 +438,24 @@ export default {
         if (this.initialSpecs === null) {
           return false;
         }
-        return keysToCheck.some(
-          (key) => !isEqual(this.initialSpecs[key], this.localSpecs[key])
-        );
+        return keysToCheck.some((key) => !isEqual(this.initialSpecs[key], this.localSpecs[key]));
       }
       return true;
     },
     domainRule() {
       return (
-        (this.possibleResources &&
-          this.possibleResources.domain.includes(this.localSpecs.domain)) ||
+        (this.possibleResources && this.possibleResources.domain.includes(this.localSpecs.domain)) ||
         "Invalid domain provided"
       );
     },
     volumeCountRule() {
-      return (
-        this.volumeCountUsed <= this.volumeCountMax ||
-        "Volume number quota exceeded"
-      );
+      return this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
     },
     volumeSizeRule() {
-      return (
-        this.volumeSizeUsed <= this.volumeSizeMax ||
-        "Volume size quota exceeded"
-      );
+      return this.volumeSizeUsed <= this.volumeSizeMax || "Volume size quota exceeded";
     },
     instanceCountUsed() {
-      return this.usedResourcesLoaded
-        ? this.instances.reduce((acc, instance) => acc + instance.count, 0)
-        : 0;
+      return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;
     },
     instanceCountMax() {
       return this.quotas ? this.quotas.instance_count.max : 0;
@@ -569,9 +472,7 @@ export default {
     ramGbUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
-            (acc, instance) =>
-              acc +
-              instance.count * this.getInstanceDetail(instance.type, "ram"),
+            (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "ram"),
             0
           ) / MB_PER_GB
         : 0;
@@ -582,9 +483,7 @@ export default {
     vcpuUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
-            (acc, instance) =>
-              acc +
-              instance.count * this.getInstanceDetail(instance.type, "vcpus"),
+            (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "vcpus"),
             0
           )
         : 0;
@@ -595,10 +494,7 @@ export default {
     volumeCountUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
-            (acc, instance) =>
-              acc +
-              instance.count *
-                this.getInstanceDetail(instance.type, "required_volume_count"),
+            (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_count"),
             0
           ) + Object.keys(this.localSpecs.volumes["nfs"]).length
         : 0;
@@ -609,10 +505,7 @@ export default {
     volumeSizeUsed() {
       return this.usedResourcesLoaded
         ? this.instancesVolumeSizeUsed +
-            Object.values(this.localSpecs.volumes.nfs).reduce(
-              (acc, volume) => acc + volume.size,
-              0
-            )
+            Object.values(this.localSpecs.volumes.nfs).reduce((acc, volume) => acc + volume.size, 0)
         : 0;
     },
     volumeSizeMax() {
@@ -620,10 +513,7 @@ export default {
     },
     instancesVolumeSizeUsed() {
       return this.instances.reduce(
-        (acc, instance) =>
-          acc +
-          instance.count *
-            this.getInstanceDetail(instance.type, "required_volume_size"),
+        (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_size"),
         0
       );
     },
@@ -679,10 +569,7 @@ export default {
     publicTagRule(id) {
       var self = this;
       return function (tags) {
-        if (
-          self.localSpecs.instances[id].count > 0 &&
-          tags.includes("public")
-        ) {
+        if (self.localSpecs.instances[id].count > 0 && tags.includes("public")) {
           let newPublicIP = 0;
           for (let key in self.localSpecs.instances) {
             if (self.localSpecs.instances[key].tags.includes("public")) {
@@ -720,9 +607,7 @@ export default {
       if (this.possibleResources === null) {
         return [];
       } else {
-        return fieldPath
-          .split(".")
-          .reduce((acc, x) => acc[x], this.possibleResources);
+        return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
       }
     },
     getInstanceDetail(instanceType, detailName, defaultValue = 0) {
@@ -773,9 +658,8 @@ export default {
         return "Required - Paste a key then press enter. Only the comment section will be displayed.";
       }
       return (
-        this.localSpecs.public_keys.every(
-          (publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null
-        ) || "Invalid SSH public key"
+        this.localSpecs.public_keys.every((publicKey) => publicKey.match(SSH_PUBLIC_KEY_REGEX) !== null) ||
+        "Invalid SSH public key"
       );
     },
     rmInstanceRow(id) {
@@ -784,11 +668,7 @@ export default {
     addInstanceRow() {
       const alphabet = "abcdefghijklmnopqrstuvwxyz";
       const keys = Object.keys(this.localSpecs.instances);
-      const all_tags = new Set(
-        Array.prototype.concat(
-          ...keys.map((x) => this.localSpecs.instances[x].tags)
-        )
-      );
+      const all_tags = new Set(Array.prototype.concat(...keys.map((x) => this.localSpecs.instances[x].tags)));
       let new_row_key;
       const stub = { count: 0, type: null, tags: [] };
 
@@ -839,14 +719,11 @@ export default {
         }
       }
       if (key === null) {
-        const vol_array = Object.keys(this.localSpecs.volumes["nfs"]).filter(
-          (value) => /^volume[0-9]{1,}$/.test(value)
+        const vol_array = Object.keys(this.localSpecs.volumes["nfs"]).filter((value) =>
+          /^volume[0-9]{1,}$/.test(value)
         );
         if (vol_array.length > 0) {
-          const index =
-            Math.max(
-              ...vol_array.map((value) => Number(value.replace(/^volume/, "")))
-            ) + 1;
+          const index = Math.max(...vol_array.map((value) => Number(value.replace(/^volume/, "")))) + 1;
           key = `volume${index}`;
         } else {
           key = `volume1`;
@@ -878,13 +755,9 @@ export default {
       this.$emit("loading", this.loading);
       let availableResources = null;
       if (this.existingCluster) {
-        availableResources = (
-          await AvailableResourcesRepository.getHost(this.hostname)
-        ).data;
+        availableResources = (await AvailableResourcesRepository.getHost(this.hostname)).data;
       } else {
-        availableResources = (
-          await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)
-        ).data;
+        availableResources = (await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)).data;
       }
       this.possibleResources = availableResources.possible_resources;
       this.quotas = availableResources.quotas;
@@ -898,7 +771,6 @@ export default {
 <style scoped>
 .hieradata-editor {
   font-size: 10pt;
-  font-family: "Consolas", "Deja Vu Sans Mono", "Bitstream Vera Sans Mono",
-    monospace;
+  font-family: "Consolas", "Deja Vu Sans Mono", "Bitstream Vera Sans Mono", monospace;
 }
 </style>

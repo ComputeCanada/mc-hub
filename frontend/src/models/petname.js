@@ -448,7 +448,7 @@ export const ADJECTIVES = [
   "wondrous",
   "workable",
   "working",
-  "worthy"
+  "worthy",
 ];
 export const NAMES = [
   "ox",
@@ -907,5 +907,5 @@ export const NAMES = [
   "tortoise",
   "treefrog",
   "werewolf",
-  "woodcock"
+  "woodcock",
 ];

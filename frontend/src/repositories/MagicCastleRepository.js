@@ -23,5 +23,5 @@ export default {
   },
   apply(hostname) {
     return Repository.post(`${resource}/${hostname}/apply`);
-  }
+  },
 };

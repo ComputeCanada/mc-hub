@@ -6,6 +6,6 @@
 import ClustersList from "@/components/cluster/ClustersList";
 
 export default {
-  components: { ClustersList }
+  components: { ClustersList },
 };
 </script>

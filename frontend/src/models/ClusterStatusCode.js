@@ -8,5 +8,5 @@ export default Object.freeze({
   BUILD_ERROR: "build_error",
   DESTROY_RUNNING: "destroy_running",
   DESTROY_ERROR: "destroy_error",
-  NOT_FOUND: "not_found"
+  NOT_FOUND: "not_found",
 });

@@ -15,16 +15,16 @@ export default {
   props: {
     hostname: {
       type: String,
-      required: true
+      required: true,
     },
     showPlanConfirmation: {
       type: Boolean,
-      default: false
+      default: false,
     },
     destroy: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   created() {
     this.removeQueryParameters();
@@ -39,7 +39,7 @@ export default {
       exception whenever a path is navigated twice in a row, even with different query params.
       */
       this.$router.replace({ query: {} }).catch(() => {});
-    }
-  }
+    },
+  },
 };
 </script>

@@ -10,18 +10,18 @@ export default {
   props: {
     color: {
       type: String,
-      required: true
+      required: true,
     },
     text: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
   methods: {
     copy() {
       navigator.clipboard.writeText(this.text);
-    }
-  }
+    },
+  },
 };
 </script>
 

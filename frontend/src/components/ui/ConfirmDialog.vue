@@ -24,28 +24,28 @@ export default {
   props: {
     value: {
       type: Boolean,
-      required: true
+      required: true,
     },
     title: {
       type: String,
-      default: "Are you sure?"
+      default: "Are you sure?",
     },
     alert: {
       type: Boolean,
-      default: false
+      default: false,
     },
     encourageConfirm: {
       type: Boolean,
-      default: false
+      default: false,
     },
     encourageCancel: {
       type: Boolean,
-      default: false
+      default: false,
     },
     maxWidth: {
       type: Number,
-      default: 400
-    }
+      default: 400,
+    },
   },
   methods: {
     confirm() {
@@ -58,8 +58,8 @@ export default {
     },
     input(value) {
       this.$emit("input", value);
-    }
-  }
+    },
+  },
 };
 </script>
 
