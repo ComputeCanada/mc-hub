@@ -150,7 +150,8 @@
       <!-- Volumes -->
       <v-list>
         <v-list-item>
-          <v-col cols="12" sm="12">
+          <v-spacer></v-spacer>
+          <v-col cols="12" sm="3">
             <resource-usage-display
               :max="volumeSizeMax"
               :used="volumeSizeUsed"
@@ -158,27 +159,76 @@
               suffix="GB"
             />
           </v-col>
+          <v-col cols="12" sm="3">
+            <resource-usage-display
+              :max="volumeCountMax"
+              :used="volumeCountUsed"
+              title="volumes"
+            />
+          </v-col>
+          <v-spacer></v-spacer>
         </v-list-item>
       </v-list>
       <v-list>
-        <div :key="id" v-for="id in DEFAULT_VOLUMES">
-          <v-list-item>
-            <v-col cols="12" sm="3" class="pt-0">
-              <v-text-field :value="id" label="volume name" readonly />
-            </v-col>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                v-model.number="localSpecs.volumes.nfs[id].size"
-                type="number"
-                label="size"
-                prefix="GB"
-                :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
-                min="0"
-                dir="rtl"
-                reverse
-              />
-            </v-col>
-          </v-list-item>
+        <div :key="tag" v-for="tag in Object.keys(localSpecs.volumes)">
+          <div :key="id" v-for="id in Object.keys(localSpecs.volumes[tag])">
+            <v-list-item>
+              <v-spacer></v-spacer>
+              <v-col cols="12" sm="2" class="pt-0">
+                <v-combobox
+                  :items="Object.keys(localSpecs.volumes)"
+                  :value="tag"
+                  label="tag"
+                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                ></v-combobox>
+                <!-- <v-text-field :value="tag" label="tag" readonly /> -->
+              </v-col>
+              <v-col cols="12" sm="3" class="pt-0">
+                <v-text-field
+                  :value="id"
+                  label="volume name"
+                  v-on:change="changeVolumeName(id, $event)"
+                  :rules="[volumeNameRule(id)]"
+                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                />
+              </v-col>
+              <v-col cols="12" sm="2" class="pt-0">
+                <v-text-field
+                  v-model.number="localSpecs.volumes[tag][id].size"
+                  type="number"
+                  label="size"
+                  prefix="GB"
+                  :rules="[
+                    volumeCountRule,
+                    volumeSizeRule,
+                    greaterThanZeroRule,
+                  ]"
+                  min="0"
+                  dir="rtl"
+                  reverse
+                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                />
+              </v-col>
+              <v-col cols="12" sm="1" class="pt-0">
+                <v-btn
+                  @click="rmVolumeRow(id)"
+                  text
+                  icon
+                  small
+                  color="error"
+                  :disabled="existingCluster && id in initialSpecs.volumes.nfs"
+                >
+                  <v-icon> mdi-delete </v-icon>
+                </v-btn>
+              </v-col>
+              <v-spacer></v-spacer>
+            </v-list-item>
+          </div>
+        </div>
+        <div class="text-center">
+          <v-btn @click="addVolumeRow" color="primary" class="ma-2">
+            Add volume row
+          </v-btn>
         </div>
         <v-divider />
       </v-list>
@@ -347,6 +397,7 @@ export default {
   data: function () {
     return {
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
+      VOLUME_STUB: { size: 50 },
       TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node"],
       validForm: true,
       initialSpecs: null,
@@ -558,9 +609,10 @@ export default {
     volumeSizeUsed() {
       return this.usedResourcesLoaded
         ? this.instancesVolumeSizeUsed +
-            this.localSpecs.volumes["nfs"]["home"].size +
-            this.localSpecs.volumes["nfs"]["project"].size +
-            this.localSpecs.volumes["nfs"]["scratch"].size
+            Object.values(this.localSpecs.volumes.nfs).reduce(
+              (acc, volume) => acc + volume.size,
+              0
+            )
         : 0;
     },
     volumeSizeMax() {
@@ -608,6 +660,20 @@ export default {
           }
         }
         this.localSpecs.instances = new_instances;
+      }
+    },
+    changeVolumeName(oldKey, newKey) {
+      if (newKey != "" && !(newKey in this.localSpecs.volumes.nfs)) {
+        const nfs_volumes = this.localSpecs.volumes.nfs;
+        const new_nfs_volumes = {};
+        for (const key of Object.keys(nfs_volumes)) {
+          if (key == oldKey) {
+            new_nfs_volumes[newKey] = nfs_volumes[oldKey];
+          } else {
+            new_nfs_volumes[key] = nfs_volumes[key];
+          }
+        }
+        this.localSpecs.volumes.nfs = new_nfs_volumes;
       }
     },
     publicTagRule(id) {
@@ -687,6 +753,21 @@ export default {
         return true;
       };
     },
+    volumeNameRule(id) {
+      var self = this;
+      return function (value) {
+        if (value == "") {
+          return "cannot be empty";
+        }
+        if (value != id && value in self.localSpecs.volumes.nfs) {
+          return "must be unique";
+        }
+        if (!/^[a-z][a-z0-9-]*$/.test(value)) {
+          return "must match [a-z][-a-z0-9]*";
+        }
+        return true;
+      };
+    },
     publicKeysRule(values) {
       if (values instanceof Array && values.length == 0) {
         return "Required - Paste a key then press enter. Only the comment section will be displayed.";
@@ -747,6 +828,35 @@ export default {
         new_row_key = `${prefix}-${suffix}`;
       }
       this.$set(this.localSpecs.instances, new_row_key, stub);
+    },
+    addVolumeRow() {
+      const nfs_volumes = new Set(Object.keys(this.localSpecs.volumes["nfs"]));
+      let key = null;
+      for (const vol of this.DEFAULT_VOLUMES) {
+        if (!nfs_volumes.has(vol)) {
+          key = vol;
+          break;
+        }
+      }
+      if (key === null) {
+        const vol_array = Object.keys(this.localSpecs.volumes["nfs"]).filter(
+          (value) => /^volume[0-9]{1,}$/.test(value)
+        );
+        if (vol_array.length > 0) {
+          const index =
+            Math.max(
+              ...vol_array.map((value) => Number(value.replace(/^volume/, "")))
+            ) + 1;
+          key = `volume${index}`;
+        } else {
+          key = `volume1`;
+        }
+      }
+      const stub = Object.assign({}, this.VOLUME_STUB);
+      this.$set(this.localSpecs.volumes["nfs"], key, stub);
+    },
+    rmVolumeRow(id) {
+      this.$delete(this.localSpecs.volumes["nfs"], id);
     },
     apply() {
       this.$emit("apply");
