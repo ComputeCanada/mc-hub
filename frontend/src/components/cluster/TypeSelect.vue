@@ -92,9 +92,7 @@ export default {
       descriptionElements.push(`${namedGroupMatches.cpu} vCPU`);
       descriptionElements.push(`${namedGroupMatches.ram} GB RAM`);
       if (typeof namedGroupMatches["disk"] !== "undefined") {
-        descriptionElements.push(
-          `${namedGroupMatches.disk} GB ephemeral storage`
-        );
+        descriptionElements.push(`${namedGroupMatches.disk} GB ephemeral storage`);
       }
 
       return descriptionElements.join(", ");

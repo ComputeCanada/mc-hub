@@ -1,10 +1,5 @@
 <template>
-  <v-dialog
-    :value="value"
-    @input="input"
-    max-width="400"
-    :persistent="persistent"
-  >
+  <v-dialog :value="value" @input="input" max-width="400" :persistent="persistent">
     <v-card :loading="loading">
       <v-card-title v-if="type === 'success'">Success</v-card-title>
       <v-card-title v-else-if="type === 'loading'">Loading</v-card-title>

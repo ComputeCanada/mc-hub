@@ -13,7 +13,7 @@ export default {
     let requiresConfirmation = false;
 
     // Native browser refresh or page unload
-    window.onbeforeunload = event => {
+    window.onbeforeunload = (event) => {
       if (requiresConfirmation) {
         event.preventDefault();
 
@@ -37,7 +37,6 @@ export default {
       }
     });
 
-
     router.afterEach(() => {
       requiresConfirmation = false;
     });
@@ -55,5 +54,5 @@ export default {
     vue.prototype.$disableUnloadConfirmation = () => {
       requiresConfirmation = false;
     };
-  }
+  },
 };

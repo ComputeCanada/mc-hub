@@ -15,7 +15,7 @@ const ClusterFormattedStatus = Object.freeze({
   build_error: { text: "Build error", color: "red" },
   destroy_running: { text: "Destroy running", color: "orange" },
   destroy_error: { text: "Destroy error", color: "red" },
-  not_found: { text: "Not found", color: "purple" }
+  not_found: { text: "Not found", color: "purple" },
 });
 
 export default {
@@ -23,8 +23,8 @@ export default {
   props: {
     status: {
       required: true,
-      validator: value => value === null || typeof value === "string"
-    }
+      validator: (value) => value === null || typeof value === "string",
+    },
   },
   computed: {
     formattedStatus() {
@@ -33,8 +33,8 @@ export default {
       } else {
         return ClusterFormattedStatus[this.status];
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

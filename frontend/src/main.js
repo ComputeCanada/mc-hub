@@ -11,5 +11,5 @@ Vue.use(UnloadConfirmation, { router });
 new Vue({
   router,
   vuetify,
-  render: h => h(App)
+  render: (h) => h(App),
 }).$mount("#app");

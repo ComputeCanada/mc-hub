@@ -6,6 +6,6 @@
 import ClusterDisplay from "@/components/cluster/ClusterDisplay";
 
 export default {
-  components: { ClusterDisplay }
+  components: { ClusterDisplay },
 };
 </script>

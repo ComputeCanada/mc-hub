@@ -11,30 +11,34 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: Home
+    component: Home,
   },
   {
     path: "/create-cluster",
     name: "Create a Magic Castle",
-    component: CreateCluster
+    component: CreateCluster,
   },
   {
     path: "/clusters/:hostname",
     name: "Edit an existing Magic Castle",
     component: ModifyCluster,
-    props: route => ({ "showPlanConfirmation": route.query.showPlanConfirmation === "1", "destroy": route.query.destroy === "1", ...route.params })
+    props: (route) => ({
+      showPlanConfirmation: route.query.showPlanConfirmation === "1",
+      destroy: route.query.destroy === "1",
+      ...route.params,
+    }),
   },
   {
     path: "*",
     name: "Not Found",
-    component: NotFound
-  }
+    component: NotFound,
+  },
 ];
 
 const router = new VueRouter({
   mode: "history",
   base: process.env.BASE_URL,
-  routes
+  routes,
 });
 
 export default router;

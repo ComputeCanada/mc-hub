@@ -8,5 +8,5 @@ export default {
   },
   getCloud(cloud_id) {
     return Repository.get(`${resource}/cloud/${cloud_id}`);
-  }
+  },
 };

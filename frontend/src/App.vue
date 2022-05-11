@@ -16,6 +16,6 @@
 import AccountDropdown from "@/components/ui/AccountDropdown";
 
 export default {
-  components: { AccountDropdown }
+  components: { AccountDropdown },
 };
 </script>

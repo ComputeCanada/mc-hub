@@ -19,7 +19,7 @@ function CodeException(messages) {
 }
 
 const CODE_VALIDATORS = {
-  yaml: code => {
+  yaml: (code) => {
     try {
       jsYaml.load(code);
       return true;
@@ -27,53 +27,53 @@ const CODE_VALIDATORS = {
       const message = `Line ${e.mark.line + 1}, column ${e.mark.column + 1}: ${capitalize(e.reason)}.`;
       throw new CodeException([message]);
     }
-  }
+  },
 };
 
 export default {
   name: "CodeEditor",
   extends: VInput,
   components: {
-    VMessages
+    VMessages,
   },
   props: {
     value: {
       type: String,
-      default: ""
+      default: "",
     },
     placeholder: {
       type: String,
-      default: ""
+      default: "",
     },
     language: {
       type: String,
-      default: "text/plain"
-    }
+      default: "text/plain",
+    },
   },
   data() {
     return {
       editor: null,
-      errorMessages: []
+      errorMessages: [],
     };
   },
   watch: {
     value(value) {
       if (value !== this.editor.getValue()) this.editor.setValue(value);
-    }
+    },
   },
   computed: {
     showPlaceholder() {
       return this.value.length === 0;
-    }
+    },
   },
   mounted() {
     monaco.editor.defineTheme("mc-hub", {
       base: "vs",
       inherit: true,
       colors: {
-        "editor.background": "#f9f9f9"
+        "editor.background": "#f9f9f9",
       },
-      rules: []
+      rules: [],
     });
     this.editor = monaco.editor.create(this.$refs.codeEditorWrapper.querySelector(".code-editor"), {
       value: this.value,
@@ -84,8 +84,8 @@ export default {
       folding: false,
       glyphMargin: false,
       minimap: {
-        enabled: false
-      }
+        enabled: false,
+      },
     });
     this.editor.onDidChangeModelContent(() => {
       const code = this.editor.getValue();
@@ -105,8 +105,8 @@ export default {
       } catch (e) {
         this.errorMessages = e.messages;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

@@ -16,9 +16,7 @@
             <v-toolbar-title>Your Magic Castles</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <v-btn color="primary" big to="/create-cluster"
-              >Create cluster</v-btn
-            >
+            <v-btn color="primary" big to="/create-cluster">Create cluster</v-btn>
           </v-toolbar>
         </template>
         <template v-slot:[`item.status`]="{ item }">
@@ -33,10 +31,7 @@
               <v-row>
                 <v-col>Hostname</v-col>
                 <v-col>
-                  <copy-button
-                    :color="expandedContentColor"
-                    :text="item.hostname"
-                  />
+                  <copy-button :color="expandedContentColor" :text="item.hostname" />
                   <code>{{ item.hostname }}</code></v-col
                 >
               </v-row>
@@ -58,14 +53,8 @@
                 <v-col>FreeIPA admin password</v-col>
                 <v-col>
                   <template v-if="item.freeipa_passwd">
-                    <copy-button
-                      :color="expandedContentColor"
-                      :text="item.freeipa_passwd"
-                    />
-                    <password-display
-                      :password="item.freeipa_passwd"
-                      :color="expandedContentColor"
-                    />
+                    <copy-button :color="expandedContentColor" :text="item.freeipa_passwd" />
+                    <password-display :password="item.freeipa_passwd" :color="expandedContentColor" />
                   </template>
                   <span v-else>not available</span>
                 </v-col>
@@ -84,14 +73,8 @@
                 <v-col>Guest password</v-col>
                 <v-col>
                   <template v-if="item.guest_passwd">
-                    <copy-button
-                      :color="expandedContentColor"
-                      :text="item.guest_passwd"
-                    />
-                    <password-display
-                      :password="item.guest_passwd"
-                      :color="expandedContentColor"
-                    />
+                    <copy-button :color="expandedContentColor" :text="item.guest_passwd" />
+                    <password-display :password="item.guest_passwd" :color="expandedContentColor" />
                   </template>
                   <span v-else>not available</span></v-col
                 >
@@ -124,9 +107,7 @@
                 </v-btn>
                 <v-spacer />
                 <v-btn
-                  v-if="
-                    ['build_running', 'destroy_running'].includes(item.status)
-                  "
+                  v-if="['build_running', 'destroy_running'].includes(item.status)"
                   color="secondary"
                   text
                   :to="`/clusters/${item.hostname}`"
@@ -134,20 +115,11 @@
                   <v-icon class="mr-2">mdi-list-status</v-icon>
                   Check progress
                 </v-btn>
-                <v-btn
-                  v-else
-                  color="secondary"
-                  text
-                  :to="`/clusters/${item.hostname}`"
-                >
+                <v-btn v-else color="secondary" text :to="`/clusters/${item.hostname}`">
                   <v-icon class="mr-2">mdi-pencil</v-icon>
                   Edit
                 </v-btn>
-                <v-btn
-                  color="secondary"
-                  text
-                  @click="destroyCluster(item.hostname)"
-                >
+                <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
                   <v-icon class="mr-2">mdi-delete</v-icon>
                   Delete
                 </v-btn>
@@ -214,15 +186,8 @@ export default {
           value: "data-table-expand",
         },
       ];
-      if (
-        this.magicCastles.some(
-          (magicCastle) => "owner" in magicCastle && magicCastle.owner != null
-        )
-      ) {
-        return base_headers.concat(
-          [{ text: "Owner", value: "owner" }],
-          end_headers
-        );
+      if (this.magicCastles.some((magicCastle) => "owner" in magicCastle && magicCastle.owner != null)) {
+        return base_headers.concat([{ text: "Owner", value: "owner" }], end_headers);
       } else {
         return base_headers.concat(end_headers);
       }
@@ -267,10 +232,7 @@ export default {
 </script>
 
 <style scoped>
-.v-data-table
-  >>> table
-  tbody
-  tr:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) {
+.v-data-table >>> table tbody tr:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) {
   cursor: pointer;
 }
 </style>
