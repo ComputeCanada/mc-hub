@@ -59,10 +59,7 @@ ENV TERRAFORM_VERSION 1.1.6
 
 # Terraform
 USER root
-RUN case "$(dpkg --print-architecture)" in \
-    arm64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip" ;; \
-    x86_64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" ;; \
-    esac; \
+RUN export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_$(dpkg --print-architecture).zip" && \
     curl -L ${TERRAFORM_URL} -o terraform.zip && \
     unzip terraform.zip -d /usr/local/bin && \
     rm terraform.zip
