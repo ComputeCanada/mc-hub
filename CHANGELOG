@@ -11,7 +11,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added ability to add and remove volumes
 - Replaced Alpine by Debian
 - Apply prettier on all vue and js files
--
 
 ## [v9.1.2] 2022-05-10
 
