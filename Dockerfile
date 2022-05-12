@@ -10,18 +10,13 @@ RUN npm run build
 
 # BACKEND BUILD STAGE
 
-FROM python:3.9-alpine3.14 as base-server
+FROM python:3.10-slim-bullseye as base-server
 
-RUN apk --no-cache add git \
-    curl \
-    build-base \
-    libffi-dev \
-    openssl-dev \
-    cargo \
-    bash
+RUN apt-get update && \
+    apt-get install  --no-install-recommends -y curl git gcc linux-libc-dev libc6-dev unzip
 
 ## Magic Castle User
-RUN adduser -D mcu
+RUN adduser --disabled-password mcu
 RUN mkdir -p /home/mcu && chown -R mcu:mcu /home/mcu
 
 USER mcu
@@ -44,7 +39,14 @@ ADD tests /home/mcu/tests
 
 ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
 
+USER root
+RUN apt-get purge -y gcc linux-libc-dev libc6-dev && \
+    apt-get -y purge --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    apt-get clean && \
+    rm -rf /root/.cache /root/.cargo /tmp/* /var/lib/apt/lists/*
+
 FROM base-server as cleanup-daemon
+USER mcu
 
 CMD /home/mcu/venv/bin/python -m mchub.services.cull_expired_cluster
 
@@ -57,8 +59,8 @@ ENV TERRAFORM_VERSION 1.1.6
 
 # Terraform
 USER root
-RUN case "$(apk --print-arch)" in \
-    aarch64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip" ;; \
+RUN case "$(dpkg --print-architecture)" in \
+    arm64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_arm64.zip" ;; \
     x86_64) export TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" ;; \
     esac; \
     curl -L ${TERRAFORM_URL} -o terraform.zip && \
