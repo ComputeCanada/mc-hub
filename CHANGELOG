@@ -1,27 +1,41 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v9.2.0] 2022-05-12
+
+### Changed
+
+- Added ability to add and remove volumes
+- Replaced Alpine by Debian
+- Apply prettier on all vue and js files
+-
+
 ## [v9.1.2] 2022-05-10
 
 ### Changed
+
 - Moved docker image location to cmdntrf/mc-hub
 
 ## [v9.1.1] 2022-05-09
 
 ### Added
+
 - Added bash to base-server container image
 
 ## [v9.1.0] 2022-05-09
 
 ### Added
+
 - Added the ability to add and remove instances to the list
 - Added the ability to edit the hostname prefix
 
 ## [v9.0.0] 2022-05-03
 
 ### Added
+
 - Added expiration date widget
 - Added `cull_expired_cluster.py` to remove expired clusters
 - Added ability to switch between OpenStack cloud projects using a widget
@@ -34,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added token authentication
 
 ### Changed
+
 - Bumped MC to 11.9.1
 - Bumped npm to 14
 - Refactor the entire node UI to match MC 11 format
@@ -46,29 +61,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [v8.0.0] 2021-05-01
 
 ### Added
+
 - Added required field `cors_allowed_origins` in configuration.json file
 - Added ability to define constants using environment variables
 - Improved documentation of multiple classes
 - Default cluster name now generated randomly, using a random pet name
 
 ### Changed
+
 - Bumped npm to 12.22
 - Bumped curl to 7.76
 
 ### Fixed
+
 - Fixed occasional bug when reading Terraform state file
 
 ### Security
+
 - Restricted the CORS allowed origins, instead of allowing all origins to make API calls
 - Bumped ssri to 6.0.2
 
 ## [v7.6.0] 2021-04-01
 
 ### Added
+
 - Terraform {plan, apply, destroy} log rotation
 - Constant TERRAFORM_REQUIRED_VERSION (currently set to 0.14.2)
 
 ### Changed
+
 - Terraform state is now parsed instead of main.tf.json when possible
 - DNS manager test now use MAGIC_CASTLE_VERSION_TAG constant instead of hardcoded value
 - Bumped MC to 10.2
@@ -76,115 +97,141 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [v7.5.1] 2021-03-27
 
 ### Fixed
+
 - Fixed Docker image deployment to Docker Hub
 
 ## [v7.5.0] 2021-03-27
 
 ### Added
+
 - Support custom cluster hieradata
 - Display error message when plan fails
 
 ### Changed
+
 - Now running CI workflow with GitHub Actions instead of Travis CI
 - Cluster names can now include dashes
 
 ### Security
+
 - Bumped Jinja2 to 2.11.3
 - Bumped elliptic to 6.5.4
 
 ## [v7.4] 2021-03-03
 
 ### Changed
+
 - Bumped MC to 10.0
 - Change "edit" button in cluster list to "check progress" when cluster is busy
 
 ## [v7.3] 2021-01-30
 
 ### Added
+
 - Added "copy to clipboard" button in the cluster details section
 
 ### Changed
+
 - Bumped MC to 9.3
 
 ### Fixed
+
 - Fixed small bug in the cluster list's password toggle button
 
 ## [v7.2.1] 2021-01-13
 
 ### Changed
+
 - Bumped MC to 9.2
 
 ### Fixed
+
 - Avoids trying to parse terraform.tfstate file when the cluster is busy
 
 ## [v7.2.0] 2021-01-13
 
 ### Added
+
 - Added detailed flavor descriptions to the cluster editor
 - Added possibility to authorize multiple SSH public keys per cluster
 
 ### Changed
+
 - Faster and cleaner Magic Castle configuration parsing
 
 ## [v7.1.0] 2021-01-12
 
 ### Added
+
 - Added details section in the cluster list
 
 ### Changed
+
 - Bumped npm to 12.20
 
 ### Security
+
 - Bumped Axios to 0.21.1
 
 ## [v7.0.0] 2020-12-16
 
 ### Added
+
 - Added Mokey link
 
 ### Changed
+
 - Bumped MC to 9.1
 - Bumped Terraform to 0.13.5
 
 ## Fixed
+
 - Fixed cluster destruction when using a deprecated image
 - Avoid using CentOS 8 as the default image
 
 ## [v6.1.4] 2020-11-29
 
 ### Fixed
+
 - Initial state of select boxes in cluster editor based on available resources
 
 ### Security
+
 - Bumped highlight.js to 9.18.5
 
 ## [v6.1.3] 2020-11-27
 
 ### Fixed
+
 - Avoid buffering the output stream of cluster status logs
 - Updated live cluster test's CentOS image version
 
 ## [v6.1.2] 2020-11-13
 
 ### Fixed
+
 - Added session expiration dialog on network errors
 
 ## [v6.1.1] 2010-10-30
 
 ### Fixed
+
 - Added missing git dependency to production Docker image
 
 ## [v6.1.0] 2020-10-30
 
 ### Added
+
 - Added cluster status logging for analytics
 
 ### Changed
+
 - Magic Castle releases are now fetched from Github
 - Cluster provisioning polling interval changed to 30 seconds
 - Bumped Magic Castle to 8.3
 
 ### Fixed
+
 - Fixed clusters' backward compatibility with older versions of Magic Castle
 - Fixed puppet-magic_castle version by specifying the puppetenv_rev variable
 - Fixed expired session handling by refreshing the page on session expiration
@@ -193,55 +240,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [v6.0.3] 2020-10-15
 
 ### Fixed
+
 - Fixed dangling threads in integration tests
 
 ## [v6.0.2] 2020-10-15
 
 ### Fixed
+
 - Fixed bug in unit tests
 
 ## [v6.0.1] 2020-10-15
 
 ### Changed
+
 - Bumped Magic Castle to 8.2
 
 ## [v6.0.0] 2020-10-04
 
 ### Added
+
 - Added Puppet provisioning status checking
 - Added JupyterHub and FreeIPA links to the UI after a successful provisioning
 
 ### Removed
+
 - Removed outdated documentation
 - Removed unused Idle cluster status code
-- Removed build_success status code, replaced with provisioning_* status codes
+- Removed build*success status code, replaced with provisioning*\* status codes
 
 ### Fixed
+
 - Fixed Alpine Linux packages version pinning in Dockerfile
 
 ### Security
+
 - Updated serialize-javascript to v3.1.0
 - Updated node-forge to v0.10.0
 
 ## [v5.2.0] 2020-09-03
 
 ### Changed
+
 - Changed project name to MC Hub
 
 ## [v5.1.0] 2020-08-20
 
 ### Added
+
 - Added SSH public key validation in the frontend
 - Added Jest frontend tests
 
 ### Changed
+
 - Changed the hostname display for existing clusters in the frontend
 - Split ClusterEditor component in two smaller components
 
 ### Removed
+
 - Removed ptvsd (VS Code debugger) from development-server Docker image
 
 ### Fixed
+
 - Fixed bug resulting in the plan type not being always updated in the database
 - Cancelling cluster destruction redirects to the cluster list page
 - Fixed guest password text field showing wrong password
@@ -249,22 +308,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [v5.0.2] 2020-08-05
 
 ### Fixed
+
 - Fixed run instructions in README
 
 ## [v5.0.1] 2020-08-04
 
 ### Fixed
+
 - Fixed production-server image unable to load DNS module with Git
 - Using a dynamic cluster name for live cluster tests to avoid rate limiting from Let's Encrypt
 
 ## [v5.0.0] 2020-08-04
 
 ### Added
+
 - Added support for Magic Castle's DNS module
 - Added configuration.json configuration file
 - Added a Cancel button in the cluster editor
 
 ### Changed
+
 - A cluster's domain must be selected from a preconfigured list of allowed domains
 - Started using Magic Castle version 8.1
 - Improved button labelling in the cluster editor
@@ -272,17 +335,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Changed Spawn and Modify buttons for Apply
 
 ### Removed
+
 - Removed the Destroy button in the cluster editor (only in the cluster list now)
 
 ### Fixed
+
 - Fixed bug that caused the floating IP not being filled in when the initial plan is cancelled
 
 ### Security
+
 - Updated elliptic package from version 6.5.2 to version 6.5.3
 
 ## [v4.0.0] 2020-07-29
 
 ### Added
+
 - Added automatic schema migration on server start to update the database schema to the latest version
 - Added database volume to persist the SQLite database file
 - Added magic_castles table for storing information about each Magic Castle cluster
@@ -292,38 +359,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added guest password generation button to the cluster editor
 
 ### Changed
+
 - Cluster's status and plan_type are now stored in a SQLite database instead of regular files
 - Changed API resource /api/magic-castle for /api/magic-castles
 
 ### Fixed
+
 - Fixed single page application shown even when the user is logged out (due to page caching)
 
 ## [v3.0.3] 2020-07-23
 
 ### Added
+
 - Added SAML & HTTPS wiki link in README
 
 ### Fixed
+
 - Updated lodash from 4.17.15 to 4.17.19 in /frontend
 - Fixed KeyError in TerraformPlanParser when resource was being updated
 
 ## [v3.0.2] 2020-07-13
 
 ### Changed
+
 - Api hostname and port in the frontend is now relative to the current host, instead of being hardcoded
 
 ## [v3.0.1] 2020-07-10
 
 ### Added
+
 - Magic Castle configuration can be parsed from main.tf.json when terraform.tfstate does not exist
 
 ### Fixed
+
 - Fixed bug that cluster could not be built when the first creation plan was cancelled
 - Fixed bug that some errored builds lead to empty public_keys list in the parsed configuration
 
 ## [v3.0.0] 2020-07-09
 
 ### Added
+
 - Added the list of existing clusters
 - Added a progress display for all cluster creation, modification and destruction
 - Added a confirmation box of terraform plan before creating, modifying or destroying a cluster
@@ -337,6 +412,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added automated OpenStack api connection testing on server startup
 
 ### Changed
+
 - Using clouds.yaml instead of openrc file
 - Dockerfile can now produce two images: one for production and one for development
 - Domain name modification disabled on existing clusters
@@ -345,7 +421,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Backend API now uses Method Views instead of Flask Restful
 
 ### Removed
+
 - start.sh script
 
 ### Security
+
 - Added string sanitization to main.tf.json
