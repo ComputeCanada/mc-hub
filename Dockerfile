@@ -17,7 +17,7 @@ RUN apt-get update && \
 
 ## Python requirements
 RUN python3 -m venv /venv
-ADD poetry.lock pyproject.toml /venv
+ADD poetry.lock pyproject.toml /venv/
 WORKDIR /venv
 ENV VIRTUAL_ENV=/venv
 RUN /venv/bin/pip install poetry && \
