@@ -71,6 +71,7 @@ ENV MAGIC_CASTLE_PATH=/magic_castle
 ENV MAGIC_CASTLE_VERSION=11.9.3
 RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz -o magic_castle.tar.gz && \
     tar xvf magic_castle.tar.gz && \
+    chown -R root:root /magic_castle && \
     mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
     rm magic_castle.tar.gz
 
