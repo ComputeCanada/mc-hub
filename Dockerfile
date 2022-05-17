@@ -15,15 +15,20 @@ FROM python:3.10-slim-bullseye as base-server
 RUN apt-get update && \
     apt-get install  --no-install-recommends -y curl git gcc linux-libc-dev libc6-dev unzip
 
+ENV POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_CACHE_DIR='/var/cache/pypoetry' \
+    POETRY_HOME='/usr/local'
+
 ## Python requirements
-RUN python3 -m venv /venv
-ADD poetry.lock pyproject.toml /venv/
-WORKDIR /venv
-ENV VIRTUAL_ENV=/venv
-RUN /venv/bin/pip install poetry && \
-    /venv/bin/poetry install
-# Install app in venv
-ADD mchub /venv/lib/python3.10/site-packages/mchub
+RUN mkdir /code
+WORKDIR /code
+ADD poetry.lock pyproject.toml /code/
+COPY mchub /code/mchub
+RUN pip install poetry && \
+    poetry install --no-dev --no-ansi && \
+    pip uninstall -y poetry && \
+    rm -rf /var/cache/pypoetry
 
 RUN apt-get purge -y gcc linux-libc-dev libc6-dev && \
     apt-get -y purge --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
@@ -38,17 +43,13 @@ USER mcu
 WORKDIR /home/mcu
 RUN mkdir /home/mcu/database
 RUN mkdir /home/mcu/credentials
-RUN mkdir /home/mcu/tests
-## Python backend src
-ADD tests /home/mcu/tests
 
 ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
-
 
 FROM base-server as cleanup-daemon
 USER mcu
 
-CMD /venv/bin/python -m mchub.services.cull_expired_cluster
+CMD python3 -m mchub.services.cull_expired_cluster
 
 ## PRODUCTION IMAGE
 FROM base-server as production-server
@@ -83,6 +84,6 @@ RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
 
 ENV MCH_DIST_PATH=/frontend
 
-CMD /venv/bin/python -m mchub.schema_update --clean && \
-    /venv/bin/python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
-#CMD /home/mcu/venv/bin/python -m mchub.wsgi
+CMD python3 -m mchub.schema_update --clean && \
+    python3 -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
+#CMD python3 -m mchub.wsgi
