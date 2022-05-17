@@ -18,7 +18,6 @@ ENV POETRY_VIRTUALENVS_CREATE=false \
     POETRY_HOME='/usr/local'
 
 ## Python requirements
-RUN mkdir /code
 WORKDIR /code
 ADD poetry.lock pyproject.toml /code/
 COPY mchub /code/mchub
