@@ -12,9 +12,6 @@ RUN npm run build
 
 FROM python:3.10-slim-bullseye as base-server
 
-RUN apt-get update && \
-    apt-get install  --no-install-recommends -y curl git gcc linux-libc-dev libc6-dev unzip
-
 ENV POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR='/var/cache/pypoetry' \
@@ -25,24 +22,22 @@ RUN mkdir /code
 WORKDIR /code
 ADD poetry.lock pyproject.toml /code/
 COPY mchub /code/mchub
-RUN pip install poetry && \
+
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y curl git gcc linux-libc-dev libc6-dev unzip && \
+    pip install poetry && \
     poetry install --no-dev --no-ansi && \
     pip uninstall -y poetry && \
-    rm -rf /var/cache/pypoetry
-
-RUN apt-get purge -y gcc linux-libc-dev libc6-dev && \
+    rm -rf /var/cache/pypoetry && \
+    apt-get purge -y gcc linux-libc-dev libc6-dev && \
     apt-get -y purge --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
     apt-get clean && \
     rm -rf /root/.cache /root/.cargo /tmp/* /var/lib/apt/lists/*
 
 ## Magic Castle User
-RUN adduser --disabled-password mcu
-RUN mkdir -p /home/mcu && chown -R mcu:mcu /home/mcu
-
-USER mcu
-WORKDIR /home/mcu
-RUN mkdir /home/mcu/database
-RUN mkdir /home/mcu/credentials
+RUN adduser --disabled-password mcu && \
+    mkdir -p /home/mcu && \
+    chown -R mcu:mcu /home/mcu
 
 ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
 
@@ -77,7 +72,8 @@ RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MA
     rm magic_castle.tar.gz
 
 USER mcu
-RUN mkdir /home/mcu/clusters
+WORKDIR /home/mcu
+RUN mkdir /home/mcu/clusters /home/mcu/database /home/mcu/credentials
 
 ADD .terraformrc /home/mcu
 RUN mkdir -p /home/mcu/.terraform.d/plugin-cache
