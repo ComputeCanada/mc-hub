@@ -1,6 +1,6 @@
 ## FRONTEND BUILD STAGE
 
-FROM node:14-bullseye as frontend-build-stage
+FROM node:18-bullseye as frontend-build-stage
 
 WORKDIR /frontend
 ADD frontend .
@@ -59,9 +59,9 @@ CMD python3 -m mchub.services.cull_expired_cluster
 FROM base-server as production-server
 
 USER root
-COPY --from=frontend-build-stage /frontend/dist /code/frontend
 COPY --from=backend-build-stage /magic_castle /magic_castle
 COPY --from=backend-build-stage /usr/local/bin/terraform /usr/local/bin/terraform
+COPY --from=frontend-build-stage /frontend/dist /code/frontend
 
 USER mcu
 WORKDIR /home/mcu
