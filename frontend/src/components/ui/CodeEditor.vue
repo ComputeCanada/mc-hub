@@ -2,14 +2,16 @@
   <div>
     <div class="code-placeholder" v-show="showPlaceholder">{{ placeholder }}</div>
     <div ref="codeEditorWrapper" class="mb-2">
-      <div class="code-editor"></div>
+      <div id="editor" class="code-editor"></div>
     </div>
     <v-messages :value="errorMessages" color="error" />
   </div>
 </template>
 
 <script>
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+// import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import loader from "@monaco-editor/loader";
+
 import { VMessages, VInput } from "vuetify/lib";
 import jsYaml from "js-yaml";
 import { capitalize } from "lodash";
@@ -67,34 +69,38 @@ export default {
     },
   },
   mounted() {
-    monaco.editor.defineTheme("mc-hub", {
-      base: "vs",
-      inherit: true,
-      colors: {
-        "editor.background": "#f9f9f9",
-      },
-      rules: [],
-    });
-    this.editor = monaco.editor.create(this.$refs.codeEditorWrapper.querySelector(".code-editor"), {
-      value: this.value,
-      theme: "mc-hub",
-      language: this.language,
-      automaticLayout: true,
-      lineNumbers: "on",
-      folding: false,
-      glyphMargin: false,
-      minimap: {
-        enabled: false,
-      },
-    });
-    this.editor.onDidChangeModelContent(() => {
-      const code = this.editor.getValue();
-      this.$emit("input", code);
+    loader.init().then((monaco) => {
+      monaco.editor.defineTheme("mc-hub", {
+        base: "vs",
+        inherit: true,
+        colors: {
+          "editor.background": "#f9f9f9",
+        },
+        rules: [],
+      });
 
-      this.errorMessages = [];
-    });
-    this.editor.onDidBlurEditorText(() => {
-      this.validateCode();
+      const editorOptions = {
+        value: this.value,
+        theme: "mc-hub",
+        language: this.language,
+        automaticLayout: true,
+        lineNumbers: "on",
+        folding: false,
+        glyphMargin: false,
+        minimap: {
+          enabled: false,
+        },
+      };
+      this.editor = monaco.editor.create(document.getElementById("editor"), editorOptions);
+      this.editor.onDidChangeModelContent(() => {
+        const code = this.editor.getValue();
+        this.$emit("input", code);
+
+        this.errorMessages = [];
+      });
+      this.editor.onDidBlurEditorText(() => {
+        this.validateCode();
+      });
     });
   },
   methods: {
