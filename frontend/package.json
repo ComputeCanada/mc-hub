@@ -40,5 +40,8 @@
     "vue-jest": "^3.0.6",
     "vue-template-compiler": "^2.6.12",
     "vuetify-loader": "^1.6.0"
-  }
+  },
+  "browserslist": [
+    "defaults"
+  ]
 }
