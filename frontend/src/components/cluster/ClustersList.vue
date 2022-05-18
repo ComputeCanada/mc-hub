@@ -150,7 +150,7 @@ export default {
       loading: true,
       expandedRows: [],
       expandedContentColor: "#C0341D",
-
+      mcStatusPromise: null,
       magicCastles: [],
     };
   },
@@ -195,7 +195,7 @@ export default {
   },
   methods: {
     startStatusPolling() {
-      let fetchStatus = () => {
+      const fetchStatus = () => {
         this.loadMagicCastlesStatus();
       };
       this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
@@ -205,8 +205,12 @@ export default {
       clearInterval(this.statusPoller);
     },
     async loadMagicCastlesStatus() {
-      this.magicCastles = (await MagicCastleRepository.getAll()).data;
-      this.loading = false;
+      if (this.mcStatusPromise === null) {
+        this.mcStatusPromise = MagicCastleRepository.getAll();
+        this.magicCastles = (await this.mcStatusPromise).data;
+        this.loading = false;
+        this.mcStatusPromise = null;
+      }
     },
     async destroyCluster(hostname) {
       await this.$router.push({
