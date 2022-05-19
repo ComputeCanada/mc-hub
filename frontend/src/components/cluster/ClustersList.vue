@@ -115,14 +115,16 @@
                   <v-icon class="mr-2">mdi-list-status</v-icon>
                   Check progress
                 </v-btn>
-                <v-btn v-else color="secondary" text :to="`/clusters/${item.hostname}`">
-                  <v-icon class="mr-2">mdi-pencil</v-icon>
-                  Edit
-                </v-btn>
-                <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
-                  <v-icon class="mr-2">mdi-delete</v-icon>
-                  Delete
-                </v-btn>
+                <div v-else>
+                  <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
+                    <v-icon class="mr-2">mdi-pencil</v-icon>
+                    Edit
+                  </v-btn>
+                  <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
+                    <v-icon class="mr-2">mdi-delete</v-icon>
+                    Delete
+                  </v-btn>
+                </div>
               </v-row>
             </v-container>
           </td>
