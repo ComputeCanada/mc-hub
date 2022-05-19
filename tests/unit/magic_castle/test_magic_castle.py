@@ -313,7 +313,7 @@ def test_dump_configuration_not_found(database_connection):
         magic_castle.dump_configuration()
 
 
-def test_get_allocated_resources_valid(database_connection):
+def test_allocated_resources_valid(database_connection):
     """
     Mock context :
 
@@ -339,7 +339,7 @@ def test_get_allocated_resources_valid(database_connection):
     200 GiB of volume storage
     """
     magic_castle = MagicCastle("valid1.calculquebec.cloud")
-    assert magic_castle.get_allocated_resources() == {
+    assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 3,
         "pre_allocated_ram": 15360,
         "pre_allocated_cores": 10,
@@ -348,14 +348,14 @@ def test_get_allocated_resources_valid(database_connection):
     }
 
 
-def test_get_allocated_resources_empty(database_connection):
+def test_allocated_resources_empty(database_connection):
     """
     Mock context :
 
     empty cluster uses 0 vcpus, 0 ram, 0 volume
     """
     magic_castle = MagicCastle("empty.calculquebec.cloud")
-    assert magic_castle.get_allocated_resources() == {
+    assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,
         "pre_allocated_ram": 0,
         "pre_allocated_cores": 0,
@@ -364,7 +364,7 @@ def test_get_allocated_resources_empty(database_connection):
     }
 
 
-def test_get_allocated_resources_missing_nodes(database_connection):
+def test_allocated_resources_missing_nodes(database_connection):
     """
     Mock context :
 
@@ -377,7 +377,7 @@ def test_get_allocated_resources_missing_nodes(database_connection):
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
     """
     magic_castle = MagicCastle("missingnodes.c3.ca")
-    assert magic_castle.get_allocated_resources() == {
+    assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,
         "pre_allocated_ram": 0,
         "pre_allocated_cores": 0,
@@ -386,14 +386,14 @@ def test_get_allocated_resources_missing_nodes(database_connection):
     }
 
 
-def test_get_allocated_resources_not_found(database_connection):
+def test_allocated_resources_not_found(database_connection):
     """
     Mock context :
 
     empty cluster uses 0 vcpus, 0 ram, 0 volume
     """
     magic_castle = MagicCastle()
-    assert magic_castle.get_allocated_resources() == {
+    assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,
         "pre_allocated_ram": 0,
         "pre_allocated_cores": 0,

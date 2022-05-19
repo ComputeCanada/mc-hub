@@ -3,7 +3,6 @@ from .. exceptions.invalid_usage_exception import InvalidUsageException
 from .. models.magic_castle.cluster_status_code import ClusterStatusCode
 from .. models.user.user import User
 
-
 class ProgressAPI(ApiView):
     def get(self, user: User, hostname):
         try:

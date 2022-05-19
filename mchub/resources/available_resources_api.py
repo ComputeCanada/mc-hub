@@ -10,6 +10,6 @@ class AvailableResourcesApi(ApiView):
         if hostname:
             mc = user.get_magic_castle_by_hostname(hostname)
             cloud_id = mc.cloud_id
-            allocated_resources = mc.get_allocated_resources()
+            allocated_resources = mc.allocated_resources
         cloud = CloudManager(cloud_id=cloud_id, **allocated_resources)
         return cloud.available_resources

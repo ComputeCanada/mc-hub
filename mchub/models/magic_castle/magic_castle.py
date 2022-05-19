@@ -65,6 +65,7 @@ class MagicCastle:
     __plan_type = None
     created = None
     _path = None
+    _tf_state = None
     _main_file = None
     expiration_date = None
     cloud_id = None
@@ -262,57 +263,41 @@ class MagicCastle:
             **self.dump_configuration(),
             "hostname": self.hostname,
             "status": self.status.value,
-            "freeipa_passwd": self.get_freeipa_passwd(),
+            "freeipa_passwd": self.freeipa_passwd,
             "owner": self.owner.username,
             "age": self.age,
             "expiration_date": self.expiration_date,
             "cloud_id": self.cloud_id,
         }
 
-    def get_freeipa_passwd(self):
-        if self.is_busy:
+    @property
+    def freeipa_passwd(self):
+        if self.tf_state is not None:
+            return self.tf_state.freeipa_passwd
+        else:
             return None
 
-        try:
-            with open(
-                path.join(self._path, TERRAFORM_STATE_FILENAME), "r"
-            ) as terraform_state_file:
-                state = json.load(terraform_state_file)
-                return TerraformStateParser(state).get_freeipa_passwd()
-        except FileNotFoundError:
-            return None
-
-    def get_allocated_resources(self):
+    @property
+    def allocated_resources(self):
         if self.is_busy:
             raise BusyClusterException
 
-        allocated_resources = dict(
-            pre_allocated_instance_count=0,
-            pre_allocated_ram=0,
-            pre_allocated_cores=0,
-            pre_allocated_volume_count=0,
-            pre_allocated_volume_size=0,
-        )
-
-        if self._path:
-            try:
-                with open(
-                    path.join(self._path, TERRAFORM_STATE_FILENAME), "r"
-                ) as terraform_state_file:
-                    state = json.load(terraform_state_file)
-            except FileNotFoundError:
-                pass
-            else:
-                parser = TerraformStateParser(state)
-                allocated_resources = dict(
-                    pre_allocated_instance_count=parser.get_instance_count(),
-                    pre_allocated_ram=parser.get_ram(),
-                    pre_allocated_cores=parser.get_cores(),
-                    pre_allocated_volume_count=parser.get_volume_count(),
-                    pre_allocated_volume_size=parser.get_volume_size(),
-                )
-
-        return allocated_resources
+        if self.tf_state is not None:
+            return dict(
+                pre_allocated_instance_count=self.tf_state.instance_count,
+                pre_allocated_ram=self.tf_state.ram,
+                pre_allocated_cores=self.tf_state.cores,
+                pre_allocated_volume_count=self.tf_state.volume_count,
+                pre_allocated_volume_size=self.tf_state.volume_size,
+            )
+        else:
+            return dict(
+                pre_allocated_instance_count=0,
+                pre_allocated_ram=0,
+                pre_allocated_cores=0,
+                pre_allocated_volume_count=0,
+                pre_allocated_volume_size=0,
+            )
 
     @property
     def is_busy(self):
@@ -479,6 +464,20 @@ class MagicCastle:
 
         self.status = previous_status
 
+    @property
+    def tf_state(self):
+        if self._tf_state is None and self._path is not None:
+            try:
+                with open(
+                    path.join(self._path, TERRAFORM_STATE_FILENAME), "r"
+                ) as terraform_state_file:
+                    state = json.load(terraform_state_file)
+            except FileNotFoundError:
+                self._tf_state = None
+            else:
+                self._tf_state = TerraformStateParser(state)
+        return self._tf_state
+
     def apply(self):
         if not self.found:
             raise ClusterNotFoundException
@@ -530,6 +529,7 @@ class MagicCastle:
                 else:
                     self.status = ClusterStatusCode.BUILD_ERROR
             else:
+                self._tf_state = None
                 if destroy:
                     self.delete()
                 else:

@@ -3,7 +3,6 @@ from . api_view import ApiView
 from .. exceptions.invalid_usage_exception import InvalidUsageException
 from .. models.user.user import User
 
-
 class MagicCastleAPI(ApiView):
     def get(self, user: User, hostname):
         if hostname:
