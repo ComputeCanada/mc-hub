@@ -94,6 +94,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import UserRepository from "@/repositories/UserRepository";
+import { isEqual } from "lodash";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "",
@@ -269,9 +270,9 @@ export default {
         case ClusterStatusCode.PROVISIONING_RUNNING:
           this.provisioningRunningDialog = true;
           break;
-        case ClusterStatusCode.PROVISIONING_SUCCESS:
-          this.successDialog = true;
-          break;
+        // case ClusterStatusCode.PROVISIONING_SUCCESS:
+        // this.successDialog = true;
+        // break;
         case ClusterStatusCode.BUILD_ERROR:
           this.errorDialog = true;
           this.showError("An error occurred while creating the cluster.");
@@ -356,7 +357,7 @@ export default {
 
         // Fetch plan
         const { message, progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        this.resourcesChanges = progress || [];
+        this.resourcesChanges = progress.filter((resource) => !isEqual(resource.change.actions, ["no-op"])) || [];
         this.clusterPlanRunningDialog = false;
 
         // Display plan
@@ -364,8 +365,10 @@ export default {
           this.showError(message);
         } else if (options.destroy === true) {
           this.clusterDestructionDialog = true;
-        } else {
+        } else if (this.resourcesChanges.length !== 0) {
           this.clusterModificationDialog = true;
+        } else {
+          this.applyCluster();
         }
       } catch (e) {
         this.clusterPlanRunningDialog = false;
