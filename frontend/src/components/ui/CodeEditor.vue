@@ -9,7 +9,6 @@
 </template>
 
 <script>
-// import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import loader from "@monaco-editor/loader";
 
 import { VMessages, VInput } from "vuetify/lib";

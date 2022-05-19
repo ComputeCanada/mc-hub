@@ -472,7 +472,7 @@ class MagicCastle:
                     path.join(self._path, TERRAFORM_STATE_FILENAME), "r"
                 ) as terraform_state_file:
                     state = json.load(terraform_state_file)
-            except FileNotFoundError:
+            except (FileNotFoundError, json.decoder.JSONDecodeError):
                 self._tf_state = None
             else:
                 self._tf_state = TerraformStateParser(state)

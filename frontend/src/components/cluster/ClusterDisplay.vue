@@ -236,7 +236,7 @@ export default {
       const statusAlreadyInitialized = this.currentStatus !== null;
       const planWasRunning = this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
 
-      const oldStatus = this.currentStatus;
+      // const oldStatus = this.currentStatus;
       this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
       const { status, progress } = (await this.statusPromise).data;
       this.statusPromise = null;
@@ -245,20 +245,15 @@ export default {
 
       if (!this.busy) {
         this.stopStatusPolling();
-      }
-
-      if (oldStatus !== this.currentStatus) {
         if (statusAlreadyInitialized && !planWasRunning) {
           // We avoid displaying any status dialog after plan generation,
           // because the new status may be the same as before the plan creation.
           this.showStatusDialog();
         }
-        if (!this.busy) {
-          if (status == ClusterStatusCode.NOT_FOUND) {
-            this.goHome();
-          } else {
-            await this.loadCluster();
-          }
+        if (status == ClusterStatusCode.NOT_FOUND) {
+          this.goHome();
+        } else {
+          await this.loadCluster();
         }
       }
     },
