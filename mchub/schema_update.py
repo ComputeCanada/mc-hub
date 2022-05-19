@@ -13,7 +13,6 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
 
     # Update the database schema to the latest version
-    with DatabaseManager.connect() as database_connection:
-        SchemaManager(database_connection).update_schema()
-        if arguments.clean:
-            CleanupManager(database_connection).clean_status()
+    SchemaManager.update_schema()
+    if arguments.clean:
+        CleanupManager.clean_status()
