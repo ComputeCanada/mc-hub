@@ -171,6 +171,7 @@ export default {
       magicCastle: null,
       user: null,
       loading: false,
+      statusPromise: null,
     };
   },
   async created() {
@@ -209,14 +210,6 @@ export default {
         ClusterStatusCode.PLAN_RUNNING,
       ].includes(this.currentStatus);
     },
-    requiresPolling() {
-      return [
-        ClusterStatusCode.DESTROY_RUNNING,
-        ClusterStatusCode.BUILD_RUNNING,
-        ClusterStatusCode.PROVISIONING_RUNNING,
-        ClusterStatusCode.PLAN_RUNNING,
-      ].includes(this.currentStatus);
-    },
     applyRunning() {
       return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     },
@@ -236,40 +229,42 @@ export default {
     updateProgress(progress) {
       this.progress = progress;
     },
-    startStatusPolling() {
-      let fetchStatus = async () => {
-        const statusAlreadyInitialized = this.currentStatus !== null;
-        const planWasRunning = this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
+    async fetchStatus() {
+      if (this.statusPromise !== null) {
+        return;
+      }
+      const statusAlreadyInitialized = this.currentStatus !== null;
+      const planWasRunning = this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
 
-        const { status, progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        const statusChanged = status !== this.currentStatus;
-        this.currentStatus = status;
-        this.resourcesChanges = progress || [];
+      const oldStatus = this.currentStatus;
+      this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
+      const { status, progress } = (await this.statusPromise).data;
+      this.statusPromise = null;
+      this.currentStatus = status;
+      this.resourcesChanges = progress || [];
 
-        if (statusChanged) {
-          if (statusAlreadyInitialized && !planWasRunning) {
-            // We avoid displaying any status dialog after plan generation,
-            // because the new status may be the same as before the plan creation.
-            this.showStatusDialog();
-          }
-          if (!this.requiresPolling) {
-            this.stopStatusPolling();
-          }
-          if (!this.busy) {
-            if (status == ClusterStatusCode.NOT_FOUND) {
-              this.goHome();
-            } else {
-              await Promise.all([this.loadCluster()]);
-            }
+      if (!this.busy) {
+        this.stopStatusPolling();
+      }
+
+      if (oldStatus !== this.currentStatus) {
+        if (statusAlreadyInitialized && !planWasRunning) {
+          // We avoid displaying any status dialog after plan generation,
+          // because the new status may be the same as before the plan creation.
+          this.showStatusDialog();
+        }
+        if (!this.busy) {
+          if (status == ClusterStatusCode.NOT_FOUND) {
+            this.goHome();
+          } else {
+            await this.loadCluster();
           }
         }
-      };
-
-      // Avoid two status pollers running concurrently
-      this.stopStatusPolling();
-
-      this.statusPoller = setInterval(fetchStatus, POLL_STATUS_INTERVAL);
-      fetchStatus();
+      }
+    },
+    startStatusPolling() {
+      this.statusPoller = setInterval(this.fetchStatus, POLL_STATUS_INTERVAL);
+      this.fetchStatus();
     },
     stopStatusPolling() {
       clearInterval(this.statusPoller);
