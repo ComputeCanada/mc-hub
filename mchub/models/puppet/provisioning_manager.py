@@ -17,9 +17,9 @@ class ProvisioningManager:
     def check_online(self, hostname):
         try:
             return (
-                requests.head(f"https://jupyter.{hostname}", timeout=0.1).status_code == 200 and
-                requests.head(f"https://ipa.{hostname}", timeout=0.1).status_code == 200     and
-                requests.head(f"https://mokey.{hostname}", timeout=0.1).status_code == 200
+                requests.head(f"https://jupyter.{hostname}", timeout=0.1).status_code == 405 and
+                requests.head(f"https://ipa.{hostname}", timeout=0.1).status_code == 301     and
+                requests.head(f"https://mokey.{hostname}", timeout=0.1).status_code == 405
             )
         except ConnectionError:
             return False
