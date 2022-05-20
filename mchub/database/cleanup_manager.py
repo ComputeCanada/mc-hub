@@ -1,4 +1,3 @@
-import sqlite3
 from .. models.magic_castle.magic_castle import MagicCastle
 from .. models.magic_castle.cluster_status_code import ClusterStatusCode
 from . database_manager import DatabaseManager

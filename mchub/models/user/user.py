@@ -1,5 +1,3 @@
-import sqlite3
-
 from typing import List
 
 from .. magic_castle.magic_castle import MagicCastle

@@ -55,7 +55,7 @@ def database_connection(mocker):
         )
 
         # Creating the DB schema
-        SchemaManager(database_connection).update_schema()
+        SchemaManager().update_schema()
 
         # Seeding test data
         test_magic_castle_rows_with_owner = [
@@ -140,8 +140,7 @@ def database_connection(mocker):
 
 @pytest.fixture
 def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return lambda database_connection: AuthenticatedUser(
-        database_connection,
+    return AuthenticatedUser(
         edu_person_principal_name="alice@computecanada.ca",
         given_name="Alice",
         surname="Tremblay",
@@ -152,8 +151,7 @@ def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture
 def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return lambda database_connection: AuthenticatedUser(
-        database_connection,
+    return AuthenticatedUser(
         edu_person_principal_name="bob12.bobby@computecanada.ca",
         given_name="Bob",
         surname="Rodriguez",
@@ -164,8 +162,7 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 @pytest.fixture
 def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return lambda database_connection: AuthenticatedUser(
-        database_connection,
+    return AuthenticatedUser(
         edu_person_principal_name="the-admin@computecanada.ca",
         given_name="Admin",
         surname="Istrator",

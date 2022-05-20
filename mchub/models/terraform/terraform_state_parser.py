@@ -34,4 +34,4 @@ class TerraformStateParser:
         try:
             self.freeipa_passwd = parse(self.FREEIPA_PASSWD).find(self.tf_state)[0].value
         except:
-            self.freeipa_passwd = ""
+            self.freeipa_passwd = None

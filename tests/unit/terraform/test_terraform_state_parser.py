@@ -33,77 +33,77 @@ def missing_nodes_state():
     return load_state("missingnodes.c3.ca")
 
 
-def test_get_instance_count_valid(valid_state):
+def test_instance_count_valid(valid_state):
     parser = TerraformStateParser(valid_state)
-    assert parser.get_instance_count() == 3
+    assert parser.instance_count == 3
 
 
-def test_get_instance_count_empty(empty_state):
+def test_instance_count_empty(empty_state):
     parser = TerraformStateParser(empty_state)
-    assert parser.get_instance_count() == 0
+    assert parser.instance_count == 0
 
 
-def test_get_instance_count_missing_nodes(missing_nodes_state):
+def test_instance_count_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
-    assert parser.get_instance_count() == 0
+    assert parser.instance_count == 0
 
 
-def test_get_cores_valid(valid_state):
+def test_cores_valid(valid_state):
     parser = TerraformStateParser(valid_state)
-    assert parser.get_cores() == 4 + 4 + 2
+    assert parser.cores == 4 + 4 + 2
 
 
-def test_get_cores_empty(empty_state):
+def test_cores_empty(empty_state):
     parser = TerraformStateParser(empty_state)
-    assert parser.get_cores() == 0
+    assert parser.cores == 0
 
 
-def test_get_cores_missing_nodes(missing_nodes_state):
+def test_cores_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
-    assert parser.get_cores() == 0
+    assert parser.cores == 0
 
 
-def test_get_ram_valid(valid_state):
+def test_ram_valid(valid_state):
     parser = TerraformStateParser(valid_state)
-    assert parser.get_ram() == 6144 + 6144 + 3072
+    assert parser.ram == 6144 + 6144 + 3072
 
 
-def test_get_ram_empty(empty_state):
+def test_ram_empty(empty_state):
     parser = TerraformStateParser(empty_state)
-    assert parser.get_ram() == 0
+    assert parser.ram == 0
 
 
 def test_get_ram_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
-    assert parser.get_ram() == 0
+    assert parser.ram == 0
 
 
-def test_get_volume_count_valid(valid_state):
+def test_volume_count_valid(valid_state):
     parser = TerraformStateParser(valid_state)
-    assert parser.get_volume_count() == 3
+    assert parser.volume_count == 3
 
 
-def test_get_volume_count_empty(empty_state):
+def test_volume_count_empty(empty_state):
     parser = TerraformStateParser(empty_state)
-    assert parser.get_volume_count() == 0
+    assert parser.volume_count == 0
 
 
-def test_get_volume_count_missing_nodes(missing_nodes_state):
+def test_volume_count_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
-    assert parser.get_volume_count() == 3
+    assert parser.volume_count == 3
 
 
-def test_get_volume_size_valid(valid_state):
+def test_volume_size_valid(valid_state):
     parser = TerraformStateParser(valid_state)
-    assert parser.get_volume_size() == 200
+    assert parser.volume_size == 200
 
 
-def test_get_volume_size_empty(empty_state):
+def test_volume_size_empty(empty_state):
     parser = TerraformStateParser(empty_state)
-    assert parser.get_volume_size() == 0
+    assert parser.volume_size == 0
 
 
-def test_get_volume_size_missing_nodes(missing_nodes_state):
+def test_volume_size_missing_nodes(missing_nodes_state):
     parser = TerraformStateParser(missing_nodes_state)
-    assert parser.get_volume_size() == 200
+    assert parser.volume_size == 200
 
