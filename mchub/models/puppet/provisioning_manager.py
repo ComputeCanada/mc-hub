@@ -13,17 +13,13 @@ class ProvisioningManager:
     completed, if it returns True, the services are online and the cluster is most
     likely online.
     """
-
-    def __init__(self, hostname):
-        self.hostname = hostname
-
-    def check_online(self):
+    @classmethod
+    def check_online(self, hostname):
         try:
             return (
-                requests.get(f"https://jupyter.{self.hostname}").status_code == 200 and
-                requests.get(f"https://ipa.{self.hostname}").status_code == 200     and
-                requests.get(f"https://mokey.{self.hostname}").status_code == 200
+                requests.head(f"https://jupyter.{hostname}", timeout=0.1).status_code == 200 and
+                requests.head(f"https://ipa.{hostname}", timeout=0.1).status_code == 200     and
+                requests.head(f"https://mokey.{hostname}", timeout=0.1).status_code == 200
             )
-
         except ConnectionError:
             return False

@@ -149,7 +149,7 @@ class MagicCastle:
             self.read_db_entry()
 
         if self._status == ClusterStatusCode.PROVISIONING_RUNNING:
-            if ProvisioningManager(self.hostname).check_online():
+            if ProvisioningManager.check_online(self.hostname):
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
             elif MAX_PROVISIONING_TIME < (datetime.datetime.now() - self.created).total_seconds() :
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
