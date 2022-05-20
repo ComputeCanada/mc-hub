@@ -5,9 +5,6 @@ from typing import List
 from .. magic_castle.magic_castle import MagicCastle
 
 class User:
-    def __init__(self, database_connection: sqlite3.Connection):
-        self._database_connection = database_connection
-
     @property
     def full_name(self):
         return None

@@ -6,7 +6,6 @@ from flask.views import MethodView
 from flask import make_response
 
 from .. configuration import config
-from .. database.database_manager import DatabaseManager
 from .. models.auth_type import AuthType
 from .. models.user.anonymous_user import AnonymousUser
 from .. models.user.authenticated_user import AuthenticatedUser
@@ -75,35 +74,33 @@ def compute_current_user(route_handler):
         # with the unit tests where both NONE and SAML are used.
         auth_type = config["auth_type"]
         headers = request.headers
-        with DatabaseManager.connect() as database_connection:
-            if AuthType.TOKEN in auth_type and "Authorization" in headers:
-                m = AUTH_HEADER_PAT.match(headers["Authorization"])
-                if m:
-                    user_token = m.group(1)
-                    if user_token == config["token"]:
-                        user = AnonymousUser(database_connection)
-                    else:
-                        raise UnauthenticatedException
-            elif AuthType.SAML in auth_type and "eduPersonPrincipalName" in headers:
-                try:
-                    # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
-                    # Therefore, special characters and accents in givenName and surname are not correctly decoded.
-                    user = AuthenticatedUser(
-                        database_connection,
-                        edu_person_principal_name=headers["eduPersonPrincipalName"],
-                        given_name=headers["givenName"],
-                        surname=headers["surname"],
-                        mail=headers["mail"],
-                        ssh_public_key=headers.get("sshPublicKey", "")
-                    )
-                except KeyError:
-                    # Missing an authentication header
+        if AuthType.TOKEN in auth_type and "Authorization" in headers:
+            m = AUTH_HEADER_PAT.match(headers["Authorization"])
+            if m:
+                user_token = m.group(1)
+                if user_token == config["token"]:
+                    user = AnonymousUser()
+                else:
                     raise UnauthenticatedException
-            elif AuthType.NONE in auth_type:
-                user = AnonymousUser(database_connection)
-            else:
+        elif AuthType.SAML in auth_type and "eduPersonPrincipalName" in headers:
+            try:
+                # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
+                # Therefore, special characters and accents in givenName and surname are not correctly decoded.
+                user = AuthenticatedUser(
+                    edu_person_principal_name=headers["eduPersonPrincipalName"],
+                    given_name=headers["givenName"],
+                    surname=headers["surname"],
+                    mail=headers["mail"],
+                    ssh_public_key=headers.get("sshPublicKey", "")
+                )
+            except KeyError:
+                # Missing an authentication header
                 raise UnauthenticatedException
-            return route_handler(user, *args, **kwargs)
+        elif AuthType.NONE in auth_type:
+            user = AnonymousUser()
+        else:
+            raise UnauthenticatedException
+        return route_handler(user, *args, **kwargs)
 
     return decorator
 

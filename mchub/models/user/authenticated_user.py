@@ -4,7 +4,7 @@ from . user import User
 from .. magic_castle.magic_castle import MagicCastle
 from ... configuration import config
 from ... configuration.cloud import DEFAULT_CLOUD
-
+from ... database.database_manager import DatabaseManager
 
 class AuthenticatedUser(User):
     """
@@ -17,7 +17,6 @@ class AuthenticatedUser(User):
 
     def __init__(
         self,
-        database_connection,
         *,
         edu_person_principal_name,
         given_name,
@@ -25,7 +24,7 @@ class AuthenticatedUser(User):
         mail,
         ssh_public_key,
     ):
-        super().__init__(database_connection)
+        super().__init__()
         self.edu_person_principal_name = edu_person_principal_name
         self.given_name = given_name
         self.surname = surname
@@ -46,10 +45,11 @@ class AuthenticatedUser(User):
 
     @property
     def projects(self):
-        results = self._database_connection.execute(
-            "SELECT projects FROM users WHERE username = ?",
-            (self.edu_person_principal_name,),
-        ).fetchone()
+        with DatabaseManager.connect() as database_connection:
+            results = database_connection.execute(
+                "SELECT projects FROM users WHERE username = ?",
+                (self.edu_person_principal_name,),
+            ).fetchone()
         if results:
             return json.loads(results[0])
         return [DEFAULT_CLOUD]
@@ -69,7 +69,8 @@ class AuthenticatedUser(User):
         if not self.is_admin():
             query = " ".join([query, "WHERE owner = ?"])
             args += (self.edu_person_principal_name,)
-        results = self._database_connection.execute(query, args)
+        with DatabaseManager.connect() as database_connection:
+            results = database_connection.execute(query, args).fetchall()
         return [MagicCastle(hostname) for hostname, in results]
 
     def create_empty_magic_castle(self):
