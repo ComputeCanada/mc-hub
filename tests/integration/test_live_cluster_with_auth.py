@@ -56,8 +56,7 @@ def setup_module(module):
     database_manager.DATABASE_FILE_PATH = db_filename
 
     # Force creation of database through schema update
-    with database_manager.DatabaseManager.connect() as database_connection:
-        schema_manager.SchemaManager(database_connection).update_schema()
+    schema_manager.SchemaManager.update_schema()
 
 def teardown_module(module):
     # delete temporary database file and folder
