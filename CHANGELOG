@@ -4,7 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v9.3.0] 2022-05-20
+
+### Changed
+
+- Added monaco-loader to reduce chunk-vendor size
+- Limited cluster list polling to one at a time
+- Defined fetchstatus as its own method
+- Limited read of terraform.tfstate
+- Cleaned TerraformStateParser
+- Cleaned CleanupManager and SchemaManager
+- Refactored polling code
+- Removed confirmation when no changes are to be done on the infra
+- Do not show delete button when cluster is busy
+- Remove database_connection from User
+- Limited impact of ProvisioningManager by defining a timeout
+
 ## [v9.2.3] 2022-05-18
+
+### Changed
 
 - Bumped node in Dockerfile to 18
 - Bumped Terraform to 1.1.9 in Dockerfile
