@@ -1,7 +1,8 @@
-from . user import User
-from .. magic_castle.magic_castle import MagicCastle
-from ... configuration.cloud import ALL_CLOUD_ID
-from ... database.database_manager import DatabaseManager
+from .user import User
+from ..magic_castle.magic_castle import MagicCastle, MagicCastleORM
+from ...configuration.cloud import ALL_CLOUD_ID
+from ...database import db
+
 
 class AnonymousUser(User):
     """
@@ -20,14 +21,12 @@ class AnonymousUser(User):
         Retrieve all the Magic Castles retrieved in the database.
         :return: A list of MagicCastle objects
         """
-        with DatabaseManager.connect() as database_connection:
-            results = database_connection.execute(
-                "SELECT hostname FROM magic_castles"
-            ).fetchall()
-        return [MagicCastle(result[0]) for result in results]
+        results = MagicCastleORM.query.all()
+        return [MagicCastle(orm=orm) for orm in results]
 
     def create_empty_magic_castle(self):
         return MagicCastle()
 
     def get_magic_castle_by_hostname(self, hostname):
-        return MagicCastle(hostname)
+        orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+        return MagicCastle(orm=orm)

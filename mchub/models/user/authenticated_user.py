@@ -1,10 +1,11 @@
 import json
 
-from . user import User
-from .. magic_castle.magic_castle import MagicCastle
-from ... configuration import config
-from ... configuration.cloud import DEFAULT_CLOUD
-from ... database.database_manager import DatabaseManager
+from .user import User
+from ..magic_castle.magic_castle import MagicCastle, MagicCastleORM
+from ...configuration import config
+from ...configuration.cloud import DEFAULT_CLOUD
+from ...database import db
+
 
 class AuthenticatedUser(User):
     """
@@ -45,13 +46,13 @@ class AuthenticatedUser(User):
 
     @property
     def projects(self):
-        with DatabaseManager.connect() as database_connection:
-            results = database_connection.execute(
-                "SELECT projects FROM users WHERE username = ?",
-                (self.edu_person_principal_name,),
-            ).fetchone()
-        if results:
-            return json.loads(results[0])
+        # with DatabaseManager.connect() as database_connection:
+        #     results = database_connection.execute(
+        #         "SELECT projects FROM users WHERE username = ?",
+        #         (self.edu_person_principal_name,),
+        #     ).fetchone()
+        # if results:
+        #     return json.loads(results[0])
         return [DEFAULT_CLOUD]
 
     def is_admin(self):
@@ -64,21 +65,19 @@ class AuthenticatedUser(User):
 
         :return: A list of MagicCastle objects
         """
-        query = "SELECT hostname FROM magic_castles"
-        args = ()
-        if not self.is_admin():
-            query = " ".join([query, "WHERE owner = ?"])
-            args += (self.edu_person_principal_name,)
-        with DatabaseManager.connect() as database_connection:
-            results = database_connection.execute(query, args).fetchall()
-        return [MagicCastle(hostname) for hostname, in results]
+        results = MagicCastleORM.query.filter_by(
+            owner=self.edu_person_principal_name
+        ).all()
+        return [MagicCastle(orm=orm) for orm in results]
 
     def create_empty_magic_castle(self):
         return MagicCastle(owner=self.edu_person_principal_name)
 
     def get_magic_castle_by_hostname(self, hostname):
         if not self.is_admin():
-            owner = self.edu_person_principal_name
+            orm = MagicCastleORM.query.filter_by(
+                hostname=hostname, owner=self.edu_person_principal_name
+            ).first()
         else:
-            owner = None
-        return MagicCastle(hostname=hostname, owner=owner)
+            orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+        return MagicCastle(orm=orm)

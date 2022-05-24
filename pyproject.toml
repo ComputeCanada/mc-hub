@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mchub"
-version = "9.2.2"
+version = "9.3.0-rc.1"
 description = ""
 authors = ["Frédéric Fortier-Chouinard", "Félix-Antoine Fortin <felix-antoine.fortin@calculquebec.ca>"]
 license = "BSD 3"
@@ -8,6 +8,8 @@ license = "BSD 3"
 [tool.poetry.dependencies]
 python = "^3.9"
 Flask = "^2.0.3"
+Flask-SQLAlchemy = "^2.5.1"
+SQLAlchemy = "^1.4.36"
 humanize = "^4.0.0"
 marshmallow = "^3.14.1"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
