@@ -51,12 +51,10 @@ class Owner:
 
 
 def terraform_apply(hostname, env, main_path, destroy):
-    from ... import create_app
-
+    log_path = path.join(main_path, TERRAFORM_APPLY_LOG_FILENAME)
+    plan_path = path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME)
     try:
-        with open(
-            path.join(main_path, TERRAFORM_APPLY_LOG_FILENAME), "w"
-        ) as output_file:
+        with open(log_path, "w") as output_file:
             run(
                 [
                     "terraform",
@@ -64,7 +62,7 @@ def terraform_apply(hostname, env, main_path, destroy):
                     "-input=false",
                     "-no-color",
                     "-auto-approve",
-                    path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME),
+                    plan_path,
                 ],
                 cwd=main_path,
                 stdout=output_file,
@@ -72,31 +70,31 @@ def terraform_apply(hostname, env, main_path, destroy):
                 check=True,
                 env=env,
             )
-    except CalledProcessError:
-        logging.info("An error occurred while running terraform apply.")
+    except CalledProcessError as err:
+        logging.info(f"An error occurred while running terraform apply: {err}")
         if destroy:
             status = ClusterStatusCode.DESTROY_ERROR
         else:
             status = ClusterStatusCode.BUILD_ERROR
+        # Disable removal from database
+        destroy = False
     else:
-        if destroy:
-            with create_app().app_context():
-                orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
-                db.session.delete(orm)
-                db.session.commit()
-
-            rmtree(main_path, ignore_errors=True)
-            return
-        else:
+        if not destroy:
             status = ClusterStatusCode.PROVISIONING_RUNNING
     finally:
         # Remove plans
-        remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
-        remove(path.join(main_path, TERRAFORM_PLAN_JSON_FILENAME))
+        from ... import create_app
+
         with create_app().app_context():
             orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
-            orm.plan_type = PlanType.NONE.value
-            orm.status = status.value
+            if destroy:
+                rmtree(main_path, ignore_errors=True)
+                db.session.delete(orm)
+            else:
+                remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
+                remove(path.join(main_path, TERRAFORM_PLAN_JSON_FILENAME))
+                orm.plan_type = PlanType.NONE.value
+                orm.status = status.value
             db.session.commit()
 
 
@@ -310,8 +308,8 @@ class MagicCastle:
             "freeipa_passwd": self.freeipa_passwd,
             "owner": self.owner.username,
             "age": self.age,
-            "expiration_date": self.orm.expiration_date,
-            "cloud_id": self.orm.cloud_id,
+            "expiration_date": self.expiration_date,
+            "cloud_id": self.cloud_id,
         }
 
     @property
@@ -440,7 +438,7 @@ class MagicCastle:
         environment_variables = environ.copy()
         dns_manager = DnsManager(self.domain)
         environment_variables.update(dns_manager.get_environment_variables())
-        environment_variables["OS_CLOUD"] = self.orm.cloud_id
+        environment_variables["OS_CLOUD"] = self.cloud_id
         plan_log = path.join(self.path, TERRAFORM_PLAN_LOG_FILENAME)
         try:
             with open(plan_log, "w") as output_file:
@@ -515,11 +513,10 @@ class MagicCastle:
         if not self.plan_created:
             raise PlanNotCreatedException
 
-        plan_type = self.plan_type
-        if plan_type == PlanType.BUILD:
+        if self.plan_type == PlanType.BUILD:
             self.status = ClusterStatusCode.BUILD_RUNNING
             destroy = False
-        elif plan_type == PlanType.DESTROY:
+        elif self.plan_type == PlanType.DESTROY:
             self.status = ClusterStatusCode.DESTROY_RUNNING
             destroy = True
         else:
