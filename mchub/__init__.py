@@ -4,7 +4,7 @@ from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
 
 
-def create_app():
+def create_app(db_path=None):
     from .configuration import config, DATABASE_FILENAME
     from .configuration.env import DIST_PATH, DATABASE_PATH
     from .database import db
@@ -13,10 +13,10 @@ def create_app():
     from .resources.available_resources_api import AvailableResourcesApi
     from .resources.user_api import UserAPI
 
+    if db_path is None:
+        db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
     app = Flask(__name__)
-    app.config[
-        "SQLALCHEMY_DATABASE_URI"
-    ] = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 

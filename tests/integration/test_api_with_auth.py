@@ -77,7 +77,7 @@ EXISTING_CLUSTER_STATE = {
     "hieradata": "",
     "image": "CentOS-7-x64-2021-11",
     "status": "provisioning_success",
-    "owner": "alice",
+    "owner": "alice@computecanada.ca",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
 }
@@ -99,14 +99,6 @@ BOB_HEADERS = {
 }
 
 IGNORE_FIELDS = ["age"]
-
-
-@pytest.fixture
-def client(mocker):
-    app = create_app()
-    app.config["TESTING"] = True
-    with app.test_client() as client:
-        yield client
 
 
 # GET /api/users/me
@@ -175,7 +167,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "buildplanning.calculquebec.cloud",
         "status": "plan_running",
         "freeipa_passwd": None,
-        "owner": "alice",
+        "owner": "alice@computecanada.ca",
     }
     assert results[1] == {
         "cloud_id": DEFAULT_CLOUD,
@@ -210,7 +202,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "created.calculquebec.cloud",
         "status": "created",
         "freeipa_passwd": None,
-        "owner": "alice",
+        "owner": "alice@computecanada.ca",
     }
     assert results[2] == {
         "cloud_id": DEFAULT_CLOUD,
@@ -245,7 +237,7 @@ def test_get_all_magic_castle_names(client):
         "hostname": "valid1.calculquebec.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
-        "owner": "alice",
+        "owner": "alice@computecanada.ca",
     }
     assert res.status_code == 200
 
@@ -464,47 +456,47 @@ def test_get_status(mocker, client):
     }
 
 
-def test_get_status_code(client, database_connection):
+def test_get_status_code(client):
     res = client.get(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
     assert res.get_json()["status"] == "not_found"
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.BUILD_RUNNING
+    db.session.commit()
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
     assert res.get_json()["status"] == "build_running"
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.PROVISIONING_SUCCESS
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.PROVISIONING_SUCCESS
+    db.session.commit()
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
     assert res.get_json()["status"] == "provisioning_success"
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_ERROR
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.BUILD_ERROR
+    db.session.commit()
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
     assert res.get_json()["status"] == "build_error"
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.DESTROY_RUNNING
+    db.session.commit()
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
     assert res.get_json()["status"] == "destroy_running"
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_ERROR
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.DESTROY_ERROR
+    db.session.commit()
     res = client.get(
         f"/api/magic-castles/{EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
@@ -512,25 +504,25 @@ def test_get_status_code(client, database_connection):
 
 
 # DELETE /api/magic-castles/<hostname>
-def test_delete_invalid_status(database_connection, client):
+def test_delete_invalid_status(client):
     res = client.delete(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.DESTROY_RUNNING
+    db.session.commit()
     res = client.delete(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.BUILD_RUNNING
+    db.session.commit()
     res = client.delete(
         f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
@@ -539,7 +531,7 @@ def test_delete_invalid_status(database_connection, client):
 
 
 # PUT /api/magic-castles/<hostname>
-def test_modify_invalid_status(database_connection, client):
+def test_modify_invalid_status(client):
     res = client.put(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,
@@ -548,9 +540,9 @@ def test_modify_invalid_status(database_connection, client):
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.BUILD_RUNNING
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.BUILD_RUNNING
+    db.session.commit()
     res = client.put(
         f"/api/magic-castles/{EXISTING_HOSTNAME}",
         json=EXISTING_CLUSTER_CONFIGURATION,
@@ -559,9 +551,9 @@ def test_modify_invalid_status(database_connection, client):
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
-    modify_cluster_status(
-        database_connection, EXISTING_HOSTNAME, ClusterStatusCode.DESTROY_RUNNING
-    )
+    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm.status = ClusterStatusCode.DESTROY_RUNNING
+    db.session.commit()
     res = client.put(
         f"/api/magic-castles/{EXISTING_HOSTNAME}",
         json=EXISTING_CLUSTER_CONFIGURATION,
@@ -569,11 +561,3 @@ def test_modify_invalid_status(database_connection, client):
     )
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
-
-
-def modify_cluster_status(database_connection, hostname, status: ClusterStatusCode):
-    database_connection.execute(
-        "UPDATE magic_castles SET status = ? WHERE hostname = ?",
-        (status.value, hostname),
-    )
-    database_connection.commit()

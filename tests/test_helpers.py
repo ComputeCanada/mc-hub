@@ -1,3 +1,4 @@
+from pickle import NONE
 import pytest
 import sqlite3
 
@@ -6,9 +7,13 @@ from os import path
 from shutil import rmtree, copytree
 from typing import Callable
 
-
+from mchub import create_app
+from mchub.database import db
 from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.user import SAMLUser
+from mchub.models.magic_castle.magic_castle import MagicCastleORM
+from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+from mchub.models.magic_castle.plan_type import PlanType
 
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 
@@ -29,111 +34,94 @@ def teardown_mock_clusters(cluster_names):
         rmtree(path.join(MOCK_CLUSTERS_PATH, cluster_name))
 
 
-@pytest.fixture(autouse=True)
-def database_connection(mocker):
-    # Using an in-memory database for faster unit tests with less disk IO
-    mocker.patch("mchub.database.database_manager.DATABASE_FILE_PATH", new=":memory:")
+def create_test_app():
 
-    with DatabaseManager.connect() as database_connection:
-        # The database :memory: only exist within a single connection.
-        # Therefore, the DatabaseConnection object is mocked to always return the same connection.
-        class MockDatabaseConnection:
-            def __init__(self):
-                self.__connection = None
+    app = create_app(db_path="sqlite:///:memory:")
+    with app.app_context():
+        db.create_all()
+        # Using an in-memory database for faster unit tests with less disk IO
 
-            def __enter__(self) -> sqlite3.Connection:
-                return database_connection
-
-            def __exit__(self, type, value, traceback):
-                pass
-
-        mocker.patch(
-            "mchub.database.database_manager.DatabaseManager.connect",
-            return_value=MockDatabaseConnection(),
+        buildplanning = MagicCastleORM(
+            hostname="buildplanning.calculquebec.cloud",
+            plan_type=PlanType.BUILD,
+            status=ClusterStatusCode.PLAN_RUNNING,
+            owner="alice@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
         )
-
-        # Creating the DB schema
-        SchemaManager().update_schema()
-
-        # Seeding test data
-        test_magic_castle_rows_with_owner = [
-            (
-                "buildplanning.calculquebec.cloud",
-                "plan_running",
-                "build",
-                "alice@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "created.calculquebec.cloud",
-                "created",
-                "build",
-                "alice@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "empty.calculquebec.cloud",
-                "build_error",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "empty-state.calculquebec.cloud",
-                "build_error",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "missingfloatingips.c3.ca",
-                "build_running",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "missingnodes.c3.ca",
-                "build_error",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "valid1.calculquebec.cloud",
-                "provisioning_success",
-                "destroy",
-                "alice@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-        ]
-        test_magic_castle_rows_without_owner = [
-            (
-                "noowner.calculquebec.cloud",
-                "provisioning_success",
-                "destroy",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-        ]
-        database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date, cloud_id) values (?, ?, ?, ?, ?, ?)",
-            test_magic_castle_rows_with_owner,
+        created = MagicCastleORM(
+            hostname="created.calculquebec.cloud",
+            status=ClusterStatusCode.CREATED,
+            plan_type=PlanType.BUILD,
+            owner="alice@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
         )
-        database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, status, plan_type, expiration_date, cloud_id) values (?, ?, ?, ?, ?)",
-            test_magic_castle_rows_without_owner,
+        empty_state = MagicCastleORM(
+            hostname="empty-state.calculquebec.cloud",
+            status=ClusterStatusCode.BUILD_ERROR,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
         )
+        empty = MagicCastleORM(
+            hostname="empty.calculquebec.cloud",
+            status=ClusterStatusCode.BUILD_ERROR,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+        )
+        missingfip = MagicCastleORM(
+            hostname="missingfloatingips.c3.ca",
+            status=ClusterStatusCode.BUILD_RUNNING,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+        )
+        missingnodes = MagicCastleORM(
+            hostname="missingnodes.c3.ca",
+            status=ClusterStatusCode.BUILD_ERROR,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+        )
+        valid1 = MagicCastleORM(
+            hostname="valid1.calculquebec.cloud",
+            status=ClusterStatusCode.PROVISIONING_SUCCESS,
+            plan_type=PlanType.DESTROY,
+            owner="alice@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+        )
+        noower = MagicCastleORM(
+            hostname="noowner.calculquebec.cloud",
+            status=ClusterStatusCode.PROVISIONING_SUCCESS,
+            plan_type=PlanType.DESTROY,
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+        )
+        db.session.add(buildplanning)
+        db.session.add(created)
+        db.session.add(empty_state)
+        db.session.add(empty)
+        db.session.add(missingfip)
+        db.session.add(missingnodes)
+        db.session.add(noower)
+        db.session.add(valid1)
+        db.session.commit()
+    return app
 
-        database_connection.commit()
-        yield database_connection
+
+@pytest.fixture
+def client(mocker):
+    app = create_test_app()
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        yield client
 
 
 @pytest.fixture

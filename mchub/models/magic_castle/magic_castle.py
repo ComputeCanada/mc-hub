@@ -478,7 +478,7 @@ class MagicCastle:
 
     @property
     def tf_state(self):
-        if self._tf_state is None and self.path is not None:
+        if self._tf_state is None and self.hostname is not None:
             try:
                 with open(
                     path.join(self.path, TERRAFORM_STATE_FILENAME), "r"

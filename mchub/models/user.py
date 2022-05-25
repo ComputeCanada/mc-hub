@@ -69,7 +69,7 @@ class SAMLUser(User):
         mail,
         ssh_public_key,
     ):
-        username, scope = self.scoped_id.split("@")
+        username, scope = edu_person_principal_name.split("@")
         super().__init__(
             username=username,
             full_name=f"{given_name} {surname}",
