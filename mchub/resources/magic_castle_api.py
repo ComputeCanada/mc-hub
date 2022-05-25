@@ -20,6 +20,7 @@ class MagicCastleAPI(ApiView):
             json_data = request.get_json()
             if not json_data:
                 raise InvalidUsageException("No json data was provided")
+
             magic_castle = user.create_empty_magic_castle()
             magic_castle.plan_creation(json_data)
             return {}

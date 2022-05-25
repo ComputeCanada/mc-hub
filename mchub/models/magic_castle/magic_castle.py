@@ -93,16 +93,16 @@ def terraform_apply(hostname, env, main_path, destroy):
             else:
                 remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
                 remove(path.join(main_path, TERRAFORM_PLAN_JSON_FILENAME))
-                orm.plan_type = PlanType.NONE.value
-                orm.status = status.value
+                orm.plan_type = PlanType.NONE
+                orm.status = status
             db.session.commit()
 
 
 class MagicCastleORM(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(256), unique=True, nullable=False)
-    status = db.Column(db.String(64), nullable=False)
-    plan_type = db.Column(db.String(64))
+    status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
+    plan_type = db.Column(db.Enum(PlanType), default=PlanType.NONE)
     owner = db.Column(db.String(64))
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
@@ -119,10 +119,8 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    _status = None
     _owner = None
     _configuration = None
-    _plan_type = None
     _tf_state = None
 
     def __init__(self, orm=None, hostname=None, owner=None):
@@ -130,30 +128,23 @@ class MagicCastle:
             self.orm = orm
             self._owner = Owner(orm.owner)
             self.hostname = orm.hostname
-            self._status = ClusterStatusCode(orm.status)
-            self._plan_type = PlanType(orm.plan_type)
             if path.exists(self.main_file):
                 self._configuration = MagicCastleConfiguration.get_from_main_file(
                     self.main_file
                 )
         else:
-            self.orm = MagicCastleORM(hostname=hostname, owner=owner)
+            self.orm = MagicCastleORM(
+                hostname=hostname,
+                owner=owner,
+                status=ClusterStatusCode.NOT_FOUND,
+                plan_type=PlanType.NONE,
+            )
             self._owner = Owner(owner)
             self.hostname = hostname
-            self._status = ClusterStatusCode.NOT_FOUND
-            self._plan_type = PlanType.NONE
 
     @property
     def hostname(self):
         return self.orm.hostname
-
-    @property
-    def path(self):
-        return path.join(CLUSTERS_PATH, self.hostname)
-
-    @property
-    def main_file(self):
-        return path.join(self.path, MAIN_TERRAFORM_FILENAME)
 
     @hostname.setter
     def hostname(self, value):
@@ -163,6 +154,14 @@ class MagicCastle:
         else:
             self.cluster_name = None
             self.domain = None
+
+    @property
+    def path(self):
+        return path.join(CLUSTERS_PATH, self.hostname)
+
+    @property
+    def main_file(self):
+        return path.join(self.path, MAIN_TERRAFORM_FILENAME)
 
     @property
     def cloud_id(self):
@@ -196,7 +195,7 @@ class MagicCastle:
 
     @property
     def status(self) -> ClusterStatusCode:
-        if self._status == ClusterStatusCode.PROVISIONING_RUNNING:
+        if self.orm.status == ClusterStatusCode.PROVISIONING_RUNNING:
             if ProvisioningManager.check_online(self.hostname):
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
             elif (
@@ -205,12 +204,11 @@ class MagicCastle:
             ):
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
 
-        return self._status
+        return self.orm.status
 
     @status.setter
     def status(self, status: ClusterStatusCode):
-        self._status = status
-        self.orm.status = self._status.value
+        self.orm.status = status
         db.session.commit()
 
         # Log cluster status updates for log analytics
@@ -218,7 +216,7 @@ class MagicCastle:
             json.dumps(
                 {
                     "hostname": self.hostname,
-                    "status": self._status.value,
+                    "status": self.orm.status.value,
                     "owner": self.owner.id,
                 }
             ),
@@ -264,12 +262,11 @@ class MagicCastle:
 
     @property
     def plan_type(self) -> PlanType:
-        return self._plan_type
+        return self.orm.plan_type
 
     @plan_type.setter
     def plan_type(self, plan_type: PlanType):
-        self._plan_type = plan_type
-        self.orm.plan_type = self.plan_type.value
+        self.orm.plan_type = plan_type
 
     def get_progress(self):
         if not self.found:
