@@ -40,7 +40,8 @@ db_filename = None
 
 @pytest.fixture
 def client(mocker):
-    app = create_app(f"sqlite:///{db_filename}")
+    mocker.patch.object(create_app, "__defaults__", (f"sqlite:///{db_filename}",))
+    app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
