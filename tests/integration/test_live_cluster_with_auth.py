@@ -35,34 +35,34 @@ JOHN_DOE_HEADERS = {
     "mail": "john.doe@example.com",
 }
 
+db_filename = None
+
 
 @pytest.fixture
 def client(mocker):
-    app = create_app()
+    app = create_app(f"sqlite:///{db_filename}")
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
 
 def setup_module(module):
-    from mchub.configuration import magic_castle
-    from mchub.database import database_manager, schema_manager
+    global db_filename
+    from mchub.database import db
 
     # Create temporary directory to store test database
     tmpdirname = tempfile.mkdtemp()
     # Patch database location
-    db_filename = path.join(tmpdirname, 'database.db')
-    magic_castle.DATABASE_FILE_PATH = db_filename
-    database_manager.DATABASE_FILE_PATH = db_filename
+    db_filename = path.join(tmpdirname, "database.db")
 
-    # Force creation of database through schema update
-    schema_manager.SchemaManager.update_schema()
+    db.create_all(app=create_app(f"sqlite:///{db_filename}"))
+
 
 def teardown_module(module):
-    # delete temporary database file and folder
-    from mchub.configuration.magic_castle import DATABASE_FILE_PATH
-    remove(DATABASE_FILE_PATH)
-    rmdir(path.dirname(DATABASE_FILE_PATH))
+    global db_filename
+    remove(db_filename)
+    rmdir(path.dirname(db_filename))
+
 
 @pytest.mark.build_live_cluster
 def test_plan_creation(client):
