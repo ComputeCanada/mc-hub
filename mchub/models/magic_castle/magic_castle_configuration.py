@@ -4,19 +4,19 @@ import marshmallow
 
 from copy import deepcopy
 
-from . magic_castle_configuration_schema import (
+from .magic_castle_configuration_schema import (
     MagicCastleConfigurationSchema,
 )
 
-from .. cloud.dns_manager import DnsManager
-from ... configuration.magic_castle import (
+from ..cloud.dns_manager import DnsManager
+from ...configuration.magic_castle import (
     MAGIC_CASTLE_SOURCE,
     MAGIC_CASTLE_VERSION,
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
     TERRAFORM_REQUIRED_VERSION,
 )
 
-from ... exceptions.server_exception import ServerException
+from ...exceptions.server_exception import ServerException
 
 IGNORED_CONFIGURATION_FIELDS = [
     "source",
@@ -72,7 +72,7 @@ class MagicCastleConfiguration:
 
         return cls(configuration)
 
-    def update_main_file(self, filename):
+    def write(self, filename):
         """
         Formats the configuration and writes it to the cluster's main.tf.json file.
         """

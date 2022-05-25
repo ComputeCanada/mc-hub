@@ -407,7 +407,7 @@ class MagicCastle:
             plan_type = PlanType.DESTROY
         else:
             plan_type = PlanType.BUILD
-            self._configuration.update_main_file(self.main_file)
+            self._configuration.write(self.main_file)
 
         if destroy and self.status == ClusterStatusCode.CREATED:
             self.delete()

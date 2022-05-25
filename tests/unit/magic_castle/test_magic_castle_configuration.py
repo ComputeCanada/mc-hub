@@ -1,9 +1,12 @@
 from mchub.exceptions.server_exception import ServerException
-from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+from mchub.models.magic_castle.magic_castle_configuration import (
+    MagicCastleConfiguration,
+)
 
 
-from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
-from ... test_helpers import *  # noqa;
+from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ...test_helpers import *  # noqa;
+
 
 def test_constructor_none():
     assert MagicCastleConfiguration().to_dict() == {}
@@ -268,7 +271,7 @@ def test_get_from_main_file_not_found():
         MagicCastleConfiguration.get_from_main_file("non-existing")
 
 
-def test_update_main_file():
+def test_write():
     CONFIG_DICT = {
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
@@ -292,10 +295,8 @@ def test_update_main_file():
     }
 
     modified_config = MagicCastleConfiguration(CONFIG_DICT)
-    path_ = path.join(
-        MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json"
-    )
-    modified_config.update_main_file(path_)
+    path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
+    modified_config.write(path_)
     saved_config = MagicCastleConfiguration.get_from_main_file(path_)
     assert saved_config.to_dict() == CONFIG_DICT
 
