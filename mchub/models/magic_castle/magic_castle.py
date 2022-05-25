@@ -98,6 +98,7 @@ class MagicCastleORM(db.Model):
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
     cloud_id = db.Column(db.String(128))
+    config = db.Column(db.PickleType())
 
 
 class MagicCastle:
@@ -110,16 +111,11 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    _configuration = None
     _tf_state = None
 
     def __init__(self, orm=None, hostname=None, owner=None):
         if orm:
             self.orm = orm
-            if path.exists(self.main_file):
-                self._configuration = MagicCastleConfiguration.get_from_main_file(
-                    self.main_file
-                )
         else:
             self.orm = MagicCastleORM(
                 hostname=hostname,
@@ -138,7 +134,7 @@ class MagicCastle:
 
     @property
     def domain(self):
-        return self._configuration.domain
+        return self.config.domain
 
     @property
     def path(self):
@@ -165,18 +161,24 @@ class MagicCastle:
         delta = datetime.datetime.now() - self.orm.created
         return humanize.naturaldelta(delta)
 
+    @property
+    def config(self):
+        return self.orm.config
+
+    @config.setter
+    def config(self, value):
+        self.orm.config = value
+
     def set_configuration(self, configuration: dict):
         self.orm.expiration_date = configuration.pop("expiration_date", None)
         self.orm.cloud_id = configuration.pop("cloud_id")
         try:
-            self._configuration = MagicCastleConfiguration(configuration)
+            self.config = MagicCastleConfiguration(configuration)
         except ValidationError:
             raise InvalidUsageException(
                 "The magic castle configuration could not be parsed."
             )
-        self.hostname = (
-            f"{self._configuration.cluster_name}.{self._configuration.domain}"
-        )
+        self.hostname = f"{self.config.cluster_name}.{self.config.domain}"
 
     @property
     def status(self) -> ClusterStatusCode:
@@ -277,8 +279,8 @@ class MagicCastle:
         if not self.found:
             raise ClusterNotFoundException
 
-        if self._configuration:
-            return self._configuration.to_dict()
+        if self.config:
+            return self.config.to_dict()
         else:
             return {}
 
@@ -392,7 +394,7 @@ class MagicCastle:
             plan_type = PlanType.DESTROY
         else:
             plan_type = PlanType.BUILD
-            self._configuration.write(self.main_file)
+            self.config.write(self.main_file)
 
         if destroy and self.status == ClusterStatusCode.CREATED:
             self.delete()
