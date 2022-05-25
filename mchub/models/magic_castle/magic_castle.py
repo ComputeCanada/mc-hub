@@ -116,7 +116,6 @@ class MagicCastle:
     def __init__(self, orm=None, hostname=None, owner=None):
         if orm:
             self.orm = orm
-            self.hostname = orm.hostname
             if path.exists(self.main_file):
                 self._configuration = MagicCastleConfiguration.get_from_main_file(
                     self.main_file
@@ -128,7 +127,6 @@ class MagicCastle:
                 status=ClusterStatusCode.NOT_FOUND,
                 plan_type=PlanType.NONE,
             )
-            self.hostname = hostname
 
     @property
     def hostname(self):
@@ -136,12 +134,11 @@ class MagicCastle:
 
     @hostname.setter
     def hostname(self, value):
-        if value is not None:
-            self.cluster_name, self.domain = value.split(".", 1)
-            self.orm.hostname = f"{self.cluster_name}.{self.domain}"
-        else:
-            self.cluster_name = None
-            self.domain = None
+        self.orm.hostname = value
+
+    @property
+    def domain(self):
+        return self._configuration.domain
 
     @property
     def path(self):
