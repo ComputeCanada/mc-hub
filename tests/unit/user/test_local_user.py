@@ -38,7 +38,8 @@ def test_query_magic_castles():
 
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
-def test_create_empty_magic_castle():
+def test_create_empty_magic_castle(client):
+    client.get("/api/user/me")
     user = LocalUser()
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
@@ -72,20 +73,17 @@ def test_create_empty_magic_castle():
             "guest_passwd": "",
         }
     )
-    # result = database_connection.execute(
-    #     "SELECT hostname, status, plan_type, owner FROM magic_castles WHERE hostname=?",
-    #     ("anon123.c3.ca",),
-    # ).fetchall()
-    magic_castle2 = MagicCastle("anon123.c3.ca")
+    magic_castle2 = user.query_magic_castles(hostname="anon123.c3.ca")[0]
     assert magic_castle2.hostname == "anon123.c3.ca"
-    assert magic_castle2.status.value == "created"
-    assert magic_castle2.get_plan_type().value == "build"
-    assert magic_castle2.owner.username == None
+    assert magic_castle2.status == ClusterStatusCode.CREATED
+    assert magic_castle2.plan_type == PlanType.BUILD
+    assert magic_castle2.owner == None
 
 
-def test_query_magic_castles():
+def test_query_magic_castles(client):
+    client.get("/api/user/me")
     user = LocalUser()
     magic_castle = user.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.owner.id == "alice@computecanada.ca"
+    assert magic_castle.owner == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS

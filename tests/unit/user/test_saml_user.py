@@ -15,7 +15,8 @@ def test_full_name(alice, bob, admin):
     assert admin.full_name == "Admin Istrator"
 
 
-def test_query_magic_castles(alice, bob, admin):
+def test_query_magic_castles(client, alice, bob, admin):
+    client.get("/api/user/me")
     # Alice
     alice_magic_castles = alice.query_magic_castles()
     assert [magic_castle.hostname for magic_castle in alice_magic_castles] == [
@@ -69,7 +70,8 @@ def test_query_magic_castles(alice, bob, admin):
 
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
-def test_create_empty_magic_castle(alice):
+def test_create_empty_magic_castle(client, alice):
+    client.get("/api/user/me")
     user = alice
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
@@ -103,29 +105,30 @@ def test_create_empty_magic_castle(alice):
             "guest_passwd": "",
         }
     )
-    magic_castle2 = MagicCastle("alice123.c3.ca")
+    magic_castle2 = alice.query_magic_castles(hostname="alice123.c3.ca")[0]
     assert magic_castle2.hostname == "alice123.c3.ca"
-    assert magic_castle2.status.value == "created"
-    assert magic_castle2.get_plan_type().value == "build"
-    assert magic_castle2.owner.id == "alice@computecanada.ca"
+    assert magic_castle2.status == ClusterStatusCode.CREATED
+    assert magic_castle2.plan_type == PlanType.BUILD
+    assert magic_castle2.owner == "alice@computecanada.ca"
 
 
-def test_query_magic_castles(alice):
+def test_query_magic_castles(client, alice):
+    client.get("/api/user/me")
     magic_castle = alice.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.owner.id == "alice@computecanada.ca"
+    assert magic_castle.owner == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
-def test_query_magic_castles_admin(admin):
+def test_query_magic_castles_admin(client, admin):
+    client.get("/api/user/me")
     magic_castle = admin.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.owner.id == "alice@computecanada.ca"
+    assert magic_castle.owner == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
-def test_query_magic_castles_unauthorized_user(bob):
-    with pytest.raises(ClusterNotFoundException):
-        bob.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
-    with pytest.raises(ClusterNotFoundException):
-        bob.query_magic_castles(hostname="noowner.calculquebec.cloud")
+def test_query_magic_castles_unauthorized_user(client, bob):
+    client.get("/api/user/me")
+    assert len(bob.query_magic_castles(hostname="valid1.calculquebec.cloud")) == 0
+    assert len(bob.query_magic_castles(hostname="noowner.calculquebec.cloud")) == 0
