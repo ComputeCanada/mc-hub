@@ -4,8 +4,8 @@ from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub import create_app
 
-from .. test_helpers import *  # noqa;
-from .. mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ..test_helpers import *  # noqa;
+from ..mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
 EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
@@ -250,7 +250,7 @@ def test_get_all_magic_castle_names(client):
     assert res.status_code == 200
 
 
-def test_get_all_magic_castles_unauthenticated(client):
+def test_query_magic_castles_local(client):
     # No authentication header at all
     res = client.get(f"/api/magic-castles")
     assert res.get_json() == {"message": "You need to be authenticated."}

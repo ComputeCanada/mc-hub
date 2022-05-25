@@ -13,8 +13,8 @@ def test_full_name():
     assert LocalUser().full_name == None
 
 
-def test_get_all_magic_castles():
-    all_magic_castles = LocalUser().get_all_magic_castles()
+def test_query_magic_castles():
+    all_magic_castles = LocalUser().query_magic_castles()
     assert [magic_castle.hostname for magic_castle in all_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
@@ -83,9 +83,9 @@ def test_create_empty_magic_castle():
     assert magic_castle2.owner.username == None
 
 
-def test_get_magic_castle_by_hostname():
+def test_query_magic_castles():
     user = LocalUser()
-    magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
+    magic_castle = user.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.owner.id == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
