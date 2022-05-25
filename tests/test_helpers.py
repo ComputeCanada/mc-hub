@@ -8,8 +8,7 @@ from typing import Callable
 
 
 from mchub.configuration.cloud import DEFAULT_CLOUD
-from mchub.database.schema_manager import SchemaManager
-from mchub.models.user import AuthenticatedUser
+from mchub.models.user import SAMLUser
 
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 
@@ -138,8 +137,8 @@ def database_connection(mocker):
 
 
 @pytest.fixture
-def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return AuthenticatedUser(
+def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
+    return SAMLUser(
         edu_person_principal_name="alice@computecanada.ca",
         given_name="Alice",
         surname="Tremblay",
@@ -149,8 +148,8 @@ def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 
 @pytest.fixture
-def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return AuthenticatedUser(
+def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
+    return SAMLUser(
         edu_person_principal_name="bob12.bobby@computecanada.ca",
         given_name="Bob",
         surname="Rodriguez",
@@ -160,8 +159,8 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 
 @pytest.fixture
-def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return AuthenticatedUser(
+def admin() -> Callable[[sqlite3.Connection], SAMLUser]:
+    return SAMLUser(
         edu_person_principal_name="the-admin@computecanada.ca",
         given_name="Admin",
         surname="Istrator",

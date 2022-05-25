@@ -51,7 +51,7 @@ class LocalUser(User):
         return MagicCastle()
 
 
-class AuthenticatedUser(User):
+class SAMLUser(User):
     """
     User class for users created when the authentication type is set to SAML.
 

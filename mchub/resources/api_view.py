@@ -7,7 +7,7 @@ from flask import make_response
 
 from ..configuration import config
 from ..models.auth_type import AuthType
-from ..models.user import LocalUser, AuthenticatedUser
+from ..models.user import LocalUser, SAMLUser
 from ..exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
@@ -61,7 +61,7 @@ def compute_current_user(route_handler):
     """
     Creates a decorator used to pass the current User object as a parameter to the route handler.
 
-    If the authentication type is SAML, an AuthenticatedUser object will be passed.
+    If the authentication type is SAML, an SAMLUser object will be passed.
     Otherwise, if the authentication type is NONE, an LocalUser object will be passed.
 
     :param route_handler: The Flask route handler function.
@@ -86,7 +86,7 @@ def compute_current_user(route_handler):
             try:
                 # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
                 # Therefore, special characters and accents in givenName and surname are not correctly decoded.
-                user = AuthenticatedUser(
+                user = SAMLUser(
                     edu_person_principal_name=headers["eduPersonPrincipalName"],
                     given_name=headers["givenName"],
                     surname=headers["surname"],
