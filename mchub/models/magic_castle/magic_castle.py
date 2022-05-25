@@ -41,15 +41,6 @@ TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
 
-class Owner:
-    def __init__(self, id=None):
-        self.id = id
-        if self.id:
-            self.username = self.id.split("@")[0]
-        else:
-            self.username = None
-
-
 def terraform_apply(hostname, env, main_path, destroy):
     log_path = path.join(main_path, TERRAFORM_APPLY_LOG_FILENAME)
     plan_path = path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME)
@@ -119,14 +110,12 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    _owner = None
     _configuration = None
     _tf_state = None
 
     def __init__(self, orm=None, hostname=None, owner=None):
         if orm:
             self.orm = orm
-            self._owner = Owner(orm.owner)
             self.hostname = orm.hostname
             if path.exists(self.main_file):
                 self._configuration = MagicCastleConfiguration.get_from_main_file(
@@ -139,7 +128,6 @@ class MagicCastle:
                 status=ClusterStatusCode.NOT_FOUND,
                 plan_type=PlanType.NONE,
             )
-            self._owner = Owner(owner)
             self.hostname = hostname
 
     @property
@@ -173,7 +161,7 @@ class MagicCastle:
 
     @property
     def owner(self):
-        return self._owner
+        return self.orm.owner
 
     @property
     def age(self):
@@ -217,7 +205,7 @@ class MagicCastle:
                 {
                     "hostname": self.hostname,
                     "status": self.orm.status.value,
-                    "owner": self.owner.id,
+                    "owner": self.owner,
                 }
             ),
             flush=True,
@@ -303,7 +291,7 @@ class MagicCastle:
             "hostname": self.hostname,
             "status": self.status.value,
             "freeipa_passwd": self.freeipa_passwd,
-            "owner": self.owner.username,
+            "owner": self.owner,
             "age": self.age,
             "expiration_date": self.expiration_date,
             "cloud_id": self.cloud_id,

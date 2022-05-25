@@ -9,10 +9,9 @@ from typing import Callable
 
 from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.database.schema_manager import SchemaManager
-from mchub.database.database_manager import DatabaseManager
-from mchub.models.user.authenticated_user import AuthenticatedUser
+from mchub.models.user import AuthenticatedUser
 
-from . mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
+from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 

@@ -2,19 +2,19 @@ import pytest
 
 from mchub.models.magic_castle.magic_castle import MagicCastle
 from mchub.configuration.cloud import DEFAULT_CLOUD
-from mchub.models.user.anonymous_user import AnonymousUser
+from mchub.models.user import LocalUser
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
-from ... test_helpers import *  # noqa
-from ... mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ...test_helpers import *  # noqa
+from ...mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
 def test_full_name():
-    assert AnonymousUser().full_name == None
+    assert LocalUser().full_name == None
 
 
 def test_get_all_magic_castles():
-    all_magic_castles = AnonymousUser().get_all_magic_castles()
+    all_magic_castles = LocalUser().get_all_magic_castles()
     assert [magic_castle.hostname for magic_castle in all_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
@@ -39,7 +39,7 @@ def test_get_all_magic_castles():
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle():
-    user = AnonymousUser()
+    user = LocalUser()
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
         {
@@ -84,7 +84,7 @@ def test_create_empty_magic_castle():
 
 
 def test_get_magic_castle_by_hostname():
-    user = AnonymousUser()
+    user = LocalUser()
     magic_castle = user.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.owner.id == "alice@computecanada.ca"
