@@ -274,9 +274,14 @@ class MagicCastle:
         if not self.found:
             raise ClusterNotFoundException
 
-        initial_plan = self.load_plan()
-        if initial_plan is None:
+        try:
+            with open(
+                path.join(self.path, TERRAFORM_PLAN_JSON_FILENAME), "r"
+            ) as plan_file:
+                initial_plan = json.load(plan_file)
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
             return None
+
         try:
             with open(path.join(self.path, TERRAFORM_APPLY_LOG_FILENAME), "r") as file:
                 terraform_output = file.read()
@@ -524,12 +529,3 @@ class MagicCastle:
         except FileNotFoundError:
             # Must be a new cluster, without existing plans
             pass
-
-    def load_plan(self):
-        try:
-            with open(
-                path.join(self.path, TERRAFORM_PLAN_JSON_FILENAME), "r"
-            ) as plan_file:
-                return json.load(plan_file)
-        except (FileNotFoundError, json.decoder.JSONDecodeError):
-            return None
