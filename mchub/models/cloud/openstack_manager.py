@@ -32,6 +32,8 @@ class OpenStackManager:
     """
 
     __slots__ = [
+        "_con",
+        "_project_id",
         "cloud_id",
         "__pre_allocated_instance_count",
         "__pre_allocated_cores",
@@ -54,6 +56,8 @@ class OpenStackManager:
         pre_allocated_volume_count=0,
         pre_allocated_volume_size=0,
     ):
+        self._con = None
+        self._project_id = None
         self.cloud_id = cloud_id
         self.__pre_allocated_instance_count = pre_allocated_instance_count
         self.__pre_allocated_cores = pre_allocated_cores
@@ -71,8 +75,13 @@ class OpenStackManager:
     def connection(self):
         if self._con is None:
             self._con = openstack.connect(cloud=self.cloud_id)
-            self.project_id = self._con.current_project_id
         return self._con
+
+    @property
+    def project_id(self):
+        if self._project_id is None:
+            self._project_id = self.connection.current_project_id
+        return self._project_id
 
     @property
     def env(self):
