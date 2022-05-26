@@ -1,12 +1,10 @@
 import json
+import re
 
 import marshmallow
+from marshmallow import fields, ValidationError, EXCLUDE
 
 from copy import deepcopy
-
-from .magic_castle_configuration_schema import (
-    MagicCastleConfigurationSchema,
-)
 
 from ..cloud.dns_manager import DnsManager
 from ...configuration.magic_castle import (
@@ -28,14 +26,53 @@ IGNORED_CONFIGURATION_FIELDS = [
 ]
 
 
+def validate_cluster_name(cluster_name):
+    # Must follow RFC 1035's subdomain naming rules: https://tools.ietf.org/html/rfc1035#section-2.3.1
+    return re.search(r"^[a-z]([a-z0-9-]*[a-z0-9]+)?$", cluster_name) is not None
+
+
+def validate_domain(domain):
+    return domain in DnsManager.get_available_domains()
+
+
+class Schema(marshmallow.Schema):
+    """
+    Marshmallow schema used to validate, deserialize and serialize Magic Castle configurations.
+    This schema is then used in MagicCastleConfiguration to load, create and update a cluster's main.tf.json file.
+    """
+
+    cluster_name = fields.Str(required=True, validate=validate_cluster_name)
+    domain = fields.Str(required=True, validate=validate_domain)
+    image = fields.Str(required=True)
+    nb_users = fields.Int(required=True)
+    instances = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Dict(
+            type=fields.Str(), count=fields.Int(), tags=fields.List(fields.Str())
+        ),
+        required=True,
+    )
+    volumes = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Dict(
+            type=fields.Str(),
+            size=fields.Int(),
+        ),
+        required=True,
+    )
+    public_keys = fields.List(fields.Str(), required=True)
+    guest_passwd = fields.Str(required=True)
+    hieradata = fields.Str(missing="")
+
+
 class MagicCastleConfiguration:
     """
-    MagicCastleConfiguration is responsible for loading, updating and dumping Magic Castle configurations.
+    MagicCastleConfiguration is responsible for loading and writing Magic Castle configurations.
 
     Loading can be done using a raw configuration dictionary (__init__),
     or from a main.tf.json file (get_from_main_file)
 
-    All configurations are validated with the configuration schema using the MagicCastleSchema class.
+    All configurations are validated with the configuration schema using the Schema class.
     """
 
     def __init__(self, configuration=None):
@@ -45,11 +82,11 @@ class MagicCastleConfiguration:
         self._configuration = {}
         if configuration:
             try:
-                self._configuration = MagicCastleConfigurationSchema().load(
+                self._configuration = Schema().load(
                     configuration,
-                    unknown=marshmallow.EXCLUDE,
+                    unknown=EXCLUDE,
                 )
-            except marshmallow.ValidationError as error:
+            except ValidationError as error:
                 raise ServerException(
                     f"The cluster configuration is invalid.",
                     additional_details=error.messages,
