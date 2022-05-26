@@ -12,6 +12,7 @@ on:
 env:
   IMAGE_NAME: "cmdntrf/mc-hub"
   RUN_LIVE_CLUSTER_TESTS: ${{ (github.event.inputs.force_build_live_cluster == 'yes' || startsWith(github.ref, 'refs/tags/v')) && 'true' || 'false' }}
+  MAGIC_CASTLE_VERSION: 11.9.3
 
 jobs:
   frontend:
@@ -50,16 +51,25 @@ jobs:
           venv/bin/pip install --upgrade pip
           venv/bin/pip install poetry
           VIRTUAL_ENV=$PWD/venv venv/bin/poetry install
+      - name: Fetch Magic Castle Source and patch acme url
+        working-directory: ./run
+        run: |
+          curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
+          tar xvf magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
+          mv magic_castle-openstack-${MAGIC_CASTLE_VERSION} magic_castle
+          sed -i 's;https://acme-v02.api.letsencrypt.org/directory;https://acme-staging-v02.api.letsencrypt.org/directory;g' magic_castle/dns/acme/main.tf
       - name: Run backend regular tests
         if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
         working-directory: ./run
         run: |
+          export MAGIC_CASTLE_PATH=$PWD/magic_castle
           export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest ../
       - name: Run backend extended tests (including live cluster tests)
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         working-directory: ./run
         run: |
+          export MAGIC_CASTLE_PATH=$PWD/magic_castle
           export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest -x -vv --build-live-cluster ../;
       # - name: Debug with tmate on failure
