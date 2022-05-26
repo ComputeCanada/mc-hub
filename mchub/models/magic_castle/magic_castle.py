@@ -143,10 +143,6 @@ class MagicCastle:
     def hostname(self):
         return self.orm.hostname
 
-    @hostname.setter
-    def hostname(self, value):
-        self.orm.hostname = value
-
     @property
     def domain(self):
         return self.config.domain
@@ -193,7 +189,7 @@ class MagicCastle:
             raise InvalidUsageException(
                 f"The magic castle configuration could not be parsed.\nError: {err.messages}"
             )
-        self.hostname = f"{self.config.cluster_name}.{self.config.domain}"
+        self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
 
     @property
     def status(self) -> ClusterStatusCode:
