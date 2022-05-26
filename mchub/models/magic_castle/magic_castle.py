@@ -16,7 +16,7 @@ from .magic_castle_configuration import MagicCastleConfiguration
 from .cluster_status_code import ClusterStatusCode
 from .plan_type import PlanType
 
-from ..terraform.terraform_state_parser import TerraformState
+from ..terraform.terraform_state import TerraformState
 from ..terraform.terraform_plan_parser import TerraformPlanParser
 from ..cloud.dns_manager import DnsManager
 from ..puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING_TIME
