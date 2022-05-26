@@ -12,6 +12,8 @@ from threading import Thread
 from marshmallow import ValidationError
 from sqlalchemy.sql import func
 
+from mchub.models.cloud.cloud_manager import CloudManager
+
 from .magic_castle_configuration import MagicCastleConfiguration
 from .cluster_status_code import ClusterStatusCode
 from .plan_type import PlanType
@@ -428,8 +430,9 @@ class MagicCastle:
         self.rotate_terraform_logs(apply=False)
         environment_variables = environ.copy()
         dns_manager = DnsManager(self.domain)
+        cloud_manager = CloudManager(self.cloud_id)
         environment_variables.update(dns_manager.get_environment_variables())
-        environment_variables["OS_CLOUD"] = self.cloud_id
+        environment_variables.update(cloud_manager.get_environment_variables())
         plan_log = path.join(self.path, TERRAFORM_PLAN_LOG_FILENAME)
         try:
             with open(plan_log, "w") as output_file:

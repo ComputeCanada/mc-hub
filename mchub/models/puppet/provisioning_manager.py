@@ -4,6 +4,7 @@ from requests.exceptions import ConnectionError
 
 MAX_PROVISIONING_TIME = 3600
 
+
 class ProvisioningManager:
     """
     ProvisioningManager is responsible checking the provisioning status of a cluster.
