@@ -54,7 +54,7 @@ jobs:
       - name: Fetch Magic Castle Source and patch acme url
         working-directory: ./run
         run: |
-          curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
+          curl -L -O https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
           tar xvf magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
           mv magic_castle-openstack-${MAGIC_CASTLE_VERSION} magic_castle
           sed -i 's;https://acme-v02.api.letsencrypt.org/directory;https://acme-staging-v02.api.letsencrypt.org/directory;g' magic_castle/dns/acme/main.tf
