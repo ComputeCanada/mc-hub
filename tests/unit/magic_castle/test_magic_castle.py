@@ -172,11 +172,11 @@ def test_get_owner_no_owner(client):
     assert magic_castle.owner == None
 
 
-def test_dump_configuration_valid(client):
+def test_config_valid(client):
     client.get("/api/user/me")
     orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.dump_configuration() == {
+    assert magic_castle.config == {
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -201,7 +201,7 @@ def test_dump_configuration_valid(client):
         "public_keys": ["ssh-rsa FAKE"],
         "image": "CentOS-7-x64-2021-11",
     }
-    assert magic_castle.dump_configuration() == {
+    assert magic_castle.config == {
         "cluster_name": "valid1",
         "nb_users": 10,
         "guest_passwd": "password-123",
@@ -228,18 +228,18 @@ def test_dump_configuration_valid(client):
     }
 
 
-def test_dump_configuration_empty(client):
+def test_config_empty(client):
     client.get("/api/user/me")
     orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.dump_configuration() == dict()
+    assert magic_castle.config == dict()
 
 
-def test_dump_configuration_busy(client):
+def test_config_busy(client):
     client.get("/api/user/me")
     orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
     magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.dump_configuration() == {
+    assert magic_castle.config == {
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
         "image": "CentOS-7-x64-2021-11",
@@ -266,10 +266,9 @@ def test_dump_configuration_busy(client):
     }
 
 
-def test_dump_configuration_not_found(client):
+def test_config_empty(client):
     magic_castle = MagicCastle()
-    with pytest.raises(ClusterNotFoundException):
-        magic_castle.dump_configuration()
+    assert magic_castle.config == {}
 
 
 def test_allocated_resources_valid(client):

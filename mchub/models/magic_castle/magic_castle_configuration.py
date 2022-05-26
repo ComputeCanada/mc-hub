@@ -1,6 +1,8 @@
 import json
 import re
 
+from collections.abc import Mapping
+
 import marshmallow
 from marshmallow import fields, ValidationError, EXCLUDE
 
@@ -13,8 +15,6 @@ from ...configuration.magic_castle import (
     MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
     TERRAFORM_REQUIRED_VERSION,
 )
-
-from ...exceptions.server_exception import ServerException
 
 IGNORED_CONFIGURATION_FIELDS = [
     "source",
@@ -65,7 +65,7 @@ class Schema(marshmallow.Schema):
     hieradata = fields.Str(missing="")
 
 
-class MagicCastleConfiguration:
+class MagicCastleConfiguration(Mapping):
     """
     MagicCastleConfiguration is responsible for loading and writing Magic Castle configurations.
 
@@ -75,22 +75,33 @@ class MagicCastleConfiguration:
     All configurations are validated with the configuration schema using the Schema class.
     """
 
-    def __init__(self, configuration=None):
+    __slots__ = ["_config"]
+
+    def __init__(self, configuration):
         """
         Initializes a MagicCastleConfiguration and validates the configuration schema, if present.
         """
-        self._configuration = {}
-        if configuration:
-            try:
-                self._configuration = Schema().load(
-                    configuration,
-                    unknown=EXCLUDE,
-                )
-            except ValidationError as error:
-                raise ServerException(
-                    f"The cluster configuration is invalid.",
-                    additional_details=error.messages,
-                )
+        self._config = Schema().load(
+            configuration,
+            unknown=EXCLUDE,
+        )
+
+    def __iter__(self):
+        return iter(self._config)
+
+    def __getitem__(self, key):
+        return self._config[key]
+
+    def __len__(self):
+        return len(self._config)
+
+    @property
+    def cluster_name(self):
+        return self["cluster_name"]
+
+    @property
+    def domain(self):
+        return self["domain"]
 
     @classmethod
     def get_from_main_file(cls, filename):
@@ -122,27 +133,13 @@ class MagicCastleConfiguration:
                     "generate_ssh_key": True,
                     "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
                     "config_version": MAGIC_CASTLE_VERSION,
-                    **self.to_dict(),
+                    **self,
                 }
             },
         }
         main_tf_configuration["module"].update(
-            DnsManager(self._configuration["domain"]).get_magic_castle_configuration()
+            DnsManager(self["domain"]).get_magic_castle_configuration()
         )
 
         with open(filename, "w") as main_terraform_file:
             json.dump(main_tf_configuration, main_terraform_file)
-
-    def to_dict(self):
-        """
-        Returns the configuration dictionnary.
-        """
-        return deepcopy(self._configuration)
-
-    @property
-    def cluster_name(self):
-        return self._configuration["cluster_name"]
-
-    @property
-    def domain(self):
-        return self._configuration["domain"]

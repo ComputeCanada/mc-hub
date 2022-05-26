@@ -1,3 +1,4 @@
+from marshmallow.exceptions import ValidationError
 from mchub.exceptions.server_exception import ServerException
 from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
@@ -6,10 +7,6 @@ from mchub.models.magic_castle.magic_castle_configuration import (
 
 from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 from ...test_helpers import *  # noqa;
-
-
-def test_constructor_none():
-    assert MagicCastleConfiguration().to_dict() == {}
 
 
 def test_constructor_valid():
@@ -35,7 +32,7 @@ def test_constructor_valid():
         "jupyterhub::enable_otp_auth: false",
         "guest_passwd": '1234\\56789\t "',
     }
-    assert MagicCastleConfiguration(CONFIG_DICT).to_dict() == CONFIG_DICT
+    assert MagicCastleConfiguration(CONFIG_DICT) == CONFIG_DICT
 
 
 def test_constructor_empty_hieradata_valid():
@@ -60,11 +57,11 @@ def test_constructor_empty_hieradata_valid():
         "guest_passwd": '1234\\56789\t "',
         "hieradata": "",
     }
-    assert MagicCastleConfiguration(CONFIG_DICT).to_dict() == CONFIG_DICT
+    assert MagicCastleConfiguration(CONFIG_DICT) == CONFIG_DICT
 
 
 def test_constructor_invalid_cluster_name():
-    with pytest.raises(ServerException):
+    with pytest.raises(ValidationError):
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo!",
@@ -97,7 +94,7 @@ def test_constructor_invalid_cluster_name():
             }
         )
 
-    with pytest.raises(ServerException):
+    with pytest.raises(ValidationError):
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo_underscore",
@@ -132,7 +129,7 @@ def test_constructor_invalid_cluster_name():
 
 
 def test_constructor_invalid_domain():
-    with pytest.raises(ServerException):
+    with pytest.raises(ValidationError):
         MagicCastleConfiguration(
             {
                 "cluster_name": "foo",
@@ -196,7 +193,7 @@ def test_get_from_dict_valid():
         "hieradata": 'profile::base::admin_email: "me@example.org"',
         "guest_passwd": '1234\\56789\t "',
     }
-    assert MagicCastleConfiguration(CONFIG_DICT).to_dict() == CONFIG_DICT
+    assert MagicCastleConfiguration(CONFIG_DICT) == CONFIG_DICT
 
 
 def test_get_from_dict_empty_hieradata_valid():
@@ -230,14 +227,14 @@ def test_get_from_dict_empty_hieradata_valid():
         "guest_passwd": '1234\\56789\t "',
     }
     config = MagicCastleConfiguration(CONFIG_DICT)
-    assert config.to_dict() == CONFIG_DICT
+    assert config == CONFIG_DICT
 
 
 def test_get_from_main_file_valid():
     config = MagicCastleConfiguration.get_from_main_file(
         path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
     )
-    assert config.to_dict() == {
+    assert config == {
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
         "image": "CentOS-7-x64-2021-11",
@@ -298,7 +295,7 @@ def test_write():
     path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
     modified_config.write(path_)
     saved_config = MagicCastleConfiguration.get_from_main_file(path_)
-    assert saved_config.to_dict() == CONFIG_DICT
+    assert saved_config == CONFIG_DICT
 
 
 def test_properties():

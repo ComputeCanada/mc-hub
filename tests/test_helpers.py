@@ -11,6 +11,9 @@ from mchub import create_app
 from mchub.database import db
 from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.user import SAMLUser
+from mchub.models.magic_castle.magic_castle_configuration import (
+    MagicCastleConfiguration,
+)
 from mchub.models.magic_castle.magic_castle import MagicCastleORM
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType
@@ -40,7 +43,6 @@ def create_test_app():
     with app.app_context():
         db.create_all()
         # Using an in-memory database for faster unit tests with less disk IO
-
         buildplanning = MagicCastleORM(
             hostname="buildplanning.calculquebec.cloud",
             plan_type=PlanType.BUILD,
@@ -48,6 +50,13 @@ def create_test_app():
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH,
+                    "buildplanning.calculquebec.cloud",
+                    "main.tf.json",
+                )
+            ),
         )
         created = MagicCastleORM(
             hostname="created.calculquebec.cloud",
@@ -56,6 +65,11 @@ def create_test_app():
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "created.calculquebec.cloud", "main.tf.json"
+                )
+            ),
         )
         empty_state = MagicCastleORM(
             hostname="empty-state.calculquebec.cloud",
@@ -64,6 +78,11 @@ def create_test_app():
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "empty-state.calculquebec.cloud", "main.tf.json"
+                )
+            ),
         )
         empty = MagicCastleORM(
             hostname="empty.calculquebec.cloud",
@@ -72,6 +91,7 @@ def create_test_app():
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config={},
         )
         missingfip = MagicCastleORM(
             hostname="missingfloatingips.c3.ca",
@@ -80,6 +100,11 @@ def create_test_app():
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "missingfloatingips.c3.ca", "main.tf.json"
+                )
+            ),
         )
         missingnodes = MagicCastleORM(
             hostname="missingnodes.c3.ca",
@@ -88,6 +113,9 @@ def create_test_app():
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
+            ),
         )
         valid1 = MagicCastleORM(
             hostname="valid1.calculquebec.cloud",
@@ -96,6 +124,11 @@ def create_test_app():
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "valid1.calculquebec.cloud", "main.tf.json"
+                )
+            ),
         )
         noower = MagicCastleORM(
             hostname="noowner.calculquebec.cloud",
@@ -103,6 +136,11 @@ def create_test_app():
             plan_type=PlanType.DESTROY,
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "noowner.calculquebec.cloud", "main.tf.json"
+                )
+            ),
         )
         db.session.add(buildplanning)
         db.session.add(created)

@@ -122,6 +122,7 @@ class MagicCastle:
                 owner=owner,
                 status=ClusterStatusCode.NOT_FOUND,
                 plan_type=PlanType.NONE,
+                config={},
             )
 
     @property
@@ -174,9 +175,9 @@ class MagicCastle:
         self.orm.cloud_id = configuration.pop("cloud_id")
         try:
             self.config = MagicCastleConfiguration(configuration)
-        except ValidationError:
+        except ValidationError as err:
             raise InvalidUsageException(
-                "The magic castle configuration could not be parsed."
+                f"The magic castle configuration could not be parsed.\nError: {err.messages}"
             )
         self.hostname = f"{self.config.cluster_name}.{self.config.domain}"
 
@@ -270,23 +271,10 @@ class MagicCastle:
             terraform_output = ""
         return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
 
-    def dump_configuration(self):
-        """
-        Returns the Magic Castle configuration dictionary of the current cluster.
-
-        :return: The configuration dictionary
-        """
-        if not self.found:
-            raise ClusterNotFoundException
-
-        if self.config:
-            return self.config.to_dict()
-        else:
-            return {}
-
-    def dump_state(self):
+    @property
+    def state(self):
         return {
-            **self.dump_configuration(),
+            **self.config,
             "hostname": self.hostname,
             "status": self.status.value,
             "freeipa_passwd": self.freeipa_passwd,

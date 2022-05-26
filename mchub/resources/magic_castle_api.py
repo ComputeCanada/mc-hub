@@ -11,11 +11,11 @@ class MagicCastleAPI(ApiView):
     def get(self, user: User, hostname):
         if hostname:
             try:
-                return user.query_magic_castles(hostname=hostname)[0].dump_state()
+                return user.query_magic_castles(hostname=hostname)[0].state
             except IndexError:
                 raise ClusterNotFoundException
         else:
-            return [mc.dump_state() for mc in user.query_magic_castles()]
+            return [mc.state for mc in user.query_magic_castles()]
 
     def post(self, user: User, hostname, apply=False):
         if apply:
