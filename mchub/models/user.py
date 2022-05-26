@@ -7,6 +7,8 @@ from ..configuration.cloud import DEFAULT_CLOUD, ALL_CLOUD_ID
 
 
 class User:
+    __slots__ = ["username", "full_name", "public_keys"]
+
     def __init__(self, username=None, full_name=None, public_keys=[]):
         self.username = username
         self.full_name = full_name
@@ -59,6 +61,8 @@ class SAMLUser(User):
     and edit clusters created by anyone, while a regular user can only view and
     edit his own clusters.
     """
+
+    __slots__ = ["scoped_id", "scope", "given_name", "surname", "mail"]
 
     def __init__(
         self,
