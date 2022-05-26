@@ -16,7 +16,7 @@ from .magic_castle_configuration import MagicCastleConfiguration
 from .cluster_status_code import ClusterStatusCode
 from .plan_type import PlanType
 
-from ..terraform.terraform_state_parser import TerraformStateParser
+from ..terraform.terraform_state_parser import TerraformState
 from ..terraform.terraform_plan_parser import TerraformPlanParser
 from ..cloud.dns_manager import DnsManager
 from ..puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING_TIME
@@ -74,18 +74,32 @@ def terraform_apply(hostname, env, main_path, destroy):
             status = ClusterStatusCode.PROVISIONING_RUNNING
     finally:
         # Remove plans
+        if destroy:
+            rmtree(main_path, ignore_errors=True)
+        else:
+            remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
+            remove(path.join(main_path, TERRAFORM_PLAN_JSON_FILENAME))
+
+        # Retrieve terraform state
+        try:
+            with open(
+                path.join(main_path, TERRAFORM_STATE_FILENAME), "r"
+            ) as tf_state_file:
+                tf_state = TerraformState(json.load(tf_state_file))
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
+            tf_state = None
+
+        # Save results in database
         from ... import create_app
 
         with create_app().app_context():
             orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
             if destroy:
-                rmtree(main_path, ignore_errors=True)
                 db.session.delete(orm)
             else:
-                remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
-                remove(path.join(main_path, TERRAFORM_PLAN_JSON_FILENAME))
                 orm.plan_type = PlanType.NONE
                 orm.status = status
+                orm.tf_state = tf_state
             db.session.commit()
 
 
@@ -99,6 +113,7 @@ class MagicCastleORM(db.Model):
     expiration_date = db.Column(db.String(32))
     cloud_id = db.Column(db.String(128))
     config = db.Column(db.PickleType())
+    tf_state = db.Column(db.PickleType())
 
 
 class MagicCastle:
@@ -111,7 +126,7 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    _tf_state = None
+    __slots__ = ["orm"]
 
     def __init__(self, orm=None, owner=None):
         if orm:
@@ -282,6 +297,10 @@ class MagicCastle:
             "expiration_date": self.expiration_date,
             "cloud_id": self.cloud_id,
         }
+
+    @property
+    def tf_state(self):
+        return self.orm.tf_state
 
     @property
     def freeipa_passwd(self):
@@ -461,20 +480,6 @@ class MagicCastle:
             )
 
         self.status = previous_status
-
-    @property
-    def tf_state(self):
-        if self._tf_state is None and self.hostname is not None:
-            try:
-                with open(
-                    path.join(self.path, TERRAFORM_STATE_FILENAME), "r"
-                ) as terraform_state_file:
-                    state = json.load(terraform_state_file)
-            except (FileNotFoundError, json.decoder.JSONDecodeError):
-                self._tf_state = None
-            else:
-                self._tf_state = TerraformStateParser(state)
-        return self._tf_state
 
     def apply(self):
         if not self.found:
