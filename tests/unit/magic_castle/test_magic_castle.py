@@ -40,7 +40,7 @@ VALID_CLUSTER_CONFIGURATION = {
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_magic_castle_plan_valid(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     cluster = MagicCastle()
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
@@ -50,7 +50,7 @@ def test_create_magic_castle_init_fail(client, monkeypatch):
         if process_args == ["terraform", "init", "-no-color", "-input=false"]:
             raise CalledProcessError(1, "terraform init")
 
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle()
     with pytest.raises(
@@ -67,7 +67,7 @@ def test_create_magic_castle_plan_fail(client, monkeypatch):
         ]:
             raise CalledProcessError(1, "terraform plan")
 
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle()
     with pytest.raises(
@@ -86,7 +86,7 @@ def test_create_magic_castle_plan_export_fail(client, monkeypatch):
         ]:
             raise CalledProcessError(1, "terraform show")
 
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle()
     with pytest.raises(
@@ -96,7 +96,7 @@ def test_create_magic_castle_plan_export_fail(client, monkeypatch):
 
 
 def test_get_status_valid(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="created.calculquebec.cloud").first()
     created = MagicCastle(orm=orm)
     assert created.status == ClusterStatusCode.CREATED
@@ -113,7 +113,7 @@ def test_get_status_valid(client):
 
 
 def test_get_status_errors(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
     empty = MagicCastle(orm=orm)
     assert empty.status == ClusterStatusCode.BUILD_ERROR
@@ -124,7 +124,7 @@ def test_get_status_errors(client):
 
 
 def test_get_status_not_found(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="nonexisting.c3.ca").first()
     magic_castle1 = MagicCastle(orm=orm)
     assert magic_castle1.status == ClusterStatusCode.NOT_FOUND
@@ -133,7 +133,7 @@ def test_get_status_not_found(client):
 
 
 def test_get_plan_type_build(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(
         hostname="buildplanning.calculquebec.cloud"
     ).first()
@@ -145,35 +145,35 @@ def test_get_plan_type_build(client):
 
 
 def test_get_plan_type_destroy(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.DESTROY
 
 
 def test_get_plan_type_none(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.NONE
 
 
 def test_get_owner_valid(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.owner == "bob12.bobby@computecanada.ca"
 
 
 def test_get_owner_no_owner(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="noowner.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.owner == None
 
 
 def test_config_valid(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == {
@@ -229,14 +229,14 @@ def test_config_valid(client):
 
 
 def test_config_empty(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == dict()
 
 
 def test_config_busy(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == {
@@ -296,7 +296,7 @@ def test_allocated_resources_valid(client):
     3 volumes
     200 GiB of volume storage
     """
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
@@ -314,7 +314,7 @@ def test_allocated_resources_empty(client):
 
     empty cluster uses 0 vcpus, 0 ram, 0 volume
     """
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
@@ -338,7 +338,7 @@ def test_allocated_resources_missing_nodes(client):
     0 + 0 + 0 [root disks]
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
     """
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="missingnodes.c3.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {

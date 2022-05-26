@@ -39,7 +39,7 @@ def test_query_magic_castles():
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     user = LocalUser()
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
@@ -81,7 +81,7 @@ def test_create_empty_magic_castle(client):
 
 
 def test_query_magic_castles(client):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     user = LocalUser()
     magic_castle = user.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"

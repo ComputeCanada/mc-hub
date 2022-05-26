@@ -16,7 +16,7 @@ def test_full_name(alice, bob, admin):
 
 
 def test_query_magic_castles(client, alice, bob, admin):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     # Alice
     alice_magic_castles = alice.query_magic_castles()
     assert [magic_castle.hostname for magic_castle in alice_magic_castles] == [
@@ -71,7 +71,7 @@ def test_query_magic_castles(client, alice, bob, admin):
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(client, alice):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     user = alice
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
@@ -113,7 +113,7 @@ def test_create_empty_magic_castle(client, alice):
 
 
 def test_query_magic_castles(client, alice):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     magic_castle = alice.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.owner == "alice@computecanada.ca"
@@ -121,7 +121,7 @@ def test_query_magic_castles(client, alice):
 
 
 def test_query_magic_castles_admin(client, admin):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     magic_castle = admin.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.owner == "alice@computecanada.ca"
@@ -129,6 +129,6 @@ def test_query_magic_castles_admin(client, admin):
 
 
 def test_query_magic_castles_unauthorized_user(client, bob):
-    client.get("/api/user/me")
+    client.get("/api/users/me")
     assert len(bob.query_magic_castles(hostname="valid1.calculquebec.cloud")) == 0
     assert len(bob.query_magic_castles(hostname="noowner.calculquebec.cloud")) == 0
