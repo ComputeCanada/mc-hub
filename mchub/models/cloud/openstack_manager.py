@@ -12,31 +12,39 @@ MINIMUM_ROOT_DISK_SIZE = 10
 
 # Magic Castle requires the following specs for each instance category
 TAG_MINIMUM_REQUIREMENTS = {
-    "mgmt": {
-        "ram": 6144,
-        "vcpus": 2
-    },
-    "login": {
-        "ram": 2048,
-        "vcpus": 2
-    },
-    "node": {
-        "ram": 2048,
-        "vcpus": 1
-    },
+    "mgmt": {"ram": 6144, "vcpus": 2},
+    "login": {"ram": 2048, "vcpus": 2},
+    "node": {"ram": 2048, "vcpus": 1},
 }
+
 
 def validate_flavor(tag, flavor):
     return (
-        flavor.vcpus >= TAG_MINIMUM_REQUIREMENTS[tag]["vcpus"] and
-        flavor.ram   >= TAG_MINIMUM_REQUIREMENTS[tag]["ram"]
+        flavor.vcpus >= TAG_MINIMUM_REQUIREMENTS[tag]["vcpus"]
+        and flavor.ram >= TAG_MINIMUM_REQUIREMENTS[tag]["ram"]
     )
+
 
 class OpenStackManager:
     """
     OpenStackManager is responsible for fetching available OpenStack resources (instances, floating IPs, images,
     storage types) and usage quotas from the OpenStack API.
     """
+
+    __slots__ = [
+        "_con",
+        "_project_id",
+        "cloud_id",
+        "__pre_allocated_instance_count",
+        "__pre_allocated_cores",
+        "__pre_allocated_ram",
+        "__pre_allocated_volume_count",
+        "__pre_allocated_volume_size",
+        "_volume_quotas",
+        "_compute_quotas",
+        "_network_quotas",
+        "_available_flavors",
+    ]
 
     def __init__(
         self,
@@ -48,9 +56,9 @@ class OpenStackManager:
         pre_allocated_volume_count=0,
         pre_allocated_volume_size=0,
     ):
-        self.connection = openstack.connect(cloud=cloud_id)
-        self.project_id = self.connection.current_project_id
-
+        self._con = None
+        self._project_id = None
+        self.cloud_id = cloud_id
         self.__pre_allocated_instance_count = pre_allocated_instance_count
         self.__pre_allocated_cores = pre_allocated_cores
         self.__pre_allocated_ram = pre_allocated_ram
@@ -62,6 +70,24 @@ class OpenStackManager:
         self._network_quotas = None
 
         self._available_flavors = None
+
+    @property
+    def connection(self):
+        if self._con is None:
+            self._con = openstack.connect(cloud=self.cloud_id)
+        return self._con
+
+    @property
+    def project_id(self):
+        if self._project_id is None:
+            self._project_id = self.connection.current_project_id
+        return self._project_id
+
+    @property
+    def env(self):
+        return {
+            "OS_CLOUD": self.cloud_id,
+        }
 
     @property
     def available_resources(self):
@@ -88,7 +114,9 @@ class OpenStackManager:
             "image": self.images,
             "tag_types": {
                 tag: [
-                    flavor.name for flavor in self.available_flavors if validate_flavor(tag, flavor)
+                    flavor.name
+                    for flavor in self.available_flavors
+                    if validate_flavor(tag, flavor)
                 ]
                 for tag in TAG_MINIMUM_REQUIREMENTS
             },

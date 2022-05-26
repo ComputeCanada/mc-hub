@@ -1,3 +1,4 @@
+import json
 import pytest
 import sqlite3
 
@@ -6,13 +7,19 @@ from os import path
 from shutil import rmtree, copytree
 from typing import Callable
 
-
+from mchub import create_app
+from mchub.database import db
 from mchub.configuration.cloud import DEFAULT_CLOUD
-from mchub.database.schema_manager import SchemaManager
-from mchub.database.database_manager import DatabaseManager
-from mchub.models.user.authenticated_user import AuthenticatedUser
+from mchub.models.user import SAMLUser
+from mchub.models.magic_castle.magic_castle_configuration import (
+    MagicCastleConfiguration,
+)
+from mchub.models.magic_castle.magic_castle import MagicCastleORM
+from mchub.models.terraform.terraform_state import TerraformState
+from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+from mchub.models.magic_castle.plan_type import PlanType
 
-from . mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
+from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -31,116 +38,145 @@ def teardown_mock_clusters(cluster_names):
         rmtree(path.join(MOCK_CLUSTERS_PATH, cluster_name))
 
 
-@pytest.fixture(autouse=True)
-def database_connection(mocker):
-    # Using an in-memory database for faster unit tests with less disk IO
-    mocker.patch("mchub.database.database_manager.DATABASE_FILE_PATH", new=":memory:")
+def create_test_app():
 
-    with DatabaseManager.connect() as database_connection:
-        # The database :memory: only exist within a single connection.
-        # Therefore, the DatabaseConnection object is mocked to always return the same connection.
-        class MockDatabaseConnection:
-            def __init__(self):
-                self.__connection = None
-
-            def __enter__(self) -> sqlite3.Connection:
-                return database_connection
-
-            def __exit__(self, type, value, traceback):
-                pass
-
-        mocker.patch(
-            "mchub.database.database_manager.DatabaseManager.connect",
-            return_value=MockDatabaseConnection(),
+    app = create_app(db_path="sqlite:///:memory:")
+    with app.app_context():
+        db.create_all()
+        # Using an in-memory database for faster unit tests with less disk IO
+        buildplanning = MagicCastleORM(
+            hostname="buildplanning.calculquebec.cloud",
+            plan_type=PlanType.BUILD,
+            status=ClusterStatusCode.PLAN_RUNNING,
+            owner="alice@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH,
+                    "buildplanning.calculquebec.cloud",
+                    "main.tf.json",
+                )
+            ),
+        )
+        created = MagicCastleORM(
+            hostname="created.calculquebec.cloud",
+            status=ClusterStatusCode.CREATED,
+            plan_type=PlanType.BUILD,
+            owner="alice@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "created.calculquebec.cloud", "main.tf.json"
+                )
+            ),
+        )
+        empty_state = MagicCastleORM(
+            hostname="empty-state.calculquebec.cloud",
+            status=ClusterStatusCode.BUILD_ERROR,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "empty-state.calculquebec.cloud", "main.tf.json"
+                )
+            ),
+        )
+        empty = MagicCastleORM(
+            hostname="empty.calculquebec.cloud",
+            status=ClusterStatusCode.BUILD_ERROR,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config={},
+        )
+        missingfip = MagicCastleORM(
+            hostname="missingfloatingips.c3.ca",
+            status=ClusterStatusCode.BUILD_RUNNING,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(
+                path.join(
+                    MOCK_CLUSTERS_PATH, "missingfloatingips.c3.ca", "main.tf.json"
+                )
+            ),
+        )
+        main_tf = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
+        terraform_tf = path.join(
+            MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "terraform.tfstate"
+        )
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
+        missingnodes = MagicCastleORM(
+            hostname="missingnodes.c3.ca",
+            status=ClusterStatusCode.BUILD_ERROR,
+            plan_type=PlanType.NONE,
+            owner="bob12.bobby@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
         )
 
-        # Creating the DB schema
-        SchemaManager().update_schema()
-
-        # Seeding test data
-        test_magic_castle_rows_with_owner = [
-            (
-                "buildplanning.calculquebec.cloud",
-                "plan_running",
-                "build",
-                "alice@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "created.calculquebec.cloud",
-                "created",
-                "build",
-                "alice@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "empty.calculquebec.cloud",
-                "build_error",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "empty-state.calculquebec.cloud",
-                "build_error",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "missingfloatingips.c3.ca",
-                "build_running",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "missingnodes.c3.ca",
-                "build_error",
-                "none",
-                "bob12.bobby@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-            (
-                "valid1.calculquebec.cloud",
-                "provisioning_success",
-                "destroy",
-                "alice@computecanada.ca",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-        ]
-        test_magic_castle_rows_without_owner = [
-            (
-                "noowner.calculquebec.cloud",
-                "provisioning_success",
-                "destroy",
-                "2029-01-01",
-                DEFAULT_CLOUD,
-            ),
-        ]
-        database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, status, plan_type, owner, expiration_date, cloud_id) values (?, ?, ?, ?, ?, ?)",
-            test_magic_castle_rows_with_owner,
-        )
-        database_connection.executemany(
-            "INSERT INTO magic_castles (hostname, status, plan_type, expiration_date, cloud_id) values (?, ?, ?, ?, ?)",
-            test_magic_castle_rows_without_owner,
+        hostname = "valid1.calculquebec.cloud"
+        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
+        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
+        valid1 = MagicCastleORM(
+            hostname=hostname,
+            status=ClusterStatusCode.PROVISIONING_SUCCESS,
+            plan_type=PlanType.DESTROY,
+            owner="alice@computecanada.ca",
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
         )
 
-        database_connection.commit()
-        yield database_connection
+        hostname = "noowner.calculquebec.cloud"
+        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
+        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
+        noower = MagicCastleORM(
+            hostname=hostname,
+            status=ClusterStatusCode.PROVISIONING_SUCCESS,
+            plan_type=PlanType.DESTROY,
+            expiration_date="2029-01-01",
+            cloud_id=DEFAULT_CLOUD,
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
+        )
+        db.session.add(buildplanning)
+        db.session.add(created)
+        db.session.add(empty_state)
+        db.session.add(empty)
+        db.session.add(missingfip)
+        db.session.add(missingnodes)
+        db.session.add(noower)
+        db.session.add(valid1)
+        db.session.commit()
+    return app
 
 
 @pytest.fixture
-def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return AuthenticatedUser(
+def client(mocker):
+    app = create_test_app()
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        yield client
+
+
+@pytest.fixture
+def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
+    return SAMLUser(
         edu_person_principal_name="alice@computecanada.ca",
         given_name="Alice",
         surname="Tremblay",
@@ -150,8 +186,8 @@ def alice() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 
 @pytest.fixture
-def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return AuthenticatedUser(
+def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
+    return SAMLUser(
         edu_person_principal_name="bob12.bobby@computecanada.ca",
         given_name="Bob",
         surname="Rodriguez",
@@ -161,8 +197,8 @@ def bob() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
 
 
 @pytest.fixture
-def admin() -> Callable[[sqlite3.Connection], AuthenticatedUser]:
-    return AuthenticatedUser(
+def admin() -> Callable[[sqlite3.Connection], SAMLUser]:
+    return SAMLUser(
         edu_person_principal_name="the-admin@computecanada.ca",
         given_name="Admin",
         surname="Istrator",

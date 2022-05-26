@@ -5,8 +5,8 @@ from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
 
-from ... test_helpers import *  # noqa
-from ... mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ...test_helpers import *  # noqa
+from ...mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
 def test_full_name(alice, bob, admin):
@@ -15,9 +15,10 @@ def test_full_name(alice, bob, admin):
     assert admin.full_name == "Admin Istrator"
 
 
-def test_get_all_magic_castles(alice, bob, admin):
+def test_query_magic_castles(client, alice, bob, admin):
+    client.get("/api/users/me")
     # Alice
-    alice_magic_castles = alice.get_all_magic_castles()
+    alice_magic_castles = alice.query_magic_castles()
     assert [magic_castle.hostname for magic_castle in alice_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
@@ -30,7 +31,7 @@ def test_get_all_magic_castles(alice, bob, admin):
     ]
 
     # Bob
-    bob_magic_castles = bob.get_all_magic_castles()
+    bob_magic_castles = bob.query_magic_castles()
     assert [magic_castle.hostname for magic_castle in bob_magic_castles] == [
         "empty.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
@@ -45,7 +46,7 @@ def test_get_all_magic_castles(alice, bob, admin):
     ]
 
     # Admin
-    admin_magic_castles = admin.get_all_magic_castles()
+    admin_magic_castles = admin.query_magic_castles()
     assert [magic_castle.hostname for magic_castle in admin_magic_castles] == [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
@@ -69,7 +70,8 @@ def test_get_all_magic_castles(alice, bob, admin):
 
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
-def test_create_empty_magic_castle(alice):
+def test_create_empty_magic_castle(client, alice):
+    client.get("/api/users/me")
     user = alice
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
@@ -103,29 +105,30 @@ def test_create_empty_magic_castle(alice):
             "guest_passwd": "",
         }
     )
-    magic_castle2 = MagicCastle("alice123.c3.ca")
+    magic_castle2 = alice.query_magic_castles(hostname="alice123.c3.ca")[0]
     assert magic_castle2.hostname == "alice123.c3.ca"
-    assert magic_castle2.status.value == "created"
-    assert magic_castle2.get_plan_type().value == "build"
-    assert magic_castle2.owner.id == "alice@computecanada.ca"
+    assert magic_castle2.status == ClusterStatusCode.CREATED
+    assert magic_castle2.plan_type == PlanType.BUILD
+    assert magic_castle2.owner == "alice@computecanada.ca"
 
 
-def test_get_magic_castle_by_hostname(alice):
-    magic_castle = alice.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
+def test_query_magic_castles(client, alice):
+    client.get("/api/users/me")
+    magic_castle = alice.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.owner.id == "alice@computecanada.ca"
+    assert magic_castle.owner == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
-def test_get_magic_castle_by_hostname_admin(admin):
-    magic_castle = admin.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
+def test_query_magic_castles_admin(client, admin):
+    client.get("/api/users/me")
+    magic_castle = admin.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
-    assert magic_castle.owner.id == "alice@computecanada.ca"
+    assert magic_castle.owner == "alice@computecanada.ca"
     assert magic_castle.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
-def test_get_magic_castle_by_hostname_unauthorized_user(bob):
-    with pytest.raises(ClusterNotFoundException):
-        bob.get_magic_castle_by_hostname("valid1.calculquebec.cloud")
-    with pytest.raises(ClusterNotFoundException):
-        bob.get_magic_castle_by_hostname("noowner.calculquebec.cloud")
+def test_query_magic_castles_unauthorized_user(client, bob):
+    client.get("/api/users/me")
+    assert len(bob.query_magic_castles(hostname="valid1.calculquebec.cloud")) == 0
+    assert len(bob.query_magic_castles(hostname="noowner.calculquebec.cloud")) == 0

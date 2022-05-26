@@ -3,15 +3,22 @@ from os import path as os_path
 from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
 
-def create_app():
-    from . configuration import config
-    from . configuration.env import DIST_PATH
-    from . resources.magic_castle_api import MagicCastleAPI
-    from . resources.progress_api import ProgressAPI
-    from . resources.available_resources_api import AvailableResourcesApi
-    from . resources.user_api import UserAPI    
 
+def create_app(db_path=None):
+    from .configuration import config, DATABASE_FILENAME
+    from .configuration.env import DIST_PATH, DATABASE_PATH
+    from .database import db
+    from .resources.magic_castle_api import MagicCastleAPI
+    from .resources.progress_api import ProgressAPI
+    from .resources.available_resources_api import AvailableResourcesApi
+    from .resources.user_api import UserAPI
+
+    if db_path is None:
+        db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
     app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_path
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
 
     # Allows origins set in config file on all routes
     CORS(
@@ -62,16 +69,13 @@ def create_app():
     user_view = UserAPI.as_view("user")
     app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
 
-
     @app.route("/css/<path:path>")
     def send_css_file(path):
         return send_from_directory(os_path.join(DIST_PATH, "css"), path)
 
-
     @app.route("/js/<path:path>")
     def send_js_file(path):
         return send_from_directory(os_path.join(DIST_PATH, "js"), path)
-
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

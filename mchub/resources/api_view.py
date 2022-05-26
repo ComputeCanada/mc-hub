@@ -5,18 +5,17 @@ from flask import request
 from flask.views import MethodView
 from flask import make_response
 
-from .. configuration import config
-from .. models.auth_type import AuthType
-from .. models.user.anonymous_user import AnonymousUser
-from .. models.user.authenticated_user import AuthenticatedUser
-from .. exceptions.invalid_usage_exception import (
+from ..configuration import config
+from ..models.auth_type import AuthType
+from ..models.user import LocalUser, SAMLUser
+from ..exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
 )
-from .. exceptions.server_exception import *
+from ..exceptions.server_exception import *
 
 
-AUTH_HEADER_PAT = re.compile(r'token\s+(.+)', re.IGNORECASE)
+AUTH_HEADER_PAT = re.compile(r"token\s+(.+)", re.IGNORECASE)
 
 DEFAULT_RESPONSE_CODE = 200
 
@@ -62,12 +61,13 @@ def compute_current_user(route_handler):
     """
     Creates a decorator used to pass the current User object as a parameter to the route handler.
 
-    If the authentication type is SAML, an AuthenticatedUser object will be passed.
-    Otherwise, if the authentication type is NONE, an AnonymousUser object will be passed.
+    If the authentication type is SAML, an SAMLUser object will be passed.
+    Otherwise, if the authentication type is NONE, an LocalUser object will be passed.
 
     :param route_handler: The Flask route handler function.
     :return: The decorator that modifies the route handler to have the current user as a parameter.
     """
+
     def decorator(*args, **kwargs):
         # While the AuthType won't change during the life of the application
         # defining auth_type in compute_current_user context leads to problem
@@ -79,25 +79,25 @@ def compute_current_user(route_handler):
             if m:
                 user_token = m.group(1)
                 if user_token == config["token"]:
-                    user = AnonymousUser()
+                    user = LocalUser()
                 else:
                     raise UnauthenticatedException
         elif AuthType.SAML in auth_type and "eduPersonPrincipalName" in headers:
             try:
                 # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
                 # Therefore, special characters and accents in givenName and surname are not correctly decoded.
-                user = AuthenticatedUser(
+                user = SAMLUser(
                     edu_person_principal_name=headers["eduPersonPrincipalName"],
                     given_name=headers["givenName"],
                     surname=headers["surname"],
                     mail=headers["mail"],
-                    ssh_public_key=headers.get("sshPublicKey", "")
+                    ssh_public_key=headers.get("sshPublicKey", ""),
                 )
             except KeyError:
                 # Missing an authentication header
                 raise UnauthenticatedException
         elif AuthType.NONE in auth_type:
-            user = AnonymousUser()
+            user = LocalUser()
         else:
             raise UnauthenticatedException
         return route_handler(user, *args, **kwargs)
