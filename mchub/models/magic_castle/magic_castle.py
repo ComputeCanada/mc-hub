@@ -113,12 +113,11 @@ class MagicCastle:
 
     _tf_state = None
 
-    def __init__(self, orm=None, hostname=None, owner=None):
+    def __init__(self, orm=None, owner=None):
         if orm:
             self.orm = orm
         else:
             self.orm = MagicCastleORM(
-                hostname=hostname,
                 owner=owner,
                 status=ClusterStatusCode.NOT_FOUND,
                 plan_type=PlanType.NONE,

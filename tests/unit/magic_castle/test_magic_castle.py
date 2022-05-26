@@ -41,7 +41,7 @@ VALID_CLUSTER_CONFIGURATION = {
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_magic_castle_plan_valid(client):
     client.get("/api/user/me")
-    cluster = MagicCastle(hostname="a-123-45.calculquebec.cloud")
+    cluster = MagicCastle()
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
 
@@ -52,7 +52,7 @@ def test_create_magic_castle_init_fail(client, monkeypatch):
 
     client.get("/api/user/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
-    cluster = MagicCastle(hostname="a-123-45.calculquebec.cloud")
+    cluster = MagicCastle()
     with pytest.raises(
         PlanException, match="An error occurred while initializing Terraform."
     ):
@@ -69,7 +69,7 @@ def test_create_magic_castle_plan_fail(client, monkeypatch):
 
     client.get("/api/user/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
-    cluster = MagicCastle(hostname="a-123-45.calculquebec.cloud")
+    cluster = MagicCastle()
     with pytest.raises(
         PlanException, match="An error occurred while planning changes."
     ):
@@ -88,7 +88,7 @@ def test_create_magic_castle_plan_export_fail(client, monkeypatch):
 
     client.get("/api/user/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
-    cluster = MagicCastle(hostname="a-123-45.calculquebec.cloud")
+    cluster = MagicCastle()
     with pytest.raises(
         PlanException, match="An error occurred while exporting planned changes."
     ):
@@ -296,7 +296,9 @@ def test_allocated_resources_valid(client):
     3 volumes
     200 GiB of volume storage
     """
-    magic_castle = MagicCastle(hostname="valid1.calculquebec.cloud")
+    client.get("/api/user/me")
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 3,
         "pre_allocated_ram": 15360,
@@ -312,7 +314,9 @@ def test_allocated_resources_empty(client):
 
     empty cluster uses 0 vcpus, 0 ram, 0 volume
     """
-    magic_castle = MagicCastle(hostname="empty.calculquebec.cloud")
+    client.get("/api/user/me")
+    orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
+    magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,
         "pre_allocated_ram": 0,
@@ -334,7 +338,9 @@ def test_allocated_resources_missing_nodes(client):
     0 + 0 + 0 [root disks]
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
     """
-    magic_castle = MagicCastle(hostname="missingnodes.c3.ca")
+    client.get("/api/user/me")
+    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.c3.ca").first()
+    magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,
         "pre_allocated_ram": 0,
