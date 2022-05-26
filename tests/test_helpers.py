@@ -1,4 +1,4 @@
-from pickle import NONE
+import json
 import pytest
 import sqlite3
 
@@ -15,6 +15,7 @@ from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
 )
 from mchub.models.magic_castle.magic_castle import MagicCastleORM
+from mchub.models.terraform.terraform_state import TerraformState
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType
 
@@ -106,6 +107,12 @@ def create_test_app():
                 )
             ),
         )
+        main_tf = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
+        terraform_tf = path.join(
+            MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "terraform.tfstate"
+        )
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
         missingnodes = MagicCastleORM(
             hostname="missingnodes.c3.ca",
             status=ClusterStatusCode.BUILD_ERROR,
@@ -113,34 +120,39 @@ def create_test_app():
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
-            ),
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
         )
+
+        hostname = "valid1.calculquebec.cloud"
+        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
+        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
         valid1 = MagicCastleORM(
-            hostname="valid1.calculquebec.cloud",
+            hostname=hostname,
             status=ClusterStatusCode.PROVISIONING_SUCCESS,
             plan_type=PlanType.DESTROY,
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(
-                    MOCK_CLUSTERS_PATH, "valid1.calculquebec.cloud", "main.tf.json"
-                )
-            ),
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
         )
+
+        hostname = "noowner.calculquebec.cloud"
+        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
+        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
         noower = MagicCastleORM(
-            hostname="noowner.calculquebec.cloud",
+            hostname=hostname,
             status=ClusterStatusCode.PROVISIONING_SUCCESS,
             plan_type=PlanType.DESTROY,
             expiration_date="2029-01-01",
             cloud_id=DEFAULT_CLOUD,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(
-                    MOCK_CLUSTERS_PATH, "noowner.calculquebec.cloud", "main.tf.json"
-                )
-            ),
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
         )
         db.session.add(buildplanning)
         db.session.add(created)
