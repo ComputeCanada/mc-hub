@@ -359,7 +359,38 @@ class MagicCastle:
         self.plan_type = PlanType.BUILD
         db.session.add(self.orm)
         db.session.commit()
-        self.__plan(destroy=False, existing_cluster=False)
+
+        # Create cluster folder on the filesystem
+        mkdir(self.path)
+        if MAGIC_CASTLE_PATH[:3] != "git":
+            symlink(
+                path.join(MAGIC_CASTLE_PATH, "openstack"),
+                path.join(self.path, "openstack"),
+            )
+            symlink(
+                path.join(MAGIC_CASTLE_PATH, "dns"),
+                path.join(self.path, "dns"),
+            )
+        # Write the main terraform file
+        self.config.write(self.main_file)
+
+        # Initialize terraform modules
+        try:
+            run(
+                ["terraform", "init", "-no-color", "-input=false"],
+                cwd=self.path,
+                capture_output=True,
+                check=True,
+            )
+        except CalledProcessError:
+            # self.status = previous_status
+            raise PlanException(
+                "An error occurred while initializing Terraform.",
+                additional_details=f"hostname: {self.hostname}",
+            )
+
+        self.status = ClusterStatusCode.CREATED
+        self.plan()
 
     def plan_modification(self, data):
         if not self.found:
@@ -367,9 +398,17 @@ class MagicCastle:
         if self.is_busy:
             raise BusyClusterException
         self.set_configuration(data)
+        self.plan_type = PlanType.BUILD
         db.session.commit()
 
-        self.__plan(destroy=False, existing_cluster=True)
+        # Check if main_file has changed before writing
+        # and planning a change, some modifications may
+        # only be reflected in the database and do not
+        # require a plan.
+        self.config.write(self.main_file)
+        self.remove_existing_plan()
+        self.rotate_terraform_logs(apply=False)
+        self.plan()
 
     def plan_destruction(self):
         if not self.found:
@@ -377,54 +416,19 @@ class MagicCastle:
         if self.is_busy:
             raise BusyClusterException
 
-        self.__plan(destroy=True, existing_cluster=True)
-
-    def __plan(self, *, destroy, existing_cluster):
-        if existing_cluster:
-            self.__remove_existing_plan()
-            previous_status = self.status
-        else:
-            mkdir(self.path)
-            if MAGIC_CASTLE_PATH[:3] != "git":
-                symlink(
-                    path.join(MAGIC_CASTLE_PATH, "openstack"),
-                    path.join(self.path, "openstack"),
-                )
-                symlink(
-                    path.join(MAGIC_CASTLE_PATH, "dns"),
-                    path.join(self.path, "dns"),
-                )
-            previous_status = ClusterStatusCode.CREATED
-
-        if destroy:
-            plan_type = PlanType.DESTROY
-        else:
-            plan_type = PlanType.BUILD
-            self.config.write(self.main_file)
-
-        if destroy and self.status == ClusterStatusCode.CREATED:
+        self.plan_type = PlanType.DESTROY
+        if self.status == ClusterStatusCode.CREATED:
             self.delete()
-            return
+        else:
+            self.remove_existing_plan()
+            self.rotate_terraform_logs(apply=False)
+            self.plan()
 
+    def plan(self):
+        previous_status = self.status
+        destroy = self.plan_type == PlanType.DESTROY
         self.status = ClusterStatusCode.PLAN_RUNNING
-        self.plan_type = plan_type
 
-        if not existing_cluster:
-            try:
-                run(
-                    ["terraform", "init", "-no-color", "-input=false"],
-                    cwd=self.path,
-                    capture_output=True,
-                    check=True,
-                )
-            except CalledProcessError:
-                self.status = previous_status
-                raise PlanException(
-                    "An error occurred while initializing Terraform.",
-                    additional_details=f"hostname: {self.hostname}",
-                )
-
-        self.rotate_terraform_logs(apply=False)
         environment_variables = environ.copy()
         dns_manager = DnsManager(self.domain)
         cloud_manager = CloudManager(self.cloud_id)
@@ -516,8 +520,7 @@ class MagicCastle:
         db.session.delete(self.orm)
         db.session.commit()
 
-    def __remove_existing_plan(self):
-        self.plan_type = PlanType.NONE
+    def remove_existing_plan(self):
         try:
             # Remove existing plan, if it exists
             remove(path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME))
