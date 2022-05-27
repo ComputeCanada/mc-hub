@@ -308,8 +308,16 @@ export default {
           query: { showPlanConfirmation: "1" },
         });
         this.unloadCluster();
-      } catch (e) {
-        this.showError(e.response.data.message);
+      } catch (error) {
+        if (error.response) {
+          this.showError(error.response.data.message);
+        } else if (error.request) {
+          console.log(error.request);
+          this.showError("Plan creation request was made but no response was received.");
+        } else {
+          console.log(error.message);
+          this.showError("Plan creation request setting up triggered an error.");
+        }
       } finally {
         this.clusterPlanRunningDialog = false;
       }
