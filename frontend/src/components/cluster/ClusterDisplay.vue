@@ -334,8 +334,6 @@ export default {
       try {
         this.unloadCluster();
         await MagicCastleRepository.delete(this.hostname);
-        // await MagicCastleRepository.apply(this.hostname);
-        this.startStatusPolling();
       } catch (e) {
         this.showError(e.response.data.message);
       }
