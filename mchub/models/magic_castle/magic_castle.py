@@ -356,13 +356,10 @@ class MagicCastle:
         if self.found:
             raise ClusterExistsException
         self.set_configuration(data)
-        self.status = ClusterStatusCode.CREATED
         self.plan_type = PlanType.BUILD
-
-        self.__plan(destroy=False, existing_cluster=False)
-
         db.session.add(self.orm)
         db.session.commit()
+        self.__plan(destroy=False, existing_cluster=False)
 
     def plan_modification(self, data):
         if not self.found:
