@@ -11,6 +11,7 @@ from threading import Thread
 
 from marshmallow import ValidationError
 from sqlalchemy.sql import func
+from sqlalchemy.exc import IntegrityError
 
 from mchub.models.cloud.cloud_manager import CloudManager
 
@@ -64,7 +65,7 @@ def terraform_apply(hostname, env, main_path, destroy):
                 env=env,
             )
     except CalledProcessError as err:
-        logging.info(f"An error occurred while running terraform apply: {err}")
+        logging.error(f"An error occurred while running terraform apply: {err}")
         if destroy:
             status = ClusterStatusCode.DESTROY_ERROR
         else:
@@ -183,15 +184,23 @@ class MagicCastle:
         self.orm.config = value
 
     def set_configuration(self, configuration: dict):
+        changed = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
-        self.orm.cloud_id = configuration.pop("cloud_id")
+        cloud_id = configuration.pop("cloud_id")
+        if self.orm.cloud_id != cloud_id:
+            self.orm.cloud_id = cloud_id
+            changed = True
         try:
-            self.config = MagicCastleConfiguration(configuration)
+            config = MagicCastleConfiguration(configuration)
         except ValidationError as err:
             raise InvalidUsageException(
                 f"The magic castle configuration could not be parsed.\nError: {err.messages}"
             )
-        self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
+        if self.config != config:
+            self.config = config
+            self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
+            changed = True
+        return changed
 
     @property
     def status(self) -> ClusterStatusCode:
@@ -269,9 +278,6 @@ class MagicCastle:
         self.orm.plan_type = plan_type
 
     def get_progress(self):
-        if not self.found:
-            raise ClusterNotFoundException
-
         try:
             with open(
                 path.join(self.path, TERRAFORM_PLAN_JSON_FILENAME), "r"
@@ -353,15 +359,24 @@ class MagicCastle:
         )
 
     def plan_creation(self, data):
-        if self.found:
-            raise ClusterExistsException
         self.set_configuration(data)
         self.plan_type = PlanType.BUILD
         db.session.add(self.orm)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            raise ClusterExistsException
 
         # Create cluster folder on the filesystem
-        mkdir(self.path)
+        try:
+            mkdir(self.path)
+        except Exception as error:
+            self.delete()
+            raise PlanException(
+                "Could not create cluster folder on the filesystem.",
+                additional_details=f"hostname: {self.hostname}, error: {error}",
+            )
+
         if MAGIC_CASTLE_PATH[:3] != "git":
             symlink(
                 path.join(MAGIC_CASTLE_PATH, "openstack"),
@@ -371,8 +386,16 @@ class MagicCastle:
                 path.join(MAGIC_CASTLE_PATH, "dns"),
                 path.join(self.path, "dns"),
             )
+
         # Write the main terraform file
-        self.config.write(self.main_file)
+        try:
+            self.config.write(self.main_file)
+        except Exception as error:
+            self.delete()
+            raise PlanException(
+                "Could not write main.tf.json on the filesystem.",
+                additional_details=f"hostname: {self.hostname}, error: {error}",
+            )
 
         # Initialize terraform modules
         try:
@@ -382,11 +405,11 @@ class MagicCastle:
                 capture_output=True,
                 check=True,
             )
-        except CalledProcessError:
-            # self.status = previous_status
+        except Exception as error:
+            self.delete()
             raise PlanException(
-                "An error occurred while initializing Terraform.",
-                additional_details=f"hostname: {self.hostname}",
+                "Could not initialize Terraform modules.",
+                additional_details=f"hostname: {self.hostname}, error: {error}",
             )
 
         self.status = ClusterStatusCode.CREATED
@@ -397,7 +420,7 @@ class MagicCastle:
             raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
-        self.set_configuration(data)
+        config_changed = self.set_configuration(data)
         self.plan_type = PlanType.BUILD
         db.session.commit()
 
@@ -405,14 +428,13 @@ class MagicCastle:
         # and planning a change, some modifications may
         # only be reflected in the database and do not
         # require a plan.
-        self.config.write(self.main_file)
-        self.remove_existing_plan()
-        self.rotate_terraform_logs(apply=False)
-        self.plan()
+        if config_changed:
+            self.config.write(self.main_file)
+            self.remove_existing_plan()
+            self.rotate_terraform_logs(apply=False)
+            self.plan()
 
     def plan_destruction(self):
-        if not self.found:
-            raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
 
@@ -506,7 +528,7 @@ class MagicCastle:
         env = environ.copy()
         if destroy:
             env["TF_WARN_OUTPUT_ERRORS"] = "1"
-        env["OS_CLOUD"] = self.orm.cloud_id
+        env.update(CloudManager(self.cloud_id).get_environment_variables())
         env.update(DnsManager(self.domain).get_environment_variables())
 
         self.rotate_terraform_logs(apply=True)
