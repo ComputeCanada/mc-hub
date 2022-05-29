@@ -53,9 +53,7 @@ def test_create_magic_castle_init_fail(client, monkeypatch):
     client.get("/api/users/me")
     monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle()
-    with pytest.raises(
-        PlanException, match="An error occurred while initializing Terraform."
-    ):
+    with pytest.raises(PlanException, match="Could not initialize Terraform modules."):
         cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
 

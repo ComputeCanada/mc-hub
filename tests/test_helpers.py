@@ -19,6 +19,7 @@ from mchub.models.terraform.terraform_state import TerraformState
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType
 
+from unittest.mock import Mock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
@@ -240,4 +241,6 @@ def mock_openstack_manager(mocker):
 
 @pytest.fixture
 def fake_successful_subprocess_run(mocker):
-    mocker.patch("mchub.models.magic_castle.magic_castle.run", return_value=None)
+    mock = Mock()
+    mock.stdout = "{}"
+    mocker.patch("mchub.models.magic_castle.magic_castle.run", return_value=mock)
