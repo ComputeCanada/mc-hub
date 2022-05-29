@@ -430,6 +430,11 @@ class MagicCastle:
         # require a plan.
         if config_changed:
             self.config.write(self.main_file)
+
+        if config_changed or self.status in (
+            ClusterStatusCode.PLAN_ERROR,
+            ClusterStatusCode.BUILD_ERROR,
+        ):
             self.remove_existing_plan()
             self.rotate_terraform_logs(apply=False)
             self.plan()
