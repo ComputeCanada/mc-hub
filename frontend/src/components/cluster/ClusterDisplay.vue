@@ -14,7 +14,7 @@
                 <v-list-item-subtitle>Hostname</v-list-item-subtitle>
                 <v-list-item-title>{{ hostname }}</v-list-item-title>
               </v-list-item-content>
-              <status-chip :status="currentStatus" />
+              <status-chip :status="status" />
             </v-list-item>
             <v-list-item v-if="cloud_id">
               <v-list-item-content>
@@ -28,7 +28,7 @@
             v-if="magicCastle && !applyRunning && !clusterDestructionDialog"
             :existing-cluster="existingCluster"
             :specs="magicCastle"
-            :current-status="currentStatus"
+            :status="status"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
             @loading="loading = $event"
           />
@@ -161,7 +161,7 @@ export default {
       clusterModificationDialog: false,
       errorMessage: "",
       statusPoller: null,
-      currentStatus: null,
+      status: null,
       resourcesChanges: [],
       magicCastle: null,
       loading: false,
@@ -199,10 +199,10 @@ export default {
         ClusterStatusCode.DESTROY_RUNNING,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.PLAN_RUNNING,
-      ].includes(this.currentStatus);
+      ].includes(this.status);
     },
     applyRunning() {
-      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
+      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.status);
     },
     cloud_id() {
       try {
@@ -227,14 +227,13 @@ export default {
       if (this.statusPromise !== null) {
         return;
       }
-      const statusAlreadyInitialized = this.currentStatus !== null;
-      const planWasRunning = this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
+      const statusAlreadyInitialized = this.status !== null;
+      const planWasRunning = this.status === ClusterStatusCode.PLAN_RUNNING;
 
-      // const oldStatus = this.currentStatus;
       this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
       const { status, progress } = (await this.statusPromise).data;
       this.statusPromise = null;
-      this.currentStatus = status;
+      this.status = status;
       this.resourcesChanges = progress || [];
 
       if (!this.busy) {
@@ -259,7 +258,7 @@ export default {
       clearInterval(this.statusPoller);
     },
     showStatusDialog() {
-      switch (this.currentStatus) {
+      switch (this.status) {
         case ClusterStatusCode.PROVISIONING_RUNNING:
           this.provisioningRunningDialog = true;
           break;
@@ -376,7 +375,7 @@ export default {
     },
     unloadCluster() {
       this.magicCastle = null;
-      this.currentStatus = null;
+      this.status = null;
     },
   },
 };

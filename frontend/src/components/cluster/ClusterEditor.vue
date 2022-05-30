@@ -312,7 +312,7 @@ export default {
       type: Boolean,
       required: true,
     },
-    currentStatus: {
+    status: {
       type: String,
     },
   },
@@ -442,7 +442,7 @@ export default {
             ClusterStatusCode.BUILD_ERROR,
             ClusterStatusCode.PROVISIONING_ERROR,
             ClusterStatusCode.DESTROY_ERROR,
-          ].includes(this.currentStatus)
+          ].includes(this.status)
         ) {
           return true;
         }
