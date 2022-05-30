@@ -55,11 +55,8 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
   image: ["centos7", "centos7-updated", "CentOS-7-x64-2021-11", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
-  instances: {
-    mgmt: { type: ["p4-6gb", "c64-256gb-10"] },
-    login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },
-    node: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] }
-  },
+  tag_types: {"mgmt": ["p4-6gb", "c2-7.5gb-31"], "login": ["p2-3gb", "p4-6gb"], "node": ["p2-3gb", "p4-6gb"]},
+  "types": ["p1-1.5gb", "p2-3gb", "p4-6gb"],
   volumes: {},
   domain: ["calculquebec.cloud", "c3.ca"]
 });
@@ -181,7 +178,6 @@ describe("ClusterEditor", () => {
       vuetify,
       propsData: {
         specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
-        user: cloneDeep(DEFAULT_USER),
         ...customizableProps
       }
     });
