@@ -422,6 +422,7 @@ class MagicCastle:
             raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
+
         config_changed = self.set_configuration(data)
         self.plan_type = PlanType.BUILD
         db.session.commit()
@@ -446,7 +447,7 @@ class MagicCastle:
             raise BusyClusterException
 
         self.plan_type = PlanType.DESTROY
-        if self.status == ClusterStatusCode.CREATED:
+        if self.status in (ClusterStatusCode.CREATED, ClusterStatusCode.PLAN_ERROR):
             self.delete()
         else:
             self.remove_existing_plan()

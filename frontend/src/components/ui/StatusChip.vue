@@ -8,6 +8,7 @@
 const ClusterFormattedStatus = Object.freeze({
   created: { text: "Plan created", color: "darkgrey" },
   plan_running: { text: "Creating plan", color: "orange" },
+  plan_error: { text: "Plan error", color: "red" },
   build_running: { text: "Build running", color: "orange" },
   provisioning_running: { text: "Provisioning running", color: "orange" },
   provisioning_success: { text: "Healthy", color: "green" },

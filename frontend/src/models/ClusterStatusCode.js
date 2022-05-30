@@ -1,6 +1,7 @@
 export default Object.freeze({
   CREATED: "created",
   PLAN_RUNNING: "plan_running",
+  PLAN_ERROR: "plan_error",
   BUILD_RUNNING: "build_running",
   PROVISIONING_RUNNING: "provisioning_running",
   PROVISIONING_SUCCESS: "provisioning_success",

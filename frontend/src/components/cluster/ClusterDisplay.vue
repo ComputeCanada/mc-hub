@@ -174,7 +174,7 @@ export default {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
         const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        if (status == ClusterStatusCode.CREATED) {
+        if (status == ClusterStatusCode.CREATED || status == ClusterStatusCode.PLAN_ERROR) {
           /*
           The initial plan was created, but the cluster was never built.
           We don't show a confirmation because no resource has been created.
