@@ -416,9 +416,6 @@ export default {
     hostname() {
       return this.localSpecs.cluster_name + "." + this.localSpecs.domain;
     },
-    applyRunning() {
-      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
-    },
     dirtyForm() {
       const keysToCheck = [
         "volumes",
@@ -436,6 +433,16 @@ export default {
       if (this.existingCluster) {
         if (this.initialSpecs === null) {
           return false;
+        }
+        if (
+          [
+            ClusterStatusCode.CREATED,
+            ClusterStatusCode.BUILD_ERROR,
+            ClusterStatusCode.PROVISIONING_ERROR,
+            ClusterStatusCode.DESTROY_ERROR,
+          ].includes(this.currentStatus)
+        ) {
+          return true;
         }
         return keysToCheck.some((key) => !isEqual(this.initialSpecs[key], this.localSpecs[key]));
       }
@@ -523,17 +530,7 @@ export default {
       return this.localSpecs !== null && this.resourceDetails !== null;
     },
     applyButtonEnabled() {
-      return (
-        !this.loading &&
-        this.validForm &&
-        (this.dirtyForm ||
-          [
-            ClusterStatusCode.CREATED,
-            ClusterStatusCode.BUILD_ERROR,
-            ClusterStatusCode.PROVISIONING_ERROR,
-            ClusterStatusCode.DESTROY_ERROR,
-          ].includes(this.currentStatus))
-      );
+      return !this.loading && this.validForm && this.dirtyForm;
     },
   },
   methods: {
