@@ -29,7 +29,6 @@
             :existing-cluster="existingCluster"
             :specs="magicCastle"
             :current-status="currentStatus"
-            :user="user"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
             @loading="loading = $event"
           />
@@ -213,7 +212,7 @@ export default {
       }
     },
     existingCluster() {
-      return this.hostname !== null;
+      return this.hostname !== null && this.hostname !== undefined;
     },
   },
   methods: {

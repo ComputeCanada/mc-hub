@@ -6,7 +6,7 @@
         <v-list-item v-if="!existingCluster">
           <v-select
             v-model="localSpecs.cloud_id"
-            :items="user.projects"
+            :items="projects"
             label="Cloud project"
             @change="changeCloudProject"
           />
@@ -338,6 +338,7 @@ export default {
       quotas: null,
       possibleResources: null,
       resourceDetails: null,
+      projects: [],
     };
   },
   watch: {
@@ -390,7 +391,8 @@ export default {
   async created() {
     if (!this.existingCluster) {
       const user = (await UserRepository.getCurrent()).data;
-      this.localSpecs.cloud_id = user.projects[0];
+      this.projects = user.projects;
+      this.localSpecs.cloud_id = this.projects[0];
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
       this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
