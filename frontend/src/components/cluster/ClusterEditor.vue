@@ -3,7 +3,7 @@
     <v-form ref="form" v-model="validForm">
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
-        <v-list-item v-if="!existingCluster">
+        <v-list-item v-if="!built">
           <v-select
             v-model="localSpecs.cloud_id"
             :items="projects"
@@ -142,7 +142,7 @@
                   :items="Object.keys(localSpecs.volumes)"
                   :value="tag"
                   label="tag"
-                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                  :readonly="built && id in initialSpecs.volumes.nfs"
                 ></v-combobox>
                 <!-- <v-text-field :value="tag" label="tag" readonly /> -->
               </v-col>
@@ -152,7 +152,7 @@
                   label="volume name"
                   v-on:change="changeVolumeName(id, $event)"
                   :rules="[volumeNameRule(id)]"
-                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                  :readonly="built && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="2" class="pt-0">
@@ -165,7 +165,7 @@
                   min="0"
                   dir="rtl"
                   reverse
-                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                  :readonly="built && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="1" class="pt-0">
@@ -175,7 +175,7 @@
                   icon
                   small
                   color="error"
-                  :disabled="existingCluster && id in initialSpecs.volumes.nfs"
+                  :disabled="built && id in initialSpecs.volumes.nfs"
                 >
                   <v-icon> mdi-delete </v-icon>
                 </v-btn>
@@ -389,10 +389,13 @@ export default {
     },
   },
   async created() {
-    if (!this.existingCluster) {
-      const user = (await UserRepository.getCurrent()).data;
+    let user;
+    if (!this.built) {
+      user = (await UserRepository.getCurrent()).data;
       this.projects = user.projects;
       this.localSpecs.cloud_id = this.projects[0];
+    }
+    if (!this.existingCluster) {
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
       this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
@@ -407,6 +410,9 @@ export default {
     this.$disableUnloadConfirmation();
   },
   computed: {
+    built() {
+      return this.existingCluster && this.status != ClusterStatusCode.CREATED;
+    },
     localSpecs: {
       get() {
         return this.specs;
@@ -574,7 +580,7 @@ export default {
               newPublicIP += self.localSpecs.instances[key].count;
             }
           }
-          if (self.existingCluster) {
+          if (self.initialSpecs) {
             for (let key in self.initialSpecs.instances) {
               if (self.initialSpecs.instances[key].tags.includes("public")) {
                 newPublicIP -= self.initialSpecs.instances[key].count;
@@ -752,7 +758,7 @@ export default {
       this.loading = true;
       this.$emit("loading", this.loading);
       let availableResources = null;
-      if (this.existingCluster) {
+      if (this.built) {
         availableResources = (await AvailableResourcesRepository.getHost(this.hostname)).data;
       } else {
         availableResources = (await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)).data;
