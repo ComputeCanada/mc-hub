@@ -288,6 +288,7 @@ import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import UserRepository from "@/repositories/UserRepository";
 
 const MB_PER_GB = 1024;
 const MINIMUM_PASSWORD_LENGTH = 8;
@@ -313,9 +314,6 @@ export default {
     },
     currentStatus: {
       type: String,
-    },
-    user: {
-      type: Object,
     },
   },
   data: function () {
@@ -391,10 +389,11 @@ export default {
   },
   async created() {
     if (!this.existingCluster) {
-      this.localSpecs.cloud_id = this.user.projects[0];
+      const user = (await UserRepository.getCurrent()).data;
+      this.localSpecs.cloud_id = user.projects[0];
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
-      this.localSpecs.public_keys = this.user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
+      this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
     }
     this.initialSpecs = cloneDeep(this.localSpecs);
     await this.loadCloudResources();

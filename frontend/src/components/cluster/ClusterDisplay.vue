@@ -93,7 +93,6 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
-import UserRepository from "@/repositories/UserRepository";
 import { isEqual } from "lodash";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
@@ -166,7 +165,6 @@ export default {
       currentStatus: null,
       resourcesChanges: [],
       magicCastle: null,
-      user: null,
       loading: false,
       statusPromise: null,
     };
@@ -187,12 +185,9 @@ export default {
         } else {
           await this.planDestruction();
         }
-      } else {
-        this.user = (await UserRepository.getCurrent()).data;
       }
       this.startStatusPolling();
     } else {
-      this.user = (await UserRepository.getCurrent()).data;
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
     }
   },
