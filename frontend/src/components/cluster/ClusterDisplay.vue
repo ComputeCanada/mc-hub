@@ -143,10 +143,6 @@ export default {
   },
   props: {
     hostname: String,
-    existingCluster: {
-      type: Boolean,
-      required: true,
-    },
     showPlanConfirmation: {
       type: Boolean,
       default: false,
@@ -220,6 +216,9 @@ export default {
       } catch (e) {
         return null;
       }
+    },
+    existingCluster() {
+      return this.hostname !== null;
     },
   },
   methods: {
