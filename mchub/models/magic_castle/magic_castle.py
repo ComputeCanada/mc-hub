@@ -447,12 +447,12 @@ class MagicCastle:
             raise BusyClusterException
 
         self.plan_type = PlanType.DESTROY
-        if self.status in (ClusterStatusCode.CREATED, ClusterStatusCode.PLAN_ERROR):
-            self.delete()
-        else:
+        if self.tf_state is not None:
             self.remove_existing_plan()
             self.rotate_terraform_logs(apply=False)
             self.create_plan()
+        else:
+            self.delete()
 
     def create_plan(self):
         previous_status = self.status
