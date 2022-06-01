@@ -293,10 +293,9 @@ export default {
     async planCreation() {
       let isCommited = false;
       let showPlan = "0";
+      this.clusterPlanRunningDialog = true;
       try {
-        this.clusterPlanRunningDialog = true;
         await MagicCastleRepository.create(this.magicCastle);
-        this.$disableUnloadConfirmation();
         isCommited = true;
         showPlan = "1";
       } catch (error) {
@@ -311,6 +310,7 @@ export default {
           this.showError("Plan creation request setting up triggered an error.");
         }
       } finally {
+        this.$disableUnloadConfirmation();
         if (isCommited) {
           await this.$router.push({
             path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
