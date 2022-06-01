@@ -291,18 +291,18 @@ export default {
       }
     },
     async planCreation() {
+      let isCommited = false;
+      let showPlan = "0";
       try {
         this.clusterPlanRunningDialog = true;
         await MagicCastleRepository.create(this.magicCastle);
         this.$disableUnloadConfirmation();
-        await this.$router.push({
-          path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
-          query: { showPlanConfirmation: "1" },
-        });
-        this.unloadCluster();
+        isCommited = true;
+        showPlan = "1";
       } catch (error) {
         if (error.response) {
           this.showError(error.response.data.message);
+          isCommited = true;
         } else if (error.request) {
           console.log(error.request);
           this.showError("Plan creation request was made but no response was received.");
@@ -311,6 +311,13 @@ export default {
           this.showError("Plan creation request setting up triggered an error.");
         }
       } finally {
+        if (isCommited) {
+          await this.$router.push({
+            path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
+            query: { showPlanConfirmation: showPlan },
+          });
+          this.unloadCluster();
+        }
         this.clusterPlanRunningDialog = false;
       }
     },

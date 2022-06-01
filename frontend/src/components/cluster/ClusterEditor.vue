@@ -334,7 +334,7 @@ export default {
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`,
       nowDate: new Date().toISOString().slice(0, 10),
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      loading: false,
+      promise: null,
       quotas: null,
       possibleResources: null,
       resourceDetails: null,
@@ -342,6 +342,9 @@ export default {
     };
   },
   watch: {
+    promise() {
+      this.$emit("loading", this.loading);
+    },
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
@@ -388,20 +391,26 @@ export default {
       }
     },
   },
-  async created() {
-    let user;
-    if (!this.built) {
-      user = (await UserRepository.getCurrent()).data;
-      this.projects = user.projects;
-      this.localSpecs.cloud_id = this.projects[0];
-    }
+  created() {
     if (!this.existingCluster) {
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
-      this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
     }
-    this.initialSpecs = cloneDeep(this.localSpecs);
-    await this.loadCloudResources();
+    if (!this.built) {
+      UserRepository.getCurrent().then((value) => {
+        const user = value.data;
+        this.projects = user.projects;
+        if (!this.existingCluster) {
+          this.localSpecs.cloud_id = this.projects[0];
+          this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
+        }
+        this.initialSpecs = cloneDeep(this.localSpecs);
+        this.loadCloudResources();
+      });
+    } else {
+      this.initialSpecs = cloneDeep(this.localSpecs);
+      this.loadCloudResources();
+    }
   },
   updated() {
     this.$refs.form.validate();
@@ -410,8 +419,11 @@ export default {
     this.$disableUnloadConfirmation();
   },
   computed: {
+    loading() {
+      return this.promise !== null;
+    },
     built() {
-      return this.existingCluster && this.status != ClusterStatusCode.CREATED;
+      return this.existingCluster && ![ClusterStatusCode.CREATED, ClusterStatusCode.PLAN_ERROR].includes(this.status);
     },
     localSpecs: {
       get() {
@@ -445,6 +457,7 @@ export default {
         if (
           [
             ClusterStatusCode.CREATED,
+            ClusterStatusCode.PLAN_ERROR,
             ClusterStatusCode.BUILD_ERROR,
             ClusterStatusCode.PROVISIONING_ERROR,
             ClusterStatusCode.DESTROY_ERROR,
@@ -742,32 +755,30 @@ export default {
     apply() {
       this.$emit("apply");
     },
-    async generateGuestPassword() {
+    generateGuestPassword() {
       this.localSpecs.guest_passwd = generatePassword();
     },
-    async changeCloudProject() {
+    changeCloudProject() {
       this.quotas = null;
       for (let key in this.localSpecs.instances) {
         this.localSpecs.instances[key].type = null;
       }
       this.localSpecs.image = null;
-      await this.loadCloudResources();
+      this.loadCloudResources();
     },
 
-    async loadCloudResources() {
-      this.loading = true;
-      this.$emit("loading", this.loading);
-      let availableResources = null;
-      if (this.built) {
-        availableResources = (await AvailableResourcesRepository.getHost(this.hostname)).data;
-      } else {
-        availableResources = (await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)).data;
-      }
-      this.possibleResources = availableResources.possible_resources;
-      this.quotas = availableResources.quotas;
-      this.resourceDetails = availableResources.resource_details;
-      this.loading = false;
-      this.$emit("loading", this.loading);
+    loadCloudResources() {
+      this.promise = this.built
+        ? AvailableResourcesRepository.getHost(this.hostname)
+        : AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id);
+      this.promise.then((response) => {
+        const data = response.data;
+        this.possibleResources = data.possible_resources;
+        this.quotas = data.quotas;
+        this.resourceDetails = data.resource_details;
+        this.promise = null;
+      });
+      return this.promise;
     },
   },
 };
