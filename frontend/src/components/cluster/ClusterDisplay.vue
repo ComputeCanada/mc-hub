@@ -79,8 +79,8 @@
 </template>
 
 <script>
-import { cloneDeep } from "lodash";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
+import TemplateRepository from "@/repositories/TemplateRepository";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import MessageDialog from "@/components/ui/MessageDialog";
 import StatusChip from "@/components/ui/StatusChip";
@@ -88,40 +88,6 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import { isEqual } from "lodash";
-
-const DEFAULT_MAGIC_CASTLE = Object.freeze({
-  cluster_name: "",
-  domain: null,
-  image: null,
-  nb_users: 10,
-  instances: {
-    mgmt: {
-      type: null,
-      count: 1,
-      tags: ["mgmt", "nfs", "puppet"],
-    },
-    login: {
-      type: null,
-      count: 1,
-      tags: ["login", "proxy", "public"],
-    },
-    node: {
-      type: null,
-      count: 1,
-      tags: ["node"],
-    },
-  },
-  volumes: {
-    nfs: {
-      home: { size: 100 },
-      project: { size: 50 },
-      scratch: { size: 50 },
-    },
-  },
-  public_keys: [],
-  guest_passwd: "",
-  hieradata: "",
-});
 
 const POLL_STATUS_INTERVAL = 1000;
 
@@ -180,7 +146,7 @@ export default {
       }
       this.startStatusPolling();
     } else {
-      this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
+      this.magicCastle = (await TemplateRepository.get("default")).data;
     }
   },
   beforeDestroy() {
