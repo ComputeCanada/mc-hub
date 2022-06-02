@@ -29,6 +29,7 @@
             :existing-cluster="existingCluster"
             :specs="magicCastle"
             :status="status"
+            :stateful="stateful"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
             @loading="loading = $event"
           />
@@ -166,6 +167,7 @@ export default {
       magicCastle: null,
       loading: false,
       statusPromise: null,
+      stateful: false,
     };
   },
   async created() {
@@ -173,16 +175,13 @@ export default {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
-        const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        if (status == ClusterStatusCode.CREATED || status == ClusterStatusCode.PLAN_ERROR) {
-          /*
-          The initial plan was created, but the cluster was never built.
-          We don't show a confirmation because no resource has been created.
-          */
-
-          await this.forceDestruction();
-        } else {
+        const { stateful } = (await MagicCastleRepository.getStatus(this.hostname)).data;
+        if (stateful) {
           await this.planDestruction();
+        } else {
+          // If the cluster does not have a state (no terraform.tfstate), it can be deleted
+          // without consent.
+          await this.forceDestruction();
         }
       }
       this.startStatusPolling();
@@ -231,9 +230,10 @@ export default {
       const planWasRunning = this.status === ClusterStatusCode.PLAN_RUNNING;
 
       this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
-      const { status, progress } = (await this.statusPromise).data;
+      const { status, stateful, progress } = (await this.statusPromise).data;
       this.statusPromise = null;
       this.status = status;
+      this.stateful = stateful;
       this.resourcesChanges = progress || [];
 
       if (!this.busy) {

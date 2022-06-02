@@ -3,7 +3,7 @@
     <v-form ref="form" v-model="validForm">
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
-        <v-list-item v-if="!built">
+        <v-list-item v-if="!stateful">
           <v-select
             v-model="localSpecs.cloud_id"
             :items="projects"
@@ -142,7 +142,7 @@
                   :items="Object.keys(localSpecs.volumes)"
                   :value="tag"
                   label="tag"
-                  :readonly="built && id in initialSpecs.volumes.nfs"
+                  :readonly="stateful && id in initialSpecs.volumes.nfs"
                 ></v-combobox>
                 <!-- <v-text-field :value="tag" label="tag" readonly /> -->
               </v-col>
@@ -152,7 +152,7 @@
                   label="volume name"
                   v-on:change="changeVolumeName(id, $event)"
                   :rules="[volumeNameRule(id)]"
-                  :readonly="built && id in initialSpecs.volumes.nfs"
+                  :readonly="stateful && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="2" class="pt-0">
@@ -165,7 +165,7 @@
                   min="0"
                   dir="rtl"
                   reverse
-                  :readonly="built && id in initialSpecs.volumes.nfs"
+                  :readonly="stateful && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="1" class="pt-0">
@@ -175,7 +175,7 @@
                   icon
                   small
                   color="error"
-                  :disabled="built && id in initialSpecs.volumes.nfs"
+                  :disabled="stateful && id in initialSpecs.volumes.nfs"
                 >
                   <v-icon> mdi-delete </v-icon>
                 </v-btn>
@@ -315,6 +315,9 @@ export default {
     status: {
       type: String,
     },
+    stateful: {
+      type: Boolean,
+    },
   },
   data: function () {
     return {
@@ -384,7 +387,7 @@ export default {
       }
     },
     dirtyForm(dirty) {
-      if (dirty) {
+      if (dirty && this.stateful) {
         this.$enableUnloadConfirmation();
       } else {
         this.$disableUnloadConfirmation();
@@ -396,7 +399,7 @@ export default {
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
     }
-    if (!this.built) {
+    if (!this.stateful) {
       UserRepository.getCurrent().then((value) => {
         const user = value.data;
         this.projects = user.projects;
@@ -421,9 +424,6 @@ export default {
   computed: {
     loading() {
       return this.promise !== null;
-    },
-    built() {
-      return this.existingCluster && ![ClusterStatusCode.CREATED, ClusterStatusCode.PLAN_ERROR].includes(this.status);
     },
     localSpecs: {
       get() {
@@ -768,7 +768,7 @@ export default {
     },
 
     loadCloudResources() {
-      this.promise = this.built
+      this.promise = this.stateful
         ? AvailableResourcesRepository.getHost(this.hostname)
         : AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id);
       this.promise.then((response) => {
