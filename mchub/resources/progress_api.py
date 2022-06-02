@@ -13,7 +13,12 @@ class ProgressAPI(ApiView):
         else:
             status = magic_castle.status
             progress = magic_castle.get_progress()
+            stateful = magic_castle.tf_state is not None
             if progress is None:
-                return {"status": status.value}
+                return {"status": status.value, "stateful": stateful}
             else:
-                return {"status": status.value, "progress": progress}
+                return {
+                    "status": status.value,
+                    "stateful": stateful,
+                    "progress": progress,
+                }

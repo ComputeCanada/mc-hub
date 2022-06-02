@@ -11,6 +11,7 @@ from threading import Thread
 
 from marshmallow import ValidationError
 from sqlalchemy.sql import func
+from sqlalchemy.exc import IntegrityError
 
 from mchub.models.cloud.cloud_manager import CloudManager
 
@@ -37,8 +38,6 @@ from ...database import db
 
 
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
-TERRAFORM_PLAN_JSON_FILENAME = "terraform_plan.json"
-
 TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
@@ -64,7 +63,7 @@ def terraform_apply(hostname, env, main_path, destroy):
                 env=env,
             )
     except CalledProcessError as err:
-        logging.info(f"An error occurred while running terraform apply: {err}")
+        logging.error(f"An error occurred while running terraform apply: {err}")
         if destroy:
             status = ClusterStatusCode.DESTROY_ERROR
         else:
@@ -75,12 +74,11 @@ def terraform_apply(hostname, env, main_path, destroy):
         if not destroy:
             status = ClusterStatusCode.PROVISIONING_RUNNING
     finally:
-        # Remove plans
+        # Remove plan
         if destroy:
             rmtree(main_path, ignore_errors=True)
         else:
             remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
-            remove(path.join(main_path, TERRAFORM_PLAN_JSON_FILENAME))
 
         # Retrieve terraform state
         try:
@@ -100,8 +98,10 @@ def terraform_apply(hostname, env, main_path, destroy):
                 db.session.delete(orm)
             else:
                 orm.plan_type = PlanType.NONE
+                orm.plan = None
                 orm.status = status
                 orm.tf_state = tf_state
+                orm.applied_config = orm.config
             db.session.commit()
 
 
@@ -115,7 +115,9 @@ class MagicCastleORM(db.Model):
     expiration_date = db.Column(db.String(32))
     cloud_id = db.Column(db.String(128))
     config = db.Column(db.PickleType())
+    applied_config = db.Column(db.PickleType())
     tf_state = db.Column(db.PickleType())
+    plan = db.Column(db.PickleType())
 
 
 class MagicCastle:
@@ -182,16 +184,28 @@ class MagicCastle:
     def config(self, value):
         self.orm.config = value
 
+    @property
+    def applied_config(self):
+        return self.orm.applied_config
+
     def set_configuration(self, configuration: dict):
+        changed = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
-        self.orm.cloud_id = configuration.pop("cloud_id")
+        cloud_id = configuration.pop("cloud_id")
+        if self.orm.cloud_id != cloud_id:
+            self.orm.cloud_id = cloud_id
+            changed = True
         try:
-            self.config = MagicCastleConfiguration(configuration)
+            config = MagicCastleConfiguration(configuration)
         except ValidationError as err:
             raise InvalidUsageException(
                 f"The magic castle configuration could not be parsed.\nError: {err.messages}"
             )
-        self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
+        if self.config != config:
+            self.config = config
+            self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
+            changed = True
+        return changed
 
     @property
     def status(self) -> ClusterStatusCode:
@@ -268,16 +282,16 @@ class MagicCastle:
     def plan_type(self, plan_type: PlanType):
         self.orm.plan_type = plan_type
 
-    def get_progress(self):
-        if not self.found:
-            raise ClusterNotFoundException
+    @property
+    def plan(self) -> dict:
+        return self.orm.plan
 
-        try:
-            with open(
-                path.join(self.path, TERRAFORM_PLAN_JSON_FILENAME), "r"
-            ) as plan_file:
-                initial_plan = json.load(plan_file)
-        except (FileNotFoundError, json.decoder.JSONDecodeError):
+    @plan.setter
+    def plan(self, plan: dict):
+        self.orm.plan = plan
+
+    def get_progress(self):
+        if self.plan is None:
             return None
 
         try:
@@ -286,12 +300,12 @@ class MagicCastle:
         except FileNotFoundError:
             # terraform apply was not launched yet, therefore the log file does not exist
             terraform_output = ""
-        return TerraformPlanParser.get_done_changes(initial_plan, terraform_output)
+        return TerraformPlanParser.get_done_changes(self.plan, terraform_output)
 
     @property
     def state(self):
         return {
-            **self.config,
+            **(self.applied_config if self.applied_config else self.config),
             "hostname": self.hostname,
             "status": self.status.value,
             "freeipa_passwd": self.freeipa_passwd,
@@ -353,81 +367,109 @@ class MagicCastle:
         )
 
     def plan_creation(self, data):
-        if self.found:
-            raise ClusterExistsException
         self.set_configuration(data)
-        self.status = ClusterStatusCode.CREATED
         self.plan_type = PlanType.BUILD
-
-        self.__plan(destroy=False, existing_cluster=False)
-
         db.session.add(self.orm)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            raise ClusterExistsException
+
+        # Create cluster folder on the filesystem
+        try:
+            mkdir(self.path)
+        except Exception as error:
+            self.delete()
+            raise PlanException(
+                "Could not create cluster folder on the filesystem.",
+                additional_details=f"hostname: {self.hostname}, error: {error}",
+            )
+
+        if MAGIC_CASTLE_PATH[:3] != "git":
+            symlink(
+                path.join(MAGIC_CASTLE_PATH, "openstack"),
+                path.join(self.path, "openstack"),
+            )
+            symlink(
+                path.join(MAGIC_CASTLE_PATH, "dns"),
+                path.join(self.path, "dns"),
+            )
+
+        # Write the main terraform file
+        try:
+            self.config.write(self.main_file)
+        except Exception as error:
+            self.delete()
+            raise PlanException(
+                "Could not write main.tf.json on the filesystem.",
+                additional_details=f"hostname: {self.hostname}, error: {error}",
+            )
+
+        # Initialize terraform modules
+        try:
+            run(
+                ["terraform", "init", "-no-color", "-input=false"],
+                cwd=self.path,
+                capture_output=True,
+                check=True,
+            )
+        except Exception as error:
+            self.delete()
+            raise PlanException(
+                "Could not initialize Terraform modules.",
+                additional_details=f"hostname: {self.hostname}, error: {error}",
+            )
+
+        self.status = ClusterStatusCode.CREATED
+        self.create_plan()
 
     def plan_modification(self, data):
         if not self.found:
             raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
-        self.set_configuration(data)
+
+        config_changed = self.set_configuration(data)
+        prev_plan_type = self.plan_type
+        self.plan_type = PlanType.BUILD
         db.session.commit()
 
-        self.__plan(destroy=False, existing_cluster=True)
+        # Check if main_file has changed before writing
+        # and planning a change, some modifications may
+        # only be reflected in the database and do not
+        # require a plan.
+        if config_changed:
+            self.config.write(self.main_file)
+
+        if (
+            config_changed
+            or self.status
+            in (
+                ClusterStatusCode.PLAN_ERROR,
+                ClusterStatusCode.BUILD_ERROR,
+            )
+            or prev_plan_type != PlanType.BUILD
+        ):
+            self.remove_existing_plan()
+            self.rotate_terraform_logs(apply=False)
+            self.create_plan()
 
     def plan_destruction(self):
-        if not self.found:
-            raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
 
-        self.__plan(destroy=True, existing_cluster=True)
-
-    def __plan(self, *, destroy, existing_cluster):
-        if existing_cluster:
-            self.__remove_existing_plan()
-            previous_status = self.status
+        self.plan_type = PlanType.DESTROY
+        if self.tf_state is not None:
+            self.remove_existing_plan()
+            self.rotate_terraform_logs(apply=False)
+            self.create_plan()
         else:
-            mkdir(self.path)
-            if MAGIC_CASTLE_PATH[:3] != "git":
-                symlink(
-                    path.join(MAGIC_CASTLE_PATH, "openstack"),
-                    path.join(self.path, "openstack"),
-                )
-                symlink(
-                    path.join(MAGIC_CASTLE_PATH, "dns"),
-                    path.join(self.path, "dns"),
-                )
-            previous_status = ClusterStatusCode.CREATED
-
-        if destroy:
-            plan_type = PlanType.DESTROY
-        else:
-            plan_type = PlanType.BUILD
-            self.config.write(self.main_file)
-
-        if destroy and self.status == ClusterStatusCode.CREATED:
             self.delete()
-            return
 
+    def create_plan(self):
+        destroy = self.plan_type == PlanType.DESTROY
         self.status = ClusterStatusCode.PLAN_RUNNING
-        self.plan_type = plan_type
 
-        if not existing_cluster:
-            try:
-                run(
-                    ["terraform", "init", "-no-color", "-input=false"],
-                    cwd=self.path,
-                    capture_output=True,
-                    check=True,
-                )
-            except CalledProcessError:
-                self.status = previous_status
-                raise PlanException(
-                    "An error occurred while initializing Terraform.",
-                    additional_details=f"hostname: {self.hostname}",
-                )
-
-        self.rotate_terraform_logs(apply=False)
         environment_variables = environ.copy()
         dns_manager = DnsManager(self.domain)
         cloud_manager = CloudManager(self.cloud_id)
@@ -453,37 +495,66 @@ class MagicCastle:
                     check=True,
                 )
         except CalledProcessError:
-            self.status = previous_status
+            self.status = ClusterStatusCode.PLAN_ERROR
             with open(plan_log, "r") as input_file:
                 log = input_file.read()
             raise PlanException(
                 "An error occurred while planning changes.",
                 additional_details=f"hostname: {self.hostname}\nlog: {log}",
             )
+        except BaseException as err:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while planning changes.",
+                additional_details=f"hostname: {self.hostname}\nerror: {err}",
+            )
 
-        plan_json_path = path.join(self.path, TERRAFORM_PLAN_JSON_FILENAME)
         try:
-            with open(plan_json_path, "w") as output_file:
-                run(
-                    [
-                        "terraform",
-                        "show",
-                        "-no-color",
-                        "-json",
-                        path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME),
-                    ],
-                    cwd=self.path,
-                    stdout=output_file,
-                    check=True,
-                )
+            proc = run(
+                [
+                    "terraform",
+                    "show",
+                    "-no-color",
+                    "-json",
+                    path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME),
+                ],
+                cwd=self.path,
+                capture_output=True,
+                check=True,
+            )
         except CalledProcessError:
-            self.status = previous_status
+            self.status = ClusterStatusCode.PLAN_ERROR
             raise PlanException(
                 "An error occurred while exporting planned changes.",
                 additional_details=f"hostname: {self.hostname}",
             )
+        except BaseException as err:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while exporting planned changes.",
+                additional_details=f"hostname: {self.hostname}\nerror: {err}",
+            )
 
-        self.status = previous_status
+        try:
+            self.plan = json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while parsing planned changes.",
+                additional_details=f"hostname: {self.hostname}",
+            )
+        except BaseException as err:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while parsing planned changes.",
+                additional_details=f"hostname: {self.hostname}\nerror: {err}",
+            )
+
+        if self.tf_state:
+            self.status = ClusterStatusCode.PROVISIONING_RUNNING
+        else:
+            self.status = ClusterStatusCode.CREATED
+        db.session.commit()
 
     def apply(self):
         if not self.found:
@@ -505,7 +576,7 @@ class MagicCastle:
         env = environ.copy()
         if destroy:
             env["TF_WARN_OUTPUT_ERRORS"] = "1"
-        env["OS_CLOUD"] = self.orm.cloud_id
+        env.update(CloudManager(self.cloud_id).get_environment_variables())
         env.update(DnsManager(self.domain).get_environment_variables())
 
         self.rotate_terraform_logs(apply=True)
@@ -519,12 +590,10 @@ class MagicCastle:
         db.session.delete(self.orm)
         db.session.commit()
 
-    def __remove_existing_plan(self):
-        self.plan_type = PlanType.NONE
+    def remove_existing_plan(self):
         try:
             # Remove existing plan, if it exists
             remove(path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME))
-            remove(path.join(self.path, TERRAFORM_PLAN_JSON_FILENAME))
         except FileNotFoundError:
             # Must be a new cluster, without existing plans
             pass

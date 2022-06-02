@@ -14,7 +14,7 @@
                 <v-list-item-subtitle>Hostname</v-list-item-subtitle>
                 <v-list-item-title>{{ hostname }}</v-list-item-title>
               </v-list-item-content>
-              <status-chip :status="currentStatus" />
+              <status-chip :status="status" />
             </v-list-item>
             <v-list-item v-if="cloud_id">
               <v-list-item-content>
@@ -28,8 +28,8 @@
             v-if="magicCastle && !applyRunning && !clusterDestructionDialog"
             :existing-cluster="existingCluster"
             :specs="magicCastle"
-            :current-status="currentStatus"
-            :user="user"
+            :status="status"
+            :stateful="stateful"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
             @loading="loading = $event"
           />
@@ -93,7 +93,6 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
-import UserRepository from "@/repositories/UserRepository";
 import { isEqual } from "lodash";
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
@@ -143,10 +142,6 @@ export default {
   },
   props: {
     hostname: String,
-    existingCluster: {
-      type: Boolean,
-      required: true,
-    },
     showPlanConfirmation: {
       type: Boolean,
       default: false,
@@ -167,12 +162,12 @@ export default {
       clusterModificationDialog: false,
       errorMessage: "",
       statusPoller: null,
-      currentStatus: null,
+      status: null,
       resourcesChanges: [],
       magicCastle: null,
-      user: null,
       loading: false,
       statusPromise: null,
+      stateful: false,
     };
   },
   async created() {
@@ -180,23 +175,17 @@ export default {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
-        const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        if (status == ClusterStatusCode.CREATED) {
-          /*
-          The initial plan was created, but the cluster was never built.
-          We don't show a confirmation because no resource has been created.
-          */
-
-          await this.forceDestruction();
-        } else {
+        const { stateful } = (await MagicCastleRepository.getStatus(this.hostname)).data;
+        if (stateful) {
           await this.planDestruction();
+        } else {
+          // If the cluster does not have a state (no terraform.tfstate), it can be deleted
+          // without consent.
+          await this.forceDestruction();
         }
-      } else {
-        this.user = (await UserRepository.getCurrent()).data;
       }
       this.startStatusPolling();
     } else {
-      this.user = (await UserRepository.getCurrent()).data;
       this.magicCastle = cloneDeep(DEFAULT_MAGIC_CASTLE);
     }
   },
@@ -209,10 +198,10 @@ export default {
         ClusterStatusCode.DESTROY_RUNNING,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.PLAN_RUNNING,
-      ].includes(this.currentStatus);
+      ].includes(this.status);
     },
     applyRunning() {
-      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
+      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.status);
     },
     cloud_id() {
       try {
@@ -220,6 +209,9 @@ export default {
       } catch (e) {
         return null;
       }
+    },
+    existingCluster() {
+      return this.hostname !== null && this.hostname !== undefined;
     },
   },
   methods: {
@@ -234,14 +226,14 @@ export default {
       if (this.statusPromise !== null) {
         return;
       }
-      const statusAlreadyInitialized = this.currentStatus !== null;
-      const planWasRunning = this.currentStatus === ClusterStatusCode.PLAN_RUNNING;
+      const statusAlreadyInitialized = this.status !== null;
+      const planWasRunning = this.status === ClusterStatusCode.PLAN_RUNNING;
 
-      // const oldStatus = this.currentStatus;
       this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
-      const { status, progress } = (await this.statusPromise).data;
+      const { status, stateful, progress } = (await this.statusPromise).data;
       this.statusPromise = null;
-      this.currentStatus = status;
+      this.status = status;
+      this.stateful = stateful;
       this.resourcesChanges = progress || [];
 
       if (!this.busy) {
@@ -266,7 +258,7 @@ export default {
       clearInterval(this.statusPoller);
     },
     showStatusDialog() {
-      switch (this.currentStatus) {
+      switch (this.status) {
         case ClusterStatusCode.PROVISIONING_RUNNING:
           this.provisioningRunningDialog = true;
           break;
@@ -299,18 +291,17 @@ export default {
       }
     },
     async planCreation() {
+      let isCommited = false;
+      let showPlan = "0";
+      this.clusterPlanRunningDialog = true;
       try {
-        this.clusterPlanRunningDialog = true;
         await MagicCastleRepository.create(this.magicCastle);
-        this.$disableUnloadConfirmation();
-        await this.$router.push({
-          path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
-          query: { showPlanConfirmation: "1" },
-        });
-        this.unloadCluster();
+        isCommited = true;
+        showPlan = "1";
       } catch (error) {
         if (error.response) {
           this.showError(error.response.data.message);
+          isCommited = true;
         } else if (error.request) {
           console.log(error.request);
           this.showError("Plan creation request was made but no response was received.");
@@ -319,6 +310,14 @@ export default {
           this.showError("Plan creation request setting up triggered an error.");
         }
       } finally {
+        this.$disableUnloadConfirmation();
+        if (isCommited) {
+          await this.$router.push({
+            path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
+            query: { showPlanConfirmation: showPlan },
+          });
+          this.unloadCluster();
+        }
         this.clusterPlanRunningDialog = false;
       }
     },
@@ -383,7 +382,7 @@ export default {
     },
     unloadCluster() {
       this.magicCastle = null;
-      this.currentStatus = null;
+      this.status = null;
     },
   },
 };

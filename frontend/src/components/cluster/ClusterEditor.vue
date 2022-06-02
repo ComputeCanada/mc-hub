@@ -3,10 +3,10 @@
     <v-form ref="form" v-model="validForm">
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
-        <v-list-item v-if="!existingCluster">
+        <v-list-item v-if="!stateful">
           <v-select
             v-model="localSpecs.cloud_id"
-            :items="user.projects"
+            :items="projects"
             label="Cloud project"
             @change="changeCloudProject"
           />
@@ -28,7 +28,11 @@
           />
         </v-list-item>
         <v-list-item>
-          <v-select v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
+          <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
+          <v-list-item-content v-else>
+            <v-list-item-subtitle>Image</v-list-item-subtitle>
+            <v-list-item-title>{{ localSpecs.image }}</v-list-item-title>
+          </v-list-item-content>
         </v-list-item>
         <v-list-item>
           <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
@@ -142,7 +146,7 @@
                   :items="Object.keys(localSpecs.volumes)"
                   :value="tag"
                   label="tag"
-                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                  :readonly="stateful && id in initialSpecs.volumes.nfs"
                 ></v-combobox>
                 <!-- <v-text-field :value="tag" label="tag" readonly /> -->
               </v-col>
@@ -152,7 +156,7 @@
                   label="volume name"
                   v-on:change="changeVolumeName(id, $event)"
                   :rules="[volumeNameRule(id)]"
-                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                  :readonly="stateful && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="2" class="pt-0">
@@ -165,7 +169,7 @@
                   min="0"
                   dir="rtl"
                   reverse
-                  :readonly="existingCluster && id in initialSpecs.volumes.nfs"
+                  :readonly="stateful && id in initialSpecs.volumes.nfs"
                 />
               </v-col>
               <v-col cols="12" sm="1" class="pt-0">
@@ -175,7 +179,7 @@
                   icon
                   small
                   color="error"
-                  :disabled="existingCluster && id in initialSpecs.volumes.nfs"
+                  :disabled="stateful && id in initialSpecs.volumes.nfs"
                 >
                   <v-icon> mdi-delete </v-icon>
                 </v-btn>
@@ -225,7 +229,7 @@
         <v-list-item>
           <v-text-field v-model.number="localSpecs.nb_users" type="number" label="Number of guest users" min="0" />
         </v-list-item>
-        <v-list-item>
+        <v-list-item v-if="!stateful">
           <v-text-field v-model="localSpecs.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
@@ -235,6 +239,12 @@
             </template>
             <span>Generate new password</span>
           </v-tooltip>
+        </v-list-item>
+        <v-list-item v-else>
+          <v-list-item-content>
+            <v-list-item-subtitle>Guest password</v-list-item-subtitle>
+            <v-list-item-title>{{ localSpecs.guest_passwd }}</v-list-item-title>
+          </v-list-item-content>
         </v-list-item>
         <v-list-group prepend-icon="mdi-script-text-outline">
           <template #activator>
@@ -288,6 +298,7 @@ import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import UserRepository from "@/repositories/UserRepository";
 
 const MB_PER_GB = 1024;
 const MINIMUM_PASSWORD_LENGTH = 8;
@@ -311,11 +322,11 @@ export default {
       type: Boolean,
       required: true,
     },
-    currentStatus: {
+    status: {
       type: String,
     },
-    user: {
-      type: Object,
+    stateful: {
+      type: Boolean,
     },
   },
   data: function () {
@@ -336,13 +347,17 @@ export default {
         `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters long`,
       nowDate: new Date().toISOString().slice(0, 10),
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      loading: false,
+      promise: null,
       quotas: null,
       possibleResources: null,
       resourceDetails: null,
+      projects: [],
     };
   },
   watch: {
+    promise() {
+      this.$emit("loading", this.loading);
+    },
     possibleResources(possibleResources) {
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
@@ -382,22 +397,33 @@ export default {
       }
     },
     dirtyForm(dirty) {
-      if (dirty) {
+      if (dirty && this.stateful) {
         this.$enableUnloadConfirmation();
       } else {
         this.$disableUnloadConfirmation();
       }
     },
   },
-  async created() {
+  created() {
     if (!this.existingCluster) {
-      this.localSpecs.cloud_id = this.user.projects[0];
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
-      this.localSpecs.public_keys = this.user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
     }
-    this.initialSpecs = cloneDeep(this.localSpecs);
-    await this.loadCloudResources();
+    if (!this.stateful) {
+      UserRepository.getCurrent().then((value) => {
+        const user = value.data;
+        this.projects = user.projects;
+        if (!this.existingCluster) {
+          this.localSpecs.cloud_id = this.projects[0];
+          this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
+        }
+        this.initialSpecs = cloneDeep(this.localSpecs);
+        this.loadCloudResources();
+      });
+    } else {
+      this.initialSpecs = cloneDeep(this.localSpecs);
+      this.loadCloudResources();
+    }
   },
   updated() {
     this.$refs.form.validate();
@@ -406,6 +432,9 @@ export default {
     this.$disableUnloadConfirmation();
   },
   computed: {
+    loading() {
+      return this.promise !== null;
+    },
     localSpecs: {
       get() {
         return this.specs;
@@ -416,9 +445,6 @@ export default {
     },
     hostname() {
       return this.localSpecs.cluster_name + "." + this.localSpecs.domain;
-    },
-    applyRunning() {
-      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.currentStatus);
     },
     dirtyForm() {
       const keysToCheck = [
@@ -437,6 +463,17 @@ export default {
       if (this.existingCluster) {
         if (this.initialSpecs === null) {
           return false;
+        }
+        if (
+          [
+            ClusterStatusCode.CREATED,
+            ClusterStatusCode.PLAN_ERROR,
+            ClusterStatusCode.BUILD_ERROR,
+            ClusterStatusCode.PROVISIONING_ERROR,
+            ClusterStatusCode.DESTROY_ERROR,
+          ].includes(this.status)
+        ) {
+          return true;
         }
         return keysToCheck.some((key) => !isEqual(this.initialSpecs[key], this.localSpecs[key]));
       }
@@ -524,17 +561,7 @@ export default {
       return this.localSpecs !== null && this.resourceDetails !== null;
     },
     applyButtonEnabled() {
-      return (
-        !this.loading &&
-        this.validForm &&
-        (this.dirtyForm ||
-          [
-            ClusterStatusCode.CREATED,
-            ClusterStatusCode.BUILD_ERROR,
-            ClusterStatusCode.PROVISIONING_ERROR,
-            ClusterStatusCode.DESTROY_ERROR,
-          ].includes(this.currentStatus))
-      );
+      return !this.loading && this.validForm && this.dirtyForm;
     },
   },
   methods: {
@@ -576,7 +603,7 @@ export default {
               newPublicIP += self.localSpecs.instances[key].count;
             }
           }
-          if (self.existingCluster) {
+          if (self.initialSpecs) {
             for (let key in self.initialSpecs.instances) {
               if (self.initialSpecs.instances[key].tags.includes("public")) {
                 newPublicIP -= self.initialSpecs.instances[key].count;
@@ -738,32 +765,30 @@ export default {
     apply() {
       this.$emit("apply");
     },
-    async generateGuestPassword() {
+    generateGuestPassword() {
       this.localSpecs.guest_passwd = generatePassword();
     },
-    async changeCloudProject() {
+    changeCloudProject() {
       this.quotas = null;
       for (let key in this.localSpecs.instances) {
         this.localSpecs.instances[key].type = null;
       }
       this.localSpecs.image = null;
-      await this.loadCloudResources();
+      this.loadCloudResources();
     },
 
-    async loadCloudResources() {
-      this.loading = true;
-      this.$emit("loading", this.loading);
-      let availableResources = null;
-      if (this.existingCluster) {
-        availableResources = (await AvailableResourcesRepository.getHost(this.hostname)).data;
-      } else {
-        availableResources = (await AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id)).data;
-      }
-      this.possibleResources = availableResources.possible_resources;
-      this.quotas = availableResources.quotas;
-      this.resourceDetails = availableResources.resource_details;
-      this.loading = false;
-      this.$emit("loading", this.loading);
+    loadCloudResources() {
+      this.promise = this.stateful
+        ? AvailableResourcesRepository.getHost(this.hostname)
+        : AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id);
+      this.promise.then((response) => {
+        const data = response.data;
+        this.possibleResources = data.possible_resources;
+        this.quotas = data.quotas;
+        this.resourceDetails = data.resource_details;
+        this.promise = null;
+      });
+      return this.promise;
     },
   },
 };

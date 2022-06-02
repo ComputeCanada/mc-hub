@@ -174,6 +174,10 @@ export default {
           value: "domain",
         },
         {
+          text: "Project",
+          value: "cloud_id",
+        },
+        {
           text: "Age",
           value: "age",
         },

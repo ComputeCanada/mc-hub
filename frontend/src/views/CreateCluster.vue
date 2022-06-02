@@ -1,5 +1,5 @@
 <template>
-  <cluster-display :existing-cluster="false" />
+  <cluster-display />
 </template>
 
 <script>

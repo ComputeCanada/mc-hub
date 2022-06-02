@@ -55,11 +55,8 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
   image: ["centos7", "centos7-updated", "CentOS-7-x64-2021-11", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
-  instances: {
-    mgmt: { type: ["p4-6gb", "c64-256gb-10"] },
-    login: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] },
-    node: { type: ["p2-3gb", "p4-6gb", "c64-256gb-10"] }
-  },
+  tag_types: {"mgmt": ["p4-6gb", "c2-7.5gb-31"], "login": ["p2-3gb", "p4-6gb"], "node": ["p2-3gb", "p4-6gb"]},
+  "types": ["p1-1.5gb", "p2-3gb", "p4-6gb"],
   volumes: {},
   domain: ["calculquebec.cloud", "c3.ca"]
 });
@@ -82,6 +79,23 @@ const DEFAULT_RESOURCE_DETAILS = Object.freeze({
   ]
 });
 
+
+async function getDefaultClusterEditorWrapper(existingCluster=true, hostname="test1.calculquebec.cloud") {
+  let wrapper = mount(ClusterEditor, {
+    localVue,
+    router,
+    vuetify,
+    propsData: {
+      specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
+      existingCluster: existingCluster,
+      hostname: hostname,
+      stateful: true,
+    }
+  });
+  await wrapper.vm.promise;
+  return wrapper;
+}
+
 describe("ClusterEditor", () => {
 
   beforeEach(function () {
@@ -89,14 +103,23 @@ describe("ClusterEditor", () => {
     moxios.install(Repository)
     moxios.wait(function () {
       let request = moxios.requests.mostRecent();
-      request.respondWith({
-        status: 200,
-        response: {
-          'possible_resources': DEFAULT_POSSIBLE_RESOURCES,
-          'quotas': DEFAULT_QUOTAS,
-          'resource_details': DEFAULT_RESOURCE_DETAILS
-        }
-      })
+      if(request.url.includes("/available-resources")) {
+        request.respondWith({
+          status: 200,
+          response: {
+            'possible_resources': DEFAULT_POSSIBLE_RESOURCES,
+            'quotas': DEFAULT_QUOTAS,
+            'resource_details': DEFAULT_RESOURCE_DETAILS
+          }
+        })
+      } else if (request.url.includes("/users/me")) {
+        request.respondWith({
+          status: 200,
+          response: DEFAULT_USER
+        })
+      } else {
+        console.log(request.url);
+      }
     })
   })
 
@@ -105,14 +128,13 @@ describe("ClusterEditor", () => {
     moxios.uninstall(Repository)
   })
 
-
   it("magicCastleGuestPasswordNonExisting", async () => {
-    const clusterEditorWrapperNew = await getDefaultClusterEditorWrapper({ loading: false, existingCluster: false });
+    const clusterEditorWrapperNew = await getDefaultClusterEditorWrapper(false);
     expect(clusterEditorWrapperNew.vm.specs.guest_passwd.length).toBe(12);
   });
 
   it("magicCastleGuestPasswordExisting", async () => {
-    const clusterEditorWrapperExisting = await getDefaultClusterEditorWrapper({ loading: false, existingCluster: true });
+    const clusterEditorWrapperExisting = await getDefaultClusterEditorWrapper(true);
     expect(clusterEditorWrapperExisting.vm.specs.guest_passwd.length).toBe(0);
   });
 
@@ -167,30 +189,6 @@ describe("ClusterEditor", () => {
 
   it("volumeSizeMax", async () => {
     const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
-
-    // available = 490
     expect(clusterEditorWrapper.vm.volumeSizeMax).toBe(490);
   });
-
-  const getDefaultClusterEditorWrapper = async (
-    customizableProps = { loading: false, existingCluster: true, hostname: "test1.calculquebec.cloud" }
-  ) => {
-    let wrapper = mount(ClusterEditor, {
-      localVue,
-      router,
-      vuetify,
-      propsData: {
-        specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
-        user: cloneDeep(DEFAULT_USER),
-        ...customizableProps
-      }
-    });
-    // ClusterEditor created() is async, called during mount and calls loadCloudResources.
-    // However, I have yet found a way to await on created(). To move on with the tests,
-    // we need the values of possibleResources, availableResources and quotas to be set.
-    // Therefore, the solution for now is to call loadCloudResources again and await the
-    // results.
-    await wrapper.vm.loadCloudResources();
-    return wrapper;
-  };
 });
