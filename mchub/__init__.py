@@ -12,6 +12,7 @@ def create_app(db_path=None):
     from .resources.progress_api import ProgressAPI
     from .resources.available_resources_api import AvailableResourcesApi
     from .resources.user_api import UserAPI
+    from .resources.template_api import TemplateAPI
 
     if db_path is None:
         db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
@@ -63,6 +64,13 @@ def create_app(db_path=None):
         "/api/available-resources/cloud/<string:cloud_id>",
         view_func=available_resources_view,
         defaults={"hostname": None},
+        methods=["GET"],
+    )
+
+    template_view = TemplateAPI.as_view("template")
+    app.add_url_rule(
+        "/api/template/<string:template_name>",
+        view_func=template_view,
         methods=["GET"],
     )
 
