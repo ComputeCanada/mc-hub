@@ -1,6 +1,6 @@
 import requests
 
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, ReadTimeout
 
 MAX_PROVISIONING_TIME = 3600
 
@@ -32,5 +32,5 @@ class ProvisioningManager:
                 ).status_code
                 == 405
             )
-        except ConnectionError:
+        except (ConnectionError, ReadTimeout):
             return False
