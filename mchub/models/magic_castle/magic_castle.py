@@ -430,6 +430,7 @@ class MagicCastle:
             raise BusyClusterException
 
         config_changed = self.set_configuration(data)
+        prev_plan_type = self.plan_type
         self.plan_type = PlanType.BUILD
         db.session.commit()
 
@@ -440,9 +441,14 @@ class MagicCastle:
         if config_changed:
             self.config.write(self.main_file)
 
-        if config_changed or self.status in (
-            ClusterStatusCode.PLAN_ERROR,
-            ClusterStatusCode.BUILD_ERROR,
+        if (
+            config_changed
+            or self.status
+            in (
+                ClusterStatusCode.PLAN_ERROR,
+                ClusterStatusCode.BUILD_ERROR,
+            )
+            or prev_plan_type != PlanType.BUILD
         ):
             self.remove_existing_plan()
             self.rotate_terraform_logs(apply=False)
