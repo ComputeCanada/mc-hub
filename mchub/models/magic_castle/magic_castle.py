@@ -455,7 +455,6 @@ class MagicCastle:
             self.delete()
 
     def create_plan(self):
-        previous_status = self.status
         destroy = self.plan_type == PlanType.DESTROY
         self.status = ClusterStatusCode.PLAN_RUNNING
 
@@ -491,6 +490,12 @@ class MagicCastle:
                 "An error occurred while planning changes.",
                 additional_details=f"hostname: {self.hostname}\nlog: {log}",
             )
+        except BaseException as err:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while planning changes.",
+                additional_details=f"hostname: {self.hostname}\nerror: {err}",
+            )
 
         try:
             proc = run(
@@ -511,6 +516,12 @@ class MagicCastle:
                 "An error occurred while exporting planned changes.",
                 additional_details=f"hostname: {self.hostname}",
             )
+        except BaseException as err:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while exporting planned changes.",
+                additional_details=f"hostname: {self.hostname}\nerror: {err}",
+            )
 
         try:
             self.plan = json.loads(proc.stdout)
@@ -520,8 +531,17 @@ class MagicCastle:
                 "An error occurred while parsing planned changes.",
                 additional_details=f"hostname: {self.hostname}",
             )
+        except BaseException as err:
+            self.status = ClusterStatusCode.PLAN_ERROR
+            raise PlanException(
+                "An error occurred while parsing planned changes.",
+                additional_details=f"hostname: {self.hostname}\nerror: {err}",
+            )
 
-        self.status = previous_status
+        if self.tf_state:
+            self.status = ClusterStatusCode.PROVISIONING_RUNNING
+        else:
+            self.status = ClusterStatusCode.CREATED
         db.session.commit()
 
     def apply(self):
