@@ -229,7 +229,7 @@
         <v-list-item>
           <v-text-field v-model.number="localSpecs.nb_users" type="number" label="Number of guest users" min="0" />
         </v-list-item>
-        <v-list-item>
+        <v-list-item v-if="!stateful">
           <v-text-field v-model="localSpecs.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
@@ -239,6 +239,12 @@
             </template>
             <span>Generate new password</span>
           </v-tooltip>
+        </v-list-item>
+        <v-list-item v-else>
+          <v-list-item-content>
+            <v-list-item-subtitle>Guest password</v-list-item-subtitle>
+            <v-list-item-title>{{ localSpecs.guest_passwd }}</v-list-item-title>
+          </v-list-item-content>
         </v-list-item>
         <v-list-group prepend-icon="mdi-script-text-outline">
           <template #activator>
