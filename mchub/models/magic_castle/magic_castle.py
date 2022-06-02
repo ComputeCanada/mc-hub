@@ -101,6 +101,7 @@ def terraform_apply(hostname, env, main_path, destroy):
                 orm.plan = None
                 orm.status = status
                 orm.tf_state = tf_state
+                orm.applied_config = orm.config
             db.session.commit()
 
 
@@ -114,6 +115,7 @@ class MagicCastleORM(db.Model):
     expiration_date = db.Column(db.String(32))
     cloud_id = db.Column(db.String(128))
     config = db.Column(db.PickleType())
+    applied_config = db.Column(db.PickleType())
     tf_state = db.Column(db.PickleType())
     plan = db.Column(db.PickleType())
 
@@ -181,6 +183,10 @@ class MagicCastle:
     @config.setter
     def config(self, value):
         self.orm.config = value
+
+    @property
+    def applied_config(self):
+        return self.orm.applied_config
 
     def set_configuration(self, configuration: dict):
         changed = False
@@ -299,7 +305,7 @@ class MagicCastle:
     @property
     def state(self):
         return {
-            **self.config,
+            **(self.applied_config if self.applied_config else self.config),
             "hostname": self.hostname,
             "status": self.status.value,
             "freeipa_passwd": self.freeipa_passwd,
