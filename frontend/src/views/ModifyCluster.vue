@@ -18,7 +18,7 @@ export default {
     },
     destroy: {
       type: Boolean,
-      default: false,
+      required: true,
     },
   },
   created() {
