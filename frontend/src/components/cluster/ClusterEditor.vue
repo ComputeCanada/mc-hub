@@ -28,7 +28,11 @@
           />
         </v-list-item>
         <v-list-item>
-          <v-select v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
+          <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
+          <v-list-item-content v-else>
+            <v-list-item-subtitle>Image</v-list-item-subtitle>
+            <v-list-item-title>{{ localSpecs.image }}</v-list-item-title>
+          </v-list-item-content>
         </v-list-item>
         <v-list-item>
           <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
