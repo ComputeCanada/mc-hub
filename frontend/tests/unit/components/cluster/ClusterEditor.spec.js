@@ -88,7 +88,8 @@ async function getDefaultClusterEditorWrapper(existingCluster=true, hostname="te
     propsData: {
       specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
       existingCluster: existingCluster,
-      hostname: hostname
+      hostname: hostname,
+      stateful: true,
     }
   });
   await wrapper.vm.promise;
