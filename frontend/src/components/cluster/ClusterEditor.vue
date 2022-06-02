@@ -11,6 +11,12 @@
             @change="changeCloudProject"
           />
         </v-list-item>
+        <v-list-item v-else>
+          <v-list-item-content>
+            <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
+            <v-list-item-title>{{ localSpecs.cloud_id }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item v-if="!existingCluster">
           <v-text-field
             v-model="localSpecs.cluster_name"

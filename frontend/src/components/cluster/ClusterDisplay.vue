@@ -5,7 +5,7 @@
         <template #progress>
           <v-progress-linear :indeterminate="progress === 0" :value="progress" />
         </template>
-        <v-card-title v-if="existingCluster" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
+        <v-card-title v-if="stateful" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
         <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
         <v-card-text>
           <v-list v-if="existingCluster">
@@ -15,12 +15,6 @@
                 <v-list-item-title>{{ hostname }}</v-list-item-title>
               </v-list-item-content>
               <status-chip :status="status" />
-            </v-list-item>
-            <v-list-item v-if="cloud_id">
-              <v-list-item-content>
-                <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
-                <v-list-item-title>{{ cloud_id }}</v-list-item-title>
-              </v-list-item-content>
             </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
@@ -148,7 +142,7 @@ export default {
     },
     destroy: {
       type: Boolean,
-      default: false,
+      required: true,
     },
   },
   data: function () {
@@ -202,13 +196,6 @@ export default {
     },
     applyRunning() {
       return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.status);
-    },
-    cloud_id() {
-      try {
-        return this.magicCastle.cloud_id;
-      } catch (e) {
-        return null;
-      }
     },
     existingCluster() {
       return this.hostname !== null && this.hostname !== undefined;
