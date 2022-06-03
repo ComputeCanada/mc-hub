@@ -2,8 +2,23 @@ from subprocess import getoutput
 from typing import List
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
+from ..database import db
 from ..configuration import config
 from ..configuration.cloud import DEFAULT_CLOUD, ALL_CLOUD_ID
+from .cloud.project import Project
+
+
+projects = db.Table(
+    "projects",
+    db.Column("user_id", db.String(), db.ForeignKey("user.id"), primary_key=True),
+    db.Column("project_id", db.String(), db.ForeignKey("project.id"), primary_key=True),
+)
+
+
+class UserORM(db.Model):
+    __tablename__ = "user"
+    id = db.Column(db.String(), primary_key=True, unique=True)
+    projects = db.relationship("Project", secondary=projects)
 
 
 class User:
