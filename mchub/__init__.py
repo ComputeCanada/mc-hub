@@ -12,6 +12,7 @@ def create_app(db_path=None):
     from .resources.progress_api import ProgressAPI
     from .resources.available_resources_api import AvailableResourcesApi
     from .resources.user_api import UserAPI
+    from .resources.project_api import ProjectAPI
     from .resources.template_api import TemplateAPI
 
     if db_path is None:
@@ -76,6 +77,9 @@ def create_app(db_path=None):
 
     user_view = UserAPI.as_view("user")
     app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
+
+    project_view = ProjectAPI.as_view("projects")
+    app.add_url_rule("/api/projects", view_func=project_view, methods=["GET", "POST"])
 
     @app.route("/css/<path:path>")
     def send_css_file(path):
