@@ -95,9 +95,7 @@ def compute_current_user(route_handler):
                 scoped_id = headers["eduPersonPrincipalName"]
                 orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
                 if orm is None:
-                    orm = UserORM(scoped_id)
-                    db.session.add(orm)
-                    db.session.commit()
+                    orm = UserORM(scoped_id=scoped_id)
                 user = SAMLUser(
                     orm=orm,
                     edu_person_principal_name=scoped_id,

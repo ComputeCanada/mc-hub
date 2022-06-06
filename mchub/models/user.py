@@ -78,12 +78,12 @@ class SAMLUser(User):
     edit his own clusters.
     """
 
-    __slots__ = ["scoped_id", "scope", "given_name", "surname", "mail"]
+    __slots__ = ["scoped_id", "scope", "given_name", "surname", "mail", "orm"]
 
     def __init__(
         self,
-        orm,
         *,
+        orm,
         edu_person_principal_name,
         given_name,
         surname,
@@ -105,7 +105,7 @@ class SAMLUser(User):
 
     @property
     def projects(self):
-        if self.orm.projects is not None:
+        if len(self.orm.projects) > 0:
             return [project.name for project in self.orm.projects]
         return [DEFAULT_CLOUD]
 
