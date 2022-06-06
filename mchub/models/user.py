@@ -17,7 +17,8 @@ projects = db.Table(
 
 class UserORM(db.Model):
     __tablename__ = "user"
-    id = db.Column(db.String(), primary_key=True, unique=True)
+    id = db.Column(db.Integer, primary_key=True)
+    scoped_id = db.Column(db.String(), unique=True)
     projects = db.relationship("Project", secondary=projects)
 
 
@@ -81,6 +82,7 @@ class SAMLUser(User):
 
     def __init__(
         self,
+        orm,
         *,
         edu_person_principal_name,
         given_name,
@@ -99,16 +101,12 @@ class SAMLUser(User):
         self.given_name = given_name
         self.surname = surname
         self.mail = mail
+        self.orm = orm
 
     @property
     def projects(self):
-        # with DatabaseManager.connect() as database_connection:
-        #     results = database_connection.execute(
-        #         "SELECT projects FROM users WHERE username = ?",
-        #         (self.edu_person_principal_name,),
-        #     ).fetchone()
-        # if results:
-        #     return json.loads(results[0])
+        if self.orm.projects is not None:
+            return [project.name for project in self.orm.projects]
         return [DEFAULT_CLOUD]
 
     def is_admin(self):

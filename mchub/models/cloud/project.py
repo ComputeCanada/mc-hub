@@ -13,7 +13,7 @@ class Provider(enum.Enum):
 
 class Project(db.Model):
     __tablename__ = "project"
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    name = db.Column(db.String())
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(), nullable=False)
     provider = db.Column(db.Enum(Provider), nullable=False)
     env = db.Column(db.PickleType())

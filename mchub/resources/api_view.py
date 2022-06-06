@@ -6,8 +6,9 @@ from flask.views import MethodView
 from flask import make_response
 
 from ..configuration import config
+from ..database import db
 from ..models.auth_type import AuthType
-from ..models.user import LocalUser, SAMLUser
+from ..models.user import LocalUser, SAMLUser, UserORM
 from ..exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
@@ -22,7 +23,8 @@ DEFAULT_RESPONSE_CODE = 200
 
 def output_json(route_handler):
     """
-    Creates a decorator that serializes the response data from the return value of the route handler to a JSON string.
+    Creates a decorator that serializes the response data from the return value of the
+    route handler to a JSON string.
 
     :param route_handler:  The Flask route handler function.
     :return: The decorator that serializes the response to JSON.
@@ -42,7 +44,8 @@ def output_json(route_handler):
 
 def handle_exceptions(route_handler):
     """
-    Creates a decorator that catches server and user exceptions and injects the error message in the response.
+    Creates a decorator that catches server and user exceptions and injects the error
+    message in the response.
 
     :param route_handler: The Flask route handler function.
     :return: The decorator that handles exceptions.
@@ -59,10 +62,12 @@ def handle_exceptions(route_handler):
 
 def compute_current_user(route_handler):
     """
-    Creates a decorator used to pass the current User object as a parameter to the route handler.
+    Creates a decorator used to pass the current User object as a parameter
+    to the route handler.
 
     If the authentication type is SAML, an SAMLUser object will be passed.
-    Otherwise, if the authentication type is NONE, an LocalUser object will be passed.
+    Otherwise, if the authentication type is NONE, an LocalUser object will
+    be passed.
 
     :param route_handler: The Flask route handler function.
     :return: The decorator that modifies the route handler to have the current user as a parameter.
@@ -85,9 +90,17 @@ def compute_current_user(route_handler):
         elif AuthType.SAML in auth_type and "eduPersonPrincipalName" in headers:
             try:
                 # Note: Request headers are interpreted as ISO Latin 1 encoded strings.
-                # Therefore, special characters and accents in givenName and surname are not correctly decoded.
+                # Therefore, special characters and accents in givenName and surname
+                # are not correctly decoded.
+                scoped_id = headers["eduPersonPrincipalName"]
+                orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
+                if orm is None:
+                    orm = UserORM(scoped_id)
+                    db.session.add(orm)
+                    db.session.commit()
                 user = SAMLUser(
-                    edu_person_principal_name=headers["eduPersonPrincipalName"],
+                    orm=orm,
+                    edu_person_principal_name=scoped_id,
                     given_name=headers["givenName"],
                     surname=headers["surname"],
                     mail=headers["mail"],
