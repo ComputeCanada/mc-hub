@@ -106,7 +106,10 @@ class SAMLUser(User):
     @property
     def projects(self):
         if len(self.orm.projects) > 0:
-            return [project.name for project in self.orm.projects]
+            return [
+                {"id": project.id, "name": project.name}
+                for project in self.orm.projects
+            ]
         return [DEFAULT_CLOUD]
 
     def is_admin(self):

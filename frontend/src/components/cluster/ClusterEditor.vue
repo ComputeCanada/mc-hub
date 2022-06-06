@@ -6,6 +6,8 @@
         <v-list-item v-if="!stateful">
           <v-select
             v-model="localSpecs.cloud_id"
+            item-value="id"
+            item-text="name"
             :items="projects"
             label="Cloud project"
             @change="changeCloudProject"
@@ -420,7 +422,7 @@ export default {
         const user = value.data;
         this.projects = user.projects;
         if (!this.existingCluster) {
-          this.localSpecs.cloud_id = this.projects[0];
+          this.localSpecs.cloud_id = this.projects[0].id;
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
         }
         this.initialSpecs = cloneDeep(this.localSpecs);

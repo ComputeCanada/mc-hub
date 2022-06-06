@@ -34,7 +34,7 @@ class OpenStackManager:
     __slots__ = [
         "_con",
         "_project_id",
-        "cloud_id",
+        "project",
         "__pre_allocated_instance_count",
         "__pre_allocated_cores",
         "__pre_allocated_ram",
@@ -48,7 +48,7 @@ class OpenStackManager:
 
     def __init__(
         self,
-        cloud_id,
+        project,
         *,
         pre_allocated_instance_count=0,
         pre_allocated_cores=0,
@@ -58,7 +58,7 @@ class OpenStackManager:
     ):
         self._con = None
         self._project_id = None
-        self.cloud_id = cloud_id
+        self.project = project
         self.__pre_allocated_instance_count = pre_allocated_instance_count
         self.__pre_allocated_cores = pre_allocated_cores
         self.__pre_allocated_ram = pre_allocated_ram
@@ -74,7 +74,9 @@ class OpenStackManager:
     @property
     def connection(self):
         if self._con is None:
-            self._con = openstack.connect(cloud=self.cloud_id)
+            # Convert OS_* environment variable in keyword arguments
+            kargs = {key[3:].lower(): value for key, value in self.project.env.items()}
+            self._con = openstack.connect(**kargs)
         return self._con
 
     @property
@@ -85,9 +87,7 @@ class OpenStackManager:
 
     @property
     def env(self):
-        return {
-            "OS_CLOUD": self.cloud_id,
-        }
+        return self.project.env
 
     @property
     def available_resources(self):

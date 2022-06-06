@@ -22,6 +22,7 @@ from .plan_type import PlanType
 from ..terraform.terraform_state import TerraformState
 from ..terraform.terraform_plan_parser import TerraformPlanParser
 from ..cloud.dns_manager import DnsManager
+from ..cloud.project import Project
 from ..puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING_TIME
 
 from ...configuration.magic_castle import (
@@ -105,7 +106,17 @@ def terraform_apply(hostname, env, main_path, destroy):
             db.session.commit()
 
 
+cluster_project = db.Table(
+    "cluster_project",
+    db.Column(
+        "cluster_id", db.Integer, db.ForeignKey("magiccastle.id"), primary_key=True
+    ),
+    db.Column("project_id", db.Integer, db.ForeignKey("project.id"), primary_key=True),
+)
+
+
 class MagicCastleORM(db.Model):
+    __tablename__ = "magiccastle"
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(256), unique=True, nullable=False)
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
@@ -113,11 +124,11 @@ class MagicCastleORM(db.Model):
     owner = db.Column(db.String(64))
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
-    cloud_id = db.Column(db.String(128))
     config = db.Column(db.PickleType())
     applied_config = db.Column(db.PickleType())
     tf_state = db.Column(db.PickleType())
     plan = db.Column(db.PickleType())
+    project = db.relationship("Project", secondary=cluster_project, uselist=False)
 
 
 class MagicCastle:
@@ -161,7 +172,11 @@ class MagicCastle:
 
     @property
     def cloud_id(self):
-        return self.orm.cloud_id
+        return self.orm.project.id
+
+    @property
+    def project(self):
+        return self.orm.project
 
     @property
     def expiration_date(self):
@@ -192,8 +207,10 @@ class MagicCastle:
         changed = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
         cloud_id = configuration.pop("cloud_id")
-        if self.orm.cloud_id != cloud_id:
-            self.orm.cloud_id = cloud_id
+
+        if self.orm.project is None or self.orm.project.id != cloud_id:
+            project = Project.query.get(cloud_id)
+            self.orm.project = project
             changed = True
         try:
             config = MagicCastleConfiguration(configuration)
@@ -472,9 +489,8 @@ class MagicCastle:
 
         environment_variables = environ.copy()
         dns_manager = DnsManager(self.domain)
-        cloud_manager = CloudManager(self.cloud_id)
         environment_variables.update(dns_manager.get_environment_variables())
-        environment_variables.update(cloud_manager.get_environment_variables())
+        environment_variables.update(self.project.env)
         plan_log = path.join(self.path, TERRAFORM_PLAN_LOG_FILENAME)
         try:
             with open(plan_log, "w") as output_file:
@@ -576,7 +592,7 @@ class MagicCastle:
         env = environ.copy()
         if destroy:
             env["TF_WARN_OUTPUT_ERRORS"] = "1"
-        env.update(CloudManager(self.cloud_id).get_environment_variables())
+        env.update(self.project.env)
         env.update(DnsManager(self.domain).get_environment_variables())
 
         self.rotate_terraform_logs(apply=True)

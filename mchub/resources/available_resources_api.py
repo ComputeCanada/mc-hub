@@ -2,6 +2,7 @@ from ..configuration.cloud import DEFAULT_CLOUD
 from ..resources.api_view import ApiView
 from ..models.cloud.cloud_manager import CloudManager
 from ..models.user import User
+from ..models.cloud.project import Project
 
 
 class AvailableResourcesApi(ApiView):
@@ -11,5 +12,6 @@ class AvailableResourcesApi(ApiView):
             mc = user.query_magic_castles(hostname=hostname)[0]
             cloud_id = mc.cloud_id
             allocated_resources = mc.allocated_resources
-        cloud = CloudManager(cloud_id=cloud_id, **allocated_resources)
+        project = Project.query.get(cloud_id)
+        cloud = CloudManager(project=project, **allocated_resources)
         return cloud.available_resources
