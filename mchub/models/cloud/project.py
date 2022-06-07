@@ -3,7 +3,8 @@ import enum
 from functools import partial
 
 import marshmallow
-from marshmallow import fields, ValidationError, EXCLUDE
+from marshmallow import fields, EXCLUDE
+from marshmallow.validate import URL, Length
 
 from ...database import db
 
@@ -26,9 +27,13 @@ class Project(db.Model):
 
 
 class OpenStackEnv(marshmallow.Schema):
-    OS_AUTH_URL = fields.String(required=True)
-    OS_APPLICATION_CREDENTIAL_ID = fields.String(required=True)
-    OS_APPLICATION_CREDENTIAL_SECRET = fields.String(required=True)
+    OS_AUTH_URL = fields.String(required=True, validate=[URL()])
+    OS_APPLICATION_CREDENTIAL_ID = fields.String(
+        required=True, validate=[Length(min=32)]
+    )
+    OS_APPLICATION_CREDENTIAL_SECRET = fields.String(
+        required=True, validate=[Length(min=86)]
+    )
 
 
 ENV_VALIDATORS = {
