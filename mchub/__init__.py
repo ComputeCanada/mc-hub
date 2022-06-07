@@ -79,7 +79,16 @@ def create_app(db_path=None):
     app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
 
     project_view = ProjectAPI.as_view("projects")
-    app.add_url_rule("/api/projects", view_func=project_view, methods=["GET", "POST"])
+    app.add_url_rule(
+        "/api/projects",
+        view_func=project_view,
+        methods=["GET", "POST"],
+    )
+    app.add_url_rule(
+        "/api/projects/<int:id>",
+        view_func=project_view,
+        methods=["DELETE"],
+    )
 
     @app.route("/css/<path:path>")
     def send_css_file(path):
