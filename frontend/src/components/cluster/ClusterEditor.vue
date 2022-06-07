@@ -306,6 +306,7 @@ import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import ProjectRepository from "@/repositories/ProjectRepository";
 import UserRepository from "@/repositories/UserRepository";
 
 const MB_PER_GB = 1024;
@@ -418,9 +419,12 @@ export default {
       this.localSpecs.guest_passwd = generatePassword();
     }
     if (!this.stateful) {
-      UserRepository.getCurrent().then((value) => {
-        const user = value.data;
-        this.projects = user.projects;
+      const user_promise = UserRepository.getCurrent();
+      const project_promise = ProjectRepository.getAll();
+      Promise.all([user_promise, project_promise]).then((values) => {
+        const user = values[0].data;
+        const projects = values[1].data;
+        this.projects = projects;
         if (!this.existingCluster) {
           this.localSpecs.cloud_id = this.projects[0].id;
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));

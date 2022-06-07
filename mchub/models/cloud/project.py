@@ -22,6 +22,7 @@ class Project(db.Model):
     name = db.Column(db.String(), nullable=False)
     provider = db.Column(db.Enum(Provider), nullable=False)
     env = db.Column(db.PickleType())
+    magic_castles = db.relationship("MagicCastleORM", back_populates="project")
 
 
 class OpenStackEnv(marshmallow.Schema):

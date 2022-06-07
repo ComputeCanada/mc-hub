@@ -71,7 +71,7 @@ export default {
       headers: [
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
-        { text: "Delete?", value: "actions", sortable: false },
+        { text: "Remove?", value: "actions", sortable: false },
       ],
       defaultProject: {
         name: "",

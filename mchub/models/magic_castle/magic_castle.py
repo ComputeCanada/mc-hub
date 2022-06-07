@@ -106,15 +106,6 @@ def terraform_apply(hostname, env, main_path, destroy):
             db.session.commit()
 
 
-cluster_project = db.Table(
-    "cluster_project",
-    db.Column(
-        "cluster_id", db.Integer, db.ForeignKey("magiccastle.id"), primary_key=True
-    ),
-    db.Column("project_id", db.Integer, db.ForeignKey("project.id"), primary_key=True),
-)
-
-
 class MagicCastleORM(db.Model):
     __tablename__ = "magiccastle"
     id = db.Column(db.Integer, primary_key=True)
@@ -128,7 +119,8 @@ class MagicCastleORM(db.Model):
     applied_config = db.Column(db.PickleType())
     tf_state = db.Column(db.PickleType())
     plan = db.Column(db.PickleType())
-    project = db.relationship("Project", secondary=cluster_project, uselist=False)
+    project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
+    project = db.relationship("Project", back_populates="magic_castles", uselist=False)
 
 
 class MagicCastle:

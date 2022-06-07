@@ -12,7 +12,17 @@ from ..exceptions.invalid_usage_exception import (
 
 class ProjectAPI(ApiView):
     def get(self, user: User):
-        return user.projects
+        if len(user.projects) > 0:
+            return [
+                {
+                    "id": project.id,
+                    "name": project.name,
+                    "provider": project.provider.value,
+                    "#clusters": len(project.magic_castles),
+                }
+                for project in user.projects
+            ]
+        return []
 
     def post(self, user: User):
         data = request.get_json()
@@ -40,12 +50,15 @@ class ProjectAPI(ApiView):
             "id": project.id,
             "name": project.name,
             "provider": project.provider.value,
+            "#clusters": len(project.magic_castles),
         }, 200
 
     def delete(self, user: User, id: int):
         project = Project.query.get(id)
         if project is None or project not in user.orm.projects:
             raise InvalidUsageException("Invalid project id")
+        if len(project.magic_castles) > 0:
+            raise InvalidUsageException("Cannot remove project with running clusters")
         user.orm.projects.remove(project)
         db.session.delete(project)
         db.session.commit()
