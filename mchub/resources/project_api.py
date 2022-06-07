@@ -39,7 +39,7 @@ class ProjectAPI(ApiView):
         return {
             "id": project.id,
             "name": project.name,
-            "provider": project.provider,
+            "provider": project.provider.value,
         }, 200
 
     def delete(self, user: User, id: int):
