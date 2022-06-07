@@ -18,7 +18,7 @@ class ProjectAPI(ApiView):
                     "id": project.id,
                     "name": project.name,
                     "provider": project.provider.value,
-                    "#clusters": len(project.magic_castles),
+                    "nb_clusters": len(project.magic_castles),
                 }
                 for project in user.projects
             ]
@@ -50,7 +50,7 @@ class ProjectAPI(ApiView):
             "id": project.id,
             "name": project.name,
             "provider": project.provider.value,
-            "#clusters": len(project.magic_castles),
+            "nb_clusters": len(project.magic_castles),
         }, 200
 
     def delete(self, user: User, id: int):

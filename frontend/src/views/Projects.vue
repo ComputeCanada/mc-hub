@@ -52,7 +52,7 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <v-icon @click="deleteItem(item)"> mdi-delete </v-icon>
+          <v-icon @click="deleteItem(item)" :disabled="item.nb_clusters > 0"> mdi-delete </v-icon>
         </template>
       </v-data-table>
     </v-card>
@@ -71,6 +71,7 @@ export default {
       headers: [
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
+        { text: "# Clusters", value: "nb_clusters" },
         { text: "Remove?", value: "actions", sortable: false },
       ],
       defaultProject: {
