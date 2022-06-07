@@ -36,7 +36,11 @@ class ProjectAPI(ApiView):
         if inspect(user.orm).identity is None:
             db.session.add(user.orm)
         db.session.commit()
-        return {"id": project.id, "name": project.name}, 200
+        return {
+            "id": project.id,
+            "name": project.name,
+            "provider": project.provider,
+        }, 200
 
     def delete(self, user: User, id: int):
         project = Project.query.get(id)

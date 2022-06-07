@@ -7,6 +7,9 @@ export default {
     return Repository.get(`${resource}`);
   },
   post(payload) {
-    return Repository.get(`${resource}`, payload);
+    return Repository.post(`${resource}`, payload);
   },
+  delete(id) {
+    return Repository.delete(`${resource}/${id}`);
+  },  
 };

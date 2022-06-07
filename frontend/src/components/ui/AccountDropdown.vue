@@ -7,6 +7,9 @@
       </v-btn>
     </template>
     <v-list>
+      <v-list-item @click="projects">
+        <v-list-item-title> Manage projects </v-list-item-title>
+      </v-list-item>
       <v-list-item @click="logout">
         <v-list-item-title> <v-icon class="mr-4">mdi-logout</v-icon>Logout </v-list-item-title>
       </v-list-item>
@@ -26,6 +29,9 @@ export default {
     this.currentUser = (await UserRepository.getCurrent()).data;
   },
   methods: {
+    projects() {
+      location.href = "/projects";
+    },
     logout() {
       location.href = "/Shibboleth.sso/Logout";
     },

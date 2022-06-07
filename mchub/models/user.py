@@ -107,10 +107,14 @@ class SAMLUser(User):
     def projects(self):
         if len(self.orm.projects) > 0:
             return [
-                {"id": project.id, "name": project.name}
+                {
+                    "id": project.id,
+                    "name": project.name,
+                    "provider": project.provider.value,
+                }
                 for project in self.orm.projects
             ]
-        return [DEFAULT_CLOUD]
+        return []
 
     def is_admin(self):
         return self.scoped_id in config.get("admins", [])
