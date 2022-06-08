@@ -1,10 +1,10 @@
 from subprocess import getoutput
 from typing import List
+from os import getlogin
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..database import db
 from ..configuration import config
-from ..configuration.cloud import DEFAULT_CLOUD, ALL_CLOUD_ID
 from .cloud.project import Project
 
 
@@ -23,16 +23,17 @@ class UserORM(db.Model):
 
 
 class User:
-    __slots__ = ["username", "full_name", "public_keys"]
+    __slots__ = ["orm", "username", "usertype", "public_keys"]
 
-    def __init__(self, username=None, full_name=None, public_keys=[]):
+    def __init__(self, orm, username, usertype, public_keys=[]):
+        self.orm = orm
         self.username = username
-        self.full_name = full_name
+        self.usertype = usertype
         self.public_keys = public_keys
 
     @property
     def projects(self):
-        return []
+        return self.orm.projects
 
     def query_magic_castles(self) -> List[MagicCastle]:
         raise NotImplementedError
@@ -46,16 +47,15 @@ class LocalUser(User):
     User class for users created when the authentication type is set to NONE.
     """
 
-    def __init__(self):
+    def __init__(self, orm):
         try:
             public_keys = getoutput("ssh-add -L").split("\n")
         except:
             public_keys = []
-        super().__init__(public_keys=public_keys)
-
-    @property
-    def projects(self):
-        return ALL_CLOUD_ID
+        username = getlogin()
+        super().__init__(
+            orm=orm, username=username, usertype="local", public_keys=public_keys
+        )
 
     def query_magic_castles(self, **filter_):
         """
@@ -78,7 +78,7 @@ class SAMLUser(User):
     edit his own clusters.
     """
 
-    __slots__ = ["scoped_id", "scope", "given_name", "surname", "mail", "orm"]
+    __slots__ = ["scoped_id", "scope", "given_name", "surname", "mail"]
 
     def __init__(
         self,
@@ -92,8 +92,9 @@ class SAMLUser(User):
     ):
         username, scope = edu_person_principal_name.split("@")
         super().__init__(
+            orm=orm,
             username=username,
-            full_name=f"{given_name} {surname}",
+            usertype="saml",
             public_keys=ssh_public_key.split(";"),
         )
         self.scoped_id = edu_person_principal_name
@@ -101,11 +102,6 @@ class SAMLUser(User):
         self.given_name = given_name
         self.surname = surname
         self.mail = mail
-        self.orm = orm
-
-    @property
-    def projects(self):
-        return self.orm.projects
 
     def is_admin(self):
         return self.scoped_id in config.get("admins", [])

@@ -426,7 +426,12 @@ export default {
         const projects = values[1].data;
         this.projects = projects;
         if (!this.existingCluster) {
-          this.localSpecs.cloud_id = this.projects[0].id;
+          try {
+            this.localSpecs.cloud_id = this.projects[0].id;
+          } catch (err) {
+            console.log("No cloud project available");
+            this.localSpecs.cloud_id = undefined;
+          }
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
         }
         this.initialSpecs = cloneDeep(this.localSpecs);
@@ -790,6 +795,9 @@ export default {
     },
 
     loadCloudResources() {
+      if (this.localSpecs.cloud_id === undefined) {
+        return;
+      }
       this.promise = this.stateful
         ? AvailableResourcesRepository.getHost(this.hostname)
         : AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id);

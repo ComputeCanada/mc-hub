@@ -1,6 +1,8 @@
 import json
 import re
 
+from os import getlogin
+
 from flask import request
 from flask.views import MethodView
 from flask import make_response
@@ -108,7 +110,11 @@ def compute_current_user(route_handler):
                 # Missing an authentication header
                 raise UnauthenticatedException
         elif AuthType.NONE in auth_type:
-            user = LocalUser()
+            scoped_id = getlogin() + "@localhost"
+            orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
+            if orm is None:
+                orm = UserORM(scoped_id=scoped_id)
+            user = LocalUser(orm=orm)
         else:
             raise UnauthenticatedException
         return route_handler(user, *args, **kwargs)

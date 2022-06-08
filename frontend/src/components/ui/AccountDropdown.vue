@@ -10,7 +10,7 @@
       <v-list-item @click="projects">
         <v-list-item-title> Manage projects </v-list-item-title>
       </v-list-item>
-      <v-list-item @click="logout">
+      <v-list-item v-if="currentUser.usertype == 'saml'" @click="logout">
         <v-list-item-title> <v-icon class="mr-4">mdi-logout</v-icon>Logout </v-list-item-title>
       </v-list-item>
     </v-list>
@@ -22,7 +22,7 @@ import UserRepository from "@/repositories/UserRepository";
 export default {
   data() {
     return {
-      currentUser: { full_name: null, username: null, public_keys: [] },
+      currentUser: { full_name: null, username: null, usertype: "local", public_keys: [] },
     };
   },
   async created() {

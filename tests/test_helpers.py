@@ -9,7 +9,6 @@ from typing import Callable
 
 from mchub import create_app
 from mchub.database import db
-from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.user import SAMLUser
 from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
