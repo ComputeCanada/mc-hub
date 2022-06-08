@@ -76,7 +76,9 @@ class OpenStackManager:
         if self._con is None:
             # Convert OS_* environment variable in keyword arguments
             kargs = {key[3:].lower(): value for key, value in self.project.env.items()}
+            kargs["auth_type"] = "v3applicationcredential"
             self._con = openstack.connect(**kargs)
+
         return self._con
 
     @property
