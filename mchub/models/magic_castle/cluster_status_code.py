@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ClusterStatusCode(Enum):
+class ClusterStatusCode(str, Enum):
     CREATED = "created"
     PLAN_RUNNING = "plan_running"
     PLAN_ERROR = "plan_error"

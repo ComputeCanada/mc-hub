@@ -205,7 +205,7 @@ class MagicCastle:
             self.orm.project = project
             changed = True
         try:
-            config = MagicCastleConfiguration(configuration)
+            config = MagicCastleConfiguration(project.provider, configuration)
         except ValidationError as err:
             raise InvalidUsageException(
                 f"The magic castle configuration could not be parsed.\nError: {err.messages}"
@@ -239,7 +239,7 @@ class MagicCastle:
             json.dumps(
                 {
                     "hostname": self.hostname,
-                    "status": self.orm.status.value,
+                    "status": self.orm.status,
                     "owner": self.owner,
                 }
             ),
@@ -316,7 +316,7 @@ class MagicCastle:
         return {
             **(self.applied_config if self.applied_config else self.config),
             "hostname": self.hostname,
-            "status": self.status.value,
+            "status": self.status,
             "freeipa_passwd": self.freeipa_passwd,
             "owner": self.owner,
             "age": self.age,

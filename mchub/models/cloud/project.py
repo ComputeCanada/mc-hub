@@ -9,7 +9,7 @@ from marshmallow.validate import URL, Length
 from ...database import db
 
 
-class Provider(enum.Enum):
+class Provider(str, enum.Enum):
     AWS = "aws"
     AZURE = "azure"
     GCP = "gcp"

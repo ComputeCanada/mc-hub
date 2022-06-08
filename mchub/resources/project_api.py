@@ -17,7 +17,7 @@ class ProjectAPI(ApiView):
                 {
                     "id": project.id,
                     "name": project.name,
-                    "provider": project.provider.value,
+                    "provider": project.provider,
                     "nb_clusters": len(project.magic_castles),
                 }
                 for project in user.projects
@@ -49,7 +49,7 @@ class ProjectAPI(ApiView):
         return {
             "id": project.id,
             "name": project.name,
-            "provider": project.provider.value,
+            "provider": project.provider,
             "nb_clusters": len(project.magic_castles),
         }, 200
 

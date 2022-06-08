@@ -75,12 +75,13 @@ class MagicCastleConfiguration(Mapping):
     All configurations are validated with the configuration schema using the Schema class.
     """
 
-    __slots__ = ["_config"]
+    __slots__ = ["_config", "provider"]
 
-    def __init__(self, configuration):
+    def __init__(self, provider, configuration):
         """
         Initializes a MagicCastleConfiguration and validates the configuration schema, if present.
         """
+        self.provider = provider
         self._config = Schema().load(
             configuration,
             unknown=EXCLUDE,
@@ -112,24 +113,27 @@ class MagicCastleConfiguration(Mapping):
         :return: The MagicCastleConfiguration object associated with the cluster.
         """
         with open(filename, "r") as main_tf:
-            main_tf_configuration = json.load(main_tf)
-        configuration = main_tf_configuration["module"]["openstack"]
+            main_tf_data = json.load(main_tf)
+        modules = main_tf_data["module"]
+        modules["module"].pop("dns", None)
+        provider = modules["module"][modules["modules"].keys()[0]]
+        configuration = main_tf_data["module"][provider]
 
         for field in IGNORED_CONFIGURATION_FIELDS:
             configuration.pop(field, None)
 
-        return cls(configuration)
+        return cls(provider, configuration)
 
     def write(self, filename):
         """
         Formats the configuration and writes it to the cluster's main.tf.json file.
         """
 
-        main_tf_configuration = {
+        main_tf_data = {
             "terraform": {"required_version": TERRAFORM_REQUIRED_VERSION},
             "module": {
-                "openstack": {
-                    "source": MAGIC_CASTLE_SOURCE["openstack"],
+                self.provider: {
+                    "source": MAGIC_CASTLE_SOURCE[self.provider],
                     "generate_ssh_key": True,
                     "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
                     "config_version": MAGIC_CASTLE_VERSION,
@@ -137,9 +141,9 @@ class MagicCastleConfiguration(Mapping):
                 }
             },
         }
-        main_tf_configuration["module"].update(
+        main_tf_data["module"].update(
             DnsManager(self["domain"]).get_magic_castle_configuration()
         )
 
         with open(filename, "w") as main_terraform_file:
-            json.dump(main_tf_configuration, main_terraform_file)
+            json.dump(main_tf_data, main_terraform_file)
