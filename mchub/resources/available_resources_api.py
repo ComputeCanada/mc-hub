@@ -9,7 +9,7 @@ class AvailableResourcesApi(ApiView):
         allocated_resources = {}
         if hostname:
             mc = user.query_magic_castles(hostname=hostname)[0]
-            cloud_id = mc.cloud_id
+            cloud_id = mc.project.id
             allocated_resources = mc.allocated_resources
         project = Project.query.get(cloud_id)
         if project is None or project not in user.projects:

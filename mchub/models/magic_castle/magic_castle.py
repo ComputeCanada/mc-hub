@@ -198,7 +198,7 @@ class MagicCastle:
     def set_configuration(self, configuration: dict):
         changed = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
-        cloud_id = configuration.pop("cloud_id")
+        cloud_id = configuration.pop("cloud")["id"]
 
         if self.orm.project is None or self.orm.project.id != cloud_id:
             project = Project.query.get(cloud_id)
@@ -321,7 +321,7 @@ class MagicCastle:
             "owner": self.owner,
             "age": self.age,
             "expiration_date": self.expiration_date,
-            "cloud_id": self.cloud_id,
+            "cloud": {"name": self.project.name, "id": self.project.id},
         }
 
     @property

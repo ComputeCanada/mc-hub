@@ -175,7 +175,7 @@ export default {
         },
         {
           text: "Project",
-          value: "cloud_id",
+          value: "cloud.name",
         },
         {
           text: "Age",
