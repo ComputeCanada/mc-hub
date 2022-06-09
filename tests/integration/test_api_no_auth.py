@@ -5,7 +5,7 @@ from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from ..test_helpers import *
 from ..mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 from subprocess import getoutput
-from os import getlogin
+from getpass import getuser
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
 EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
@@ -86,7 +86,7 @@ IGNORE_FIELDS = ["age"]
 def test_get_current_user(client):
     res = client.get(f"/api/users/me")
     assert res.get_json() == {
-        "username": getlogin(),
+        "username": getuser(),
         "public_keys": getoutput("ssh-add -L").split("\n"),
         "usertype": "local",
     }

@@ -1,6 +1,6 @@
 from subprocess import getoutput
 from typing import List
-from os import getlogin
+from getpass import getuser
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..database import db
@@ -52,7 +52,7 @@ class LocalUser(User):
             public_keys = getoutput("ssh-add -L").split("\n")
         except:
             public_keys = []
-        username = getlogin()
+        username = getuser()
         super().__init__(
             orm=orm, username=username, usertype="local", public_keys=public_keys
         )
