@@ -201,11 +201,10 @@ class MagicCastle:
         cloud_id = configuration.pop("cloud")["id"]
 
         if self.orm.project is None or self.orm.project.id != cloud_id:
-            project = Project.query.get(cloud_id)
-            self.orm.project = project
+            self.orm.project = Project.query.get(cloud_id)
             changed = True
         try:
-            config = MagicCastleConfiguration(project.provider, configuration)
+            config = MagicCastleConfiguration(self.orm.project.provider, configuration)
         except ValidationError as err:
             raise InvalidUsageException(
                 f"The magic castle configuration could not be parsed.\nError: {err.messages}"
