@@ -43,7 +43,7 @@ TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
 
-def terraform_apply(hostname, env, main_path, destroy):
+def terraform_apply(cluster_id, env, main_path, destroy):
     log_path = path.join(main_path, TERRAFORM_APPLY_LOG_FILENAME)
     plan_path = path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME)
     try:
@@ -94,7 +94,7 @@ def terraform_apply(hostname, env, main_path, destroy):
         from ... import create_app
 
         with create_app().app_context():
-            orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+            orm = MagicCastleORM.query.get(cluster_id)
             if destroy:
                 db.session.delete(orm)
             else:
@@ -589,7 +589,7 @@ class MagicCastle:
 
         self.rotate_terraform_logs(apply=True)
         Thread(
-            target=terraform_apply, args=[self.hostname, env, self.path, destroy]
+            target=terraform_apply, args=[self.orm.id, env, self.path, destroy]
         ).start()
 
     def delete(self):
