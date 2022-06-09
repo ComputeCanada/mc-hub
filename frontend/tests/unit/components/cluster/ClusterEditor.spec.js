@@ -16,11 +16,11 @@ localVue.use(Vuetify);
 localVue.use(UnloadConfirmation, { router });
 
 const DEFAULT_USER = Object.freeze({
-  projects: ["arbutus:training"],
   public_keys: [],
 });
 
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
+  cloud: {"id" : 1, "name": "arbutus"},
   cluster_name: "",
   domain: "calculquebec.cloud",
   image: "CentOS-7-x64-2021-11",
