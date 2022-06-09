@@ -395,8 +395,8 @@ class MagicCastle:
 
         if MAGIC_CASTLE_PATH[:3] != "git":
             symlink(
-                path.join(MAGIC_CASTLE_PATH, "openstack"),
-                path.join(self.path, "openstack"),
+                path.join(MAGIC_CASTLE_PATH, self.project.provider),
+                path.join(self.path, self.project.provider),
             )
             symlink(
                 path.join(MAGIC_CASTLE_PATH, "dns"),
