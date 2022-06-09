@@ -115,9 +115,9 @@ class MagicCastleConfiguration(Mapping):
         with open(filename, "r") as main_tf:
             main_tf_data = json.load(main_tf)
         modules = main_tf_data["module"]
-        modules["module"].pop("dns", None)
-        provider = modules["module"][modules["modules"].keys()[0]]
-        configuration = main_tf_data["module"][provider]
+        modules.pop("dns", None)
+        provider = list(modules.keys())[0]
+        configuration = modules[provider]
 
         for field in IGNORED_CONFIGURATION_FIELDS:
             configuration.pop(field, None)
