@@ -103,9 +103,6 @@ class SAMLUser(User):
         self.surname = surname
         self.mail = mail
 
-    def is_admin(self):
-        return self.scoped_id in config.get("admins", [])
-
     def query_magic_castles(self, **filter_):
         """
         If the user is admin, it will retrieve all the clusters,
@@ -113,8 +110,7 @@ class SAMLUser(User):
 
         :return: A list of MagicCastle objects
         """
-        if not self.is_admin():
-            filter_["owner"] = self.scoped_id
+        filter_["owner"] = self.scoped_id
         results = MagicCastleORM.query.filter_by(**filter_)
         return [MagicCastle(orm=orm) for orm in results.all()]
 
