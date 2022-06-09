@@ -1,4 +1,3 @@
-from mchub.configuration.cloud import ALL_CLOUD_ID, DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
 # from mchub import create_app
@@ -6,6 +5,7 @@ from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from ..test_helpers import *
 from ..mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 from subprocess import getoutput
+from os import getlogin
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
 EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
@@ -53,7 +53,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "hieradata": "",
 }
 EXISTING_CLUSTER_STATE = {
-    "cloud_id": DEFAULT_CLOUD,
+    "cloud": {"id": 1, "name": "test-project"},
     "cluster_name": "valid1",
     "nb_users": 10,
     "guest_passwd": "password-123",
@@ -86,10 +86,9 @@ IGNORE_FIELDS = ["age"]
 def test_get_current_user(client):
     res = client.get(f"/api/users/me")
     assert res.get_json() == {
-        "full_name": None,
-        "username": None,
+        "username": getlogin(),
         "public_keys": getoutput("ssh-add -L").split("\n"),
-        "projects": ALL_CLOUD_ID,
+        "usertype": "local",
     }
 
 
@@ -103,7 +102,7 @@ def test_get_all_magic_castle_names(client):
         results.append(result)
 
     assert results[0] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -138,7 +137,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "alice@computecanada.ca",
     }
     assert results[1] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -173,7 +172,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "alice@computecanada.ca",
     }
     assert results[2] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "hostname": "empty-state.calculquebec.cloud",
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
@@ -208,7 +207,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "bob12.bobby@computecanada.ca",
     }
     assert results[3] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "hostname": "empty.calculquebec.cloud",
         "status": "build_error",
         "freeipa_passwd": None,
@@ -216,7 +215,7 @@ def test_get_all_magic_castle_names(client):
         "expiration_date": "2029-01-01",
     }
     assert results[4] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
         "expiration_date": "2029-01-01",
@@ -252,7 +251,7 @@ def test_get_all_magic_castle_names(client):
     }
 
     assert results[5] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
         "expiration_date": "2029-01-01",
@@ -287,7 +286,7 @@ def test_get_all_magic_castle_names(client):
         "owner": "bob12.bobby@computecanada.ca",
     }
     assert results[6] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "cluster_name": "noowner",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -322,7 +321,7 @@ def test_get_all_magic_castle_names(client):
         "owner": None,
     }
     assert results[7] == {
-        "cloud_id": DEFAULT_CLOUD,
+        "cloud": {"id": 1, "name": "test-project"},
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",

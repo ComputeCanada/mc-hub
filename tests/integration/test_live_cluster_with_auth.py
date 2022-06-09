@@ -6,8 +6,6 @@ from time import time, sleep
 from os import path, remove, rmdir
 from random import randrange
 
-from mchub.configuration.cloud import DEFAULT_CLOUD
-
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
 using the OpenStack clouds.yaml, configuration.json and gcloud-key.json provided to the container.
@@ -70,7 +68,7 @@ def test_plan_creation(client):
     res = client.post(
         f"/api/magic-castles",
         json={
-            "cloud_id": DEFAULT_CLOUD,
+            "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
@@ -172,7 +170,7 @@ def test_plan_modify(client):
     res = client.put(
         f"/api/magic-castles/{HOSTNAME}",
         json={
-            "cloud_id": DEFAULT_CLOUD,
+            "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",

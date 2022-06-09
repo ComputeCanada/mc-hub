@@ -1,16 +1,11 @@
 import pytest
 
 from mchub.models.magic_castle.magic_castle import MagicCastle
-from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.user import LocalUser
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
 from ...test_helpers import *  # noqa
 from ...mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
-
-
-def test_full_name():
-    assert LocalUser().full_name == None
 
 
 def test_query_magic_castles():
@@ -40,11 +35,11 @@ def test_query_magic_castles():
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(client):
     client.get("/api/users/me")
-    user = LocalUser()
+    user = LocalUser(orm=None)
     magic_castle = user.create_empty_magic_castle()
     magic_castle.plan_creation(
         {
-            "cloud_id": DEFAULT_CLOUD,
+            "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": "anon123",
             "domain": "c3.ca",
             "image": "CentOS-7-x64-2021-11",
@@ -82,7 +77,7 @@ def test_create_empty_magic_castle(client):
 
 def test_query_magic_castles(client):
     client.get("/api/users/me")
-    user = LocalUser()
+    user = LocalUser(orm=None)
     magic_castle = user.query_magic_castles(hostname="valid1.calculquebec.cloud")[0]
     assert magic_castle.hostname == "valid1.calculquebec.cloud"
     assert magic_castle.owner == "alice@computecanada.ca"

@@ -32,7 +32,7 @@ def test_constructor_valid():
         "jupyterhub::enable_otp_auth: false",
         "guest_passwd": '1234\\56789\t "',
     }
-    assert MagicCastleConfiguration(CONFIG_DICT) == CONFIG_DICT
+    assert MagicCastleConfiguration("openstack", CONFIG_DICT) == CONFIG_DICT
 
 
 def test_constructor_empty_hieradata_valid():
@@ -57,12 +57,13 @@ def test_constructor_empty_hieradata_valid():
         "guest_passwd": '1234\\56789\t "',
         "hieradata": "",
     }
-    assert MagicCastleConfiguration(CONFIG_DICT) == CONFIG_DICT
+    assert MagicCastleConfiguration("openstack", CONFIG_DICT) == CONFIG_DICT
 
 
 def test_constructor_invalid_cluster_name():
     with pytest.raises(ValidationError):
         MagicCastleConfiguration(
+            "openstack",
             {
                 "cluster_name": "foo!",
                 "domain": "calculquebec.cloud",
@@ -91,11 +92,12 @@ def test_constructor_invalid_cluster_name():
                 "public_keys": [""],
                 "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
-            }
+            },
         )
 
     with pytest.raises(ValidationError):
         MagicCastleConfiguration(
+            "openstack",
             {
                 "cluster_name": "foo_underscore",
                 "domain": "calculquebec.cloud",
@@ -124,13 +126,14 @@ def test_constructor_invalid_cluster_name():
                 "public_keys": [""],
                 "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
-            }
+            },
         )
 
 
 def test_constructor_invalid_domain():
     with pytest.raises(ValidationError):
         MagicCastleConfiguration(
+            "openstack",
             {
                 "cluster_name": "foo",
                 "domain": "invalid.cloud",
@@ -159,7 +162,7 @@ def test_constructor_invalid_domain():
                 "public_keys": [""],
                 "hieradata": "",
                 "guest_passwd": '1234\\56789\t "',
-            }
+            },
         )
 
 
@@ -193,7 +196,7 @@ def test_get_from_dict_valid():
         "hieradata": 'profile::base::admin_email: "me@example.org"',
         "guest_passwd": '1234\\56789\t "',
     }
-    assert MagicCastleConfiguration(CONFIG_DICT) == CONFIG_DICT
+    assert MagicCastleConfiguration("openstack", CONFIG_DICT) == CONFIG_DICT
 
 
 def test_get_from_dict_empty_hieradata_valid():
@@ -226,7 +229,7 @@ def test_get_from_dict_empty_hieradata_valid():
         "hieradata": "",
         "guest_passwd": '1234\\56789\t "',
     }
-    config = MagicCastleConfiguration(CONFIG_DICT)
+    config = MagicCastleConfiguration("openstack", CONFIG_DICT)
     assert config == CONFIG_DICT
 
 
@@ -291,7 +294,7 @@ def test_write():
         "guest_passwd": "",
     }
 
-    modified_config = MagicCastleConfiguration(CONFIG_DICT)
+    modified_config = MagicCastleConfiguration("openstack", CONFIG_DICT)
     path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
     modified_config.write(path_)
     saved_config = MagicCastleConfiguration.get_from_main_file(path_)
@@ -300,6 +303,7 @@ def test_write():
 
 def test_properties():
     config = MagicCastleConfiguration(
+        "openstack",
         {
             "cluster_name": "foo",
             "domain": "calculquebec.cloud",
@@ -320,7 +324,7 @@ def test_properties():
             "public_keys": ["ssh-rsa FAKE"],
             "guest_passwd": '1234\\56789\t "',
             "hieradata": "",
-        }
+        },
     )
     assert config.cluster_name == "foo"
     assert config.domain == "calculquebec.cloud"

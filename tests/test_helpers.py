@@ -13,6 +13,7 @@ from mchub.models.user import SAMLUser
 from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
 )
+from mchub.models.cloud.project import Project
 from mchub.models.magic_castle.magic_castle import MagicCastleORM
 from mchub.models.terraform.terraform_state import TerraformState
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
@@ -43,6 +44,19 @@ def create_test_app():
     app = create_app(db_path="sqlite:///:memory:")
     with app.app_context():
         db.create_all()
+
+        project = Project(
+            name="test-project",
+            provider="openstack",
+            env={
+                "OS_AUTH_URL": "http://localhost:5000/v3",
+                "OS_APPLICATION_CREDENTIAL_ID": "'z3vjwfkwqocqo2kpowkxf50uvjfkqeqt'",
+                "OS_APPLICATION_CREDENTIAL_SECRET": "'ibrp7kj6labtp-s1fuu82afxrkz8w3kzjrx052ap8coljqjwiacmrxhvtf8dxce77ck8m8u6pbrgv8ezraoe4r'",
+            },
+        )
+        db.session.add(project)
+        db.session.commit()
+
         # Using an in-memory database for faster unit tests with less disk IO
         buildplanning = MagicCastleORM(
             hostname="buildplanning.calculquebec.cloud",
@@ -50,7 +64,7 @@ def create_test_app():
             status=ClusterStatusCode.PLAN_RUNNING,
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH,
@@ -65,7 +79,7 @@ def create_test_app():
             plan_type=PlanType.BUILD,
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH, "created.calculquebec.cloud", "main.tf.json"
@@ -78,7 +92,7 @@ def create_test_app():
             plan_type=PlanType.NONE,
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH, "empty-state.calculquebec.cloud", "main.tf.json"
@@ -91,7 +105,7 @@ def create_test_app():
             plan_type=PlanType.NONE,
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
             config={},
         )
         missingfip = MagicCastleORM(
@@ -100,7 +114,7 @@ def create_test_app():
             plan_type=PlanType.NONE,
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH, "missingfloatingips.c3.ca", "main.tf.json"
@@ -119,7 +133,22 @@ def create_test_app():
             plan_type=PlanType.NONE,
             owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
+            config=MagicCastleConfiguration.get_from_main_file(main_tf),
+            tf_state=tf_state,
+        )
+
+        hostname = "noowner.calculquebec.cloud"
+        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
+        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
+        with open(path.join(terraform_tf)) as file_:
+            tf_state = TerraformState(json.load(file_))
+        noower = MagicCastleORM(
+            hostname=hostname,
+            status=ClusterStatusCode.PROVISIONING_SUCCESS,
+            plan_type=PlanType.DESTROY,
+            expiration_date="2029-01-01",
+            project=project,
             config=MagicCastleConfiguration.get_from_main_file(main_tf),
             tf_state=tf_state,
         )
@@ -135,25 +164,11 @@ def create_test_app():
             plan_type=PlanType.DESTROY,
             owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
+            project=project,
             config=MagicCastleConfiguration.get_from_main_file(main_tf),
             tf_state=tf_state,
         )
 
-        hostname = "noowner.calculquebec.cloud"
-        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
-        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
-        with open(path.join(terraform_tf)) as file_:
-            tf_state = TerraformState(json.load(file_))
-        noower = MagicCastleORM(
-            hostname=hostname,
-            status=ClusterStatusCode.PROVISIONING_SUCCESS,
-            plan_type=PlanType.DESTROY,
-            expiration_date="2029-01-01",
-            cloud_id=DEFAULT_CLOUD,
-            config=MagicCastleConfiguration.get_from_main_file(main_tf),
-            tf_state=tf_state,
-        )
         db.session.add(buildplanning)
         db.session.add(created)
         db.session.add(empty_state)
@@ -177,6 +192,7 @@ def client(mocker):
 @pytest.fixture
 def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
     return SAMLUser(
+        orm=None,
         edu_person_principal_name="alice@computecanada.ca",
         given_name="Alice",
         surname="Tremblay",
@@ -188,6 +204,7 @@ def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
 @pytest.fixture
 def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
     return SAMLUser(
+        orm=None,
         edu_person_principal_name="bob12.bobby@computecanada.ca",
         given_name="Bob",
         surname="Rodriguez",
@@ -199,6 +216,7 @@ def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
 @pytest.fixture
 def admin() -> Callable[[sqlite3.Connection], SAMLUser]:
     return SAMLUser(
+        orm=None,
         edu_person_principal_name="the-admin@computecanada.ca",
         given_name="Admin",
         surname="Istrator",

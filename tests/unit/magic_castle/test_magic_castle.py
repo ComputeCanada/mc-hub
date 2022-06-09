@@ -3,7 +3,6 @@ import pytest
 from copy import deepcopy
 from subprocess import CalledProcessError
 
-from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType
@@ -15,7 +14,7 @@ from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 VALID_CLUSTER_CONFIGURATION = {
-    "cloud_id": DEFAULT_CLOUD,
+    "cloud": {"id": 1, "name": "test-project"},
     "cluster_name": "a-123-45",
     "nb_users": 10,
     "guest_passwd": "password-123",
