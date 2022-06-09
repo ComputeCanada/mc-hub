@@ -18,10 +18,6 @@ services:
       - type: bind
         source: ./run/acme_key.pem
         target: /home/mcu/credentials/acme_key.pem
-      - type: bind
-        source: ./run/clouds.yaml
-        target: /home/mcu/credentials/clouds.yaml
-        read_only: true
       - type: volume
         source: database
         target: /home/mcu/database
@@ -30,7 +26,6 @@ services:
         target: /home/mcu/.terraform.d/plugin-cache
     user: mcu
     environment:
-      OS_CLIENT_CONFIG_FILE: /home/mcu/credentials/clouds.yaml
       MAGIC_CASTLE_ACME_KEY_PEM: /home/mcu/credentials/acme_key.pem
 
   cleanup:
