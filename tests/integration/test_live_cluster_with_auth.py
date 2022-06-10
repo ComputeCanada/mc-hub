@@ -8,6 +8,7 @@ from os import path, remove, rmdir
 from random import randrange
 
 from mchub.models.cloud.project import Project
+from mchub.models.user import UserORM
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
@@ -72,7 +73,11 @@ def setup_module(module):
                 ],
             },
         )
+        user = UserORM(
+            scoped_id=JOHN_DOE_HEADERS["eduPersonPrincipalName"], projects=[project]
+        )
         db.session.add(project)
+        db.session.add(user)
         db.session.commit()
 
 

@@ -1,9 +1,11 @@
+from operator import imod
 from flask import request
 from .api_view import ApiView
 from ..exceptions.invalid_usage_exception import (
     ClusterNotFoundException,
     InvalidUsageException,
 )
+from ..models.cloud.project import Project
 from ..models.user import User
 from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
 
@@ -32,6 +34,11 @@ class MagicCastleAPI(ApiView):
             json_data = request.get_json()
             if not json_data:
                 raise InvalidUsageException("No json data was provided")
+
+            cloud = json_data.get("cloud", {"id": None})
+            project = Project.query.get(cloud["id"])
+            if project and project not in user.projects:
+                raise InvalidUsageException("Invalid project id")
 
             magic_castle = MagicCastle()
             magic_castle.plan_creation(json_data)
