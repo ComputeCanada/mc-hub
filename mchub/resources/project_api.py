@@ -19,6 +19,7 @@ class ProjectAPI(ApiView):
                     "name": project.name,
                     "provider": project.provider,
                     "nb_clusters": len(project.magic_castles),
+                    "admin": project.admin_id == user.orm.id,
                 }
                 for project in user.projects
             ]
@@ -40,23 +41,30 @@ class ProjectAPI(ApiView):
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
 
-        project = Project(name=name, provider=provider, env=env)
+        if user.orm.id is None:
+            db.session.add(user.orm)
+            db.session.commit()
+
+        project = Project(name=name, admin_id=user.orm.id, provider=provider, env=env)
         user.orm.projects.append(project)
         db.session.add(project)
-        if inspect(user.orm).identity is None:
-            db.session.add(user.orm)
         db.session.commit()
         return {
             "id": project.id,
             "name": project.name,
             "provider": project.provider,
             "nb_clusters": len(project.magic_castles),
+            "admin": True,
         }, 200
 
     def delete(self, user: User, id: int):
         project = Project.query.get(id)
         if project is None or project not in user.orm.projects:
             raise InvalidUsageException("Invalid project id")
+        if project.admin_id != user.orm.id:
+            raise InvalidUsageException(
+                "Cannot remove project that you are not the admin of"
+            )
         if len(project.magic_castles) > 0:
             raise InvalidUsageException("Cannot remove project with running clusters")
         user.orm.projects.remove(project)

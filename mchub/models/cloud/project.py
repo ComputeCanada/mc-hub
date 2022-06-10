@@ -21,6 +21,7 @@ class Project(db.Model):
     __tablename__ = "project"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
+    admin_id = db.Column(db.Integer, nullable=False)
     provider = db.Column(db.Enum(Provider), nullable=False)
     env = db.Column(db.PickleType())
     magic_castles = db.relationship("MagicCastleORM", back_populates="project")

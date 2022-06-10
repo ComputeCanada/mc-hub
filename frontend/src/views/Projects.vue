@@ -11,7 +11,8 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <v-icon @click="deleteItem(item)" :disabled="item.nb_clusters > 0"> mdi-delete </v-icon>
+          <v-icon v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0"> mdi-delete </v-icon>
+          <div v-else>not owner</div>
         </template>
       </v-data-table>
     </v-card>
