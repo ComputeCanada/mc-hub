@@ -112,7 +112,6 @@ class MagicCastleORM(db.Model):
     hostname = db.Column(db.String(256), unique=True, nullable=False)
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
     plan_type = db.Column(db.Enum(PlanType), default=PlanType.NONE)
-    owner = db.Column(db.String(64))
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
     config = db.Column(db.PickleType())
@@ -135,12 +134,11 @@ class MagicCastle:
 
     __slots__ = ["orm"]
 
-    def __init__(self, orm=None, owner=None):
+    def __init__(self, orm=None):
         if orm:
             self.orm = orm
         else:
             self.orm = MagicCastleORM(
-                owner=owner,
                 status=ClusterStatusCode.NOT_FOUND,
                 plan_type=PlanType.NONE,
                 config={},
@@ -173,10 +171,6 @@ class MagicCastle:
     @property
     def expiration_date(self):
         return self.orm.expiration_date
-
-    @property
-    def owner(self):
-        return self.orm.owner
 
     @property
     def age(self):
@@ -239,7 +233,6 @@ class MagicCastle:
                 {
                     "hostname": self.hostname,
                     "status": self.orm.status,
-                    "owner": self.owner,
                 }
             ),
             flush=True,
@@ -317,7 +310,6 @@ class MagicCastle:
             "hostname": self.hostname,
             "status": self.status,
             "freeipa_passwd": self.freeipa_passwd,
-            "owner": self.owner,
             "age": self.age,
             "expiration_date": self.expiration_date,
             "cloud": {"name": self.project.name, "id": self.project.id},

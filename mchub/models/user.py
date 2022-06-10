@@ -35,11 +35,19 @@ class User:
     def projects(self):
         return self.orm.projects
 
-    def query_magic_castles(self) -> List[MagicCastle]:
-        raise NotImplementedError
+    @property
+    def magic_castles(self):
+        """
+        If the user is admin, it will retrieve all the clusters,
+        otherwise, only the clusters owned by the user.
 
-    def create_empty_magic_castle(self) -> MagicCastle:
-        raise NotImplementedError
+        :return: A list of MagicCastle objects
+        """
+        return [
+            MagicCastle(orm=mc_orm)
+            for project in self.projects
+            for mc_orm in project.magic_castles
+        ]
 
 
 class LocalUser(User):
@@ -56,17 +64,6 @@ class LocalUser(User):
         super().__init__(
             orm=orm, username=username, usertype="local", public_keys=public_keys
         )
-
-    def query_magic_castles(self, **filter_):
-        """
-        Retrieve all the Magic Castles retrieved in the database.
-        :return: A list of MagicCastle objects
-        """
-        results = MagicCastleORM.query.filter_by(**filter_)
-        return [MagicCastle(orm=orm) for orm in results.all()]
-
-    def create_empty_magic_castle(self):
-        return MagicCastle()
 
 
 class SAMLUser(User):
@@ -102,17 +99,3 @@ class SAMLUser(User):
         self.given_name = given_name
         self.surname = surname
         self.mail = mail
-
-    def query_magic_castles(self, **filter_):
-        """
-        If the user is admin, it will retrieve all the clusters,
-        otherwise, only the clusters owned by the user.
-
-        :return: A list of MagicCastle objects
-        """
-        filter_["owner"] = self.scoped_id
-        results = MagicCastleORM.query.filter_by(**filter_)
-        return [MagicCastle(orm=orm) for orm in results.all()]
-
-    def create_empty_magic_castle(self):
-        return MagicCastle(owner=self.scoped_id)

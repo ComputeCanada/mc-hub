@@ -31,7 +31,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "guest_passwd": "",
 }
 EXISTING_CLUSTER_CONFIGURATION = {
-    "cloud": {"id": 1, "name": "test-project"},
+    "cloud": {"id": 1, "name": "project-alice"},
     "cluster_name": "valid1",
     "domain": "calculquebec.cloud",
     "image": "CentOS-7-x64-2021-11",
@@ -54,7 +54,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
 }
 
 EXISTING_CLUSTER_STATE = {
-    "cloud": {"id": 1, "name": "test-project"},
+    "cloud": {"id": 1, "name": "project-alice"},
     "cluster_name": "valid1",
     "nb_users": 10,
     "expiration_date": "2029-01-01",
@@ -76,7 +76,6 @@ EXISTING_CLUSTER_STATE = {
     "hieradata": "",
     "image": "CentOS-7-x64-2021-11",
     "status": "provisioning_success",
-    "owner": "alice@computecanada.ca",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
 }
@@ -132,7 +131,7 @@ def test_get_all_magic_castle_names(client):
         results.append(result)
 
     assert results[0] == {
-        "cloud": {"id": 1, "name": "test-project"},
+        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -164,10 +163,9 @@ def test_get_all_magic_castle_names(client):
         "hostname": "buildplanning.calculquebec.cloud",
         "status": "plan_running",
         "freeipa_passwd": None,
-        "owner": "alice@computecanada.ca",
     }
     assert results[1] == {
-        "cloud": {"id": 1, "name": "test-project"},
+        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -199,10 +197,9 @@ def test_get_all_magic_castle_names(client):
         "hostname": "created.calculquebec.cloud",
         "status": "created",
         "freeipa_passwd": None,
-        "owner": "alice@computecanada.ca",
     }
     assert results[2] == {
-        "cloud": {"id": 1, "name": "test-project"},
+        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -234,7 +231,6 @@ def test_get_all_magic_castle_names(client):
         "hostname": "valid1.calculquebec.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
-        "owner": "alice@computecanada.ca",
     }
     assert res.status_code == 200
 

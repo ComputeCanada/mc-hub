@@ -2,6 +2,7 @@ import json
 import pytest
 import sqlite3
 
+from getpass import getuser
 from pathlib import Path
 from os import path
 from shutil import rmtree, copytree
@@ -9,7 +10,7 @@ from typing import Callable
 
 from mchub import create_app
 from mchub.database import db
-from mchub.models.user import SAMLUser
+from mchub.models.user import SAMLUser, UserORM
 from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
 )
@@ -45,8 +46,8 @@ def create_test_app():
     with app.app_context():
         db.create_all()
 
-        project = Project(
-            name="test-project",
+        project_alice = Project(
+            name="project-alice",
             provider="openstack",
             env={
                 "OS_AUTH_URL": "http://localhost:5000/v3",
@@ -54,7 +55,31 @@ def create_test_app():
                 "OS_APPLICATION_CREDENTIAL_SECRET": "'ibrp7kj6labtp-s1fuu82afxrkz8w3kzjrx052ap8coljqjwiacmrxhvtf8dxce77ck8m8u6pbrgv8ezraoe4r'",
             },
         )
-        db.session.add(project)
+        project_bob = Project(
+            name="project-bob",
+            provider="openstack",
+            env={
+                "OS_AUTH_URL": "http://localhost:5000/v3",
+                "OS_APPLICATION_CREDENTIAL_ID": "'z3vjwfkwqocqo2kpowkxf50uvjfkqeqt'",
+                "OS_APPLICATION_CREDENTIAL_SECRET": "'ibrp7kj6labtp-s1fuu82afxrkz8w3kzjrx052ap8coljqjwiacmrxhvtf8dxce77ck8m8u6pbrgv8ezraoe4r'",
+            },
+        )
+        db.session.add(project_alice)
+        db.session.add(project_bob)
+        db.session.commit()
+
+        username = getuser()
+        local_user = UserORM(
+            scoped_id=f"{username}@localhost", projects=[project_alice, project_bob]
+        )
+        alice_user = UserORM(
+            scoped_id="alice@computecanada.ca", projects=[project_alice]
+        )
+        bob_user = UserORM(scoped_id="bob@computecanada.ca", projects=[project_bob])
+
+        db.session.add(local_user)
+        db.session.add(alice_user)
+        db.session.add(bob_user)
         db.session.commit()
 
         # Using an in-memory database for faster unit tests with less disk IO
@@ -62,9 +87,8 @@ def create_test_app():
             hostname="buildplanning.calculquebec.cloud",
             plan_type=PlanType.BUILD,
             status=ClusterStatusCode.PLAN_RUNNING,
-            owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_alice,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH,
@@ -77,9 +101,8 @@ def create_test_app():
             hostname="created.calculquebec.cloud",
             status=ClusterStatusCode.CREATED,
             plan_type=PlanType.BUILD,
-            owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_alice,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH, "created.calculquebec.cloud", "main.tf.json"
@@ -90,9 +113,8 @@ def create_test_app():
             hostname="empty-state.calculquebec.cloud",
             status=ClusterStatusCode.BUILD_ERROR,
             plan_type=PlanType.NONE,
-            owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_bob,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH, "empty-state.calculquebec.cloud", "main.tf.json"
@@ -103,18 +125,16 @@ def create_test_app():
             hostname="empty.calculquebec.cloud",
             status=ClusterStatusCode.BUILD_ERROR,
             plan_type=PlanType.NONE,
-            owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_bob,
             config={},
         )
         missingfip = MagicCastleORM(
             hostname="missingfloatingips.c3.ca",
             status=ClusterStatusCode.BUILD_RUNNING,
             plan_type=PlanType.NONE,
-            owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_bob,
             config=MagicCastleConfiguration.get_from_main_file(
                 path.join(
                     MOCK_CLUSTERS_PATH, "missingfloatingips.c3.ca", "main.tf.json"
@@ -131,9 +151,8 @@ def create_test_app():
             hostname="missingnodes.c3.ca",
             status=ClusterStatusCode.BUILD_ERROR,
             plan_type=PlanType.NONE,
-            owner="bob12.bobby@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_bob,
             config=MagicCastleConfiguration.get_from_main_file(main_tf),
             tf_state=tf_state,
         )
@@ -148,7 +167,7 @@ def create_test_app():
             status=ClusterStatusCode.PROVISIONING_SUCCESS,
             plan_type=PlanType.DESTROY,
             expiration_date="2029-01-01",
-            project=project,
+            project=project_bob,
             config=MagicCastleConfiguration.get_from_main_file(main_tf),
             tf_state=tf_state,
         )
@@ -162,9 +181,8 @@ def create_test_app():
             hostname=hostname,
             status=ClusterStatusCode.PROVISIONING_SUCCESS,
             plan_type=PlanType.DESTROY,
-            owner="alice@computecanada.ca",
             expiration_date="2029-01-01",
-            project=project,
+            project=project_alice,
             config=MagicCastleConfiguration.get_from_main_file(main_tf),
             tf_state=tf_state,
         )
