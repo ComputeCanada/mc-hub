@@ -87,7 +87,7 @@ def create_app(db_path=None):
     app.add_url_rule(
         "/api/projects/<int:id>",
         view_func=project_view,
-        methods=["DELETE"],
+        methods=["PATCH", "DELETE"],
     )
 
     @app.route("/css/<path:path>")

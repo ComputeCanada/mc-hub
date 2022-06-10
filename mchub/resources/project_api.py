@@ -3,7 +3,7 @@ from sqlalchemy import inspect
 
 from .api_view import ApiView
 from ..database import db
-from ..models.user import User
+from ..models.user import User, UserORM
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
@@ -54,8 +54,37 @@ class ProjectAPI(ApiView):
             "name": project.name,
             "provider": project.provider,
             "nb_clusters": len(project.magic_castles),
-            "admin": True,
+            "admin": project.admin_id == user.orm.id,
         }, 200
+
+    def patch(self, user: User, id: int):
+        project = Project.query.get(id)
+        if project is None or project not in user.orm.projects:
+            raise InvalidUsageException("Invalid project id")
+        if project.admin_id != user.orm.id:
+            raise InvalidUsageException(
+                "Cannot edit project membership that you are not the admin of"
+            )
+        data = request.get_json()
+        if not data:
+            raise InvalidUsageException("No json data was provided")
+
+        add_members = data.get("add", [])
+        del_members = data.get("del", [])
+
+        for username in add_members:
+            member = UserORM.query.filter_by(scoped_id=username).first()
+            if not member:
+                member = UserORM(scoped_id=username)
+                db.session.add(member)
+            member.projects.append(project)
+
+        for username in del_members:
+            member = UserORM.query.filter_by(scoped_id=username).first()
+            if member and member.id != user.orm.id:
+                member.projects.remove(project)
+
+        db.session.commit()
 
     def delete(self, user: User, id: int):
         project = Project.query.get(id)
