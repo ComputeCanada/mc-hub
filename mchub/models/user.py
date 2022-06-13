@@ -19,7 +19,12 @@ class UserORM(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     scoped_id = db.Column(db.String(), unique=True)
-    projects = db.relationship("Project", secondary=projects)
+    projects = db.relationship(
+        "Project",
+        secondary=projects,
+        lazy="subquery",
+        backref=db.backref("members", lazy=True),
+    )
 
 
 class User:

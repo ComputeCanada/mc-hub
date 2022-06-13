@@ -11,17 +11,32 @@ from ..exceptions.invalid_usage_exception import (
 
 
 class ProjectAPI(ApiView):
-    def get(self, user: User):
-        return [
-            {
+    def get(self, user: User, id: int):
+        if id is not None:
+            project = Project.query.get(id)
+            if project is None or project not in user.orm.projects:
+                raise InvalidUsageException("Invalid project id")
+            return {
                 "id": project.id,
                 "name": project.name,
                 "provider": project.provider,
                 "nb_clusters": len(project.magic_castles),
                 "admin": project.admin_id == user.orm.id,
+                "members": [member.scoped_id for member in project.members]
+                if project.admin_id == user.orm.id
+                else [],
             }
-            for project in user.projects
-        ]
+        else:
+            return [
+                {
+                    "id": project.id,
+                    "name": project.name,
+                    "provider": project.provider,
+                    "nb_clusters": len(project.magic_castles),
+                    "admin": project.admin_id == user.orm.id,
+                }
+                for project in user.projects
+            ]
 
     def post(self, user: User):
         data = request.get_json()
