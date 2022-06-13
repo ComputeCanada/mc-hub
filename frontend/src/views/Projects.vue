@@ -12,8 +12,9 @@
         </template>
         <template v-slot:[`item.actions`]="{ item }">
           <project-membership :id="item.id" />
-          <v-btn color="secondary" v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
+          <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
             <v-icon> mdi-delete </v-icon>
+            delete
           </v-btn>
           <div v-else>not owner</div>
         </template>
@@ -40,7 +41,7 @@ export default {
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
         { text: "# Clusters", value: "nb_clusters" },
-        { text: "Edit / Delete", value: "actions", sortable: false },
+        { text: "", value: "actions", sortable: false },
       ],
     };
   },

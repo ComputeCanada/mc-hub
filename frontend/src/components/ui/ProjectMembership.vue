@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
     <template v-slot:activator="{ on, attrs }">
-      <v-btn color="secondary" text v-bind="attrs" v-on="on"> <v-icon>mdi-pencil</v-icon> </v-btn>
+      <v-btn color="secondary" text v-bind="attrs" v-on="on"> <v-icon>mdi-pencil</v-icon> edit </v-btn>
     </template>
     <v-card>
       <v-card-title>
