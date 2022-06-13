@@ -60,9 +60,13 @@ def setup_module(module):
 
     with create_app(f"sqlite:///{db_filename}").app_context():
         db.create_all()
+        user = UserORM(scoped_id=JOHN_DOE_HEADERS["eduPersonPrincipalName"])
+        db.session.add(user)
+        db.session.commit()
         project = Project(
             name="test-project",
             provider="openstack",
+            admin_id=user.id,
             env={
                 "OS_AUTH_URL": os.environ["OS_AUTH_URL"],
                 "OS_APPLICATION_CREDENTIAL_ID": os.environ[
@@ -73,11 +77,8 @@ def setup_module(module):
                 ],
             },
         )
-        user = UserORM(
-            scoped_id=JOHN_DOE_HEADERS["eduPersonPrincipalName"], projects=[project]
-        )
+        user.projects.append(project)
         db.session.add(project)
-        db.session.add(user)
         db.session.commit()
 
 

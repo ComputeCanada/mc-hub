@@ -67,12 +67,13 @@ jobs:
       - name: Run backend extended tests (including live cluster tests)
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         working-directory: ./run
+        env:
+          OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
+          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
+          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
         run: |
           export MAGIC_CASTLE_PATH=$PWD/magic_castle
           venv/bin/python -m pytest -x -vv --build-live-cluster ../;
-      # - name: Debug with tmate on failure
-      #   if: ${{ failure() }}
-      #   uses: mxschmitt/action-tmate@v3
   container:
     runs-on: ubuntu-20.04
     name: Build container
