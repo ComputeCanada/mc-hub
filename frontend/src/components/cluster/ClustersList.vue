@@ -164,7 +164,7 @@ export default {
   },
   computed: {
     headers() {
-      let base_headers = [
+      return [
         {
           text: "Cluster name",
           value: "cluster_name",
@@ -175,7 +175,7 @@ export default {
         },
         {
           text: "Project",
-          value: "cloud_id",
+          value: "cloud.name",
         },
         {
           text: "Age",
@@ -185,18 +185,11 @@ export default {
           text: "Status",
           value: "status",
         },
-      ];
-      let end_headers = [
         {
           text: "",
           value: "data-table-expand",
         },
       ];
-      if (this.magicCastles.some((magicCastle) => "owner" in magicCastle && magicCastle.owner != null)) {
-        return base_headers.concat([{ text: "Owner", value: "owner" }], end_headers);
-      } else {
-        return base_headers.concat(end_headers);
-      }
     },
   },
   methods: {

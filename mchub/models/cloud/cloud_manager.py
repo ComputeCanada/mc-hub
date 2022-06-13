@@ -3,8 +3,8 @@ from ..cloud.dns_manager import DnsManager
 
 
 class CloudManager:
-    def __init__(self, cloud_id, **kwargs):
-        self.manager = OpenStackManager(cloud_id=cloud_id, **kwargs)
+    def __init__(self, project, **kwargs):
+        self.manager = OpenStackManager(project=project, **kwargs)
 
     @property
     def available_resources(self):
@@ -17,6 +17,3 @@ class CloudManager:
             "domain"
         ] = DnsManager.get_available_domains()
         return available_resources
-
-    def get_environment_variables(self):
-        return self.manager.env

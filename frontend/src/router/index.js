@@ -2,6 +2,7 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 import Home from "@/views/Home";
 import CreateCluster from "@/views/CreateCluster";
+import Projects from "@/views/Projects";
 import NotFound from "@/views/NotFound";
 import ModifyCluster from "@/views/ModifyCluster";
 
@@ -27,6 +28,11 @@ const routes = [
       destroy: route.query.destroy === "1",
       ...route.params,
     }),
+  },
+  {
+    path: "/projects",
+    name: "Projects",
+    component: Projects,
   },
   {
     path: "*",

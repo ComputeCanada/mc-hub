@@ -1,6 +1,5 @@
 import pytest
 
-from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub import create_app
 
@@ -32,7 +31,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "guest_passwd": "",
 }
 EXISTING_CLUSTER_CONFIGURATION = {
-    "cloud_id": DEFAULT_CLOUD,
+    "cloud": {"id": 1, "name": "project-alice"},
     "cluster_name": "valid1",
     "domain": "calculquebec.cloud",
     "image": "CentOS-7-x64-2021-11",
@@ -55,7 +54,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
 }
 
 EXISTING_CLUSTER_STATE = {
-    "cloud_id": DEFAULT_CLOUD,
+    "cloud": {"id": 1, "name": "project-alice"},
     "cluster_name": "valid1",
     "nb_users": 10,
     "expiration_date": "2029-01-01",
@@ -77,7 +76,6 @@ EXISTING_CLUSTER_STATE = {
     "hieradata": "",
     "image": "CentOS-7-x64-2021-11",
     "status": "provisioning_success",
-    "owner": "alice@computecanada.ca",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
 }
@@ -105,17 +103,15 @@ IGNORE_FIELDS = ["age"]
 def test_get_current_user_authentified(client):
     res = client.get(f"/api/users/me", headers=ALICE_HEADERS)
     assert res.get_json() == {
-        "full_name": "Alice Tremblay",
         "username": "alice",
+        "usertype": "saml",
         "public_keys": ["ssh-rsa FAKE"],
-        "projects": [DEFAULT_CLOUD],
     }
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
     assert res.get_json() == {
-        "full_name": "Bob Rodriguez",
         "username": "bob12.bobby",
+        "usertype": "saml",
         "public_keys": ["ssh-rsa FAKE"],
-        "projects": [DEFAULT_CLOUD],
     }
 
 
@@ -128,14 +124,14 @@ def test_get_current_user_non_authentified(client):
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles", headers=ALICE_HEADERS)
-    results = []
+    results = {}
     for result in res.get_json():
         for field in IGNORE_FIELDS:
             result.pop(field)
-        results.append(result)
+        results[result["hostname"]] = result
 
-    assert results[0] == {
-        "cloud_id": DEFAULT_CLOUD,
+    assert results["buildplanning.calculquebec.cloud"] == {
+        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -167,10 +163,9 @@ def test_get_all_magic_castle_names(client):
         "hostname": "buildplanning.calculquebec.cloud",
         "status": "plan_running",
         "freeipa_passwd": None,
-        "owner": "alice@computecanada.ca",
     }
-    assert results[1] == {
-        "cloud_id": DEFAULT_CLOUD,
+    assert results["created.calculquebec.cloud"] == {
+        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -202,10 +197,9 @@ def test_get_all_magic_castle_names(client):
         "hostname": "created.calculquebec.cloud",
         "status": "created",
         "freeipa_passwd": None,
-        "owner": "alice@computecanada.ca",
     }
-    assert results[2] == {
-        "cloud_id": DEFAULT_CLOUD,
+    assert results["valid1.calculquebec.cloud"] == {
+        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
@@ -237,7 +231,6 @@ def test_get_all_magic_castle_names(client):
         "hostname": "valid1.calculquebec.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
-        "owner": "alice@computecanada.ca",
     }
     assert res.status_code == 200
 

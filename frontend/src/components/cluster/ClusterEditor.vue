@@ -5,7 +5,9 @@
       <v-list class="pt-0">
         <v-list-item v-if="!stateful">
           <v-select
-            v-model="localSpecs.cloud_id"
+            v-model="localSpecs.cloud.id"
+            item-value="id"
+            item-text="name"
             :items="projects"
             label="Cloud project"
             @change="changeCloudProject"
@@ -14,7 +16,7 @@
         <v-list-item v-else>
           <v-list-item-content>
             <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.cloud_id }}</v-list-item-title>
+            <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item v-if="!existingCluster">
@@ -304,6 +306,7 @@ import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import ProjectRepository from "@/repositories/ProjectRepository";
 import UserRepository from "@/repositories/UserRepository";
 
 const MB_PER_GB = 1024;
@@ -416,11 +419,19 @@ export default {
       this.localSpecs.guest_passwd = generatePassword();
     }
     if (!this.stateful) {
-      UserRepository.getCurrent().then((value) => {
-        const user = value.data;
-        this.projects = user.projects;
+      const user_promise = UserRepository.getCurrent();
+      const project_promise = ProjectRepository.getAll();
+      Promise.all([user_promise, project_promise]).then((values) => {
+        const user = values[0].data;
+        const projects = values[1].data;
+        this.projects = projects;
         if (!this.existingCluster) {
-          this.localSpecs.cloud_id = this.projects[0];
+          try {
+            this.localSpecs.cloud.id = this.projects[0].id;
+          } catch (err) {
+            console.log("No cloud project available");
+            this.localSpecs.cloud.id = undefined;
+          }
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
         }
         this.initialSpecs = cloneDeep(this.localSpecs);
@@ -784,9 +795,12 @@ export default {
     },
 
     loadCloudResources() {
+      if (this.localSpecs.cloud.id === undefined) {
+        return;
+      }
       this.promise = this.stateful
         ? AvailableResourcesRepository.getHost(this.hostname)
-        : AvailableResourcesRepository.getCloud(this.localSpecs.cloud_id);
+        : AvailableResourcesRepository.getCloud(this.localSpecs.cloud.id);
       this.promise.then((response) => {
         const data = response.data;
         this.possibleResources = data.possible_resources;

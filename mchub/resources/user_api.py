@@ -5,8 +5,7 @@ from ..models.user import User
 class UserAPI(ApiView):
     def get(self, user: User):
         return {
-            "full_name": user.full_name,
             "username": user.username,
+            "usertype": user.usertype,
             "public_keys": user.public_keys,
-            "projects": user.projects,
         }

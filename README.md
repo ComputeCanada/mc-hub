@@ -20,11 +20,6 @@ Before running the MC Hub Docker container, you need to setup a few things.
    mkdir clusters_backup
    sudo chmod -R 777 clusters_backup
    ```
-2. Download or create a `clouds.yaml` file with your OpenStack cloud credentials. The cloud entry you want to use needs to be named `openstack`.
-3. Copy the `clouds.yaml` file to the root of the repository.
-   ```
-   cp <clouds.yaml location> .
-   ```
 
 If you are using Google Cloud as a DNS provider, do the following steps.
 
@@ -44,14 +39,13 @@ Read the section on the [JSON Configuration](./docs/configuration.md) for more i
 ## Running the pre-built Docker image
 
 1. Run the [latest image](https://hub.docker.com/repository/docker/cmdntrf/mc-hub) of MC Hub. This command binds the port 5000 from the container's Flask server to the host's port 8080. You may change port 8080 to another port. Also change `v9.1.2` for the latest version of MC Hub in the following command.
-   
+
    If you are not using the Google Cloud DNS provider, remove the line `--mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \`.
 
    ```shell script
    docker run --rm -p 8080:5000 \
      --mount "type=volume,source=database,target=/home/mcu/database" \
      --mount "type=bind,source=$(pwd)/gcloud-key.json,target=/home/mcu/credentials/gcloud-key.json" \
-     --mount "type=bind,source=$(pwd)/clouds.yaml,target=/home/mcu/.config/openstack/clouds.yaml" \
      --mount "type=bind,source=$(pwd)/clusters_backup,target=/home/mcu/clusters" \
      --mount "type=bind,source=$(pwd)/configuration.json,target=/home/mcu/configuration.json" \
      cmdntrf/mc-hb:v9.1.2

@@ -1,4 +1,5 @@
 DEFAULT = {
+    "cloud": {"id": None, "name": None},
     "cluster_name": "",
     "domain": None,
     "image": None,

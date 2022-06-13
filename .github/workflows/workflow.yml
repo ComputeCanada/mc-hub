@@ -36,7 +36,7 @@ jobs:
           mkdir -p run/clusters
       - name: Decrypt secret files
         run: |
-          FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
+          FILE_NAMES=('configuration.json' 'gcloud-key.json')
           for file_name in "${FILE_NAMES[@]}"
           do
             gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
@@ -63,14 +63,12 @@ jobs:
         working-directory: ./run
         run: |
           export MAGIC_CASTLE_PATH=$PWD/magic_castle
-          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest ../
       - name: Run backend extended tests (including live cluster tests)
         if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
         working-directory: ./run
         run: |
           export MAGIC_CASTLE_PATH=$PWD/magic_castle
-          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest -x -vv --build-live-cluster ../;
       # - name: Debug with tmate on failure
       #   if: ${{ failure() }}

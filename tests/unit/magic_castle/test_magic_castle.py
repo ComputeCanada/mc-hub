@@ -3,7 +3,6 @@ import pytest
 from copy import deepcopy
 from subprocess import CalledProcessError
 
-from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType
@@ -15,7 +14,7 @@ from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 VALID_CLUSTER_CONFIGURATION = {
-    "cloud_id": DEFAULT_CLOUD,
+    "cloud": {"id": 1, "name": "test-project"},
     "cluster_name": "a-123-45",
     "nb_users": 10,
     "guest_passwd": "password-123",
@@ -154,20 +153,6 @@ def test_get_plan_type_none(client):
     orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.NONE
-
-
-def test_get_owner_valid(client):
-    client.get("/api/users/me")
-    orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
-    magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.owner == "bob12.bobby@computecanada.ca"
-
-
-def test_get_owner_no_owner(client):
-    client.get("/api/users/me")
-    orm = MagicCastleORM.query.filter_by(hostname="noowner.calculquebec.cloud").first()
-    magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.owner == None
 
 
 def test_config_valid(client):

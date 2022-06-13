@@ -48,8 +48,6 @@ RUN adduser --disabled-password mcu && \
     mkdir -p /home/mcu && \
     chown -R mcu:mcu /home/mcu
 
-ENV OS_CLIENT_CONFIG_FILE=/home/mcu/credentials/clouds.yaml
-
 FROM base-server as cleanup-daemon
 USER mcu
 WORKDIR /home/mcu

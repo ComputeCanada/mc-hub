@@ -22,6 +22,7 @@ from .plan_type import PlanType
 from ..terraform.terraform_state import TerraformState
 from ..terraform.terraform_plan_parser import TerraformPlanParser
 from ..cloud.dns_manager import DnsManager
+from ..cloud.project import Project
 from ..puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING_TIME
 
 from ...configuration.magic_castle import (
@@ -42,7 +43,7 @@ TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
 
 
-def terraform_apply(hostname, env, main_path, destroy):
+def terraform_apply(cluster_id, env, main_path, destroy):
     log_path = path.join(main_path, TERRAFORM_APPLY_LOG_FILENAME)
     plan_path = path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME)
     try:
@@ -93,7 +94,7 @@ def terraform_apply(hostname, env, main_path, destroy):
         from ... import create_app
 
         with create_app().app_context():
-            orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+            orm = MagicCastleORM.query.get(cluster_id)
             if destroy:
                 db.session.delete(orm)
             else:
@@ -106,18 +107,19 @@ def terraform_apply(hostname, env, main_path, destroy):
 
 
 class MagicCastleORM(db.Model):
+    __tablename__ = "magiccastle"
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(256), unique=True, nullable=False)
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
     plan_type = db.Column(db.Enum(PlanType), default=PlanType.NONE)
-    owner = db.Column(db.String(64))
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
-    cloud_id = db.Column(db.String(128))
     config = db.Column(db.PickleType())
     applied_config = db.Column(db.PickleType())
     tf_state = db.Column(db.PickleType())
     plan = db.Column(db.PickleType())
+    project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
+    project = db.relationship("Project", back_populates="magic_castles", uselist=False)
 
 
 class MagicCastle:
@@ -132,12 +134,11 @@ class MagicCastle:
 
     __slots__ = ["orm"]
 
-    def __init__(self, orm=None, owner=None):
+    def __init__(self, orm=None):
         if orm:
             self.orm = orm
         else:
             self.orm = MagicCastleORM(
-                owner=owner,
                 status=ClusterStatusCode.NOT_FOUND,
                 plan_type=PlanType.NONE,
                 config={},
@@ -161,15 +162,15 @@ class MagicCastle:
 
     @property
     def cloud_id(self):
-        return self.orm.cloud_id
+        return self.orm.project.id
+
+    @property
+    def project(self):
+        return self.orm.project
 
     @property
     def expiration_date(self):
         return self.orm.expiration_date
-
-    @property
-    def owner(self):
-        return self.orm.owner
 
     @property
     def age(self):
@@ -191,12 +192,13 @@ class MagicCastle:
     def set_configuration(self, configuration: dict):
         changed = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
-        cloud_id = configuration.pop("cloud_id")
-        if self.orm.cloud_id != cloud_id:
-            self.orm.cloud_id = cloud_id
+        cloud_id = configuration.pop("cloud")["id"]
+
+        if self.orm.project is None or self.orm.project.id != cloud_id:
+            self.orm.project = Project.query.get(cloud_id)
             changed = True
         try:
-            config = MagicCastleConfiguration(configuration)
+            config = MagicCastleConfiguration(self.orm.project.provider, configuration)
         except ValidationError as err:
             raise InvalidUsageException(
                 f"The magic castle configuration could not be parsed.\nError: {err.messages}"
@@ -230,8 +232,7 @@ class MagicCastle:
             json.dumps(
                 {
                     "hostname": self.hostname,
-                    "status": self.orm.status.value,
-                    "owner": self.owner,
+                    "status": self.orm.status,
                 }
             ),
             flush=True,
@@ -307,12 +308,11 @@ class MagicCastle:
         return {
             **(self.applied_config if self.applied_config else self.config),
             "hostname": self.hostname,
-            "status": self.status.value,
+            "status": self.status,
             "freeipa_passwd": self.freeipa_passwd,
-            "owner": self.owner,
             "age": self.age,
             "expiration_date": self.expiration_date,
-            "cloud_id": self.cloud_id,
+            "cloud": {"name": self.project.name, "id": self.project.id},
         }
 
     @property
@@ -387,8 +387,8 @@ class MagicCastle:
 
         if MAGIC_CASTLE_PATH[:3] != "git":
             symlink(
-                path.join(MAGIC_CASTLE_PATH, "openstack"),
-                path.join(self.path, "openstack"),
+                path.join(MAGIC_CASTLE_PATH, self.project.provider),
+                path.join(self.path, self.project.provider),
             )
             symlink(
                 path.join(MAGIC_CASTLE_PATH, "dns"),
@@ -472,9 +472,8 @@ class MagicCastle:
 
         environment_variables = environ.copy()
         dns_manager = DnsManager(self.domain)
-        cloud_manager = CloudManager(self.cloud_id)
         environment_variables.update(dns_manager.get_environment_variables())
-        environment_variables.update(cloud_manager.get_environment_variables())
+        environment_variables.update(self.project.env)
         plan_log = path.join(self.path, TERRAFORM_PLAN_LOG_FILENAME)
         try:
             with open(plan_log, "w") as output_file:
@@ -576,12 +575,12 @@ class MagicCastle:
         env = environ.copy()
         if destroy:
             env["TF_WARN_OUTPUT_ERRORS"] = "1"
-        env.update(CloudManager(self.cloud_id).get_environment_variables())
+        env.update(self.project.env)
         env.update(DnsManager(self.domain).get_environment_variables())
 
         self.rotate_terraform_logs(apply=True)
         Thread(
-            target=terraform_apply, args=[self.hostname, env, self.path, destroy]
+            target=terraform_apply, args=[self.orm.id, env, self.path, destroy]
         ).start()
 
     def delete(self):

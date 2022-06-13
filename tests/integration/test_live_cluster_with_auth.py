@@ -1,16 +1,18 @@
 import pytest
 import tempfile
+import os
 
 from mchub import create_app
 from time import time, sleep
 from os import path, remove, rmdir
 from random import randrange
 
-from mchub.configuration.cloud import DEFAULT_CLOUD
+from mchub.models.cloud.project import Project
+from mchub.models.user import UserORM
 
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
-using the OpenStack clouds.yaml, configuration.json and gcloud-key.json provided to the container.
+using the OpenStack OS_* environment variables, configuration.json and gcloud-key.json provided to the container.
 
 The auth_type variable in configuration.json must be set to "SAML" for these tests to work properly.
 
@@ -56,7 +58,27 @@ def setup_module(module):
     # Patch database location
     db_filename = path.join(tmpdirname, "database.db")
 
-    db.create_all(app=create_app(f"sqlite:///{db_filename}"))
+    with create_app(f"sqlite:///{db_filename}").app_context():
+        db.create_all()
+        project = Project(
+            name="test-project",
+            provider="openstack",
+            env={
+                "OS_AUTH_URL": os.environ["OS_AUTH_URL"],
+                "OS_APPLICATION_CREDENTIAL_ID": os.environ[
+                    "OS_APPLICATION_CREDENTIAL_ID"
+                ],
+                "OS_APPLICATION_CREDENTIAL_SECRET": os.environ[
+                    "OS_APPLICATION_CREDENTIAL_SECRET"
+                ],
+            },
+        )
+        user = UserORM(
+            scoped_id=JOHN_DOE_HEADERS["eduPersonPrincipalName"], projects=[project]
+        )
+        db.session.add(project)
+        db.session.add(user)
+        db.session.commit()
 
 
 def teardown_module(module):
@@ -70,7 +92,7 @@ def test_plan_creation(client):
     res = client.post(
         f"/api/magic-castles",
         json={
-            "cloud_id": DEFAULT_CLOUD,
+            "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
@@ -172,7 +194,7 @@ def test_plan_modify(client):
     res = client.put(
         f"/api/magic-castles/{HOSTNAME}",
         json={
-            "cloud_id": DEFAULT_CLOUD,
+            "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": CLUSTER_NAME,
             "nb_users": 10,
             "guest_passwd": "",
