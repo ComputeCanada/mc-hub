@@ -10,7 +10,7 @@ from flask import make_response
 from ..configuration import config
 from ..database import db
 from ..models.auth_type import AuthType
-from ..models.user import LocalUser, SAMLUser, UserORM
+from ..models.user import LocalUser, SAMLUser, UserORM, TokenSuperUser
 from ..exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
@@ -86,7 +86,7 @@ def compute_current_user(route_handler):
             if m:
                 user_token = m.group(1)
                 if user_token == config["token"]:
-                    user = LocalUser()
+                    user = TokenSuperUser()
                 else:
                     raise UnauthenticatedException
         elif AuthType.SAML in auth_type and "eduPersonPrincipalName" in headers:

@@ -27,6 +27,16 @@ class UserORM(db.Model):
     )
 
 
+class TokenSuperUser:
+    @property
+    def projects(self):
+        return Project.query.all()
+
+    @property
+    def magic_castles(self):
+        return [MagicCastle(orm) for orm in MagicCastleORM.query.all()]
+
+
 class User:
     __slots__ = ["orm", "username", "domain", "usertype", "public_keys"]
 
@@ -43,12 +53,6 @@ class User:
 
     @property
     def magic_castles(self):
-        """
-        If the user is admin, it will retrieve all the clusters,
-        otherwise, only the clusters owned by the user.
-
-        :return: A list of MagicCastle objects
-        """
         return [
             MagicCastle(orm=mc_orm)
             for project in self.projects
