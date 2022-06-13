@@ -11,7 +11,7 @@ from ..exceptions.invalid_usage_exception import (
 
 
 class ProjectAPI(ApiView):
-    def get(self, user: User, id: int):
+    def get(self, user: User, id: int = None):
         if id is not None:
             project = Project.query.get(id)
             if project is None or project not in user.orm.projects:

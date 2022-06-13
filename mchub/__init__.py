@@ -82,7 +82,6 @@ def create_app(db_path=None):
     app.add_url_rule(
         "/api/projects",
         view_func=project_view,
-        defaults={"id": None},
         methods=["GET", "POST"],
     )
     app.add_url_rule(
