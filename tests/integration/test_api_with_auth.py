@@ -124,13 +124,13 @@ def test_get_current_user_non_authentified(client):
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles", headers=ALICE_HEADERS)
-    results = []
+    results = {}
     for result in res.get_json():
         for field in IGNORE_FIELDS:
             result.pop(field)
-        results.append(result)
+        results[result["hostname"]] = result
 
-    assert results[0] == {
+    assert results["buildplanning.calculquebec.cloud"] == {
         "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
@@ -164,7 +164,7 @@ def test_get_all_magic_castle_names(client):
         "status": "plan_running",
         "freeipa_passwd": None,
     }
-    assert results[1] == {
+    assert results["created.calculquebec.cloud"] == {
         "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
@@ -198,7 +198,7 @@ def test_get_all_magic_castle_names(client):
         "status": "created",
         "freeipa_passwd": None,
     }
-    assert results[2] == {
+    assert results["valid1.calculquebec.cloud"] == {
         "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
