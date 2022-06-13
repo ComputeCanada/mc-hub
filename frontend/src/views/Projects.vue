@@ -7,11 +7,14 @@
             <v-toolbar-title>Your Projects</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <cloud-provider-input @newProject="updateProjects" />
+            <cloud-provider-input @newProject="updateProjectList" />
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <v-icon v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0"> mdi-delete </v-icon>
+          <project-membership :id="item.id" />
+          <v-btn color="secondary" v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
+            <v-icon> mdi-delete </v-icon>
+          </v-btn>
           <div v-else>not owner</div>
         </template>
       </v-data-table>
@@ -22,11 +25,13 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
+import ProjectMembership from "@/components/ui/ProjectMembership";
 
 export default {
   name: "Projects",
   components: {
     CloudProviderInput,
+    ProjectMembership,
   },
   data() {
     return {
@@ -35,19 +40,19 @@ export default {
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
         { text: "# Clusters", value: "nb_clusters" },
-        { text: "Remove?", value: "actions", sortable: false },
+        { text: "Edit / Delete", value: "actions", sortable: false },
       ],
     };
   },
   created() {
-    this.updateProjects();
+    this.updateProjectList();
   },
   methods: {
-    async updateProjects() {
+    async updateProjectList() {
       this.projects = (await ProjectRepository.getAll()).data;
     },
     deleteItem(item) {
-      ProjectRepository.delete(item.id).then(this.updateProjects);
+      ProjectRepository.delete(item.id).then(this.updateProjectList);
     },
   },
 };
