@@ -94,13 +94,13 @@ def test_get_current_user(client):
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles")
-    results = []
+    results = {}
     for result in res.get_json():
         for field in IGNORE_FIELDS:
             result.pop(field)
-        results.append(result)
+        results[result["hostname"]] = result
 
-    assert results[0] == {
+    assert results["buildplanning.calculquebec.cloud"] == {
         "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
@@ -134,7 +134,7 @@ def test_get_all_magic_castle_names(client):
         "status": "plan_running",
         "freeipa_passwd": None,
     }
-    assert results[1] == {
+    assert results["created.calculquebec.cloud"] == {
         "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
@@ -168,7 +168,7 @@ def test_get_all_magic_castle_names(client):
         "status": "created",
         "freeipa_passwd": None,
     }
-    assert results[2] == {
+    assert results["valid1.calculquebec.cloud"] == {
         "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
@@ -202,7 +202,7 @@ def test_get_all_magic_castle_names(client):
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
     }
-    assert results[3] == {
+    assert results["empty-state.calculquebec.cloud"] == {
         "cloud": {"id": 2, "name": "project-bob"},
         "hostname": "empty-state.calculquebec.cloud",
         "cluster_name": "empty-state",
@@ -236,14 +236,14 @@ def test_get_all_magic_castle_names(client):
         "status": "build_error",
         "freeipa_passwd": None,
     }
-    assert results[4] == {
+    assert results["empty.calculquebec.cloud"] == {
         "cloud": {"id": 2, "name": "project-bob"},
         "hostname": "empty.calculquebec.cloud",
         "status": "build_error",
         "freeipa_passwd": None,
         "expiration_date": "2029-01-01",
     }
-    assert results[5] == {
+    assert results["missingfloatingips.c3.ca"] == {
         "cloud": {"id": 2, "name": "project-bob"},
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
@@ -278,7 +278,7 @@ def test_get_all_magic_castle_names(client):
         "freeipa_passwd": None,
     }
 
-    assert results[6] == {
+    assert results["missingnodes.c3.ca"] == {
         "cloud": {"id": 2, "name": "project-bob"},
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
@@ -312,7 +312,7 @@ def test_get_all_magic_castle_names(client):
         "status": "build_error",
         "freeipa_passwd": "FAKE",
     }
-    assert results[7] == {
+    assert results["noowner.calculquebec.cloud"] == {
         "cloud": {"id": 2, "name": "project-bob"},
         "cluster_name": "noowner",
         "domain": "calculquebec.cloud",
