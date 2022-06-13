@@ -23,11 +23,12 @@ class UserORM(db.Model):
 
 
 class User:
-    __slots__ = ["orm", "username", "usertype", "public_keys"]
+    __slots__ = ["orm", "username", "domain", "usertype", "public_keys"]
 
-    def __init__(self, orm, username, usertype, public_keys=[]):
+    def __init__(self, orm, username, domain, usertype, public_keys=[]):
         self.orm = orm
         self.username = username
+        self.domain = domain
         self.usertype = usertype
         self.public_keys = public_keys
 
@@ -62,7 +63,11 @@ class LocalUser(User):
             public_keys = []
         username = getuser()
         super().__init__(
-            orm=orm, username=username, usertype="local", public_keys=public_keys
+            orm=orm,
+            username=username,
+            domain="localhost",
+            usertype="local",
+            public_keys=public_keys,
         )
 
 
@@ -75,7 +80,7 @@ class SAMLUser(User):
     edit his own clusters.
     """
 
-    __slots__ = ["scoped_id", "scope", "given_name", "surname", "mail"]
+    __slots__ = ["scoped_id", "given_name", "surname", "mail"]
 
     def __init__(
         self,
@@ -91,11 +96,11 @@ class SAMLUser(User):
         super().__init__(
             orm=orm,
             username=username,
+            domain=scope,
             usertype="saml",
             public_keys=ssh_public_key.split(";"),
         )
         self.scoped_id = edu_person_principal_name
-        self.scope = scope
         self.given_name = given_name
         self.surname = surname
         self.mail = mail
