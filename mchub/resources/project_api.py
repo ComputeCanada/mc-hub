@@ -12,18 +12,16 @@ from ..exceptions.invalid_usage_exception import (
 
 class ProjectAPI(ApiView):
     def get(self, user: User):
-        if len(user.projects) > 0:
-            return [
-                {
-                    "id": project.id,
-                    "name": project.name,
-                    "provider": project.provider,
-                    "nb_clusters": len(project.magic_castles),
-                    "admin": project.admin_id == user.orm.id,
-                }
-                for project in user.projects
-            ]
-        return []
+        return [
+            {
+                "id": project.id,
+                "name": project.name,
+                "provider": project.provider,
+                "nb_clusters": len(project.magic_castles),
+                "admin": project.admin_id == user.orm.id,
+            }
+            for project in user.projects
+        ]
 
     def post(self, user: User):
         data = request.get_json()
