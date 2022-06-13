@@ -46,8 +46,19 @@ def create_test_app():
     with app.app_context():
         db.create_all()
 
+        username = getuser()
+        local_user = UserORM(scoped_id=f"{username}@localhost")
+        alice_user = UserORM(scoped_id="alice@computecanada.ca")
+        bob_user = UserORM(scoped_id="bob@computecanada.ca")
+
+        db.session.add(local_user)
+        db.session.add(alice_user)
+        db.session.add(bob_user)
+        db.session.commit()
+
         project_alice = Project(
             name="project-alice",
+            admin_id=alice_user.id,
             provider="openstack",
             env={
                 "OS_AUTH_URL": "http://localhost:5000/v3",
@@ -58,28 +69,19 @@ def create_test_app():
         project_bob = Project(
             name="project-bob",
             provider="openstack",
+            admin_id=bob_user.id,
             env={
                 "OS_AUTH_URL": "http://localhost:5000/v3",
                 "OS_APPLICATION_CREDENTIAL_ID": "'z3vjwfkwqocqo2kpowkxf50uvjfkqeqt'",
                 "OS_APPLICATION_CREDENTIAL_SECRET": "'ibrp7kj6labtp-s1fuu82afxrkz8w3kzjrx052ap8coljqjwiacmrxhvtf8dxce77ck8m8u6pbrgv8ezraoe4r'",
             },
         )
+        local_user.projects.append(project_alice)
+        local_user.projects.append(project_bob)
+        alice_user.projects.append(project_alice)
+        bob_user.projects.append(project_bob)
         db.session.add(project_alice)
         db.session.add(project_bob)
-        db.session.commit()
-
-        username = getuser()
-        local_user = UserORM(
-            scoped_id=f"{username}@localhost", projects=[project_alice, project_bob]
-        )
-        alice_user = UserORM(
-            scoped_id="alice@computecanada.ca", projects=[project_alice]
-        )
-        bob_user = UserORM(scoped_id="bob@computecanada.ca", projects=[project_bob])
-
-        db.session.add(local_user)
-        db.session.add(alice_user)
-        db.session.add(bob_user)
         db.session.commit()
 
         # Using an in-memory database for faster unit tests with less disk IO
