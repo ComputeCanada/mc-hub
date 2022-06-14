@@ -60,14 +60,22 @@ def setup_module(module):
 
     with create_app(f"sqlite:///{db_filename}").app_context():
         db.create_all()
-        user = UserORM(scoped_id=JOHN_DOE_HEADERS["eduPersonPrincipalName"])
-        db.session.add(user)
-        db.session.commit()
-        project = Project(
-            name="test-project",
-            provider="openstack",
-            admin_id=user.id,
-            env={
+
+
+def teardown_module(module):
+    global db_filename
+    remove(db_filename)
+    rmdir(path.dirname(db_filename))
+
+
+@pytest.mark.build_live_cluster
+def test_project_creation(client):
+    res = client.post(
+        "api/projects",
+        json={
+            "name": "test-project",
+            "provider": "openstack",
+            "env": {
                 "OS_AUTH_URL": os.environ["OS_AUTH_URL"],
                 "OS_APPLICATION_CREDENTIAL_ID": os.environ[
                     "OS_APPLICATION_CREDENTIAL_ID"
@@ -76,16 +84,18 @@ def setup_module(module):
                     "OS_APPLICATION_CREDENTIAL_SECRET"
                 ],
             },
-        )
-        user.projects.append(project)
-        db.session.add(project)
-        db.session.commit()
+        },
+        headers=JOHN_DOE_HEADERS,
+    )
 
-
-def teardown_module(module):
-    global db_filename
-    remove(db_filename)
-    rmdir(path.dirname(db_filename))
+    assert res.status_code == 200
+    assert res.get_json() == {
+        "id": 1,
+        "name": "test-project",
+        "provider": "openstack",
+        "nb_clusters": 0,
+        "admin": True,
+    }
 
 
 @pytest.mark.build_live_cluster
