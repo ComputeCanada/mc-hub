@@ -104,6 +104,7 @@ class ProjectAPI(ApiView):
                 member.projects.remove(project)
 
         db.session.commit()
+        return {}, 200
 
     def delete(self, user: User, id: int):
         project = Project.query.get(id)
@@ -118,4 +119,4 @@ class ProjectAPI(ApiView):
         user.orm.projects.remove(project)
         db.session.delete(project)
         db.session.commit()
-        return "", 200
+        return {}, 200

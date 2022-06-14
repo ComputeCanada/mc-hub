@@ -321,6 +321,17 @@ def test_destroy_success(client):
 
 
 @pytest.mark.build_live_cluster
+def test_project_deletion(client):
+    res = client.delete(
+        "api/projects/1",
+        headers=JOHN_DOE_HEADERS,
+    )
+
+    assert res.status_code == 200
+    assert res.get_json() == {}
+
+
+@pytest.mark.build_live_cluster
 def test_cluster_folder_deleted():
     sleep(1)  # Status is "not_found" before the cluster folder is deleted
     assert not path.exists(f"/home/mcu/clusters/{HOSTNAME}")
