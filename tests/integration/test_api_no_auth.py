@@ -1,7 +1,5 @@
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
-# from mchub import create_app
-
 from ..test_helpers import *
 from ..mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 from subprocess import getoutput
@@ -15,6 +13,7 @@ from ..data import (
     NON_EXISTING_HOSTNAME,
     EXISTING_CLUSTER_STATE,
     CLUSTERS,
+    PROGRESS_DATA,
 )
 
 # GET /api/users/me
@@ -77,171 +76,7 @@ def test_get_state_non_existing(client):
 @pytest.mark.skip(reason="source of truth is currently false")
 def test_get_status(mocker, client):
     res = client.get(f"/api/magic-castles/missingfloatingips.c3.ca/status")
-    assert res.get_json() == {
-        "status": "build_running",
-        "progress": [
-            {
-                "address": "module.openstack.data.template_cloudinit_config.login_config[0]",
-                "type": "template_cloudinit_config",
-                "change": {"actions": ["read"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.data.template_cloudinit_config.mgmt_config[0]",
-                "type": "template_cloudinit_config",
-                "change": {"actions": ["read"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.data.template_cloudinit_config.node_config["node1"]',
-                "type": "template_cloudinit_config",
-                "change": {"actions": ["read"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.data.template_cloudinit_config.node_config["node2"]',
-                "type": "template_cloudinit_config",
-                "change": {"actions": ["read"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.data.template_cloudinit_config.node_config["node3"]',
-                "type": "template_cloudinit_config",
-                "change": {"actions": ["read"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.data.template_file.hieradata",
-                "type": "template_file",
-                "change": {"actions": ["read"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_blockstorage_volume_v2.home[0]",
-                "type": "openstack_blockstorage_volume_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_blockstorage_volume_v2.project[0]",
-                "type": "openstack_blockstorage_volume_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_blockstorage_volume_v2.scratch[0]",
-                "type": "openstack_blockstorage_volume_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_floatingip_associate_v2.fip[0]",
-                "type": "openstack_compute_floatingip_associate_v2",
-                "change": {"actions": ["create"], "progress": "queued"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_instance_v2.login[0]",
-                "type": "openstack_compute_instance_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_instance_v2.mgmt[0]",
-                "type": "openstack_compute_instance_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.openstack_compute_instance_v2.node["node1"]',
-                "type": "openstack_compute_instance_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.openstack_compute_instance_v2.node["node2"]',
-                "type": "openstack_compute_instance_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.openstack_compute_instance_v2.node["node3"]',
-                "type": "openstack_compute_instance_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_keypair_v2.keypair",
-                "type": "openstack_compute_keypair_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_secgroup_v2.secgroup_1",
-                "type": "openstack_compute_secgroup_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_volume_attach_v2.va_home[0]",
-                "type": "openstack_compute_volume_attach_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_volume_attach_v2.va_project[0]",
-                "type": "openstack_compute_volume_attach_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_compute_volume_attach_v2.va_scratch[0]",
-                "type": "openstack_compute_volume_attach_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_networking_floatingip_v2.fip[0]",
-                "type": "openstack_networking_floatingip_v2",
-                "change": {"actions": ["create"], "progress": "running"},
-            },
-            {
-                "address": "module.openstack.openstack_networking_port_v2.port_login[0]",
-                "type": "openstack_networking_port_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.openstack_networking_port_v2.port_mgmt[0]",
-                "type": "openstack_networking_port_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.openstack_networking_port_v2.port_node["node1"]',
-                "type": "openstack_networking_port_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.openstack_networking_port_v2.port_node["node2"]',
-                "type": "openstack_networking_port_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": 'module.openstack.openstack_networking_port_v2.port_node["node3"]',
-                "type": "openstack_networking_port_v2",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.random_pet.guest_passwd[0]",
-                "type": "random_pet",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.random_string.freeipa_passwd",
-                "type": "random_string",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.random_string.munge_key",
-                "type": "random_string",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.random_string.puppetmaster_password",
-                "type": "random_string",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.random_uuid.consul_token",
-                "type": "random_uuid",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-            {
-                "address": "module.openstack.tls_private_key.login_rsa",
-                "type": "tls_private_key",
-                "change": {"actions": ["create"], "progress": "done"},
-            },
-        ],
-    }
+    assert res.get_json() == PROGRESS_DATA
 
 
 def test_get_status_code(client):
