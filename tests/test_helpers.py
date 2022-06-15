@@ -22,6 +22,7 @@ from mchub.models.magic_castle.plan_type import PlanType
 
 from unittest.mock import Mock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
+from .data import CLUSTERS, PLAN_TYPE
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -84,119 +85,38 @@ def create_test_app():
         db.session.add(project_bob)
         db.session.commit()
 
-        # Using an in-memory database for faster unit tests with less disk IO
-        buildplanning = MagicCastleORM(
-            hostname="buildplanning.calculquebec.cloud",
-            plan_type=PlanType.BUILD,
-            status=ClusterStatusCode.PLAN_RUNNING,
-            expiration_date="2029-01-01",
-            project=project_alice,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(
-                    MOCK_CLUSTERS_PATH,
-                    "buildplanning.calculquebec.cloud",
-                    "main.tf.json",
-                )
-            ),
-        )
-        created = MagicCastleORM(
-            hostname="created.calculquebec.cloud",
-            status=ClusterStatusCode.CREATED,
-            plan_type=PlanType.BUILD,
-            expiration_date="2029-01-01",
-            project=project_alice,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(
-                    MOCK_CLUSTERS_PATH, "created.calculquebec.cloud", "main.tf.json"
-                )
-            ),
-        )
-        empty_state = MagicCastleORM(
-            hostname="empty-state.calculquebec.cloud",
-            status=ClusterStatusCode.BUILD_ERROR,
-            plan_type=PlanType.NONE,
-            expiration_date="2029-01-01",
-            project=project_bob,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(
-                    MOCK_CLUSTERS_PATH, "empty-state.calculquebec.cloud", "main.tf.json"
-                )
-            ),
-        )
-        empty = MagicCastleORM(
-            hostname="empty.calculquebec.cloud",
-            status=ClusterStatusCode.BUILD_ERROR,
-            plan_type=PlanType.NONE,
-            expiration_date="2029-01-01",
-            project=project_bob,
-            config={},
-        )
-        missingfip = MagicCastleORM(
-            hostname="missingfloatingips.c3.ca",
-            status=ClusterStatusCode.BUILD_RUNNING,
-            plan_type=PlanType.NONE,
-            expiration_date="2029-01-01",
-            project=project_bob,
-            config=MagicCastleConfiguration.get_from_main_file(
-                path.join(
-                    MOCK_CLUSTERS_PATH, "missingfloatingips.c3.ca", "main.tf.json"
-                )
-            ),
-        )
-        main_tf = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
-        terraform_tf = path.join(
-            MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "terraform.tfstate"
-        )
-        with open(path.join(terraform_tf)) as file_:
-            tf_state = TerraformState(json.load(file_))
-        missingnodes = MagicCastleORM(
-            hostname="missingnodes.c3.ca",
-            status=ClusterStatusCode.BUILD_ERROR,
-            plan_type=PlanType.NONE,
-            expiration_date="2029-01-01",
-            project=project_bob,
-            config=MagicCastleConfiguration.get_from_main_file(main_tf),
-            tf_state=tf_state,
-        )
-
-        hostname = "noowner.calculquebec.cloud"
-        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
-        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
-        with open(path.join(terraform_tf)) as file_:
-            tf_state = TerraformState(json.load(file_))
-        noower = MagicCastleORM(
-            hostname=hostname,
-            status=ClusterStatusCode.PROVISIONING_SUCCESS,
-            plan_type=PlanType.DESTROY,
-            expiration_date="2029-01-01",
-            project=project_bob,
-            config=MagicCastleConfiguration.get_from_main_file(main_tf),
-            tf_state=tf_state,
-        )
-
-        hostname = "valid1.calculquebec.cloud"
-        main_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "main.tf.json")
-        terraform_tf = path.join(MOCK_CLUSTERS_PATH, hostname, "terraform.tfstate")
-        with open(path.join(terraform_tf)) as file_:
-            tf_state = TerraformState(json.load(file_))
-        valid1 = MagicCastleORM(
-            hostname=hostname,
-            status=ClusterStatusCode.PROVISIONING_SUCCESS,
-            plan_type=PlanType.DESTROY,
-            expiration_date="2029-01-01",
-            project=project_alice,
-            config=MagicCastleConfiguration.get_from_main_file(main_tf),
-            tf_state=tf_state,
-        )
-
-        db.session.add(buildplanning)
-        db.session.add(created)
-        db.session.add(empty_state)
-        db.session.add(empty)
-        db.session.add(missingfip)
-        db.session.add(missingnodes)
-        db.session.add(noower)
-        db.session.add(valid1)
+        for key, data in CLUSTERS.items():
+            hostname = key
+            project = Project.query.get(data["cloud"]["id"])
+            main = path.join(
+                MOCK_CLUSTERS_PATH,
+                hostname,
+                "main.tf.json",
+            )
+            state = path.join(
+                MOCK_CLUSTERS_PATH,
+                hostname,
+                "terraform.tfstate",
+            )
+            try:
+                with open(state) as file_:
+                    tf_state = TerraformState(json.load(file_))
+            except FileNotFoundError:
+                tf_state = None
+            try:
+                config = MagicCastleConfiguration.get_from_main_file(main)
+            except FileNotFoundError:
+                continue
+            cluster = MagicCastleORM(
+                hostname=hostname,
+                project=project,
+                status=data["status"],
+                expiration_date=data["expiration_date"],
+                config=config,
+                tf_state=tf_state,
+                plan_type=PLAN_TYPE[key],
+            )
+            db.session.add(cluster)
         db.session.commit()
     return app
 
@@ -259,7 +179,6 @@ def generate_test_clusters():
     mock_cluster_names = [
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
-        "empty.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
         "missingnodes.c3.ca",
         "noowner.calculquebec.cloud",

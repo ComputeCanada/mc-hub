@@ -14,7 +14,6 @@ def test_query_magic_castles():
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
-        "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.c3.ca",
         "noowner.calculquebec.cloud",

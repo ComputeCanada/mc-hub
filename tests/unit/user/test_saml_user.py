@@ -27,13 +27,11 @@ def test_query_magic_castles(client, alice, bob, admin):
     # Bob
     bob_magic_castles = bob.magic_castles
     assert [magic_castle.hostname for magic_castle in bob_magic_castles] == [
-        "empty.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.c3.ca",
     ]
     assert [magic_castle.status for magic_castle in bob_magic_castles] == [
-        ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.BUILD_ERROR,
@@ -45,7 +43,6 @@ def test_query_magic_castles(client, alice, bob, admin):
         "buildplanning.calculquebec.cloud",
         "created.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
-        "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.c3.ca",
         "noowner.calculquebec.cloud",
@@ -54,7 +51,6 @@ def test_query_magic_castles(client, alice, bob, admin):
     assert [magic_castle.status for magic_castle in admin_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
-        ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.BUILD_ERROR,

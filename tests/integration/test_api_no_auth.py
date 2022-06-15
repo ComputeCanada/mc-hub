@@ -40,7 +40,6 @@ def test_get_all_magic_castle_names(client):
         "created.calculquebec.cloud",
         "valid1.calculquebec.cloud",
         "empty-state.calculquebec.cloud",
-        "empty.calculquebec.cloud",
         "missingfloatingips.c3.ca",
         "missingnodes.c3.ca",
         "noowner.calculquebec.cloud",

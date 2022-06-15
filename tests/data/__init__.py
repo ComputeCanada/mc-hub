@@ -1,3 +1,5 @@
+from mchub.models.magic_castle.plan_type import PlanType
+
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
     "domain": "calculquebec.cloud",
@@ -72,6 +74,16 @@ BOB_HEADERS = {
     "surname": "Rodriguez",
     "mail": "bob-rodriguez435@example.com",
     "sshPublicKey": "ssh-rsa FAKE",
+}
+
+PLAN_TYPE = {
+    "buildplanning.calculquebec.cloud": PlanType.BUILD,
+    "created.calculquebec.cloud": PlanType.BUILD,
+    "valid1.calculquebec.cloud": PlanType.DESTROY,
+    "empty-state.calculquebec.cloud": None,
+    "missingfloatingips.c3.ca": None,
+    "missingnodes.c3.ca": None,
+    "noowner.calculquebec.cloud": None,
 }
 
 CLUSTERS = {
@@ -210,13 +222,6 @@ CLUSTERS = {
         "hieradata": "",
         "status": "build_error",
         "freeipa_passwd": None,
-    },
-    "empty.calculquebec.cloud": {
-        "cloud": {"id": 2, "name": "project-bob"},
-        "hostname": "empty.calculquebec.cloud",
-        "status": "build_error",
-        "freeipa_passwd": None,
-        "expiration_date": "2029-01-01",
     },
     "missingfloatingips.c3.ca": {
         "cloud": {"id": 2, "name": "project-bob"},

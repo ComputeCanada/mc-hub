@@ -111,9 +111,6 @@ def test_get_status_valid(client):
 
 def test_get_status_errors(client):
     client.get("/api/users/me")
-    orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
-    empty = MagicCastle(orm=orm)
-    assert empty.status == ClusterStatusCode.BUILD_ERROR
 
     orm = MagicCastleORM.query.filter_by(hostname="missingnodes.c3.ca").first()
     missingnodes = MagicCastle(orm=orm)
@@ -211,13 +208,6 @@ def test_config_valid(client):
     }
 
 
-def test_config_empty(client):
-    client.get("/api/users/me")
-    orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
-    magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.config == dict()
-
-
 def test_config_busy(client):
     client.get("/api/users/me")
     orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
@@ -288,24 +278,6 @@ def test_allocated_resources_valid(client):
         "pre_allocated_cores": 10,
         "pre_allocated_volume_count": 3,
         "pre_allocated_volume_size": 200,
-    }
-
-
-def test_allocated_resources_empty(client):
-    """
-    Mock context :
-
-    empty cluster uses 0 vcpus, 0 ram, 0 volume
-    """
-    client.get("/api/users/me")
-    orm = MagicCastleORM.query.filter_by(hostname="empty.calculquebec.cloud").first()
-    magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.allocated_resources == {
-        "pre_allocated_instance_count": 0,
-        "pre_allocated_ram": 0,
-        "pre_allocated_cores": 0,
-        "pre_allocated_volume_count": 0,
-        "pre_allocated_volume_size": 0,
     }
 
 
