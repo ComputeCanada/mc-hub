@@ -29,7 +29,7 @@ def valid_state():
 
 @pytest.fixture
 def empty_state():
-    return load_state("empty.calculquebec.cloud")
+    return load_state("empty-state.calculquebec.cloud")
 
 
 @pytest.fixture
