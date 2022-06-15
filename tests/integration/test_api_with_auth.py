@@ -49,14 +49,14 @@ def test_get_all_magic_castle_names(client):
             result.pop(field)
         results[result["hostname"]] = result
 
-    assert (
-        results["buildplanning.calculquebec.cloud"]
-        == CLUSTERS["buildplanning.calculquebec.cloud"]
-    )
-    assert (
-        results["created.calculquebec.cloud"] == CLUSTERS["created.calculquebec.cloud"]
-    )
-    assert results["valid1.calculquebec.cloud"] == CLUSTERS["valid1.calculquebec.cloud"]
+    clusters = [
+        "buildplanning.calculquebec.cloud",
+        "created.calculquebec.cloud",
+        "valid1.calculquebec.cloud",
+    ]
+    for cluster_name in clusters:
+        assert results[cluster_name] == CLUSTERS[cluster_name]
+
     assert res.status_code == 200
 
 

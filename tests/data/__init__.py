@@ -46,26 +46,10 @@ NON_EXISTING_HOSTNAME = f"{NON_EXISTING_CLUSTER_CONFIGURATION['cluster_name']}.{
 EXISTING_HOSTNAME = f"{EXISTING_CLUSTER_CONFIGURATION['cluster_name']}.{EXISTING_CLUSTER_CONFIGURATION['domain']}"
 
 EXISTING_CLUSTER_STATE = {
+    **EXISTING_CLUSTER_CONFIGURATION,
     "cloud": {"id": 1, "name": "project-alice"},
-    "cluster_name": "valid1",
-    "nb_users": 10,
     "guest_passwd": "password-123",
-    "volumes": {
-        "nfs": {
-            "home": {"size": 100},
-            "project": {"size": 50},
-            "scratch": {"size": 50},
-        }
-    },
-    "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-    },
-    "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
-    "image": "CentOS-7-x64-2021-11",
-    "hieradata": "",
     "status": "provisioning_success",
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
