@@ -10,7 +10,7 @@ from typing import Callable
 
 from mchub import create_app
 from mchub.database import db
-from mchub.models.user import SAMLUser, UserORM
+from mchub.models.user import LocalUser, SAMLUser, UserORM
 from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
 )
@@ -145,7 +145,9 @@ def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
     app = create_test_app()
     with app.app_context():
         yield SAMLUser(
-            orm=UserORM.query.get(2),
+            orm=UserORM.query.filter_by(
+                scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
+            ).first(),
             edu_person_principal_name=ALICE_HEADERS["eduPersonPrincipalName"],
             given_name=ALICE_HEADERS["givenName"],
             surname=ALICE_HEADERS["surname"],
@@ -159,7 +161,9 @@ def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
     app = create_test_app()
     with app.app_context():
         yield SAMLUser(
-            orm=UserORM.query.get(3),
+            orm=UserORM.query.filter_by(
+                scoped_id=BOB_HEADERS["eduPersonPrincipalName"]
+            ).first(),
             edu_person_principal_name=BOB_HEADERS["eduPersonPrincipalName"],
             given_name=BOB_HEADERS["givenName"],
             surname=BOB_HEADERS["surname"],
@@ -172,13 +176,9 @@ def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
 def admin() -> Callable[[sqlite3.Connection], SAMLUser]:
     app = create_test_app()
     with app.app_context():
-        yield SAMLUser(
-            orm=UserORM.query.get(1),
-            edu_person_principal_name="the-admin@computecanada.ca",
-            given_name="Admin",
-            surname="Istrator",
-            mail="administrator@example.com",
-            ssh_public_key="ssh-rsa FAKE",
+        username = getuser()
+        yield LocalUser(
+            orm=UserORM.query.filter_by(scoped_id=f"{username}@localhost").first(),
         )
 
 
