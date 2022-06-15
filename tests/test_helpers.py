@@ -22,7 +22,7 @@ from mchub.models.magic_castle.plan_type import PlanType
 
 from unittest.mock import Mock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
-from .data import CLUSTERS, PLAN_TYPE
+from .data import CLUSTERS, PLAN_TYPE, BOB_HEADERS, ALICE_HEADERS
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -49,8 +49,8 @@ def create_test_app():
 
         username = getuser()
         local_user = UserORM(scoped_id=f"{username}@localhost")
-        alice_user = UserORM(scoped_id="alice@computecanada.ca")
-        bob_user = UserORM(scoped_id="bob@computecanada.ca")
+        alice_user = UserORM(scoped_id=ALICE_HEADERS["eduPersonPrincipalName"])
+        bob_user = UserORM(scoped_id=BOB_HEADERS["eduPersonPrincipalName"])
 
         db.session.add(local_user)
         db.session.add(alice_user)
@@ -146,11 +146,11 @@ def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
     with app.app_context():
         yield SAMLUser(
             orm=UserORM.query.get(2),
-            edu_person_principal_name="alice@computecanada.ca",
-            given_name="Alice",
-            surname="Tremblay",
-            mail="alice.tremblay@example.com",
-            ssh_public_key="ssh-rsa FAKE",
+            edu_person_principal_name=ALICE_HEADERS["eduPersonPrincipalName"],
+            given_name=ALICE_HEADERS["givenName"],
+            surname=ALICE_HEADERS["surname"],
+            mail=ALICE_HEADERS["mail"],
+            ssh_public_key=ALICE_HEADERS["sshPublicKey"],
         )
 
 
@@ -160,11 +160,11 @@ def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
     with app.app_context():
         yield SAMLUser(
             orm=UserORM.query.get(3),
-            edu_person_principal_name="bob12.bobby@computecanada.ca",
-            given_name="Bob",
-            surname="Rodriguez",
-            mail="bob-rodriguez435@example.com",
-            ssh_public_key="ssh-rsa FAKE",
+            edu_person_principal_name=BOB_HEADERS["eduPersonPrincipalName"],
+            given_name=BOB_HEADERS["givenName"],
+            surname=BOB_HEADERS["surname"],
+            mail=BOB_HEADERS["mail"],
+            ssh_public_key=BOB_HEADERS["sshPublicKey"],
         )
 
 

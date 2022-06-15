@@ -102,7 +102,6 @@ def test_get_state_not_owned(client):
 
 
 # GET /api/magic-castles/<hostname>/status
-@pytest.mark.skip(reason="source of truth is currently false")
 def test_get_status(mocker, client):
     res = client.get(
         f"/api/magic-castles/missingfloatingips.c3.ca/status", headers=BOB_HEADERS
