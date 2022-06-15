@@ -30,7 +30,7 @@ def setup_mock_clusters(cluster_names):
     rmtree(MOCK_CLUSTERS_PATH, ignore_errors=True)
     for cluster_name in cluster_names:
         copytree(
-            path.join(Path(__file__).parent, "mock-clusters", cluster_name),
+            path.join(Path(__file__).parent, "data", "mock-clusters", cluster_name),
             path.join(MOCK_CLUSTERS_PATH, cluster_name),
         )
 

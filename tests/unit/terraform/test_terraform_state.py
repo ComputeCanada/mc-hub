@@ -12,7 +12,11 @@ from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 def load_state(hostname):
     state_file_path = path.join(
-        path.dirname(tests.__file__), "mock-clusters", hostname, "terraform.tfstate"
+        path.dirname(tests.__file__),
+        "data",
+        "mock-clusters",
+        hostname,
+        "terraform.tfstate",
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)
