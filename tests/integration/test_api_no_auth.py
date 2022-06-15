@@ -67,7 +67,6 @@ def test_get_state_non_existing(client):
 
 
 # GET /api/magic-castles/<hostname>/status
-@pytest.mark.skip(reason="source of truth is currently false")
 def test_get_status(mocker, client):
     res = client.get(f"/api/magic-castles/missingfloatingips.c3.ca/status")
     assert res.get_json() == PROGRESS_DATA

@@ -98,6 +98,11 @@ def create_test_app():
                 hostname,
                 "terraform.tfstate",
             )
+            plan = path.join(
+                MOCK_CLUSTERS_PATH,
+                hostname,
+                "terraform_plan.json",
+            )
             try:
                 with open(state) as file_:
                     tf_state = TerraformState(json.load(file_))
@@ -106,7 +111,12 @@ def create_test_app():
             try:
                 config = MagicCastleConfiguration.get_from_main_file(main)
             except FileNotFoundError:
-                continue
+                config = None
+            try:
+                with open(plan) as file_:
+                    plan = json.load(file_)
+            except FileNotFoundError:
+                plan = None
             cluster = MagicCastleORM(
                 hostname=hostname,
                 project=project,
@@ -115,6 +125,7 @@ def create_test_app():
                 config=config,
                 tf_state=tf_state,
                 plan_type=PLAN_TYPE[key],
+                plan=plan,
             )
             db.session.add(cluster)
         db.session.commit()

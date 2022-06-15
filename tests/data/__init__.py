@@ -329,6 +329,7 @@ CLUSTERS = {
 
 PROGRESS_DATA = {
     "status": "build_running",
+    "stateful": False,
     "progress": [
         {
             "address": "module.openstack.module.cluster_config.null_resource.deploy_hieradata[0]",
