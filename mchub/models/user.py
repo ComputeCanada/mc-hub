@@ -24,6 +24,7 @@ class UserORM(db.Model):
         secondary=projects,
         lazy="subquery",
         backref=db.backref("members", lazy=True),
+        order_by="Project.id",
     )
 
 

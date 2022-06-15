@@ -131,38 +131,44 @@ def client(mocker):
 
 @pytest.fixture
 def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
-    return SAMLUser(
-        orm=None,
-        edu_person_principal_name="alice@computecanada.ca",
-        given_name="Alice",
-        surname="Tremblay",
-        mail="alice.tremblay@example.com",
-        ssh_public_key="ssh-rsa FAKE",
-    )
+    app = create_test_app()
+    with app.app_context():
+        yield SAMLUser(
+            orm=UserORM.query.get(2),
+            edu_person_principal_name="alice@computecanada.ca",
+            given_name="Alice",
+            surname="Tremblay",
+            mail="alice.tremblay@example.com",
+            ssh_public_key="ssh-rsa FAKE",
+        )
 
 
 @pytest.fixture
 def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
-    return SAMLUser(
-        orm=None,
-        edu_person_principal_name="bob12.bobby@computecanada.ca",
-        given_name="Bob",
-        surname="Rodriguez",
-        mail="bob-rodriguez435@example.com",
-        ssh_public_key="ssh-rsa FAKE",
-    )
+    app = create_test_app()
+    with app.app_context():
+        yield SAMLUser(
+            orm=UserORM.query.get(3),
+            edu_person_principal_name="bob12.bobby@computecanada.ca",
+            given_name="Bob",
+            surname="Rodriguez",
+            mail="bob-rodriguez435@example.com",
+            ssh_public_key="ssh-rsa FAKE",
+        )
 
 
 @pytest.fixture
 def admin() -> Callable[[sqlite3.Connection], SAMLUser]:
-    return SAMLUser(
-        orm=None,
-        edu_person_principal_name="the-admin@computecanada.ca",
-        given_name="Admin",
-        surname="Istrator",
-        mail="administrator@example.com",
-        ssh_public_key="ssh-rsa FAKE",
-    )
+    app = create_test_app()
+    with app.app_context():
+        yield SAMLUser(
+            orm=UserORM.query.get(1),
+            edu_person_principal_name="the-admin@computecanada.ca",
+            given_name="Admin",
+            surname="Istrator",
+            mail="administrator@example.com",
+            ssh_public_key="ssh-rsa FAKE",
+        )
 
 
 @pytest.fixture(autouse=True)
