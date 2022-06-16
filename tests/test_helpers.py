@@ -173,7 +173,7 @@ def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
 
 
 @pytest.fixture
-def admin() -> Callable[[sqlite3.Connection], SAMLUser]:
+def admin() -> Callable[[sqlite3.Connection], LocalUser]:
     app = create_test_app()
     with app.app_context():
         username = getuser()

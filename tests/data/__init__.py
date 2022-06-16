@@ -86,12 +86,10 @@ PLAN_TYPE = {
     "noowner.calculquebec.cloud": None,
 }
 
-CLUSTERS = {
+CLUSTERS_CONFIG = {
     "buildplanning.calculquebec.cloud": {
-        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 34,
         "instances": {
@@ -117,15 +115,10 @@ CLUSTERS = {
         "public_keys": ["ssh-rsa FAKE"],
         "guest_passwd": "password-123",
         "hieradata": "",
-        "hostname": "buildplanning.calculquebec.cloud",
-        "status": "plan_running",
-        "freeipa_passwd": None,
     },
     "created.calculquebec.cloud": {
-        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 34,
         "instances": {
@@ -151,15 +144,10 @@ CLUSTERS = {
         "public_keys": ["ssh-rsa FAKE"],
         "guest_passwd": "password-123",
         "hieradata": "",
-        "hostname": "created.calculquebec.cloud",
-        "status": "created",
-        "freeipa_passwd": None,
     },
     "valid1.calculquebec.cloud": {
-        "cloud": {"id": 1, "name": "project-alice"},
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 10,
         "instances": {
@@ -185,16 +173,10 @@ CLUSTERS = {
         "public_keys": ["ssh-rsa FAKE"],
         "guest_passwd": "password-123",
         "hieradata": "",
-        "hostname": "valid1.calculquebec.cloud",
-        "status": "provisioning_success",
-        "freeipa_passwd": "FAKE",
     },
     "empty-state.calculquebec.cloud": {
-        "cloud": {"id": 2, "name": "project-bob"},
-        "hostname": "empty-state.calculquebec.cloud",
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 34,
         "instances": {
@@ -220,14 +202,10 @@ CLUSTERS = {
         "public_keys": ["ssh-rsa FAKE"],
         "guest_passwd": "password-123",
         "hieradata": "",
-        "status": "build_error",
-        "freeipa_passwd": None,
     },
     "missingfloatingips.c3.ca": {
-        "cloud": {"id": 2, "name": "project-bob"},
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
-        "expiration_date": "2029-01-01",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 17,
         "instances": {
@@ -253,75 +231,121 @@ CLUSTERS = {
         "public_keys": ["ssh-rsa FAKE"],
         "guest_passwd": "password-123",
         "hieradata": "",
+    },
+    "missingnodes.c3.ca": {
+        "cluster_name": "missingnodes",
+        "domain": "c3.ca",
+        "image": "CentOS-7-x64-2021-11",
+        "nb_users": 10,
+        "instances": {
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+        },
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
+        },
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+    },
+    "noowner.calculquebec.cloud": {
+        "cluster_name": "noowner",
+        "domain": "calculquebec.cloud",
+        "image": "CentOS-7-x64-2021-11",
+        "nb_users": 10,
+        "instances": {
+            "mgmt": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["mgmt", "nfs", "puppet"],
+            },
+            "login": {
+                "type": "p4-6gb",
+                "count": 1,
+                "tags": ["login", "proxy", "public"],
+            },
+            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+        },
+        "volumes": {
+            "nfs": {
+                "home": {"size": 100},
+                "project": {"size": 50},
+                "scratch": {"size": 50},
+            }
+        },
+        "public_keys": ["ssh-rsa FAKE"],
+        "guest_passwd": "password-123",
+        "hieradata": "",
+    },
+}
+
+CLUSTERS = {
+    "buildplanning.calculquebec.cloud": {
+        **CLUSTERS_CONFIG["buildplanning.calculquebec.cloud"],
+        "cloud": {"id": 1, "name": "project-alice"},
+        "expiration_date": "2029-01-01",
+        "hostname": "buildplanning.calculquebec.cloud",
+        "status": "plan_running",
+        "freeipa_passwd": None,
+    },
+    "created.calculquebec.cloud": {
+        **CLUSTERS_CONFIG["created.calculquebec.cloud"],
+        "cloud": {"id": 1, "name": "project-alice"},
+        "expiration_date": "2029-01-01",
+        "hostname": "created.calculquebec.cloud",
+        "status": "created",
+        "freeipa_passwd": None,
+    },
+    "valid1.calculquebec.cloud": {
+        **CLUSTERS_CONFIG["valid1.calculquebec.cloud"],
+        "cloud": {"id": 1, "name": "project-alice"},
+        "expiration_date": "2029-01-01",
+        "hostname": "valid1.calculquebec.cloud",
+        "status": "provisioning_success",
+        "freeipa_passwd": "FAKE",
+    },
+    "empty-state.calculquebec.cloud": {
+        **CLUSTERS_CONFIG["empty-state.calculquebec.cloud"],
+        "cloud": {"id": 2, "name": "project-bob"},
+        "hostname": "empty-state.calculquebec.cloud",
+        "expiration_date": "2029-01-01",
+        "status": "build_error",
+        "freeipa_passwd": None,
+    },
+    "missingfloatingips.c3.ca": {
+        **CLUSTERS_CONFIG["missingfloatingips.c3.ca"],
+        "cloud": {"id": 2, "name": "project-bob"},
         "hostname": "missingfloatingips.c3.ca",
+        "expiration_date": "2029-01-01",
         "status": "build_running",
         "freeipa_passwd": None,
     },
     "missingnodes.c3.ca": {
+        **CLUSTERS_CONFIG["missingnodes.c3.ca"],
         "cloud": {"id": 2, "name": "project-bob"},
-        "cluster_name": "missingnodes",
-        "domain": "c3.ca",
-        "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "hieradata": "",
         "hostname": "missingnodes.c3.ca",
+        "expiration_date": "2029-01-01",
         "status": "build_error",
         "freeipa_passwd": "FAKE",
     },
     "noowner.calculquebec.cloud": {
+        **CLUSTERS_CONFIG["noowner.calculquebec.cloud"],
         "cloud": {"id": 2, "name": "project-bob"},
-        "cluster_name": "noowner",
-        "domain": "calculquebec.cloud",
-        "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-        "hieradata": "",
         "hostname": "noowner.calculquebec.cloud",
+        "expiration_date": "2029-01-01",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
     },
@@ -477,4 +501,27 @@ PROGRESS_DATA = {
             "change": {"actions": ["create"], "progress": "queued"},
         },
     ],
+}
+
+CONFIG_DICT = {
+    "cluster_name": "foo-123",
+    "domain": "calculquebec.cloud",
+    "image": "CentOS-7-x64-2021-11",
+    "nb_users": 17,
+    "instances": {
+        "mgmt": {"type": "p4-6gb", "count": 1},
+        "login": {"type": "p4-6gb", "count": 1},
+        "node": {"type": "p2-3gb", "count": 3},
+    },
+    "volumes": {
+        "nfs": {
+            "home": {"size": 50},
+            "project": {"size": 1},
+            "scratch": {"size": 1},
+        }
+    },
+    "public_keys": [""],
+    "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
+    "jupyterhub::enable_otp_auth: false",
+    "guest_passwd": '1234\\56789\t "',
 }

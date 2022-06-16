@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from marshmallow.exceptions import ValidationError
 from mchub.exceptions.server_exception import ServerException
 from mchub.models.magic_castle.magic_castle_configuration import (
@@ -8,260 +10,44 @@ from mchub.models.magic_castle.magic_castle_configuration import (
 from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 from ...test_helpers import *  # noqa;
 
+from ...data import CONFIG_DICT, CLUSTERS_CONFIG
+
 
 def test_constructor_valid():
-    CONFIG_DICT = {
-        "cluster_name": "foo-123",
-        "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 50},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": [""],
-        "hieradata": 'profile::base::admin_email: "frederic.fortier-chouinard@calculquebec.ca"\n'
-        "jupyterhub::enable_otp_auth: false",
-        "guest_passwd": '1234\\56789\t "',
-    }
-    assert MagicCastleConfiguration("openstack", CONFIG_DICT) == CONFIG_DICT
+    config = deepcopy(CONFIG_DICT)
+    assert MagicCastleConfiguration("openstack", config) == config
 
 
 def test_constructor_empty_hieradata_valid():
-    CONFIG_DICT = {
-        "cluster_name": "foo-123",
-        "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1},
-            "login": {"type": "p4-6gb", "count": 1},
-            "node": {"type": "p2-3gb", "count": 3},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 50},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": [""],
-        "guest_passwd": '1234\\56789\t "',
-        "hieradata": "",
-    }
-    assert MagicCastleConfiguration("openstack", CONFIG_DICT) == CONFIG_DICT
+    config = deepcopy(CONFIG_DICT)
+    config["hieradata"] = ""
+    assert MagicCastleConfiguration("openstack", config) == config
 
 
 def test_constructor_invalid_cluster_name():
+    config = deepcopy(CONFIG_DICT)
+    config["cluster_name"] = "foo!"
     with pytest.raises(ValidationError):
-        MagicCastleConfiguration(
-            "openstack",
-            {
-                "cluster_name": "foo!",
-                "domain": "calculquebec.cloud",
-                "image": "CentOS-7-x64-2021-11",
-                "nb_users": 17,
-                "instances": {
-                    "mgmt": {
-                        "type": "p4-6gb",
-                        "count": 1,
-                        "tags": ["mgmt", "nfs", "puppet"],
-                    },
-                    "login": {
-                        "type": "p4-6gb",
-                        "count": 1,
-                        "tags": ["login", "proxy", "public"],
-                    },
-                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-                },
-                "volumes": {
-                    "nfs": {
-                        "home": {"size": 50},
-                        "project": {"size": 1},
-                        "scratch": {"size": 1},
-                    }
-                },
-                "public_keys": [""],
-                "hieradata": "",
-                "guest_passwd": '1234\\56789\t "',
-            },
-        )
+        MagicCastleConfiguration("openstack", config)
 
+    config = deepcopy(CONFIG_DICT)
+    config["cluster_name"] = "foo_underscore"
     with pytest.raises(ValidationError):
-        MagicCastleConfiguration(
-            "openstack",
-            {
-                "cluster_name": "foo_underscore",
-                "domain": "calculquebec.cloud",
-                "image": "CentOS-7-x64-2021-11",
-                "nb_users": 17,
-                "instances": {
-                    "mgmt": {
-                        "type": "p4-6gb",
-                        "count": 1,
-                        "tags": ["mgmt", "nfs", "puppet"],
-                    },
-                    "login": {
-                        "type": "p4-6gb",
-                        "count": 1,
-                        "tags": ["login", "proxy", "public"],
-                    },
-                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-                },
-                "volumes": {
-                    "nfs": {
-                        "home": {"size": 50},
-                        "project": {"size": 1},
-                        "scratch": {"size": 1},
-                    }
-                },
-                "public_keys": [""],
-                "hieradata": "",
-                "guest_passwd": '1234\\56789\t "',
-            },
-        )
+        MagicCastleConfiguration("openstack", config)
 
 
 def test_constructor_invalid_domain():
+    config = deepcopy(CONFIG_DICT)
+    config["domain"] = "invalid.cloud"
     with pytest.raises(ValidationError):
-        MagicCastleConfiguration(
-            "openstack",
-            {
-                "cluster_name": "foo",
-                "domain": "invalid.cloud",
-                "image": "CentOS-7-x64-2021-11",
-                "nb_users": 17,
-                "instances": {
-                    "mgmt": {
-                        "type": "p4-6gb",
-                        "count": 1,
-                        "tags": ["mgmt", "nfs", "puppet"],
-                    },
-                    "login": {
-                        "type": "p4-6gb",
-                        "count": 1,
-                        "tags": ["login", "proxy", "public"],
-                    },
-                    "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-                },
-                "volumes": {
-                    "nfs": {
-                        "home": {"size": 50},
-                        "project": {"size": 1},
-                        "scratch": {"size": 1},
-                    }
-                },
-                "public_keys": [""],
-                "hieradata": "",
-                "guest_passwd": '1234\\56789\t "',
-            },
-        )
-
-
-def test_get_from_dict_valid():
-    CONFIG_DICT = {
-        "cluster_name": "foo",
-        "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 50},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": [""],
-        "hieradata": 'profile::base::admin_email: "me@example.org"',
-        "guest_passwd": '1234\\56789\t "',
-    }
-    assert MagicCastleConfiguration("openstack", CONFIG_DICT) == CONFIG_DICT
-
-
-def test_get_from_dict_empty_hieradata_valid():
-    CONFIG_DICT = {
-        "cluster_name": "foo",
-        "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["mgmt", "nfs", "puppet"],
-            },
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 50},
-                "project": {"size": 1},
-                "scratch": {"size": 1},
-            }
-        },
-        "public_keys": [""],
-        "hieradata": "",
-        "guest_passwd": '1234\\56789\t "',
-    }
-    config = MagicCastleConfiguration("openstack", CONFIG_DICT)
-    assert config == CONFIG_DICT
+        MagicCastleConfiguration("openstack", config)
 
 
 def test_get_from_main_file_valid():
     config = MagicCastleConfiguration.get_from_main_file(
         path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
     )
-    assert config == {
-        "cluster_name": "missingnodes",
-        "domain": "c3.ca",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 10,
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "hieradata": "",
-        "public_keys": ["ssh-rsa FAKE"],
-        "guest_passwd": "password-123",
-    }
+    assert config == CLUSTERS_CONFIG["missingnodes.c3.ca"]
 
 
 def test_get_from_main_file_not_found():
@@ -302,29 +88,6 @@ def test_write():
 
 
 def test_properties():
-    config = MagicCastleConfiguration(
-        "openstack",
-        {
-            "cluster_name": "foo",
-            "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2021-11",
-            "nb_users": 17,
-            "instances": {
-                "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-                "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
-                "node": {"type": "", "count": 3, "tags": ["node"]},
-            },
-            "volumes": {
-                "nfs": {
-                    "home": {"size": 50},
-                    "project": {"size": 1},
-                    "scratch": {"size": 1},
-                }
-            },
-            "public_keys": ["ssh-rsa FAKE"],
-            "guest_passwd": '1234\\56789\t "',
-            "hieradata": "",
-        },
-    )
-    assert config.cluster_name == "foo"
+    config = MagicCastleConfiguration("openstack", CONFIG_DICT)
+    assert config.cluster_name == "foo-123"
     assert config.domain == "calculquebec.cloud"
