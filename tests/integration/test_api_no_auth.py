@@ -8,12 +8,12 @@ from getpass import getuser
 from ..data import (
     NON_EXISTING_CLUSTER_CONFIGURATION,
     EXISTING_CLUSTER_CONFIGURATION,
-    IGNORE_FIELDS,
     EXISTING_HOSTNAME,
     NON_EXISTING_HOSTNAME,
     EXISTING_CLUSTER_STATE,
     CLUSTERS,
     PROGRESS_DATA,
+    DEFAULT_TEMPLATE,
 )
 
 # GET /api/users/me
@@ -26,36 +26,24 @@ def test_get_current_user(client):
     }
 
 
+def test_get_current_user(client):
+    res = client.get(f"/api/template/default")
+    assert res.get_json() == DEFAULT_TEMPLATE
+
+
 # GET /api/magic_castle
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles")
-    results = {}
-    for result in res.get_json():
-        for field in IGNORE_FIELDS:
-            result.pop(field)
-        results[result["hostname"]] = result
-
-    clusters = [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
-        "empty-state.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-        "missingnodes.c3.ca",
-        "noowner.calculquebec.cloud",
-    ]
-    for cluster_name in clusters:
-        assert results[cluster_name] == CLUSTERS[cluster_name]
-
     assert res.status_code == 200
+    for result in res.get_json():
+        cluster_name = result["hostname"]
+        assert result == CLUSTERS[cluster_name]
 
 
 # GET /api/magic-castles/<hostname>
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}")
     state = res.get_json()
-    for field in IGNORE_FIELDS:
-        state.pop(field)
     assert state == EXISTING_CLUSTER_STATE
     assert res.status_code == 200
 

@@ -1,5 +1,28 @@
 from mchub.models.magic_castle.plan_type import PlanType
 
+DEFAULT_TEMPLATE = {
+    "cloud": {"id": None, "name": None},
+    "cluster_name": "",
+    "domain": None,
+    "image": None,
+    "nb_users": 10,
+    "instances": {
+        "mgmt": {"type": None, "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
+        "login": {"type": None, "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": None, "count": 1, "tags": ["node"]},
+    },
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "project": {"size": 100},
+            "scratch": {"size": 100},
+        }
+    },
+    "public_keys": [],
+    "guest_passwd": "",
+    "hieradata": "",
+}
+
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
     "domain": "calculquebec.cloud",
@@ -56,9 +79,8 @@ EXISTING_CLUSTER_STATE = {
     "hostname": "valid1.calculquebec.cloud",
     "freeipa_passwd": "FAKE",
     "expiration_date": "2029-01-01",
+    "age": "a moment",
 }
-
-IGNORE_FIELDS = ["age"]
 
 ALICE_HEADERS = {
     "eduPersonPrincipalName": "alice@computecanada.ca",
@@ -300,6 +322,7 @@ CLUSTERS = {
         "hostname": "buildplanning.calculquebec.cloud",
         "status": "plan_running",
         "freeipa_passwd": None,
+        "age": "a moment",
     },
     "created.calculquebec.cloud": {
         **CLUSTERS_CONFIG["created.calculquebec.cloud"],
@@ -308,6 +331,7 @@ CLUSTERS = {
         "hostname": "created.calculquebec.cloud",
         "status": "created",
         "freeipa_passwd": None,
+        "age": "a moment",
     },
     "valid1.calculquebec.cloud": {
         **CLUSTERS_CONFIG["valid1.calculquebec.cloud"],
@@ -316,6 +340,7 @@ CLUSTERS = {
         "hostname": "valid1.calculquebec.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
+        "age": "a moment",
     },
     "empty-state.calculquebec.cloud": {
         **CLUSTERS_CONFIG["empty-state.calculquebec.cloud"],
@@ -324,6 +349,7 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "status": "build_error",
         "freeipa_passwd": None,
+        "age": "a moment",
     },
     "missingfloatingips.c3.ca": {
         **CLUSTERS_CONFIG["missingfloatingips.c3.ca"],
@@ -332,6 +358,7 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "status": "build_running",
         "freeipa_passwd": None,
+        "age": "a moment",
     },
     "missingnodes.c3.ca": {
         **CLUSTERS_CONFIG["missingnodes.c3.ca"],
@@ -340,6 +367,7 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "status": "build_error",
         "freeipa_passwd": "FAKE",
+        "age": "a moment",
     },
     "noowner.calculquebec.cloud": {
         **CLUSTERS_CONFIG["noowner.calculquebec.cloud"],
@@ -348,6 +376,7 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
+        "age": "a moment",
     },
 }
 

@@ -7,7 +7,6 @@ from ..mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 from ..data import (
     NON_EXISTING_CLUSTER_CONFIGURATION,
     EXISTING_CLUSTER_CONFIGURATION,
-    IGNORE_FIELDS,
     EXISTING_HOSTNAME,
     NON_EXISTING_HOSTNAME,
     EXISTING_CLUSTER_STATE,
@@ -45,8 +44,6 @@ def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles", headers=ALICE_HEADERS)
     results = {}
     for result in res.get_json():
-        for field in IGNORE_FIELDS:
-            result.pop(field)
         results[result["hostname"]] = result
 
     clusters = [
@@ -79,8 +76,6 @@ def test_query_magic_castles_local(client):
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     state = res.get_json()
-    for field in IGNORE_FIELDS:
-        state.pop(field)
     assert state == EXISTING_CLUSTER_STATE
     assert res.status_code == 200
 

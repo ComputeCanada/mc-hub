@@ -174,7 +174,8 @@ class MagicCastle:
 
     @property
     def age(self):
-        delta = datetime.datetime.now() - self.orm.created
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        delta = now - self.orm.created
         return humanize.naturaldelta(delta)
 
     @property
@@ -212,12 +213,10 @@ class MagicCastle:
     @property
     def status(self) -> ClusterStatusCode:
         if self.orm.status == ClusterStatusCode.PROVISIONING_RUNNING:
+            now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             if ProvisioningManager.check_online(self.hostname):
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
-            elif (
-                MAX_PROVISIONING_TIME
-                < (datetime.datetime.now() - self.orm.created).total_seconds()
-            ):
+            elif MAX_PROVISIONING_TIME < (now - self.orm.created).total_seconds():
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
 
         return self.orm.status
