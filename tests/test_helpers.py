@@ -37,12 +37,11 @@ def setup_mock_clusters(cluster_names):
 
 
 def teardown_mock_clusters(cluster_names):
-    for cluster_name in cluster_names:
-        rmtree(path.join(MOCK_CLUSTERS_PATH, cluster_name))
+    rmtree(MOCK_CLUSTERS_PATH, ignore_errors=True)
 
 
-def create_test_app():
-
+@pytest.fixture
+def app(generate_test_clusters):
     app = create_app(db_path="sqlite:///:memory:")
     with app.app_context():
         db.create_all()
@@ -129,57 +128,50 @@ def create_test_app():
             )
             db.session.add(cluster)
         db.session.commit()
-    return app
+        yield app
+        db.drop_all()
 
 
 @pytest.fixture
-def client(mocker):
-    app = create_test_app()
-    app.config["TESTING"] = True
+def client(app):
     with app.test_client() as client:
         yield client
 
 
 @pytest.fixture
-def alice() -> Callable[[sqlite3.Connection], SAMLUser]:
-    app = create_test_app()
-    with app.app_context():
-        yield SAMLUser(
-            orm=UserORM.query.filter_by(
-                scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
-            ).first(),
-            edu_person_principal_name=ALICE_HEADERS["eduPersonPrincipalName"],
-            given_name=ALICE_HEADERS["givenName"],
-            surname=ALICE_HEADERS["surname"],
-            mail=ALICE_HEADERS["mail"],
-            ssh_public_key=ALICE_HEADERS["sshPublicKey"],
-        )
+def alice(app) -> Callable[[sqlite3.Connection], SAMLUser]:
+    yield SAMLUser(
+        orm=UserORM.query.filter_by(
+            scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
+        ).first(),
+        edu_person_principal_name=ALICE_HEADERS["eduPersonPrincipalName"],
+        given_name=ALICE_HEADERS["givenName"],
+        surname=ALICE_HEADERS["surname"],
+        mail=ALICE_HEADERS["mail"],
+        ssh_public_key=ALICE_HEADERS["sshPublicKey"],
+    )
 
 
 @pytest.fixture
-def bob() -> Callable[[sqlite3.Connection], SAMLUser]:
-    app = create_test_app()
-    with app.app_context():
-        yield SAMLUser(
-            orm=UserORM.query.filter_by(
-                scoped_id=BOB_HEADERS["eduPersonPrincipalName"]
-            ).first(),
-            edu_person_principal_name=BOB_HEADERS["eduPersonPrincipalName"],
-            given_name=BOB_HEADERS["givenName"],
-            surname=BOB_HEADERS["surname"],
-            mail=BOB_HEADERS["mail"],
-            ssh_public_key=BOB_HEADERS["sshPublicKey"],
-        )
+def bob(app) -> Callable[[sqlite3.Connection], SAMLUser]:
+    yield SAMLUser(
+        orm=UserORM.query.filter_by(
+            scoped_id=BOB_HEADERS["eduPersonPrincipalName"]
+        ).first(),
+        edu_person_principal_name=BOB_HEADERS["eduPersonPrincipalName"],
+        given_name=BOB_HEADERS["givenName"],
+        surname=BOB_HEADERS["surname"],
+        mail=BOB_HEADERS["mail"],
+        ssh_public_key=BOB_HEADERS["sshPublicKey"],
+    )
 
 
 @pytest.fixture
-def admin() -> Callable[[sqlite3.Connection], LocalUser]:
-    app = create_test_app()
-    with app.app_context():
-        username = getuser()
-        yield LocalUser(
-            orm=UserORM.query.filter_by(scoped_id=f"{username}@localhost").first(),
-        )
+def admin(app) -> Callable[[sqlite3.Connection], LocalUser]:
+    username = getuser()
+    yield LocalUser(
+        orm=UserORM.query.filter_by(scoped_id=f"{username}@localhost").first(),
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -193,15 +185,7 @@ def mock_clusters_path(mocker):
 
 @pytest.fixture(autouse=True)
 def generate_test_clusters():
-    mock_cluster_names = [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "empty-state.calculquebec.cloud",
-        "missingnodes.c3.ca",
-        "noowner.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-    ]
+    mock_cluster_names = list(CLUSTERS.keys())
     setup_mock_clusters(mock_cluster_names)
     yield
     teardown_mock_clusters(mock_cluster_names)
