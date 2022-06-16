@@ -8,7 +8,7 @@ from ...test_helpers import *  # noqa
 from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
-def test_query_magic_castles():
+def test_query_magic_castles(app):
     all_magic_castles = LocalUser().magic_castles
     assert [magic_castle.hostname for magic_castle in all_magic_castles] == [
         "buildplanning.calculquebec.cloud",
@@ -32,8 +32,7 @@ def test_query_magic_castles():
 
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
-def test_create_empty_magic_castle(client):
-    client.get("/api/users/me")
+def test_create_empty_magic_castle(app):
     magic_castle = MagicCastle()
     magic_castle.plan_creation(
         {
@@ -67,12 +66,10 @@ def test_create_empty_magic_castle(client):
         }
     )
 
-    data = client.get("/api/magic-castles/anon123.c3.ca/status").get_json()
-    assert data["status"] == ClusterStatusCode.CREATED
-    assert data["stateful"] == False
-    assert data["progress"] == []
+    data = MagicCastleORM.query.get(magic_castle.orm.id)
+    assert data.status == ClusterStatusCode.CREATED
 
 
-def test_query_magic_castles(client):
-    data = client.get("/api/magic-castles/valid1.calculquebec.cloud").get_json()
-    assert data["status"] == ClusterStatusCode.PROVISIONING_SUCCESS
+def test_query_magic_castles(app):
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    assert orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
