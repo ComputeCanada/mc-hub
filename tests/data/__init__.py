@@ -525,3 +525,26 @@ CONFIG_DICT = {
     "jupyterhub::enable_otp_auth: false",
     "guest_passwd": '1234\\56789\t "',
 }
+
+VALID_CLUSTER_CONFIGURATION = {
+    "cloud": {"id": 1, "name": "test-project"},
+    "cluster_name": "a-123-45",
+    "nb_users": 10,
+    "guest_passwd": "password-123",
+    "volumes": {
+        "nfs": {
+            "home": {"size": 100},
+            "scratch": {"size": 50},
+            "project": {"size": 50},
+        }
+    },
+    "instances": {
+        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "puppet", "nfs"]},
+        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
+        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
+    },
+    "domain": "calculquebec.cloud",
+    "public_keys": [""],
+    "hieradata": "",
+    "image": "CentOS-7-x64-2021-11",
+}

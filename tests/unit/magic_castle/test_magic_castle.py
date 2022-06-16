@@ -11,30 +11,7 @@ from mchub.exceptions.server_exception import PlanException
 
 from ...test_helpers import *  # noqa;
 from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
-
-
-VALID_CLUSTER_CONFIGURATION = {
-    "cloud": {"id": 1, "name": "test-project"},
-    "cluster_name": "a-123-45",
-    "nb_users": 10,
-    "guest_passwd": "password-123",
-    "volumes": {
-        "nfs": {
-            "home": {"size": 100},
-            "scratch": {"size": 50},
-            "project": {"size": 50},
-        }
-    },
-    "instances": {
-        "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "puppet", "nfs"]},
-        "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
-        "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-    },
-    "domain": "calculquebec.cloud",
-    "public_keys": [""],
-    "hieradata": "",
-    "image": "CentOS-7-x64-2021-11",
-}
+from ...data import CLUSTERS_CONFIG, VALID_CLUSTER_CONFIGURATION
 
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
@@ -143,63 +120,17 @@ def test_get_plan_type_none(app):
 
 
 def test_config_valid(app):
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    hostname = "valid1.calculquebec.cloud"
+    orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
     magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.config == {
-        "cluster_name": "valid1",
-        "nb_users": 10,
-        "guest_passwd": "password-123",
-        "volumes": {
-            "nfs": {
-                "home": {"size": 100},
-                "project": {"size": 50},
-                "scratch": {"size": 50},
-            }
-        },
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
-        },
-        "domain": "calculquebec.cloud",
-        "hieradata": "",
-        "public_keys": ["ssh-rsa FAKE"],
-        "image": "CentOS-7-x64-2021-11",
-    }
+    assert magic_castle.config == CLUSTERS_CONFIG[hostname]
 
 
 def test_config_busy(app):
-    orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
+    hostname = "missingfloatingips.c3.ca"
+    orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
     magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.config == {
-        "cluster_name": "missingfloatingips",
-        "domain": "c3.ca",
-        "image": "CentOS-7-x64-2021-11",
-        "nb_users": 17,
-        "instances": {
-            "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {
-                "type": "p4-6gb",
-                "count": 1,
-                "tags": ["login", "proxy", "public"],
-            },
-            "node": {"type": "p2-3gb", "count": 3, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 50},
-                "scratch": {"size": 1},
-                "project": {"size": 1},
-            }
-        },
-        "public_keys": ["ssh-rsa FAKE"],
-        "hieradata": "",
-        "guest_passwd": "password-123",
-    }
+    assert magic_castle.config == CLUSTERS_CONFIG[hostname]
 
 
 def test_config_empty(app):
