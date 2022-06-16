@@ -6,7 +6,11 @@ from subprocess import CalledProcessError
 from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.models.magic_castle.plan_type import PlanType
-from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
+from mchub.exceptions.invalid_usage_exception import (
+    ClusterNotFoundException,
+    ClusterExistsException,
+    PlanNotCreatedException,
+)
 from mchub.exceptions.server_exception import PlanException
 
 from ...test_helpers import *  # noqa;
@@ -18,6 +22,22 @@ from ...data import CLUSTERS_CONFIG, VALID_CLUSTER_CONFIGURATION
 def test_create_magic_castle_plan_valid(app):
     cluster = MagicCastle()
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+
+
+@pytest.mark.usefixtures("fake_successful_subprocess_run")
+def test_create_magic_castle_twice(app):
+    cluster1 = MagicCastle()
+    cluster1.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+
+    cluster2 = MagicCastle()
+    with pytest.raises(ClusterExistsException):
+        cluster2.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+
+
+def test_apply_before_planning(app):
+    cluster = MagicCastle()
+    with pytest.raises(ClusterNotFoundException):
+        cluster.apply()
 
 
 def test_create_magic_castle_init_fail(app, monkeypatch):
