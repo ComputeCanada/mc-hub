@@ -191,13 +191,13 @@ class MagicCastle:
         return self.orm.applied_config
 
     def set_configuration(self, configuration: dict):
-        changed = False
+        expect_tf_changes = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
         cloud_id = configuration.pop("cloud")["id"]
 
         if self.orm.project is None or self.orm.project.id != cloud_id:
             self.orm.project = Project.query.get(cloud_id)
-            changed = True
+            expect_tf_changes = True
         try:
             config = MagicCastleConfiguration(self.orm.project.provider, configuration)
         except ValidationError as err:
@@ -207,8 +207,8 @@ class MagicCastle:
         if self.config != config:
             self.config = config
             self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
-            changed = True
-        return changed
+            expect_tf_changes = True
+        return expect_tf_changes
 
     @property
     def status(self) -> ClusterStatusCode:
