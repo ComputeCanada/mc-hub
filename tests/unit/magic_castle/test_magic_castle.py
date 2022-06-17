@@ -36,7 +36,7 @@ def test_create_magic_castle_twice(app):
 
 def test_apply_before_planning(app):
     cluster = MagicCastle()
-    with pytest.raises(ClusterNotFoundException):
+    with pytest.raises(PlanNotCreatedException):
         cluster.apply()
 
 

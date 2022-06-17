@@ -359,12 +359,6 @@ class MagicCastle:
     def found(self):
         return self.status != ClusterStatusCode.NOT_FOUND
 
-    @property
-    def plan_created(self):
-        return self.status != ClusterStatusCode.PLAN_RUNNING and path.exists(
-            path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME)
-        )
-
     def plan_creation(self, data):
         self.set_configuration(data)
         self.plan_type = PlanType.BUILD
@@ -555,12 +549,12 @@ class MagicCastle:
         db.session.commit()
 
     def apply(self):
-        if not self.found:
-            raise ClusterNotFoundException
+        if self.plan is None or not path.exists(
+            path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME)
+        ):
+            raise PlanNotCreatedException
         if self.is_busy:
             raise BusyClusterException
-        if not self.plan_created:
-            raise PlanNotCreatedException
 
         if self.plan_type == PlanType.BUILD:
             self.status = ClusterStatusCode.BUILD_RUNNING
