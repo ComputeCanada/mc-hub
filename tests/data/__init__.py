@@ -25,7 +25,7 @@ DEFAULT_TEMPLATE = {
 
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
-    "domain": "calculquebec.cloud",
+    "domain": "magic-castle.cloud",
     "image": "CentOS-7-x64-2021-11",
     "nb_users": 10,
     "instances": {
@@ -47,7 +47,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
 
 EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "valid1",
-    "domain": "calculquebec.cloud",
+    "domain": "magic-castle.cloud",
     "image": "CentOS-7-x64-2021-11",
     "nb_users": 10,
     "instances": {
@@ -76,7 +76,7 @@ EXISTING_CLUSTER_STATE = {
     "guest_passwd": "password-123",
     "public_keys": ["ssh-rsa FAKE"],
     "status": "provisioning_success",
-    "hostname": "valid1.calculquebec.cloud",
+    "hostname": "valid1.magic-castle.cloud",
     "freeipa_passwd": "FAKE",
     "expiration_date": "2029-01-01",
     "age": "a moment",
@@ -99,19 +99,19 @@ BOB_HEADERS = {
 }
 
 PLAN_TYPE = {
-    "buildplanning.calculquebec.cloud": PlanType.BUILD,
-    "created.calculquebec.cloud": PlanType.BUILD,
-    "valid1.calculquebec.cloud": PlanType.DESTROY,
-    "empty-state.calculquebec.cloud": None,
-    "missingfloatingips.c3.ca": None,
-    "missingnodes.c3.ca": None,
-    "noowner.calculquebec.cloud": None,
+    "buildplanning.magic-castle.cloud": PlanType.BUILD,
+    "created.magic-castle.cloud": PlanType.BUILD,
+    "valid1.magic-castle.cloud": PlanType.DESTROY,
+    "empty-state.magic-castle.cloud": None,
+    "missingfloatingips.mc.ca": None,
+    "missingnodes.mc.ca": None,
+    "noowner.magic-castle.cloud": None,
 }
 
 CLUSTERS_CONFIG = {
-    "buildplanning.calculquebec.cloud": {
+    "buildplanning.magic-castle.cloud": {
         "cluster_name": "buildplanning",
-        "domain": "calculquebec.cloud",
+        "domain": "magic-castle.cloud",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 34,
         "instances": {
@@ -138,9 +138,9 @@ CLUSTERS_CONFIG = {
         "guest_passwd": "password-123",
         "hieradata": "",
     },
-    "created.calculquebec.cloud": {
+    "created.magic-castle.cloud": {
         "cluster_name": "created",
-        "domain": "calculquebec.cloud",
+        "domain": "magic-castle.cloud",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 34,
         "instances": {
@@ -167,9 +167,9 @@ CLUSTERS_CONFIG = {
         "guest_passwd": "password-123",
         "hieradata": "",
     },
-    "valid1.calculquebec.cloud": {
+    "valid1.magic-castle.cloud": {
         "cluster_name": "valid1",
-        "domain": "calculquebec.cloud",
+        "domain": "magic-castle.cloud",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 10,
         "instances": {
@@ -196,9 +196,9 @@ CLUSTERS_CONFIG = {
         "guest_passwd": "password-123",
         "hieradata": "",
     },
-    "empty-state.calculquebec.cloud": {
+    "empty-state.magic-castle.cloud": {
         "cluster_name": "empty-state",
-        "domain": "calculquebec.cloud",
+        "domain": "magic-castle.cloud",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 34,
         "instances": {
@@ -225,9 +225,9 @@ CLUSTERS_CONFIG = {
         "guest_passwd": "password-123",
         "hieradata": "",
     },
-    "missingfloatingips.c3.ca": {
+    "missingfloatingips.mc.ca": {
         "cluster_name": "missingfloatingips",
-        "domain": "c3.ca",
+        "domain": "mc.ca",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 17,
         "instances": {
@@ -254,9 +254,9 @@ CLUSTERS_CONFIG = {
         "guest_passwd": "password-123",
         "hieradata": "",
     },
-    "missingnodes.c3.ca": {
+    "missingnodes.mc.ca": {
         "cluster_name": "missingnodes",
-        "domain": "c3.ca",
+        "domain": "mc.ca",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 10,
         "instances": {
@@ -283,9 +283,9 @@ CLUSTERS_CONFIG = {
         "guest_passwd": "password-123",
         "hieradata": "",
     },
-    "noowner.calculquebec.cloud": {
+    "noowner.magic-castle.cloud": {
         "cluster_name": "noowner",
-        "domain": "calculquebec.cloud",
+        "domain": "magic-castle.cloud",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 10,
         "instances": {
@@ -315,64 +315,64 @@ CLUSTERS_CONFIG = {
 }
 
 CLUSTERS = {
-    "buildplanning.calculquebec.cloud": {
-        **CLUSTERS_CONFIG["buildplanning.calculquebec.cloud"],
+    "buildplanning.magic-castle.cloud": {
+        **CLUSTERS_CONFIG["buildplanning.magic-castle.cloud"],
         "cloud": {"id": 1, "name": "project-alice"},
         "expiration_date": "2029-01-01",
-        "hostname": "buildplanning.calculquebec.cloud",
+        "hostname": "buildplanning.magic-castle.cloud",
         "status": "plan_running",
         "freeipa_passwd": None,
         "age": "a moment",
     },
-    "created.calculquebec.cloud": {
-        **CLUSTERS_CONFIG["created.calculquebec.cloud"],
+    "created.magic-castle.cloud": {
+        **CLUSTERS_CONFIG["created.magic-castle.cloud"],
         "cloud": {"id": 1, "name": "project-alice"},
         "expiration_date": "2029-01-01",
-        "hostname": "created.calculquebec.cloud",
+        "hostname": "created.magic-castle.cloud",
         "status": "created",
         "freeipa_passwd": None,
         "age": "a moment",
     },
-    "valid1.calculquebec.cloud": {
-        **CLUSTERS_CONFIG["valid1.calculquebec.cloud"],
+    "valid1.magic-castle.cloud": {
+        **CLUSTERS_CONFIG["valid1.magic-castle.cloud"],
         "cloud": {"id": 1, "name": "project-alice"},
         "expiration_date": "2029-01-01",
-        "hostname": "valid1.calculquebec.cloud",
+        "hostname": "valid1.magic-castle.cloud",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
         "age": "a moment",
     },
-    "empty-state.calculquebec.cloud": {
-        **CLUSTERS_CONFIG["empty-state.calculquebec.cloud"],
+    "empty-state.magic-castle.cloud": {
+        **CLUSTERS_CONFIG["empty-state.magic-castle.cloud"],
         "cloud": {"id": 2, "name": "project-bob"},
-        "hostname": "empty-state.calculquebec.cloud",
+        "hostname": "empty-state.magic-castle.cloud",
         "expiration_date": "2029-01-01",
         "status": "build_error",
         "freeipa_passwd": None,
         "age": "a moment",
     },
-    "missingfloatingips.c3.ca": {
-        **CLUSTERS_CONFIG["missingfloatingips.c3.ca"],
+    "missingfloatingips.mc.ca": {
+        **CLUSTERS_CONFIG["missingfloatingips.mc.ca"],
         "cloud": {"id": 2, "name": "project-bob"},
-        "hostname": "missingfloatingips.c3.ca",
+        "hostname": "missingfloatingips.mc.ca",
         "expiration_date": "2029-01-01",
         "status": "build_running",
         "freeipa_passwd": None,
         "age": "a moment",
     },
-    "missingnodes.c3.ca": {
-        **CLUSTERS_CONFIG["missingnodes.c3.ca"],
+    "missingnodes.mc.ca": {
+        **CLUSTERS_CONFIG["missingnodes.mc.ca"],
         "cloud": {"id": 2, "name": "project-bob"},
-        "hostname": "missingnodes.c3.ca",
+        "hostname": "missingnodes.mc.ca",
         "expiration_date": "2029-01-01",
         "status": "build_error",
         "freeipa_passwd": "FAKE",
         "age": "a moment",
     },
-    "noowner.calculquebec.cloud": {
-        **CLUSTERS_CONFIG["noowner.calculquebec.cloud"],
+    "noowner.magic-castle.cloud": {
+        **CLUSTERS_CONFIG["noowner.magic-castle.cloud"],
         "cloud": {"id": 2, "name": "project-bob"},
-        "hostname": "noowner.calculquebec.cloud",
+        "hostname": "noowner.magic-castle.cloud",
         "expiration_date": "2029-01-01",
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
@@ -534,7 +534,7 @@ PROGRESS_DATA = {
 
 CONFIG_DICT = {
     "cluster_name": "foo-123",
-    "domain": "calculquebec.cloud",
+    "domain": "magic-castle.cloud",
     "image": "CentOS-7-x64-2021-11",
     "nb_users": 17,
     "instances": {
@@ -572,7 +572,7 @@ VALID_CLUSTER_CONFIGURATION = {
         "login": {"type": "p4-6gb", "count": 1, "tags": ["login", "proxy", "public"]},
         "node": {"type": "p2-3gb", "count": 1, "tags": ["node"]},
     },
-    "domain": "calculquebec.cloud",
+    "domain": "magic-castle.cloud",
     "public_keys": [""],
     "hieradata": "",
     "image": "CentOS-7-x64-2021-11",

@@ -4,7 +4,6 @@ from getpass import getuser
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..database import db
-from ..configuration import config
 from .cloud.project import Project
 
 

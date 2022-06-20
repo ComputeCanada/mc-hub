@@ -1,5 +1,6 @@
 import pytest
 
+from freezegun import freeze_time
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
 from ..test_helpers import *  # noqa;
@@ -40,6 +41,7 @@ def test_get_current_user_non_authentified(client):
 
 
 # GET /api/magic_castle
+@freeze_time("2022-01-01")
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles", headers=ALICE_HEADERS)
     results = {}
@@ -47,9 +49,9 @@ def test_get_all_magic_castle_names(client):
         results[result["hostname"]] = result
 
     clusters = [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
+        "buildplanning.magic-castle.cloud",
+        "created.magic-castle.cloud",
+        "valid1.magic-castle.cloud",
     ]
     for cluster_name in clusters:
         assert results[cluster_name] == CLUSTERS[cluster_name]
@@ -73,6 +75,7 @@ def test_query_magic_castles_local(client):
 
 
 # GET /api/magic-castles/<hostname>
+@freeze_time("2022-01-01")
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     state = res.get_json()
@@ -90,7 +93,7 @@ def test_get_state_non_existing(client):
 
 def test_get_state_not_owned(client):
     res = client.get(
-        f"/api/magic-castles/missingfloatingips.c3.ca", headers=ALICE_HEADERS
+        f"/api/magic-castles/missingfloatingips.mc.ca", headers=ALICE_HEADERS
     )
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
@@ -99,7 +102,7 @@ def test_get_state_not_owned(client):
 # GET /api/magic-castles/<hostname>/status
 def test_get_status(mocker, client):
     res = client.get(
-        f"/api/magic-castles/missingfloatingips.c3.ca/status", headers=BOB_HEADERS
+        f"/api/magic-castles/missingfloatingips.mc.ca/status", headers=BOB_HEADERS
     )
     assert res.get_json() == PROGRESS_DATA
 

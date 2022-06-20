@@ -2834,7 +2834,7 @@
                             "constant_value": "11.8"
                         },
                         "domain": {
-                            "constant_value": "c3.ca"
+                            "constant_value": "mc.ca"
                         },
                         "generate_ssh_key": {
                             "constant_value": true

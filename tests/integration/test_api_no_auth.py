@@ -5,6 +5,8 @@ from ..mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 from subprocess import getoutput
 from getpass import getuser
 
+from freezegun import freeze_time
+
 from ..data import (
     NON_EXISTING_CLUSTER_CONFIGURATION,
     EXISTING_CLUSTER_CONFIGURATION,
@@ -32,6 +34,7 @@ def test_get_current_user(client):
 
 
 # GET /api/magic_castle
+@freeze_time("2022-01-01")
 def test_get_all_magic_castle_names(client):
     res = client.get(f"/api/magic-castles")
     assert res.status_code == 200
@@ -41,6 +44,7 @@ def test_get_all_magic_castle_names(client):
 
 
 # GET /api/magic-castles/<hostname>
+@freeze_time("2022-01-01")
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}")
     state = res.get_json()
@@ -56,7 +60,7 @@ def test_get_state_non_existing(client):
 
 # GET /api/magic-castles/<hostname>/status
 def test_get_status(mocker, client):
-    res = client.get(f"/api/magic-castles/missingfloatingips.c3.ca/status")
+    res = client.get(f"/api/magic-castles/missingfloatingips.mc.ca/status")
     assert res.get_json() == PROGRESS_DATA
 
 

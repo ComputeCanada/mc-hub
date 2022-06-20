@@ -32,7 +32,7 @@ class DnsManager:
         if self.provider:
             magic_castle_configuration = {
                 "dns": {
-                    "source": MAGIC_CASTLE_SOURCE['dns'][self.module],
+                    "source": MAGIC_CASTLE_SOURCE["dns"][self.module],
                     "name": "${module.openstack.cluster_name}",
                     "domain": "${module.openstack.domain}",
                     "public_instances": "${module.openstack.public_instances}",

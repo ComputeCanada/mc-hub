@@ -22,7 +22,7 @@ const DEFAULT_USER = Object.freeze({
 const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cloud: {"id" : 1, "name": "arbutus"},
   cluster_name: "",
-  domain: "calculquebec.cloud",
+  domain: "magic-castle.cloud",
   image: "CentOS-7-x64-2021-11",
   nb_users: 10,
   instances: {
@@ -58,7 +58,7 @@ const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
   tag_types: {"mgmt": ["p4-6gb", "c2-7.5gb-31"], "login": ["p2-3gb", "p4-6gb"], "node": ["p2-3gb", "p4-6gb"]},
   "types": ["p1-1.5gb", "p2-3gb", "p4-6gb"],
   volumes: {},
-  domain: ["calculquebec.cloud", "c3.ca"]
+  domain: ["magic-castle.cloud", "mc.ca"]
 });
 
 const DEFAULT_QUOTAS = Object.freeze({
@@ -80,7 +80,7 @@ const DEFAULT_RESOURCE_DETAILS = Object.freeze({
 });
 
 
-async function getDefaultClusterEditorWrapper(existingCluster=true, hostname="test1.calculquebec.cloud") {
+async function getDefaultClusterEditorWrapper(existingCluster=true, hostname="test1.magic-castle.cloud") {
   let wrapper = mount(ClusterEditor, {
     localVue,
     router,

@@ -86,30 +86,30 @@ def test_create_magic_castle_plan_export_fail(app, monkeypatch):
 
 
 def test_get_status_valid(app):
-    orm = MagicCastleORM.query.filter_by(hostname="created.calculquebec.cloud").first()
+    orm = MagicCastleORM.query.filter_by(hostname="created.magic-castle.cloud").first()
     created = MagicCastle(orm=orm)
     assert created.status == ClusterStatusCode.CREATED
 
     orm = MagicCastleORM.query.filter_by(
-        hostname="buildplanning.calculquebec.cloud"
+        hostname="buildplanning.magic-castle.cloud"
     ).first()
     buildplanning = MagicCastle(orm=orm)
     assert buildplanning.status == ClusterStatusCode.PLAN_RUNNING
 
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
     valid1 = MagicCastle(orm=orm)
     assert valid1.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
 def test_get_status_errors(app):
 
-    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.c3.ca").first()
+    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.mc.ca").first()
     missingnodes = MagicCastle(orm=orm)
     assert missingnodes.status == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_not_found(app):
-    orm = MagicCastleORM.query.filter_by(hostname="nonexisting.c3.ca").first()
+    orm = MagicCastleORM.query.filter_by(hostname="nonexisting.mc.ca").first()
     magic_castle1 = MagicCastle(orm=orm)
     assert magic_castle1.status == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
@@ -118,36 +118,36 @@ def test_get_status_not_found(app):
 
 def test_get_plan_type_build(app):
     orm = MagicCastleORM.query.filter_by(
-        hostname="buildplanning.calculquebec.cloud"
+        hostname="buildplanning.magic-castle.cloud"
     ).first()
     build_planning = MagicCastle(orm=orm)
     assert build_planning.plan_type == PlanType.BUILD
-    orm = MagicCastleORM.query.filter_by(hostname="created.calculquebec.cloud").first()
+    orm = MagicCastleORM.query.filter_by(hostname="created.magic-castle.cloud").first()
     created = MagicCastle(orm=orm)
     assert created.plan_type == PlanType.BUILD
 
 
 def test_get_plan_type_destroy(app):
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.DESTROY
 
 
 def test_get_plan_type_none(app):
-    orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.c3.ca").first()
+    orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.mc.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.NONE
 
 
 def test_config_valid(app):
-    hostname = "valid1.calculquebec.cloud"
+    hostname = "valid1.magic-castle.cloud"
     orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == CLUSTERS_CONFIG[hostname]
 
 
 def test_config_busy(app):
-    hostname = "missingfloatingips.c3.ca"
+    hostname = "missingfloatingips.mc.ca"
     orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == CLUSTERS_CONFIG[hostname]
@@ -183,7 +183,7 @@ def test_allocated_resources_valid(app):
     3 volumes
     200 GiB of volume storage
     """
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 3,
@@ -206,7 +206,7 @@ def test_allocated_resources_missing_nodes(app):
     0 + 0 + 0 [root disks]
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
     """
-    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.c3.ca").first()
+    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.mc.ca").first()
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,

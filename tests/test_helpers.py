@@ -2,6 +2,7 @@ import json
 import pytest
 import sqlite3
 
+from datetime import datetime
 from getpass import getuser
 from pathlib import Path
 from os import path
@@ -24,6 +25,12 @@ from unittest.mock import Mock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 from .data import CLUSTERS, PLAN_TYPE, BOB_HEADERS, ALICE_HEADERS
 
+from .mocks.configuration.config_mock import (
+    config_auth_none_mock,
+    # config_auth_saml_mock,
+)  # noqa;
+
+
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
 
@@ -41,7 +48,7 @@ def teardown_mock_clusters(cluster_names):
 
 
 @pytest.fixture
-def app(generate_test_clusters):
+def app(config_auth_none_mock, generate_test_clusters):
     app = create_app(db_path="sqlite:///:memory:")
     with app.app_context():
         db.create_all()
@@ -125,6 +132,7 @@ def app(generate_test_clusters):
                 tf_state=tf_state,
                 plan_type=PLAN_TYPE[key],
                 plan=plan,
+                created=datetime(2022, 1, 1),
             )
             db.session.add(cluster)
         db.session.commit()

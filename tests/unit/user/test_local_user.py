@@ -11,13 +11,13 @@ from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 def test_query_magic_castles(app):
     all_magic_castles = LocalUser().magic_castles
     assert [magic_castle.hostname for magic_castle in all_magic_castles] == [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "empty-state.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-        "missingnodes.c3.ca",
-        "noowner.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
+        "buildplanning.magic-castle.cloud",
+        "created.magic-castle.cloud",
+        "empty-state.magic-castle.cloud",
+        "missingfloatingips.mc.ca",
+        "missingnodes.mc.ca",
+        "noowner.magic-castle.cloud",
+        "valid1.magic-castle.cloud",
     ]
     assert [magic_castle.status for magic_castle in all_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
@@ -38,7 +38,7 @@ def test_create_empty_magic_castle(app):
         {
             "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": "anon123",
-            "domain": "c3.ca",
+            "domain": "mc.ca",
             "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
@@ -71,5 +71,5 @@ def test_create_empty_magic_castle(app):
 
 
 def test_query_magic_castles(app):
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.calculquebec.cloud").first()
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
     assert orm.status == ClusterStatusCode.PROVISIONING_SUCCESS

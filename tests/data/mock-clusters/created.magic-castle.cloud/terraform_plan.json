@@ -3400,7 +3400,7 @@
                             "constant_value": "11.8"
                         },
                         "domain": {
-                            "constant_value": "calculquebec.cloud"
+                            "constant_value": "magic-castle.cloud"
                         },
                         "generate_ssh_key": {
                             "constant_value": true

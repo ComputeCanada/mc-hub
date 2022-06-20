@@ -5,6 +5,7 @@ from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
 
 from ...test_helpers import *  # noqa
+
 from ...mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
@@ -12,9 +13,9 @@ def test_query_magic_castles_alice(alice):
     # Alice
     alice_magic_castles = alice.magic_castles
     assert [magic_castle.hostname for magic_castle in alice_magic_castles] == [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
+        "buildplanning.magic-castle.cloud",
+        "created.magic-castle.cloud",
+        "valid1.magic-castle.cloud",
     ]
     assert [magic_castle.status for magic_castle in alice_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
@@ -27,10 +28,10 @@ def test_query_magic_castles_bob(bob):
     # Bob
     bob_magic_castles = bob.magic_castles
     assert [magic_castle.hostname for magic_castle in bob_magic_castles] == [
-        "empty-state.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-        "missingnodes.c3.ca",
-        "noowner.calculquebec.cloud",
+        "empty-state.magic-castle.cloud",
+        "missingfloatingips.mc.ca",
+        "missingnodes.mc.ca",
+        "noowner.magic-castle.cloud",
     ]
     assert [magic_castle.status for magic_castle in bob_magic_castles] == [
         ClusterStatusCode.BUILD_ERROR,
@@ -44,13 +45,13 @@ def test_query_magic_castles_admin(admin):
     # Admin
     admin_magic_castles = admin.magic_castles
     assert [magic_castle.hostname for magic_castle in admin_magic_castles] == [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
-        "empty-state.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-        "missingnodes.c3.ca",
-        "noowner.calculquebec.cloud",
+        "buildplanning.magic-castle.cloud",
+        "created.magic-castle.cloud",
+        "valid1.magic-castle.cloud",
+        "empty-state.magic-castle.cloud",
+        "missingfloatingips.mc.ca",
+        "missingnodes.mc.ca",
+        "noowner.magic-castle.cloud",
     ]
     assert [magic_castle.status for magic_castle in admin_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
@@ -70,7 +71,7 @@ def test_create_empty_magic_castle(alice):
         {
             "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": "alice123",
-            "domain": "c3.ca",
+            "domain": "mc.ca",
             "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
@@ -98,6 +99,6 @@ def test_create_empty_magic_castle(alice):
         }
     )
     magic_castle2 = alice.magic_castles[-1]
-    assert magic_castle2.hostname == "alice123.c3.ca"
+    assert magic_castle2.hostname == "alice123.mc.ca"
     assert magic_castle2.status == ClusterStatusCode.CREATED
     assert magic_castle2.plan_type == PlanType.BUILD

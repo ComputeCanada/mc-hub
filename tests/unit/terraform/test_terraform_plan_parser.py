@@ -36,7 +36,7 @@ def read_terraform_apply_log(hostname):
 
 @pytest.fixture
 def missing_floating_ips_initial_plan():
-    return load_plan("missingfloatingips.c3.ca")
+    return load_plan("missingfloatingips.mc.ca")
 
 
 def test_get_resources_changes():
@@ -76,6 +76,6 @@ def test_get_resources_changes():
 def test_get_done_changes(missing_floating_ips_initial_plan):
     progress = TerraformPlanParser.get_done_changes(
         missing_floating_ips_initial_plan,
-        read_terraform_apply_log("missingfloatingips.c3.ca"),
+        read_terraform_apply_log("missingfloatingips.mc.ca"),
     )
     assert progress == PROGRESS_DATA["progress"]

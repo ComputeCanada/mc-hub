@@ -45,9 +45,9 @@ def test_constructor_invalid_domain():
 
 def test_get_from_main_file_valid():
     config = MagicCastleConfiguration.get_from_main_file(
-        path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
+        path.join(MOCK_CLUSTERS_PATH, "missingnodes.mc.ca", "main.tf.json")
     )
-    assert config == CLUSTERS_CONFIG["missingnodes.c3.ca"]
+    assert config == CLUSTERS_CONFIG["missingnodes.mc.ca"]
 
 
 def test_get_from_main_file_not_found():
@@ -60,7 +60,7 @@ def test_get_from_main_file_not_found():
 def test_write():
     CONFIG_DICT = {
         "cluster_name": "missingnodes",
-        "domain": "c3.ca",
+        "domain": "mc.ca",
         "image": "CentOS-7-x64-2021-11",
         "nb_users": 30,
         "instances": {
@@ -81,7 +81,7 @@ def test_write():
     }
 
     modified_config = MagicCastleConfiguration("openstack", CONFIG_DICT)
-    path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
+    path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.mc.ca", "main.tf.json")
     modified_config.write(path_)
     saved_config = MagicCastleConfiguration.get_from_main_file(path_)
     assert saved_config == CONFIG_DICT
@@ -90,4 +90,4 @@ def test_write():
 def test_properties():
     config = MagicCastleConfiguration("openstack", CONFIG_DICT)
     assert config.cluster_name == "foo-123"
-    assert config.domain == "calculquebec.cloud"
+    assert config.domain == "magic-castle.cloud"

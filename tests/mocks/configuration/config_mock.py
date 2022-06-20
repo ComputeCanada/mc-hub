@@ -16,10 +16,12 @@ from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 
 BASE_CONFIGURATION = {
+    "token": "abcdefghijklmnopqrstuv123q123561",
     "admins": ["the-admin@computecanada.ca"],
+    "cors_allowed_origins": ["https://hc-hub.example.com"],
     "domains": {
-        "calculquebec.cloud": {"dns_provider": "cf1"},
-        "c3.ca": {"dns_provider": "gcloud1"},
+        "magic-castle.cloud": {"dns_provider": "cf1"},
+        "mc.ca": {"dns_provider": "gcloud1"},
     },
     "dns_providers": {
         "cf1": {
@@ -52,7 +54,7 @@ def config_auth_saml_mock(mocker):
     configuration = BASE_CONFIGURATION
     configuration["auth_type"] = [AuthType.SAML]
     mocker.patch(
-        "mchub.models.user.config",
+        "mchub.configuration.config",
         new=configuration,
     )
     mocker.patch(
@@ -70,7 +72,7 @@ def config_auth_none_mock(mocker):
     configuration = BASE_CONFIGURATION
     configuration["auth_type"] = [AuthType.NONE]
     mocker.patch(
-        "mchub.models.user.config",
+        "mchub.configuration.config",
         new=configuration,
     )
     mocker.patch(

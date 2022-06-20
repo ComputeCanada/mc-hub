@@ -24,17 +24,17 @@ def load_state(hostname):
 
 @pytest.fixture
 def valid_state():
-    return load_state("valid1.calculquebec.cloud")
+    return load_state("valid1.magic-castle.cloud")
 
 
 @pytest.fixture
 def empty_state():
-    return load_state("empty-state.calculquebec.cloud")
+    return load_state("empty-state.magic-castle.cloud")
 
 
 @pytest.fixture
 def missing_nodes_state():
-    return load_state("missingnodes.c3.ca")
+    return load_state("missingnodes.mc.ca")
 
 
 def test_instance_count_valid(valid_state):
