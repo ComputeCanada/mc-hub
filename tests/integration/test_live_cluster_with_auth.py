@@ -7,9 +7,6 @@ from time import time, sleep
 from os import path, remove, rmdir
 from random import randrange
 
-from mchub.models.cloud.project import Project
-from mchub.models.user import UserORM
-
 """
 This implementation test suite does not use any mocking. Instead, it creates, modifies and destroys a live cluster
 using the OpenStack OS_* environment variables, configuration.json and gcloud-key.json provided to the container.

@@ -1,12 +1,15 @@
-import pytest
-
 import tests
 import json
 
+import pytest
+
+from os import path
+
 from mchub.models.terraform.terraform_plan_parser import TerraformPlanParser
 
-from ...test_helpers import *  # noqa
-from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ...mocks.configuration.config_mock import (
+    config_auth_none_mock as config_mock,
+)  # noqa;
 from ...data import PROGRESS_DATA
 
 

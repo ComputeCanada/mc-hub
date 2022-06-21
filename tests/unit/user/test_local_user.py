@@ -4,8 +4,15 @@ from mchub.models.magic_castle.magic_castle import MagicCastle
 from mchub.models.user import LocalUser
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
-from ...test_helpers import *  # noqa
-from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ...test_helpers import (
+    app,
+    generate_test_clusters,
+    fake_successful_subprocess_run,
+    mock_clusters_path,
+)  # noqa
+from ...mocks.configuration.config_mock import (
+    config_auth_none_mock as config_mock,
+)  # noqa;
 
 
 def test_query_magic_castles(app):
@@ -33,6 +40,8 @@ def test_query_magic_castles(app):
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(app):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+
     magic_castle = MagicCastle()
     magic_castle.plan_creation(
         {
@@ -71,5 +80,7 @@ def test_create_empty_magic_castle(app):
 
 
 def test_query_magic_castles(app):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+
     orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
     assert orm.status == ClusterStatusCode.PROVISIONING_SUCCESS

@@ -3,8 +3,15 @@ import pytest
 from freezegun import freeze_time
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
-from ..test_helpers import *  # noqa;
-from ..mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ..test_helpers import (
+    client,
+    app,
+    generate_test_clusters,
+    mock_clusters_path,
+)  # noqa;
+from ..mocks.configuration.config_mock import (
+    config_auth_saml_mock as config_mock,
+)  # noqa;
 from ..data import (
     NON_EXISTING_CLUSTER_CONFIGURATION,
     EXISTING_CLUSTER_CONFIGURATION,
@@ -108,6 +115,9 @@ def test_get_status(mocker, client):
 
 
 def test_get_status_code(client):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
     res = client.get(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}/status", headers=ALICE_HEADERS
     )
@@ -156,6 +166,9 @@ def test_get_status_code(client):
 
 # DELETE /api/magic-castles/<hostname>
 def test_delete_invalid_status(client):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
     res = client.delete(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}", headers=ALICE_HEADERS
     )
@@ -183,6 +196,9 @@ def test_delete_invalid_status(client):
 
 # PUT /api/magic-castles/<hostname>
 def test_modify_invalid_status(client):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
     res = client.put(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,

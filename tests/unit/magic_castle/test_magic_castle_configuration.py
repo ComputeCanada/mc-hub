@@ -1,14 +1,19 @@
+import pytest
+
 from copy import deepcopy
+from os import path
 
 from marshmallow.exceptions import ValidationError
-from mchub.exceptions.server_exception import ServerException
 from mchub.models.magic_castle.magic_castle_configuration import (
     MagicCastleConfiguration,
 )
 
-
-from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
-from ...test_helpers import *  # noqa;
+from ...test_helpers import (
+    generate_test_clusters,
+    mock_clusters_path,
+    MOCK_CLUSTERS_PATH,
+)
+from ...mocks.configuration.config_mock import config_auth_none_mock as config_mock
 
 from ...data import CONFIG_DICT, CLUSTERS_CONFIG
 

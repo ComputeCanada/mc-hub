@@ -1,7 +1,10 @@
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
-from ..test_helpers import *
-from ..mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ..test_helpers import client, app, generate_test_clusters, mock_clusters_path
+from ..mocks import mock_load_config
+from ..mocks.configuration.config_mock import (
+    config_auth_none_mock as config_mock,
+)  # noqa;
 from subprocess import getoutput
 from getpass import getuser
 
@@ -65,6 +68,9 @@ def test_get_status(mocker, client):
 
 
 def test_get_status_code(client):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
     res = client.get(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "not_found"
 
@@ -101,6 +107,9 @@ def test_get_status_code(client):
 
 # DELETE /api/magic-castles/<hostname>
 def test_delete_invalid_status(client):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
     res = client.delete(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}")
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
@@ -122,6 +131,9 @@ def test_delete_invalid_status(client):
 
 # PUT /api/magic-castles/<hostname>
 def test_modify_invalid_status(client):
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
     res = client.put(
         f"/api/magic-castles/{NON_EXISTING_HOSTNAME}",
         json=NON_EXISTING_CLUSTER_CONFIGURATION,

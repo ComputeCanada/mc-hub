@@ -4,9 +4,20 @@ from mchub.models.magic_castle.magic_castle import MagicCastle
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
 
-from ...test_helpers import *  # noqa
+from ...test_helpers import (
+    app,
+    client,
+    generate_test_clusters,
+    mock_clusters_path,
+    alice,
+    bob,
+    admin,
+    fake_successful_subprocess_run,
+)  # noqa
 
-from ...mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ...mocks.configuration.config_mock import (
+    config_auth_saml_mock as config_mock,
+)  # noqa;
 
 
 def test_query_magic_castles_alice(alice):
@@ -66,6 +77,8 @@ def test_query_magic_castles_admin(admin):
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(alice):
+    from mchub.models.magic_castle.plan_type import PlanType
+
     magic_castle = MagicCastle()
     magic_castle.plan_creation(
         {

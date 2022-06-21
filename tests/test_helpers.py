@@ -9,27 +9,9 @@ from os import path
 from shutil import rmtree, copytree
 from typing import Callable
 
-from mchub import create_app
-from mchub.database import db
-from mchub.models.user import LocalUser, SAMLUser, UserORM
-from mchub.models.magic_castle.magic_castle_configuration import (
-    MagicCastleConfiguration,
-)
-from mchub.models.cloud.project import Project
-from mchub.models.magic_castle.magic_castle import MagicCastleORM
-from mchub.models.terraform.terraform_state import TerraformState
-from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
-from mchub.models.magic_castle.plan_type import PlanType
-
 from unittest.mock import Mock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
 from .data import CLUSTERS, PLAN_TYPE, BOB_HEADERS, ALICE_HEADERS
-
-from .mocks.configuration.config_mock import (
-    config_auth_none_mock,
-    # config_auth_saml_mock,
-)  # noqa;
-
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -48,7 +30,17 @@ def teardown_mock_clusters(cluster_names):
 
 
 @pytest.fixture
-def app(config_auth_none_mock, generate_test_clusters):
+def app(config_mock, generate_test_clusters):
+    from mchub import create_app
+    from mchub.database import db
+    from mchub.models.cloud.project import Project
+    from mchub.models.terraform.terraform_state import TerraformState
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.models.user import UserORM
+
     app = create_app(db_path="sqlite:///:memory:")
     with app.app_context():
         db.create_all()
@@ -147,7 +139,9 @@ def client(app):
 
 
 @pytest.fixture
-def alice(app) -> Callable[[sqlite3.Connection], SAMLUser]:
+def alice(app):
+    from mchub.models.user import SAMLUser, UserORM
+
     yield SAMLUser(
         orm=UserORM.query.filter_by(
             scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
@@ -161,7 +155,9 @@ def alice(app) -> Callable[[sqlite3.Connection], SAMLUser]:
 
 
 @pytest.fixture
-def bob(app) -> Callable[[sqlite3.Connection], SAMLUser]:
+def bob(app):
+    from mchub.models.user import SAMLUser, UserORM
+
     yield SAMLUser(
         orm=UserORM.query.filter_by(
             scoped_id=BOB_HEADERS["eduPersonPrincipalName"]
@@ -175,8 +171,11 @@ def bob(app) -> Callable[[sqlite3.Connection], SAMLUser]:
 
 
 @pytest.fixture
-def admin(app) -> Callable[[sqlite3.Connection], LocalUser]:
+def admin(app):
+    from mchub.models.user import LocalUser, UserORM
+
     username = getuser()
+
     yield LocalUser(
         orm=UserORM.query.filter_by(scoped_id=f"{username}@localhost").first(),
     )

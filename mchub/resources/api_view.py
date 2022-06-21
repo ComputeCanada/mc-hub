@@ -15,7 +15,7 @@ from ..exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
 )
-from ..exceptions.server_exception import *
+from ..exceptions.server_exception import ServerException
 
 
 AUTH_HEADER_PAT = re.compile(r"token\s+(.+)", re.IGNORECASE)
