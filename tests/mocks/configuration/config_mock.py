@@ -55,16 +55,8 @@ def config_auth_saml_mock(mocker):
     configuration = BASE_CONFIGURATION
     configuration["auth_type"] = [AuthType.SAML]
     mocker.patch(
-        "mchub.configuration.config",
-        new=configuration,
-    )
-    mocker.patch(
-        "mchub.models.cloud.dns_manager.config",
-        new=configuration,
-    )
-    mocker.patch(
-        "mchub.resources.api_view.config",
-        new=configuration,
+        "mchub.configuration.get_config",
+        return_value=configuration,
     )
 
 
@@ -75,14 +67,6 @@ def config_auth_none_mock(mocker):
     configuration = BASE_CONFIGURATION
     configuration["auth_type"] = [AuthType.NONE]
     mocker.patch(
-        "mchub.configuration.config",
-        new=configuration,
-    )
-    mocker.patch(
-        "mchub.models.cloud.dns_manager.config",
-        new=configuration,
-    )
-    mocker.patch(
-        "mchub.resources.api_view.config",
-        new=configuration,
+        "mchub.configuration.get_config",
+        return_value=configuration,
     )

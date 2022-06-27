@@ -4,9 +4,6 @@ from copy import deepcopy
 from os import path
 
 from marshmallow.exceptions import ValidationError
-from mchub.models.magic_castle.magic_castle_configuration import (
-    MagicCastleConfiguration,
-)
 
 from ...test_helpers import (
     generate_test_clusters,
@@ -19,17 +16,29 @@ from ...data import CONFIG_DICT, CLUSTERS_CONFIG
 
 
 def test_constructor_valid():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     config = deepcopy(CONFIG_DICT)
     assert MagicCastleConfiguration("openstack", config) == config
 
 
 def test_constructor_empty_hieradata_valid():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     config = deepcopy(CONFIG_DICT)
     config["hieradata"] = ""
     assert MagicCastleConfiguration("openstack", config) == config
 
 
 def test_constructor_invalid_cluster_name():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     config = deepcopy(CONFIG_DICT)
     config["cluster_name"] = "foo!"
     with pytest.raises(ValidationError):
@@ -42,6 +51,10 @@ def test_constructor_invalid_cluster_name():
 
 
 def test_constructor_invalid_domain():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     config = deepcopy(CONFIG_DICT)
     config["domain"] = "invalid.cloud"
     with pytest.raises(ValidationError):
@@ -49,6 +62,10 @@ def test_constructor_invalid_domain():
 
 
 def test_get_from_main_file_valid():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     config = MagicCastleConfiguration.get_from_main_file(
         path.join(MOCK_CLUSTERS_PATH, "missingnodes.mc.ca", "main.tf.json")
     )
@@ -56,6 +73,10 @@ def test_get_from_main_file_valid():
 
 
 def test_get_from_main_file_not_found():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     with pytest.raises(FileNotFoundError):
         MagicCastleConfiguration.get_from_main_file("empty")
     with pytest.raises(FileNotFoundError):
@@ -63,6 +84,10 @@ def test_get_from_main_file_not_found():
 
 
 def test_write():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     CONFIG_DICT = {
         "cluster_name": "missingnodes",
         "domain": "mc.ca",
@@ -93,6 +118,10 @@ def test_write():
 
 
 def test_properties():
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
     config = MagicCastleConfiguration("openstack", CONFIG_DICT)
     assert config.cluster_name == "foo-123"
     assert config.domain == "magic-castle.cloud"

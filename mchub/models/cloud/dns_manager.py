@@ -1,5 +1,5 @@
-from ... configuration import config
-from ... configuration.magic_castle import MAGIC_CASTLE_SOURCE, MAGIC_CASTLE_ACME_KEY_PEM
+from ...configuration import get_config
+from ...configuration.magic_castle import MAGIC_CASTLE_SOURCE, MAGIC_CASTLE_ACME_KEY_PEM
 
 
 class DnsManager:
@@ -12,19 +12,19 @@ class DnsManager:
 
     def __init__(self, domain):
         self.domain = domain
-        self.provider = config["domains"][domain].get("dns_provider")
-        self.module = config["dns_providers"][self.provider]["module"]
+        self.provider = get_config()["domains"][domain].get("dns_provider")
+        self.module = get_config()["dns_providers"][self.provider]["module"]
 
     @staticmethod
     def get_available_domains():
-        return list(config["domains"].keys())
+        return list(get_config()["domains"].keys())
 
     def get_dns_provider(self):
         return self.provider
 
     def get_environment_variables(self):
         if self.provider:
-            return config["dns_providers"][self.provider]["environment_variables"]
+            return get_config()["dns_providers"][self.provider]["environment_variables"]
         else:
             return {}
 
@@ -41,12 +41,14 @@ class DnsManager:
                 }
             }
             magic_castle_configuration["dns"].update(
-                config["dns_providers"][self.provider][
+                get_config()["dns_providers"][self.provider][
                     "magic_castle_configuration"
                 ]
             )
             if MAGIC_CASTLE_ACME_KEY_PEM != "":
-                magic_castle_configuration["dns"]["acme_key_pem"] = f"${{file(\"{MAGIC_CASTLE_ACME_KEY_PEM}\")}}"
+                magic_castle_configuration["dns"][
+                    "acme_key_pem"
+                ] = f'${{file("{MAGIC_CASTLE_ACME_KEY_PEM}")}}'
 
             return magic_castle_configuration
         else:

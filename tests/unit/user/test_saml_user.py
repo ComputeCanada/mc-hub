@@ -1,9 +1,5 @@
 import pytest
 
-from mchub.models.magic_castle.magic_castle import MagicCastle
-from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
-from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
-
 from ...test_helpers import (
     app,
     client,
@@ -21,6 +17,8 @@ from ...mocks.configuration.config_mock import (
 
 
 def test_query_magic_castles_alice(alice):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+
     # Alice
     alice_magic_castles = alice.magic_castles
     assert [magic_castle.hostname for magic_castle in alice_magic_castles] == [
@@ -36,6 +34,8 @@ def test_query_magic_castles_alice(alice):
 
 
 def test_query_magic_castles_bob(bob):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+
     # Bob
     bob_magic_castles = bob.magic_castles
     assert [magic_castle.hostname for magic_castle in bob_magic_castles] == [
@@ -53,6 +53,8 @@ def test_query_magic_castles_bob(bob):
 
 
 def test_query_magic_castles_admin(admin):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+
     # Admin
     admin_magic_castles = admin.magic_castles
     assert [magic_castle.hostname for magic_castle in admin_magic_castles] == [
@@ -77,6 +79,8 @@ def test_query_magic_castles_admin(admin):
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_empty_magic_castle(alice):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.plan_type import PlanType
 
     magic_castle = MagicCastle()

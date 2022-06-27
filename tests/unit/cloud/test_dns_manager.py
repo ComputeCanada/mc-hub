@@ -1,19 +1,20 @@
 import pytest
 
-from mchub.configuration.magic_castle import MAGIC_CASTLE_SOURCE
-from mchub.models.cloud.dns_manager import DnsManager
-
 from ...mocks.configuration.config_mock import (
     config_auth_none_mock as config_mock,
 )
 
 
 def test_initialize_disallowed_domain():
+    from mchub.models.cloud.dns_manager import DnsManager
+
     with pytest.raises(KeyError):
         DnsManager("invalid.com")
 
 
 def test_get_available_domains():
+    from mchub.models.cloud.dns_manager import DnsManager
+
     assert [
         "magic-castle.cloud",
         "mc.ca",
@@ -21,6 +22,8 @@ def test_get_available_domains():
 
 
 def test_get_environment_variables_with_dns_provider():
+    from mchub.models.cloud.dns_manager import DnsManager
+
     assert DnsManager("magic-castle.cloud").get_environment_variables() == {
         "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
         "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
@@ -33,6 +36,9 @@ def test_get_environment_variables_with_dns_provider():
 
 
 def test_get_magic_castle_configuration_with_dns_provider():
+    from mchub.configuration.magic_castle import MAGIC_CASTLE_SOURCE
+    from mchub.models.cloud.dns_manager import DnsManager
+
     assert DnsManager("magic-castle.cloud").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",

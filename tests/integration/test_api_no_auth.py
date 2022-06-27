@@ -1,7 +1,4 @@
-from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
-
 from ..test_helpers import client, app, generate_test_clusters, mock_clusters_path
-from ..mocks import mock_load_config
 from ..mocks.configuration.config_mock import (
     config_auth_none_mock as config_mock,
 )  # noqa;
@@ -68,6 +65,7 @@ def test_get_status(mocker, client):
 
 
 def test_get_status_code(client):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
     from mchub.database import db
 
@@ -107,6 +105,7 @@ def test_get_status_code(client):
 
 # DELETE /api/magic-castles/<hostname>
 def test_delete_invalid_status(client):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
     from mchub.database import db
 
@@ -131,6 +130,7 @@ def test_delete_invalid_status(client):
 
 # PUT /api/magic-castles/<hostname>
 def test_modify_invalid_status(client):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
     from mchub.database import db
 

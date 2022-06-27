@@ -38,7 +38,7 @@ def load_config():
     try:
         with open(config_path) as configuration_file:
             config = json.load(configuration_file)
-    except FileNotFoundError:
+    except FileNotFoundError as error:
         logging.error(
             f"Could not find {CONFIGURATION_FILENAME} in {CONFIGURATION_FILE_PATH}"
         )
@@ -54,7 +54,11 @@ def load_config():
     return config
 
 
-try:
-    config = load_config()
-except:
-    config = {}
+_config = None
+
+
+def get_config():
+    global _config
+    if _config is None:
+        _config = load_config()
+    return _config
