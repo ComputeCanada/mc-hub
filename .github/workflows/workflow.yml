@@ -15,7 +15,7 @@ env:
 
 jobs:
   frontend:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Test frontend
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
       - name: Run frontend unit tests
         run: (cd frontend && npm run test:unit)
   backend:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Test backend
     steps:
       - uses: actions/checkout@v2
@@ -66,7 +66,7 @@ jobs:
       #   if: ${{ failure() }}
       #   uses: mxschmitt/action-tmate@v3
   container:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Build container
     steps:
       - uses: actions/checkout@v2
