@@ -21,7 +21,7 @@ RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MA
     mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
     chown -R root:root ${MAGIC_CASTLE_PATH}
 
-ENV TERRAFORM_VERSION 1.1.9
+ENV TERRAFORM_VERSION 1.3.2
 RUN TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_$(dpkg --print-architecture).zip" && \
     curl -L ${TERRAFORM_URL} -o terraform.zip && \
     unzip terraform.zip -d /usr/local/bin
