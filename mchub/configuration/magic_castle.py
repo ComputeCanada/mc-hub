@@ -9,9 +9,9 @@ STORAGE_SPACES = ["home", "project", "scratch"]
 MAGIC_CASTLE_PUPPET_CONFIGURATION_URL = (
     "https://github.com/ComputeCanada/puppet-magic_castle.git"
 )
-TERRAFORM_REQUIRED_VERSION = ">= 1.1.0"
+TERRAFORM_REQUIRED_VERSION = ">= 1.2.1"
 
-MAGIC_CASTLE_VERSION = environ.get("MAGIC_CASTLE_VERSION", "11.9.1")
+MAGIC_CASTLE_VERSION = environ.get("MAGIC_CASTLE_VERSION", "11.9.5")
 MAGIC_CASTLE_PATH = environ.get("MAGIC_CASTLE_PATH", "git")
 if MAGIC_CASTLE_PATH == "git":
     MAGIC_CASTLE_SOURCE = {
