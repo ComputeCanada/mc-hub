@@ -21,6 +21,7 @@ Flask-Cors = "^3.0.10"
 pytest = "^7.0.1"
 pytest-flask = "^1.2.0"
 pytest-mock = "^3.7.0"
+freezegun = "^1.2.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

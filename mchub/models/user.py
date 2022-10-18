@@ -4,7 +4,6 @@ from getpass import getuser
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..database import db
-from ..configuration import config
 from .cloud.project import Project
 
 
@@ -24,6 +23,7 @@ class UserORM(db.Model):
         secondary=projects,
         lazy="subquery",
         backref=db.backref("members", lazy=True),
+        order_by="Project.id",
     )
 
 

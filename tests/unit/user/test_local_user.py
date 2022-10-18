@@ -1,24 +1,29 @@
 import pytest
 
-from mchub.models.magic_castle.magic_castle import MagicCastle
-from mchub.models.user import LocalUser
-from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+from ...test_helpers import (
+    app,
+    generate_test_clusters,
+    fake_successful_subprocess_run,
+    mock_clusters_path,
+)  # noqa
+from ...mocks.configuration.config_mock import (
+    config_auth_none_mock as config_mock,
+)  # noqa;
 
-from ...test_helpers import *  # noqa
-from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
+def test_query_magic_castles(app):
+    from mchub.models.user import LocalUser
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
-def test_query_magic_castles():
     all_magic_castles = LocalUser().magic_castles
     assert [magic_castle.hostname for magic_castle in all_magic_castles] == [
-        "buildplanning.calculquebec.cloud",
-        "created.calculquebec.cloud",
-        "empty-state.calculquebec.cloud",
-        "empty.calculquebec.cloud",
-        "missingfloatingips.c3.ca",
-        "missingnodes.c3.ca",
-        "noowner.calculquebec.cloud",
-        "valid1.calculquebec.cloud",
+        "buildplanning.magic-castle.cloud",
+        "created.magic-castle.cloud",
+        "empty-state.magic-castle.cloud",
+        "missingfloatingips.mc.ca",
+        "missingnodes.mc.ca",
+        "noowner.magic-castle.cloud",
+        "valid1.magic-castle.cloud",
     ]
     assert [magic_castle.status for magic_castle in all_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
@@ -33,14 +38,18 @@ def test_query_magic_castles():
 
 
 @pytest.mark.usefixtures("fake_successful_subprocess_run")
-def test_create_empty_magic_castle(client):
-    client.get("/api/users/me")
+def test_create_empty_magic_castle(app):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+
     magic_castle = MagicCastle()
     magic_castle.plan_creation(
         {
             "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": "anon123",
-            "domain": "c3.ca",
+            "domain": "mc.ca",
             "image": "CentOS-7-x64-2021-11",
             "nb_users": 10,
             "instances": {
@@ -68,12 +77,13 @@ def test_create_empty_magic_castle(client):
         }
     )
 
-    data = client.get("/api/magic-castles/anon123.c3.ca/status").get_json()
-    assert data["status"] == ClusterStatusCode.CREATED
-    assert data["stateful"] == False
-    assert data["progress"] == []
+    data = MagicCastleORM.query.get(magic_castle.orm.id)
+    assert data.status == ClusterStatusCode.CREATED
 
 
-def test_query_magic_castles(client):
-    data = client.get("/api/magic-castles/valid1.calculquebec.cloud").get_json()
-    assert data["status"] == ClusterStatusCode.PROVISIONING_SUCCESS
+def test_query_magic_castles(app):
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+
+    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
+    assert orm.status == ClusterStatusCode.PROVISIONING_SUCCESS

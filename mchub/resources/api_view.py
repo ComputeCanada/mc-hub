@@ -7,7 +7,7 @@ from flask import request
 from flask.views import MethodView
 from flask import make_response
 
-from ..configuration import config
+from ..configuration import get_config
 from ..database import db
 from ..models.auth_type import AuthType
 from ..models.user import LocalUser, SAMLUser, UserORM, TokenSuperUser
@@ -15,7 +15,7 @@ from ..exceptions.invalid_usage_exception import (
     UnauthenticatedException,
     InvalidUsageException,
 )
-from ..exceptions.server_exception import *
+from ..exceptions.server_exception import ServerException
 
 
 AUTH_HEADER_PAT = re.compile(r"token\s+(.+)", re.IGNORECASE)
@@ -79,13 +79,13 @@ def compute_current_user(route_handler):
         # While the AuthType won't change during the life of the application
         # defining auth_type in compute_current_user context leads to problem
         # with the unit tests where both NONE and SAML are used.
-        auth_type = config["auth_type"]
+        auth_type = get_config()["auth_type"]
         headers = request.headers
         if AuthType.TOKEN in auth_type and "Authorization" in headers:
             m = AUTH_HEADER_PAT.match(headers["Authorization"])
             if m:
                 user_token = m.group(1)
-                if user_token == config["token"]:
+                if user_token == get_config()["token"]:
                     user = TokenSuperUser()
                 else:
                     raise UnauthenticatedException

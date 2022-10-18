@@ -32,8 +32,16 @@ from ...configuration.magic_castle import (
 )
 from ...configuration.env import CLUSTERS_PATH
 
-from ...exceptions.invalid_usage_exception import *
-from ...exceptions.server_exception import *
+from ...exceptions.invalid_usage_exception import (
+    ClusterNotFoundException,
+    ClusterExistsException,
+    InvalidUsageException,
+    BusyClusterException,
+    PlanNotCreatedException,
+)
+from ...exceptions.server_exception import (
+    PlanException,
+)
 
 from ...database import db
 
@@ -174,7 +182,8 @@ class MagicCastle:
 
     @property
     def age(self):
-        delta = datetime.datetime.now() - self.orm.created
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        delta = now - self.orm.created
         return humanize.naturaldelta(delta)
 
     @property
@@ -190,13 +199,13 @@ class MagicCastle:
         return self.orm.applied_config
 
     def set_configuration(self, configuration: dict):
-        changed = False
+        expect_tf_changes = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
         cloud_id = configuration.pop("cloud")["id"]
 
         if self.orm.project is None or self.orm.project.id != cloud_id:
             self.orm.project = Project.query.get(cloud_id)
-            changed = True
+            expect_tf_changes = True
         try:
             config = MagicCastleConfiguration(self.orm.project.provider, configuration)
         except ValidationError as err:
@@ -206,18 +215,16 @@ class MagicCastle:
         if self.config != config:
             self.config = config
             self.orm.hostname = f"{self.config.cluster_name}.{self.config.domain}"
-            changed = True
-        return changed
+            expect_tf_changes = True
+        return expect_tf_changes
 
     @property
     def status(self) -> ClusterStatusCode:
         if self.orm.status == ClusterStatusCode.PROVISIONING_RUNNING:
+            now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             if ProvisioningManager.check_online(self.hostname):
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
-            elif (
-                MAX_PROVISIONING_TIME
-                < (datetime.datetime.now() - self.orm.created).total_seconds()
-            ):
+            elif MAX_PROVISIONING_TIME < (now - self.orm.created).total_seconds():
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
 
         return self.orm.status
@@ -359,12 +366,6 @@ class MagicCastle:
     @property
     def found(self):
         return self.status != ClusterStatusCode.NOT_FOUND
-
-    @property
-    def plan_created(self):
-        return self.status != ClusterStatusCode.PLAN_RUNNING and path.exists(
-            path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME)
-        )
 
     def plan_creation(self, data):
         self.set_configuration(data)
@@ -556,12 +557,12 @@ class MagicCastle:
         db.session.commit()
 
     def apply(self):
-        if not self.found:
-            raise ClusterNotFoundException
+        if self.plan is None or not path.exists(
+            path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME)
+        ):
+            raise PlanNotCreatedException
         if self.is_busy:
             raise BusyClusterException
-        if not self.plan_created:
-            raise PlanNotCreatedException
 
         if self.plan_type == PlanType.BUILD:
             self.status = ClusterStatusCode.BUILD_RUNNING

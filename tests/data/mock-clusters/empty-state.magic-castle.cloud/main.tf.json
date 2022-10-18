@@ -8,13 +8,13 @@
             "generate_ssh_key": true,
             "config_git_url": "https://github.com/ComputeCanada/puppet-magic_castle.git",
             "config_version": "11.8",
-            "cluster_name": "valid1",
-            "domain": "calculquebec.cloud",
+            "cluster_name": "empty-state",
+            "domain": "magic-castle.cloud",
             "image": "CentOS-7-x64-2021-11",
-            "nb_users": 10,
+            "nb_users": 34,
             "instances": {
                 "mgmt": {
-                    "type": "p4-6gb",
+                    "type": "c2-7.5gb-31",
                     "count": 1,
                     "tags": [
                         "mgmt",
@@ -32,8 +32,8 @@
                     ]
                 },
                 "node": {
-                    "type": "p2-3gb",
-                    "count": 1,
+                    "type": "c1-7.5gb-30",
+                    "count": 5,
                     "tags": [
                         "node"
                     ]
@@ -42,13 +42,13 @@
             "volumes": {
                 "nfs": {
                     "home": {
-                        "size": 100
+                        "size": 73
                     },
                     "project": {
-                        "size": 50
+                        "size": 1
                     },
                     "scratch": {
-                        "size": 50
+                        "size": 1
                     }
                 }
             },

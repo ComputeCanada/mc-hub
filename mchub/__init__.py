@@ -5,7 +5,7 @@ from flask_cors import CORS
 
 
 def create_app(db_path=None):
-    from .configuration import config, DATABASE_FILENAME
+    from .configuration import get_config, DATABASE_FILENAME
     from .configuration.env import DIST_PATH, DATABASE_PATH
     from .database import db
     from .resources.magic_castle_api import MagicCastleAPI
@@ -25,7 +25,7 @@ def create_app(db_path=None):
     # Allows origins set in config file on all routes
     CORS(
         app,
-        origins=config["cors_allowed_origins"],
+        origins=get_config()["cors_allowed_origins"],
     )
 
     magic_castle_view = MagicCastleAPI.as_view("magic_castle")

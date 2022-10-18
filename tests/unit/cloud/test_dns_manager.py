@@ -1,37 +1,45 @@
 import pytest
 
-from mchub.configuration.magic_castle import MAGIC_CASTLE_SOURCE
-from mchub.models.cloud.dns_manager import DnsManager
+from ...mocks.configuration.config_mock import (
+    config_auth_none_mock as config_mock,
+)
 
-from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
-from ... test_helpers import *  # noqa;
 
 def test_initialize_disallowed_domain():
+    from mchub.models.cloud.dns_manager import DnsManager
+
     with pytest.raises(KeyError):
         DnsManager("invalid.com")
 
 
 def test_get_available_domains():
+    from mchub.models.cloud.dns_manager import DnsManager
+
     assert [
-        "calculquebec.cloud",
-        "c3.ca",
+        "magic-castle.cloud",
+        "mc.ca",
     ] == DnsManager.get_available_domains()
 
 
 def test_get_environment_variables_with_dns_provider():
-    assert DnsManager("calculquebec.cloud").get_environment_variables() == {
+    from mchub.models.cloud.dns_manager import DnsManager
+
+    assert DnsManager("magic-castle.cloud").get_environment_variables() == {
         "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
         "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
         "CLOUDFLARE_DNS_API_TOKEN": "EXAMPLE_TOKEN",
     }
-    assert DnsManager("c3.ca").get_environment_variables() == {
+    assert DnsManager("mc.ca").get_environment_variables() == {
         "GOOGLE_CREDENTIALS": "/home/mcu/credentials/gcloud-service-account.json",
         "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-service-account.json",
     }
 
 
 def test_get_magic_castle_configuration_with_dns_provider():
-    assert DnsManager("calculquebec.cloud").get_magic_castle_configuration() == {
+    from mchub.configuration.magic_castle import MAGIC_CASTLE_SOURCE
+    from mchub.models.cloud.dns_manager import DnsManager
+
+    assert DnsManager("magic-castle.cloud").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",
             "source": MAGIC_CASTLE_SOURCE["dns"]["cloudflare"],
@@ -42,7 +50,7 @@ def test_get_magic_castle_configuration_with_dns_provider():
             "sudoer_username": "${module.openstack.accounts.sudoer.username}",
         }
     }
-    assert DnsManager("c3.ca").get_magic_castle_configuration() == {
+    assert DnsManager("mc.ca").get_magic_castle_configuration() == {
         "dns": {
             "email": "you@example.com",
             "project": "your-project-name",

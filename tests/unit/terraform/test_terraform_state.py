@@ -12,7 +12,11 @@ from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 def load_state(hostname):
     state_file_path = path.join(
-        path.dirname(tests.__file__), "mock-clusters", hostname, "terraform.tfstate"
+        path.dirname(tests.__file__),
+        "data",
+        "mock-clusters",
+        hostname,
+        "terraform.tfstate",
     )
     with open(state_file_path, "r") as terraform_state_file:
         return json.load(terraform_state_file)
@@ -20,17 +24,17 @@ def load_state(hostname):
 
 @pytest.fixture
 def valid_state():
-    return load_state("valid1.calculquebec.cloud")
+    return load_state("valid1.magic-castle.cloud")
 
 
 @pytest.fixture
 def empty_state():
-    return load_state("empty.calculquebec.cloud")
+    return load_state("empty-state.magic-castle.cloud")
 
 
 @pytest.fixture
 def missing_nodes_state():
-    return load_state("missingnodes.c3.ca")
+    return load_state("missingnodes.mc.ca")
 
 
 def test_instance_count_valid(valid_state):
