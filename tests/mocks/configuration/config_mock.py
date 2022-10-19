@@ -51,22 +51,20 @@ BASE_CONFIGURATION = {
 @pytest.fixture(autouse=True)
 def config_auth_saml_mock(mocker):
     from mchub.models.auth_type import AuthType
-
-    configuration = BASE_CONFIGURATION
+    configuration = BASE_CONFIGURATION.copy()
     configuration["auth_type"] = [AuthType.SAML]
     mocker.patch(
-        "mchub.configuration.get_config",
-        return_value=configuration,
+        "mchub.configuration._config",
+        configuration,
     )
 
 
 @pytest.fixture(autouse=True)
 def config_auth_none_mock(mocker):
     from mchub.models.auth_type import AuthType
-
-    configuration = BASE_CONFIGURATION
+    configuration = BASE_CONFIGURATION.copy()
     configuration["auth_type"] = [AuthType.NONE]
     mocker.patch(
-        "mchub.configuration.get_config",
-        return_value=configuration,
+        "mchub.configuration._config",
+        configuration,
     )
