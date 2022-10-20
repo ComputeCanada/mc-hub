@@ -73,5 +73,6 @@ ENV MAGIC_CASTLE_VERSION=11.9.6
 ENV MCH_DIST_PATH=/code/frontend
 
 CMD python3 -m mchub.schema_update --clean && \
+    python3 -m mchub.init_clusters && \
     python3 -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
 #CMD python3 -m mchub.wsgi
