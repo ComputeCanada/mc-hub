@@ -24,7 +24,7 @@ if __name__ == "__main__":
     for fd in scandir(CLUSTERS_PATH):
         if fd.is_dir():
             cmd_args = ["terraform", "init", "-no-color", "-input=false"]
-            if parser.upgrade:
+            if arguments.upgrade:
                 cmd_args += ["-upgrade"]
             try:
                 cmd = run(
