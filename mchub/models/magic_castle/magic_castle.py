@@ -386,7 +386,7 @@ class MagicCastle:
                 additional_details=f"hostname: {self.hostname}, error: {error}",
             )
 
-        if MAGIC_CASTLE_PATH[:3] != "git":
+        if MAGIC_CASTLE_PATH not in ("git", "http"):
             symlink(
                 path.join(MAGIC_CASTLE_PATH, self.project.provider),
                 path.join(self.path, self.project.provider),
