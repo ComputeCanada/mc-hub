@@ -6,9 +6,10 @@ folder with a main.tf.json.
 
 import argparse
 
-from os import scandir, path, exit
+from os import scandir, path
 from subprocess import run
 from logging import getLogger
+from sys import exit
 
 from .configuration.env import CLUSTERS_PATH
 
