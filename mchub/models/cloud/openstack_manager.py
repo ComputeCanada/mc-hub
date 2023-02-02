@@ -1,10 +1,13 @@
 import openstack
 
 from os import environ, path
-from re import search, IGNORECASE
+from re import match, IGNORECASE, compile
 
-CENTOS_VALID_IMAGES = r"centos"
-OTHER_VALID_IMAGES = r"almalinux|rocky"
+VALID_IMAGES_REGEX_ARRAY = [
+    compile(r"rocky-8", IGNORECASE),
+    compile(r"almalinux-8", IGNORECASE),
+    compile(r"centos-8", IGNORECASE),
+]
 
 # Magic Castle requires 10 GB on the root disk for each node.
 # Otherwise, it creates and mounts an external volume of 10 GB.
@@ -147,16 +150,13 @@ class OpenStackManager:
 
     @property
     def images(self):
-        centos = []
-        others = []
+        images = []
         for image in self.connection.image.images():
-            if search(CENTOS_VALID_IMAGES, image.name, IGNORECASE):
-                centos.append(image.name)
-            elif search(OTHER_VALID_IMAGES, image.name, IGNORECASE):
-                others.append(image.name)
-        centos.sort()
-        others.sort()
-        return centos + others
+            for pattern in VALID_IMAGES_REGEX_ARRAY:
+                if pattern.match(image.name):
+                    images.append(image.name)
+                    break
+        return images
 
     @property
     def available_flavors(self):
