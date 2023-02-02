@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v9.2.10] 2023-02-02
+
+- Interpret image ordering priority correctly
+
 ## [v9.2.9] 2023-02-02
 
 - Update image filtering mechanism and drop support for CentOS 7
