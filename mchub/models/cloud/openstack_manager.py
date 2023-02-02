@@ -122,11 +122,12 @@ class OpenStackManager:
     def images(self):
         images = []
         for image in self.connection.image.images():
-            for pattern in VALID_IMAGES_REGEX_ARRAY:
+            for idx, pattern in enumerate(VALID_IMAGES_REGEX_ARRAY):
                 if pattern.match(image.name):
-                    images.append(image.name)
+                    images.append((idx, image.name))
                     break
-        return images
+        images.sort()
+        return [image[1] for image in images]
 
     @property
     def available_flavors(self):
