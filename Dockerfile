@@ -8,7 +8,7 @@ RUN npm install && npm run build
 
 # BACKEND BUILD STAGE
 
-FROM python:3.10-slim-bullseye as backend-build-stage
+FROM python:3.11-slim-bullseye as backend-build-stage
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y curl git gcc linux-libc-dev libc6-dev unzip && \
@@ -38,10 +38,10 @@ COPY mchub /code/mchub
 RUN poetry install --no-dev --no-ansi && \
     pip uninstall -y poetry
 
-FROM python:3.10-slim-bullseye as base-server
+FROM python:3.11-slim-bullseye as base-server
 
 COPY --from=backend-build-stage /code /code
-COPY --from=backend-build-stage /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=backend-build-stage /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
 ## Magic Castle User
 RUN adduser --disabled-password mcu && \
