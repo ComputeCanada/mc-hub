@@ -6,16 +6,16 @@ authors = ["Frédéric Fortier-Chouinard", "Félix-Antoine Fortin <felix-antoine
 license = "BSD 3"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-Flask = "^1.1.4"
-Flask-SQLAlchemy = "^2.5.1"
-SQLAlchemy = "^1.4.46"
-humanize = "^4.6.0"
-marshmallow = "^3.19.0"
+python = "^3.9"
+Flask = "~2.1.0"
+Flask-SQLAlchemy = "~2.5.1"
+SQLAlchemy = "~1.4.36"
+humanize = "^4.0.0"
+marshmallow = "~3.14.1"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
-openstacksdk = "^1.0.1"
-jsonpath-ng = "^1.5.3"
-Flask-Cors = "^3.0.10"
+openstacksdk = "^0.61.0"
+jsonpath-ng = "~1.5.3"
+Flask-Cors = "~3.0.10"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.2"
