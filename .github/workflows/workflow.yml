@@ -44,6 +44,10 @@ jobs:
           done
         env:
           DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.11
       - name: Create virtualenv
         working-directory: ./run
         run: |
