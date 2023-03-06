@@ -2,8 +2,8 @@ from mchub.configuration.cloud import ALL_CLOUD_ID, DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub import create_app
 
-from .. test_helpers import *
-from .. mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ..test_helpers import *
+from ..mocks.configuration.config_mock import config_auth_none_mock  # noqa;
 
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
@@ -12,7 +12,7 @@ EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
     "domain": "calculquebec.cloud",
-    "image": "CentOS-7-x64-2021-11",
+    "image": "Rocky-8.7-x64-2023-02",
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -33,7 +33,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
 EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "valid1",
     "domain": "calculquebec.cloud",
-    "image": "CentOS-7-x64-2021-11",
+    "image": "Rocky-8.7-x64-2023-02",
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -70,7 +70,7 @@ EXISTING_CLUSTER_STATE = {
     },
     "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
-    "image": "CentOS-7-x64-2021-11",
+    "image": "Rocky-8.7-x64-2023-02",
     "hieradata": "",
     "status": "provisioning_success",
     "owner": "alice",
@@ -115,7 +115,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -150,7 +150,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -186,7 +186,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "empty-state",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -228,7 +228,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "missingfloatingips",
         "domain": "c3.ca",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 17,
         "instances": {
             "mgmt": {
@@ -264,7 +264,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 10,
         "instances": {
             "mgmt": {
@@ -299,7 +299,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "noowner",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 10,
         "instances": {
             "mgmt": {
@@ -334,7 +334,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 10,
         "instances": {
             "mgmt": {

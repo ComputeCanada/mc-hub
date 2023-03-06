@@ -1,9 +1,12 @@
 from mchub.exceptions.server_exception import ServerException
-from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+from mchub.models.magic_castle.magic_castle_configuration import (
+    MagicCastleConfiguration,
+)
 
 
-from ... mocks.configuration.config_mock import config_auth_none_mock  # noqa;
-from ... test_helpers import *  # noqa;
+from ...mocks.configuration.config_mock import config_auth_none_mock  # noqa;
+from ...test_helpers import *  # noqa;
+
 
 def test_constructor_none():
     assert MagicCastleConfiguration().to_dict() == {}
@@ -13,7 +16,7 @@ def test_constructor_valid():
     CONFIG_DICT = {
         "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -39,7 +42,7 @@ def test_constructor_empty_hieradata_valid():
     CONFIG_DICT = {
         "cluster_name": "foo-123",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 17,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1},
@@ -66,7 +69,7 @@ def test_constructor_invalid_cluster_name():
             {
                 "cluster_name": "foo!",
                 "domain": "calculquebec.cloud",
-                "image": "CentOS-7-x64-2021-11",
+                "image": "Rocky-8.7-x64-2023-02",
                 "nb_users": 17,
                 "instances": {
                     "mgmt": {
@@ -99,7 +102,7 @@ def test_constructor_invalid_cluster_name():
             {
                 "cluster_name": "foo_underscore",
                 "domain": "calculquebec.cloud",
-                "image": "CentOS-7-x64-2021-11",
+                "image": "Rocky-8.7-x64-2023-02",
                 "nb_users": 17,
                 "instances": {
                     "mgmt": {
@@ -134,7 +137,7 @@ def test_constructor_invalid_domain():
             {
                 "cluster_name": "foo",
                 "domain": "invalid.cloud",
-                "image": "CentOS-7-x64-2021-11",
+                "image": "Rocky-8.7-x64-2023-02",
                 "nb_users": 17,
                 "instances": {
                     "mgmt": {
@@ -167,7 +170,7 @@ def test_get_from_dict_valid():
     CONFIG_DICT = {
         "cluster_name": "foo",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 17,
         "instances": {
             "mgmt": {
@@ -200,7 +203,7 @@ def test_get_from_dict_empty_hieradata_valid():
     CONFIG_DICT = {
         "cluster_name": "foo",
         "domain": "calculquebec.cloud",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 17,
         "instances": {
             "mgmt": {
@@ -237,7 +240,7 @@ def test_get_from_main_file_valid():
     assert config.to_dict() == {
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 10,
         "instances": {
             "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -272,7 +275,7 @@ def test_update_main_file():
     CONFIG_DICT = {
         "cluster_name": "missingnodes",
         "domain": "c3.ca",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 30,
         "instances": {
             "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -292,9 +295,7 @@ def test_update_main_file():
     }
 
     modified_config = MagicCastleConfiguration(CONFIG_DICT)
-    path_ = path.join(
-        MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json"
-    )
+    path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.c3.ca", "main.tf.json")
     modified_config.update_main_file(path_)
     saved_config = MagicCastleConfiguration.get_from_main_file(path_)
     assert saved_config.to_dict() == CONFIG_DICT
@@ -305,7 +306,7 @@ def test_properties():
         {
             "cluster_name": "foo",
             "domain": "calculquebec.cloud",
-            "image": "CentOS-7-x64-2021-11",
+            "image": "Rocky-8.7-x64-2023-02",
             "nb_users": 17,
             "instances": {
                 "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},

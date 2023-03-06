@@ -4,8 +4,8 @@ from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub import create_app
 
-from .. test_helpers import *  # noqa;
-from .. mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ..test_helpers import *  # noqa;
+from ..mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 NON_EXISTING_HOSTNAME = "nonexisting.calculquebec.cloud"
 EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
@@ -13,7 +13,7 @@ EXISTING_HOSTNAME = "valid1.calculquebec.cloud"
 NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
     "domain": "calculquebec.cloud",
-    "image": "CentOS-7-x64-2021-11",
+    "image": "Rocky-8.7-x64-2023-02",
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -35,7 +35,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "cloud_id": DEFAULT_CLOUD,
     "cluster_name": "valid1",
     "domain": "calculquebec.cloud",
-    "image": "CentOS-7-x64-2021-11",
+    "image": "Rocky-8.7-x64-2023-02",
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -75,7 +75,7 @@ EXISTING_CLUSTER_STATE = {
     "domain": "calculquebec.cloud",
     "public_keys": ["ssh-rsa FAKE"],
     "hieradata": "",
-    "image": "CentOS-7-x64-2021-11",
+    "image": "Rocky-8.7-x64-2023-02",
     "status": "provisioning_success",
     "owner": "alice",
     "hostname": "valid1.calculquebec.cloud",
@@ -147,7 +147,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "buildplanning",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -182,7 +182,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "created",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -217,7 +217,7 @@ def test_get_all_magic_castle_names(client):
         "cluster_name": "valid1",
         "domain": "calculquebec.cloud",
         "expiration_date": "2029-01-01",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 10,
         "instances": {
             "mgmt": {

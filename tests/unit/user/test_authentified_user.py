@@ -4,8 +4,8 @@ from mchub.configuration.cloud import DEFAULT_CLOUD
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
 
-from ... test_helpers import *  # noqa
-from ... mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
+from ...test_helpers import *  # noqa
+from ...mocks.configuration.config_mock import config_auth_saml_mock  # noqa;
 
 
 def test_full_name(database_connection, alice, bob, admin):
@@ -76,7 +76,7 @@ def test_create_empty_magic_castle(database_connection, alice):
             "cloud_id": DEFAULT_CLOUD,
             "cluster_name": "alice123",
             "domain": "c3.ca",
-            "image": "CentOS-7-x64-2021-11",
+            "image": "Rocky-8.7-x64-2023-02",
             "nb_users": 10,
             "instances": {
                 "mgmt": {
