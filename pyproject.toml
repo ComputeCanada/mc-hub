@@ -7,13 +7,13 @@ license = "BSD 3"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-Flask = "^2.0.3"
-humanize = "^4.0.0"
-marshmallow = "^3.14.1"
+Flask = "~2.0.3"
+humanize = "~4.0.0"
+marshmallow = "~3.14.1"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
 openstacksdk = "^0.61.0"
-jsonpath-ng = "^1.5.3"
-Flask-Cors = "^3.0.10"
+jsonpath-ng = "~1.5.3"
+Flask-Cors = "~3.0.10"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0.1"
