@@ -1,27 +1,27 @@
 [tool.poetry]
 name = "mchub"
-version = "10.0.2"
+version = "10.2.0"
 description = ""
 authors = ["Frédéric Fortier-Chouinard", "Félix-Antoine Fortin <felix-antoine.fortin@calculquebec.ca>"]
 license = "BSD 3"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-Flask = "^2.0.3"
-Flask-SQLAlchemy = "^2.5.1"
-SQLAlchemy = "^1.4.36"
-humanize = "^4.0.0"
-marshmallow = "^3.14.1"
+python = "^3.11"
+Flask = "^2.2.3"
+Flask-SQLAlchemy = "^3.0.3"
+SQLAlchemy = "^2.0.5.post1"
+humanize = "^4.6.0"
+marshmallow = "^3.19.0"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
-openstacksdk = "^0.61.0"
+openstacksdk = "^1.0.1"
 jsonpath-ng = "^1.5.3"
 Flask-Cors = "^3.0.10"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.0.1"
+pytest = "^7.2.2"
 pytest-flask = "^1.2.0"
-pytest-mock = "^3.7.0"
-freezegun = "^1.2.1"
+pytest-mock = "^3.10.0"
+freezegun = "^1.2.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
