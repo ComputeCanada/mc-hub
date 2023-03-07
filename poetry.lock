@@ -810,40 +810,24 @@ files = [
 
 [[package]]
 name = "marshmallow"
-version = "3.14.1"
+version = "3.19.0"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "marshmallow-3.14.1-py3-none-any.whl", hash = "sha256:04438610bc6dadbdddb22a4a55bcc7f6f8099e69580b2e67f5a681933a1f4400"},
-    {file = "marshmallow-3.14.1.tar.gz", hash = "sha256:4c05c1684e0e97fe779c62b91878f173b937fe097b356cd82f793464f5bc6138"},
-]
-
-[package.extras]
-dev = ["flake8 (==4.0.1)", "flake8-bugbear (==21.9.2)", "mypy (==0.910)", "pre-commit (>=2.4,<3.0)", "pytest", "pytz", "simplejson", "tox"]
-docs = ["alabaster (==0.7.12)", "autodocsumm (==0.2.7)", "sphinx (==4.3.0)", "sphinx-issues (==1.2.0)", "sphinx-version-warning (==1.1.2)"]
-lint = ["flake8 (==4.0.1)", "flake8-bugbear (==21.9.2)", "mypy (==0.910)", "pre-commit (>=2.4,<3.0)"]
-tests = ["pytest", "pytz", "simplejson"]
-
-[[package]]
-name = "munch"
-version = "2.5.0"
-description = "A dot-accessible dictionary (a la JavaScript objects)"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "munch-2.5.0-py2.py3-none-any.whl", hash = "sha256:6f44af89a2ce4ed04ff8de41f70b226b984db10a91dcc7b9ac2efc1c77022fdd"},
-    {file = "munch-2.5.0.tar.gz", hash = "sha256:2d735f6f24d4dba3417fa448cae40c6e896ec1fdab6cdb5e6510999758a4dbd2"},
+    {file = "marshmallow-3.19.0-py3-none-any.whl", hash = "sha256:93f0958568da045b0021ec6aeb7ac37c81bfcccbb9a0e7ed8559885070b3a19b"},
+    {file = "marshmallow-3.19.0.tar.gz", hash = "sha256:90032c0fd650ce94b6ec6dc8dfeb0e3ff50c144586462c389b81a07205bedb78"},
 ]
 
 [package.dependencies]
-six = "*"
+packaging = ">=17.0"
 
 [package.extras]
-testing = ["astroid (>=1.5.3,<1.6.0)", "astroid (>=2.0)", "coverage", "pylint (>=1.7.2,<1.8.0)", "pylint (>=2.3.1,<2.4.0)", "pytest"]
-yaml = ["PyYAML (>=5.1.0)"]
+dev = ["flake8 (==5.0.4)", "flake8-bugbear (==22.10.25)", "mypy (==0.990)", "pre-commit (>=2.4,<3.0)", "pytest", "pytz", "simplejson", "tox"]
+docs = ["alabaster (==0.7.12)", "autodocsumm (==0.2.9)", "sphinx (==5.3.0)", "sphinx-issues (==3.0.1)", "sphinx-version-warning (==1.1.2)"]
+lint = ["flake8 (==5.0.4)", "flake8-bugbear (==22.10.25)", "mypy (==0.990)", "pre-commit (>=2.4,<3.0)"]
+tests = ["pytest", "pytz", "simplejson"]
 
 [[package]]
 name = "netifaces"
@@ -887,14 +871,14 @@ files = [
 
 [[package]]
 name = "openstacksdk"
-version = "0.61.0"
+version = "1.0.1"
 description = "An SDK for building applications to work with OpenStack"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "openstacksdk-0.61.0-py3-none-any.whl", hash = "sha256:9894d3d510563dcfc50c4755287dbfbf98def1f37caf2cfc15e9d0e1fd5d9a41"},
-    {file = "openstacksdk-0.61.0.tar.gz", hash = "sha256:3eed308871230f0c53a8f58b6c5a358b184080c6b2c6bc69ab088eea057aa127"},
+    {file = "openstacksdk-1.0.1-py3-none-any.whl", hash = "sha256:b433bc3d22d6e645a653b0d48919b36bec033081d5d89daaa5d6800a0935e990"},
+    {file = "openstacksdk-1.0.1.tar.gz", hash = "sha256:365e5dcca64e16e74a4f9f9d2a1f2207970e946d9a5c482549cfa5ec02ca2c98"},
 ]
 
 [package.dependencies]
@@ -906,7 +890,6 @@ iso8601 = ">=0.1.11"
 jmespath = ">=0.9.0"
 jsonpatch = ">=1.16,<1.20 || >1.20"
 keystoneauth1 = ">=3.18.0"
-munch = ">=2.1.0"
 netifaces = ">=0.10.4"
 os-service-types = ">=1.7.0"
 pbr = ">=2.0.0,<2.1.0 || >2.1.0"
@@ -932,7 +915,7 @@ pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 name = "packaging"
 version = "23.0"
 description = "Core utilities for Python packages"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -1411,4 +1394,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "3155b68133cc63b2e5ba0d43f737fc6dbda10749258c9116b3a752ee144c945c"
+content-hash = "de239272fc68c771eba0458b58504fc7c55c26525166b645202d45192a8480a2"
