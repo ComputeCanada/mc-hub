@@ -1,10 +1,17 @@
 from ..cloud.openstack_manager import OpenStackManager
 from ..cloud.dns_manager import DnsManager
 
+MANAGER_CLASSES = {
+    "openstack": OpenStackManager,
+}
 
 class CloudManager:
     def __init__(self, project, **kwargs):
-        self.manager = OpenStackManager(project=project, **kwargs)
+        manager_class = MANAGER_CLASSES.get(project.cloud_provider)
+        if manager_class:
+            self.manager = manager_class(project=project, **kwargs)
+        else:
+            raise ValueError("Invalid cloud provider")
 
     @property
     def available_resources(self):
