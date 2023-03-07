@@ -41,7 +41,7 @@ RUN poetry install --no-dev --no-ansi && \
 FROM python:3.11-slim-bullseye as base-server
 
 COPY --from=backend-build-stage /code /code
-COPY --from=backend-build-stage /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=backend-build-stage /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
 ## Magic Castle User
 RUN adduser --disabled-password mcu && \
