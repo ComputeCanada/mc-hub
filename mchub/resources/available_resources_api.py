@@ -13,7 +13,7 @@ class AvailableResourcesApi(ApiView):
     def get(self, user: User, hostname, cloud_id):
         if hostname:
             orm = db.session.execute(
-                db.select(MagicCastleORM).where(hostname=hostname)
+                db.select(MagicCastleORM).filter_by(hostname=hostname)
             ).scalar_one_or_none()
             if orm and orm.project in user.projects:
                 mc = MagicCastle(orm)

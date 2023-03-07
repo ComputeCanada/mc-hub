@@ -96,7 +96,7 @@ def compute_current_user(route_handler):
                 # are not correctly decoded.
                 scoped_id = headers["eduPersonPrincipalName"]
                 orm = db.session.execute(
-                    db.select(UserORM).where(UserORM.scoped_id == scoped_id)
+                    db.select(UserORM).filter_by(scoped_id=scoped_id)
                 ).scalar_one_or_none()
                 if orm is None:
                     orm = UserORM(scoped_id=scoped_id)
@@ -114,7 +114,7 @@ def compute_current_user(route_handler):
         elif AuthType.NONE in auth_type:
             scoped_id = getuser() + "@localhost"
             orm = db.session.execute(
-                db.select(UserORM).where(UserORM.scoped_id == scoped_id)
+                db.select(UserORM).filter_by(scoped_id=scoped_id)
             ).scalar_one_or_none()
             if orm is None:
                 orm = UserORM(scoped_id=scoped_id)
