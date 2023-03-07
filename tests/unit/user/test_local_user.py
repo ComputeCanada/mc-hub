@@ -51,7 +51,7 @@ def test_create_empty_magic_castle(app):
             "cloud": {"id": 1, "name": "test-project"},
             "cluster_name": "anon123",
             "domain": "mc.ca",
-            "image": "CentOS-7-x64-2021-11",
+            "image": "Rocky-8.7-x64-2023-02",
             "nb_users": 10,
             "instances": {
                 "mgmt": {

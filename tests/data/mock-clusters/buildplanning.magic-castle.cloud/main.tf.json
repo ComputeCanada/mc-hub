@@ -9,7 +9,7 @@
             "puppetenv_rev": "11.8",
             "cluster_name": "buildplanning",
             "domain": "magic-castle.cloud",
-            "image": "CentOS-7-x64-2021-11",
+            "image": "Rocky-8.7-x64-2023-02",
             "nb_users": 34,
             "instances": {
                 "mgmt": {

@@ -23,7 +23,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cloud: {"id" : 1, "name": "arbutus"},
   cluster_name: "",
   domain: "magic-castle.cloud",
-  image: "CentOS-7-x64-2021-11",
+  image: "Rocky-8.7-x64-2023-02",
   nb_users: 10,
   instances: {
     mgmt: {
@@ -54,7 +54,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
 });
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
-  image: ["centos7", "centos7-updated", "CentOS-7-x64-2021-11", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
+  image: ["centos7", "centos7-updated", "Rocky-8.7-x64-2023-02", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
   tag_types: {"mgmt": ["p4-6gb", "c2-7.5gb-31"], "login": ["p2-3gb", "p4-6gb"], "node": ["p2-3gb", "p4-6gb"]},
   "types": ["p1-1.5gb", "p2-3gb", "p4-6gb"],
   volumes: {},

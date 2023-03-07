@@ -91,7 +91,7 @@ def test_write():
     CONFIG_DICT = {
         "cluster_name": "missingnodes",
         "domain": "mc.ca",
-        "image": "CentOS-7-x64-2021-11",
+        "image": "Rocky-8.7-x64-2023-02",
         "nb_users": 30,
         "instances": {
             "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},

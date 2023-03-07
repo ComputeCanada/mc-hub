@@ -10,7 +10,7 @@
             "config_version": "11.8",
             "cluster_name": "valid1",
             "domain": "magic-castle.cloud",
-            "image": "CentOS-7-x64-2021-11",
+            "image": "Rocky-8.7-x64-2023-02",
             "nb_users": 10,
             "instances": {
                 "mgmt": {
