@@ -95,7 +95,9 @@ def compute_current_user(route_handler):
                 # Therefore, special characters and accents in givenName and surname
                 # are not correctly decoded.
                 scoped_id = headers["eduPersonPrincipalName"]
-                orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
+                orm = db.session.execute(
+                    db.select(UserORM).where(UserORM.scoped_id == scoped_id)
+                ).scalar_one_or_none()
                 if orm is None:
                     orm = UserORM(scoped_id=scoped_id)
                 user = SAMLUser(
@@ -111,7 +113,9 @@ def compute_current_user(route_handler):
                 raise UnauthenticatedException
         elif AuthType.NONE in auth_type:
             scoped_id = getuser() + "@localhost"
-            orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
+            orm = db.session.execute(
+                db.select(UserORM).where(UserORM.scoped_id == scoped_id)
+            ).scalar_one_or_none()
             if orm is None:
                 orm = UserORM(scoped_id=scoped_id)
             user = LocalUser(orm=orm)
