@@ -78,9 +78,7 @@ def test_create_empty_magic_castle(app):
         }
     )
 
-    data = db.session.execute(
-        db.select(MagicCastleORM).where(MagicCastleORM.id == magic_castle.orm.id)
-    ).scalar_one()
+    data = db.session.get(MagicCastleORM, magic_castle.orm.id)
     assert data.status == ClusterStatusCode.CREATED
 
 

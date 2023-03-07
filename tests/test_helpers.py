@@ -85,9 +85,7 @@ def app(config_mock, generate_test_clusters):
 
         for key, data in CLUSTERS.items():
             hostname = key
-            project = db.session.execute(
-                db.select(Project).filter_by(id=data["cloud"]["id"])
-            ).scalar_one()
+            project = db.session.get(Project, data["cloud"]["id"])
             main = path.join(
                 MOCK_CLUSTERS_PATH,
                 hostname,

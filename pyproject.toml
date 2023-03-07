@@ -7,9 +7,9 @@ license = "BSD 3"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-Flask = "~2.1.0"
-Flask-SQLAlchemy = "~2.5.1"
-SQLAlchemy = "~1.4.36"
+Flask = "^2.2.0"
+Flask-SQLAlchemy = "^3.0.3"
+SQLAlchemy = "^2.0.5"
 humanize = "^4.0.0"
 marshmallow = "~3.19.0"
 gunicorn = {extras = ["gevent"], version = "^20.1.0"}
