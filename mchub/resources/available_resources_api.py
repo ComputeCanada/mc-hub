@@ -6,12 +6,15 @@ from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
 from ..exceptions.invalid_usage_exception import (
     ClusterNotFoundException,
 )
+from ..database import db
 
 
 class AvailableResourcesApi(ApiView):
     def get(self, user: User, hostname, cloud_id):
         if hostname:
-            orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+            orm = db.session.execute(
+                db.select(MagicCastleORM).where(hostname=hostname)
+            ).scalar_one_or_none()
             if orm and orm.project in user.projects:
                 mc = MagicCastle(orm)
             else:
@@ -19,7 +22,7 @@ class AvailableResourcesApi(ApiView):
             project = mc.project
             allocated_resources = mc.allocated_resources
         elif cloud_id:
-            project = Project.query.get(cloud_id)
+            project = db.session.get(Project, cloud_id)
             if project is None or project not in user.projects:
                 return {
                     "quotas": {},
