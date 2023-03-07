@@ -1,4 +1,6 @@
 from re import M
+from sqlalchemy import select
+
 from ..models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..models.magic_castle.cluster_status_code import ClusterStatusCode
 from . import db

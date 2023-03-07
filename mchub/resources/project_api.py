@@ -1,5 +1,4 @@
 from flask import request
-from sqlalchemy import inspect
 
 from .api_view import ApiView
 from ..database import db
@@ -71,7 +70,7 @@ class ProjectAPI(ApiView):
         }, 200
 
     def patch(self, user: User, id: int):
-        project = Project.query.get(id)
+        project = db.session.get(Project, id)
         if project is None or project not in user.orm.projects:
             raise InvalidUsageException("Invalid project id")
         if project.admin_id != user.orm.id:
@@ -107,7 +106,7 @@ class ProjectAPI(ApiView):
         return {}, 200
 
     def delete(self, user: User, id: int):
-        project = Project.query.get(id)
+        project = db.session.get(Project, id)
         if project is None or project not in user.orm.projects:
             raise InvalidUsageException("Invalid project id")
         if project.admin_id != user.orm.id:
