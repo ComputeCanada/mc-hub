@@ -102,7 +102,9 @@ def terraform_apply(cluster_id, env, main_path, destroy):
         from ... import create_app
 
         with create_app().app_context():
-            orm = MagicCastleORM.query.get(cluster_id)
+            orm = db.session.execute(
+                db.select(MagicCastleORM).where(MagicCastleORM.id == cluster_id)
+            ).scalar_one()
             if destroy:
                 db.session.delete(orm)
             else:
@@ -127,7 +129,12 @@ class MagicCastleORM(db.Model):
     tf_state = db.Column(db.PickleType())
     plan = db.Column(db.PickleType())
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
-    project = db.relationship("Project", back_populates="magic_castles", uselist=False)
+    project = db.relationship(
+        "Project",
+        back_populates="magic_castles",
+        uselist=False,
+        cascade_backrefs=False,
+    )
 
 
 class MagicCastle:
@@ -204,7 +211,9 @@ class MagicCastle:
         cloud_id = configuration.pop("cloud")["id"]
 
         if self.orm.project is None or self.orm.project.id != cloud_id:
-            self.orm.project = Project.query.get(cloud_id)
+            self.orm.project = db.session.execute(
+                db.select(Project).where(Project.id == cloud_id)
+            ).scalar_one()
             expect_tf_changes = True
         try:
             config = MagicCastleConfiguration(self.orm.project.provider, configuration)

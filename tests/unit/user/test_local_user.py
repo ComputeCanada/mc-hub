@@ -43,6 +43,7 @@ def test_create_empty_magic_castle(app):
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
 
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
 
     magic_castle = MagicCastle()
     magic_castle.plan_creation(
@@ -77,7 +78,9 @@ def test_create_empty_magic_castle(app):
         }
     )
 
-    data = MagicCastleORM.query.get(magic_castle.orm.id)
+    data = db.session.execute(
+        db.select(MagicCastleORM).where(MagicCastleORM.id == magic_castle.orm.id)
+    ).scalar_one()
     assert data.status == ClusterStatusCode.CREATED
 
 
