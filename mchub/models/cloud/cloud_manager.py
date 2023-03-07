@@ -7,7 +7,7 @@ MANAGER_CLASSES = {
 
 class CloudManager:
     def __init__(self, project, **kwargs):
-        manager_class = MANAGER_CLASSES.get(project.cloud_provider)
+        manager_class = MANAGER_CLASSES.get(project.provider)
         if manager_class:
             self.manager = manager_class(project=project, **kwargs)
         else:
