@@ -89,7 +89,9 @@ class ProjectAPI(ApiView):
         for username in add_members:
             if "@" not in username:
                 username = f"{username}@{default_domain}"
-            member = UserORM.query.filter_by(scoped_id=username).first()
+            member = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=username)
+            ).scalar_one_or_none()
             if not member:
                 member = UserORM(scoped_id=username)
                 db.session.add(member)
@@ -98,7 +100,9 @@ class ProjectAPI(ApiView):
         for username in del_members:
             if "@" not in username:
                 username = f"{username}@{default_domain}"
-            member = UserORM.query.filter_by(scoped_id=username).first()
+            member = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=username)
+            ).scalar_one_or_none()
             if member and member.id != user.orm.id:
                 member.projects.remove(project)
 
