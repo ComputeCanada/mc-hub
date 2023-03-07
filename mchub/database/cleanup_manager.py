@@ -11,7 +11,7 @@ class CleanupManager:
         back to a stable state. Applicable when booting the app
         when and there is definetely no state running.
         """
-        for orm in db.sessions.scalars(db.select(MagicCastleORM)).all():
+        for orm in db.session.scalars(db.select(MagicCastleORM)).all():
             if orm.status == ClusterStatusCode.BUILD_RUNNING:
                 orm.status = ClusterStatusCode.BUILD_ERROR
             elif orm.status == ClusterStatusCode.PLAN_RUNNING:
