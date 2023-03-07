@@ -1,13 +1,11 @@
 import json
 import pytest
-import sqlite3
 
 from datetime import datetime
 from getpass import getuser
 from pathlib import Path
 from os import path
 from shutil import rmtree, copytree
-from typing import Callable
 
 from unittest.mock import Mock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
@@ -85,7 +83,7 @@ def app(config_mock, generate_test_clusters):
 
         for key, data in CLUSTERS.items():
             hostname = key
-            project = Project.query.get(data["cloud"]["id"])
+            project = db.session.get(Project, data["cloud"]["id"])
             main = path.join(
                 MOCK_CLUSTERS_PATH,
                 hostname,
@@ -141,11 +139,14 @@ def client(app):
 @pytest.fixture
 def alice(app):
     from mchub.models.user import SAMLUser, UserORM
+    from mchub.database import db
 
     yield SAMLUser(
-        orm=UserORM.query.filter_by(
-            scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
-        ).first(),
+        orm=db.session.scalar(
+            db.select(UserORM).filter_by(
+                scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
+            )
+        ),
         edu_person_principal_name=ALICE_HEADERS["eduPersonPrincipalName"],
         given_name=ALICE_HEADERS["givenName"],
         surname=ALICE_HEADERS["surname"],
@@ -157,11 +158,14 @@ def alice(app):
 @pytest.fixture
 def bob(app):
     from mchub.models.user import SAMLUser, UserORM
+    from mchub.database import db
 
     yield SAMLUser(
-        orm=UserORM.query.filter_by(
-            scoped_id=BOB_HEADERS["eduPersonPrincipalName"]
-        ).first(),
+        orm=db.session.scalar(
+            db.select(UserORM).filter_by(
+                scoped_id=BOB_HEADERS["eduPersonPrincipalName"]
+            )
+        ),
         edu_person_principal_name=BOB_HEADERS["eduPersonPrincipalName"],
         given_name=BOB_HEADERS["givenName"],
         surname=BOB_HEADERS["surname"],
@@ -173,11 +177,14 @@ def bob(app):
 @pytest.fixture
 def admin(app):
     from mchub.models.user import LocalUser, UserORM
+    from mchub.database import db
 
     username = getuser()
 
     yield LocalUser(
-        orm=UserORM.query.filter_by(scoped_id=f"{username}@localhost").first(),
+        orm=db.session.scalar(
+            db.select(UserORM).filter_by(scoped_id=f"{username}@localhost")
+        ),
     )
 
 

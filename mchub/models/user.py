@@ -24,17 +24,21 @@ class UserORM(db.Model):
         lazy="subquery",
         backref=db.backref("members", lazy=True),
         order_by="Project.id",
+        cascade_backrefs=False,
     )
 
 
 class TokenSuperUser:
     @property
     def projects(self):
-        return Project.query.all()
+        return db.session.scalars(db.select(Project)).all()
 
     @property
     def magic_castles(self):
-        return [MagicCastle(orm) for orm in MagicCastleORM.query.all()]
+        return [
+            MagicCastle(orm)
+            for orm in db.session.scalars(db.select(MagicCastleORM)).all()
+        ]
 
 
 class User:

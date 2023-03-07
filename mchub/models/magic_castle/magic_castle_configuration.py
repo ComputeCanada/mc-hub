@@ -47,22 +47,17 @@ class Schema(marshmallow.Schema):
     nb_users = fields.Int(required=True)
     instances = fields.Dict(
         keys=fields.Str(),
-        values=fields.Dict(
-            type=fields.Str(), count=fields.Int(), tags=fields.List(fields.Str())
-        ),
+        values=fields.Dict(),
         required=True,
     )
     volumes = fields.Dict(
         keys=fields.Str(),
-        values=fields.Dict(
-            type=fields.Str(),
-            size=fields.Int(),
-        ),
+        values=fields.Dict(),
         required=True,
     )
     public_keys = fields.List(fields.Str(), required=True)
     guest_passwd = fields.Str(required=True)
-    hieradata = fields.Str(missing="")
+    hieradata = fields.Str(load_default="")
 
 
 class MagicCastleConfiguration(Mapping):

@@ -32,8 +32,8 @@ def output_json(route_handler):
     :return: The decorator that serializes the response to JSON.
     """
 
-    def decorator(*args, **kwargs):
-        response = route_handler(*args, **kwargs)
+    def decorator(**kwargs):
+        response = route_handler(**kwargs)
         if type(response) == tuple:
             data, response_code = response
         else:
@@ -53,9 +53,9 @@ def handle_exceptions(route_handler):
     :return: The decorator that handles exceptions.
     """
 
-    def decorator(*args, **kwargs):
+    def decorator(**kwargs):
         try:
-            return route_handler(*args, **kwargs)
+            return route_handler(**kwargs)
         except (InvalidUsageException, ServerException) as e:
             return e.get_response()
 
@@ -75,7 +75,7 @@ def compute_current_user(route_handler):
     :return: The decorator that modifies the route handler to have the current user as a parameter.
     """
 
-    def decorator(*args, **kwargs):
+    def decorator(**kwargs):
         # While the AuthType won't change during the life of the application
         # defining auth_type in compute_current_user context leads to problem
         # with the unit tests where both NONE and SAML are used.
@@ -95,7 +95,9 @@ def compute_current_user(route_handler):
                 # Therefore, special characters and accents in givenName and surname
                 # are not correctly decoded.
                 scoped_id = headers["eduPersonPrincipalName"]
-                orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
+                orm = db.session.execute(
+                    db.select(UserORM).filter_by(scoped_id=scoped_id)
+                ).scalar_one_or_none()
                 if orm is None:
                     orm = UserORM(scoped_id=scoped_id)
                 user = SAMLUser(
@@ -111,13 +113,15 @@ def compute_current_user(route_handler):
                 raise UnauthenticatedException
         elif AuthType.NONE in auth_type:
             scoped_id = getuser() + "@localhost"
-            orm = UserORM.query.filter_by(scoped_id=scoped_id).first()
+            orm = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=scoped_id)
+            ).scalar_one_or_none()
             if orm is None:
                 orm = UserORM(scoped_id=scoped_id)
             user = LocalUser(orm=orm)
         else:
             raise UnauthenticatedException
-        return route_handler(user, *args, **kwargs)
+        return route_handler(user=user, **kwargs)
 
     return decorator
 

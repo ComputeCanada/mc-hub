@@ -8,12 +8,15 @@ from ..exceptions.invalid_usage_exception import (
 from ..models.cloud.project import Project
 from ..models.user import User
 from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
+from ..database import db
 
 
 class MagicCastleAPI(ApiView):
     def get(self, user: User, hostname):
         if hostname:
-            orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+            orm = db.session.execute(
+                db.select(MagicCastleORM).filter_by(hostname=hostname)
+            ).scalar_one_or_none()
             if orm and orm.project in user.projects:
                 return MagicCastle(orm).state
             else:
@@ -23,7 +26,9 @@ class MagicCastleAPI(ApiView):
 
     def post(self, user: User, hostname, apply=False):
         if apply:
-            orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+            orm = db.session.execute(
+                db.select(MagicCastleORM).filter_by(hostname=hostname)
+            ).scalar_one_or_none()
             if orm and orm.project in user.projects:
                 magic_castle = MagicCastle(orm)
             else:
@@ -36,7 +41,7 @@ class MagicCastleAPI(ApiView):
                 raise InvalidUsageException("No json data was provided")
 
             cloud = json_data.get("cloud", {"id": None})
-            project = Project.query.get(cloud["id"])
+            project = db.session.get(Project, cloud["id"])
             if project and project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
 
@@ -45,7 +50,9 @@ class MagicCastleAPI(ApiView):
             return {}
 
     def put(self, user: User, hostname):
-        orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+        orm = db.session.execute(
+            db.select(MagicCastleORM).filter_by(hostname=hostname)
+        ).scalar_one_or_none()
         if orm and orm.project in user.projects:
             magic_castle = MagicCastle(orm)
         else:
@@ -57,7 +64,9 @@ class MagicCastleAPI(ApiView):
         return {}
 
     def delete(self, user: User, hostname):
-        orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+        orm = db.session.execute(
+            db.select(MagicCastleORM).filter_by(hostname=hostname)
+        ).scalar_one_or_none()
         if orm and orm.project in user.projects:
             magic_castle = MagicCastle(orm)
         else:

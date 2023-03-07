@@ -1,5 +1,4 @@
 from flask import request
-from sqlalchemy import inspect
 
 from .api_view import ApiView
 from ..database import db
@@ -13,7 +12,7 @@ from ..exceptions.invalid_usage_exception import (
 class ProjectAPI(ApiView):
     def get(self, user: User, id: int = None):
         if id is not None:
-            project = Project.query.get(id)
+            project = db.session.get(Project, id)
             if project is None or project not in user.orm.projects:
                 raise InvalidUsageException("Invalid project id")
             return {
@@ -71,7 +70,7 @@ class ProjectAPI(ApiView):
         }, 200
 
     def patch(self, user: User, id: int):
-        project = Project.query.get(id)
+        project = db.session.get(Project, id)
         if project is None or project not in user.orm.projects:
             raise InvalidUsageException("Invalid project id")
         if project.admin_id != user.orm.id:
@@ -90,7 +89,9 @@ class ProjectAPI(ApiView):
         for username in add_members:
             if "@" not in username:
                 username = f"{username}@{default_domain}"
-            member = UserORM.query.filter_by(scoped_id=username).first()
+            member = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=username)
+            ).scalar_one_or_none()
             if not member:
                 member = UserORM(scoped_id=username)
                 db.session.add(member)
@@ -99,7 +100,9 @@ class ProjectAPI(ApiView):
         for username in del_members:
             if "@" not in username:
                 username = f"{username}@{default_domain}"
-            member = UserORM.query.filter_by(scoped_id=username).first()
+            member = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=username)
+            ).scalar_one_or_none()
             if member and member.id != user.orm.id:
                 member.projects.remove(project)
 
@@ -107,7 +110,7 @@ class ProjectAPI(ApiView):
         return {}, 200
 
     def delete(self, user: User, id: int):
-        project = Project.query.get(id)
+        project = db.session.get(Project, id)
         if project is None or project not in user.orm.projects:
             raise InvalidUsageException("Invalid project id")
         if project.admin_id != user.orm.id:
