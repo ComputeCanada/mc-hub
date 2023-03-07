@@ -85,6 +85,9 @@ def test_create_empty_magic_castle(app):
 def test_query_magic_castles(app):
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
+    )
     assert orm.status == ClusterStatusCode.PROVISIONING_SUCCESS

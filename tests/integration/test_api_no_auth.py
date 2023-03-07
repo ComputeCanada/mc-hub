@@ -72,31 +72,41 @@ def test_get_status_code(client):
     res = client.get(f"/api/magic-castles/{NON_EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "not_found"
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.BUILD_RUNNING
     db.session.commit()
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "build_running"
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.PROVISIONING_SUCCESS
     db.session.commit()
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "provisioning_success"
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.BUILD_ERROR
     db.session.commit()
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "build_error"
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.DESTROY_RUNNING
     db.session.commit()
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
     assert res.get_json()["status"] == "destroy_running"
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.DESTROY_ERROR
     db.session.commit()
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}/status")
@@ -113,14 +123,18 @@ def test_delete_invalid_status(client):
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.DESTROY_RUNNING
     db.session.commit()
     res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.BUILD_RUNNING
     db.session.commit()
     res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
@@ -141,7 +155,9 @@ def test_modify_invalid_status(client):
     assert res.get_json() == {"message": "This cluster does not exist."}
     assert res.status_code != 200
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.BUILD_RUNNING
     db.session.commit()
     res = client.put(
@@ -151,7 +167,9 @@ def test_modify_invalid_status(client):
     assert res.get_json() == {"message": "This cluster is busy."}
     assert res.status_code != 200
 
-    orm = MagicCastleORM.query.filter_by(hostname=EXISTING_HOSTNAME).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
     orm.status = ClusterStatusCode.DESTROY_RUNNING
     db.session.commit()
     res = client.put(

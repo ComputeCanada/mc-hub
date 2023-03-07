@@ -41,7 +41,6 @@ class MagicCastleAPI(ApiView):
                 raise InvalidUsageException("No json data was provided")
 
             cloud = json_data.get("cloud", {"id": None})
-            # project = Project.query.get(cloud["id"])
             project = db.session.get(Project, cloud["id"])
             if project and project not in user.projects:
                 raise InvalidUsageException("Invalid project id")

@@ -107,18 +107,23 @@ def test_create_magic_castle_plan_export_fail(app, monkeypatch):
 def test_get_status_valid(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="created.magic-castle.cloud").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
+    )
     created = MagicCastle(orm=orm)
     assert created.status == ClusterStatusCode.CREATED
 
-    orm = MagicCastleORM.query.filter_by(
-        hostname="buildplanning.magic-castle.cloud"
-    ).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="buildplanning.magic-castle.cloud")
+    )
     buildplanning = MagicCastle(orm=orm)
     assert buildplanning.status == ClusterStatusCode.PLAN_RUNNING
 
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
+    )
     valid1 = MagicCastle(orm=orm)
     assert valid1.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
@@ -126,8 +131,11 @@ def test_get_status_valid(app):
 def test_get_status_errors(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.mc.ca").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="missingnodes.mc.ca")
+    )
     missingnodes = MagicCastle(orm=orm)
     assert missingnodes.status == ClusterStatusCode.BUILD_ERROR
 
@@ -135,8 +143,11 @@ def test_get_status_errors(app):
 def test_get_status_not_found(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="nonexisting.mc.ca").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="nonexisting.mc.ca")
+    )
     magic_castle1 = MagicCastle(orm=orm)
     assert magic_castle1.status == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
@@ -146,13 +157,16 @@ def test_get_status_not_found(app):
 def test_get_plan_type_build(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.plan_type import PlanType
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(
-        hostname="buildplanning.magic-castle.cloud"
-    ).first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="buildplanning.magic-castle.cloud")
+    )
     build_planning = MagicCastle(orm=orm)
     assert build_planning.plan_type == PlanType.BUILD
-    orm = MagicCastleORM.query.filter_by(hostname="created.magic-castle.cloud").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
+    )
     created = MagicCastle(orm=orm)
     assert created.plan_type == PlanType.BUILD
 
@@ -160,8 +174,11 @@ def test_get_plan_type_build(app):
 def test_get_plan_type_destroy(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.plan_type import PlanType
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
+    )
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.DESTROY
 
@@ -169,26 +186,31 @@ def test_get_plan_type_destroy(app):
 def test_get_plan_type_none(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.plan_type import PlanType
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="missingfloatingips.mc.ca").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="missingfloatingips.mc.ca")
+    )
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.plan_type == PlanType.NONE
 
 
 def test_config_valid(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.database import db
 
     hostname = "valid1.magic-castle.cloud"
-    orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == CLUSTERS_CONFIG[hostname]
 
 
 def test_config_busy(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.database import db
 
     hostname = "missingfloatingips.mc.ca"
-    orm = MagicCastleORM.query.filter_by(hostname=hostname).first()
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.config == CLUSTERS_CONFIG[hostname]
 
@@ -226,8 +248,11 @@ def test_allocated_resources_valid(app):
     200 GiB of volume storage
     """
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="valid1.magic-castle.cloud").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
+    )
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 3,
@@ -251,8 +276,11 @@ def test_allocated_resources_missing_nodes(app):
     + 50 + 50 + 100 [external volumes] = 200 GiO of volume storage
     """
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.database import db
 
-    orm = MagicCastleORM.query.filter_by(hostname="missingnodes.mc.ca").first()
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="missingnodes.mc.ca")
+    )
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "pre_allocated_instance_count": 0,
