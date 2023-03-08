@@ -100,6 +100,7 @@ async function getDefaultClusterEditorWrapper(existingCluster=true, hostname="te
     }
   });
   await wrapper.vm.promise;
+  await wrapper.vm.promise_dns;
   return wrapper;
 }
 
