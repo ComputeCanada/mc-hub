@@ -809,11 +809,13 @@ export default {
         this.possibleResources = data.possible_resources;
         this.quotas = data.quotas;
         this.resourceDetails = data.resource_details;
+        this.promise = null;
       });
       this.promise_dns = DomainsRepository.getDomains();
       this.promise_dns.then((response) => {
         const data = response.data;
         this.domains = data.domains;
+        this.promise_dns = null;
       });
       return [this.promise, this.promise_dns];
     },
