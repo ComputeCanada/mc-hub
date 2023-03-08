@@ -810,13 +810,11 @@ export default {
         this.quotas = data.quotas;
         this.resourceDetails = data.resource_details;
       });
-      if (!this.existingCluster) {
-        this.promise_dns = DomainsRepository.getDomains();
-        this.promise_dns.then((response) => {
-          const data = response.data;
-          this.domains = data.domains;
-        });
-      }
+      this.promise_dns = DomainsRepository.getDomains();
+      this.promise_dns.then((response) => {
+        const data = response.data;
+        this.domains = data.domains;
+      });
       return [this.promise, this.promise_dns];
     },
   },
