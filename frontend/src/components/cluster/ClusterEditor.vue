@@ -353,6 +353,7 @@ export default {
       nowDate: new Date().toISOString().slice(0, 10),
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       promise: null,
+      promise_dns: null,
       quotas: null,
       possibleResources: null,
       domains: null,
@@ -448,7 +449,7 @@ export default {
   },
   computed: {
     loading() {
-      return this.promise !== null;
+      return this.promise !== null && this.promise_dns !== null;
     },
     localSpecs: {
       get() {
@@ -808,15 +809,15 @@ export default {
         this.possibleResources = data.possible_resources;
         this.quotas = data.quotas;
         this.resourceDetails = data.resource_details;
-        this.promise = null;
       });
-      this.promise_dns = DomainsRepository.getDomains();
-      this.promise_dns.then((response) => {
-        const data = response.data;
-        this.domains = data.domains;
-        this.promise_dns = null;
-      });
-      return this.promise;
+      if (!this.existingCluster) {
+        this.promise_dns = DomainsRepository.getDomains();
+        this.promise_dns.then((response) => {
+          const data = response.data;
+          this.domains = data.domains;
+        });
+      }
+      return [this.promise, this.promise_dns];
     },
   },
 };
