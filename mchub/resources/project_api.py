@@ -1,6 +1,6 @@
 from flask import request
 
-from .api_view import ApiView
+from .api_view import APIView
 from ..database import db
 from ..models.user import User, UserORM
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
@@ -9,7 +9,7 @@ from ..exceptions.invalid_usage_exception import (
 )
 
 
-class ProjectAPI(ApiView):
+class ProjectAPI(APIView):
     def get(self, user: User, id: int = None):
         if id is not None:
             project = db.session.get(Project, id)

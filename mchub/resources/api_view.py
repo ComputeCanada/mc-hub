@@ -126,7 +126,7 @@ def compute_current_user(route_handler):
     return decorator
 
 
-class ApiView(MethodView):
+class APIView(MethodView):
     """
     Configures all child classes to use the default decorators on all route handlers.
     """

@@ -1,5 +1,4 @@
 from ..cloud.openstack_manager import OpenStackManager
-from ..cloud.dns_manager import DnsManager
 
 MANAGER_CLASSES = {
     "openstack": OpenStackManager,
@@ -16,11 +15,6 @@ class CloudManager:
     @property
     def available_resources(self):
         """
-        Retrieves the available cloud resources including resources from OpenStack
-        and available domains.
+        Retrieves the available cloud resources from the cloud provider.
         """
-        available_resources = self.manager.available_resources
-        available_resources["possible_resources"][
-            "domain"
-        ] = DnsManager.get_available_domains()
-        return available_resources
+        return self.manager.available_resources

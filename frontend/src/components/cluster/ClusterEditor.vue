@@ -28,12 +28,7 @@
           />
         </v-list-item>
         <v-list-item v-if="!existingCluster">
-          <v-select
-            v-model="localSpecs.domain"
-            :items="getPossibleValues('domain')"
-            label="Domain"
-            :rules="[domainRule]"
-          />
+          <v-select v-model="localSpecs.domain" :items="getPossibleDomains()" label="Domain" :rules="[domainRule]" />
         </v-list-item>
         <v-list-item>
           <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
@@ -306,6 +301,7 @@ import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import DomainsRepository from "@/repositories/DomainsRepository";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import UserRepository from "@/repositories/UserRepository";
 
@@ -359,6 +355,7 @@ export default {
       promise: null,
       quotas: null,
       possibleResources: null,
+      domains: null,
       resourceDetails: null,
       projects: [],
     };
@@ -367,18 +364,19 @@ export default {
     promise() {
       this.$emit("loading", this.loading);
     },
-    possibleResources(possibleResources) {
+    domains(domains) {
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
       if (this.localSpecs.domain === null) {
         try {
-          this.localSpecs.domain = possibleResources.domain[0];
-          this.initialSpecs.domain = possibleResources.domain[0];
+          this.localSpecs.domain = domains[0];
+          this.initialSpecs.domain = domains[0];
         } catch (err) {
           console.log("No domain available");
         }
       }
-
+    },
+    possibleResources(possibleResources) {
       // Image
       if (this.localSpecs.image === null) {
         try {
@@ -497,10 +495,7 @@ export default {
       return true;
     },
     domainRule() {
-      return (
-        (this.possibleResources && this.possibleResources.domain.includes(this.localSpecs.domain)) ||
-        "Invalid domain provided"
-      );
+      return (this.domains && this.domains.includes(this.localSpecs.domain)) || "Invalid domain provided";
     },
     volumeCountRule() {
       return this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
@@ -652,6 +647,13 @@ export default {
         return [];
       } else {
         return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
+      }
+    },
+    getPossibleDomains() {
+      if (this.domains === null) {
+        return [];
+      } else {
+        return this.domains;
       }
     },
     getInstanceDetail(instanceType, detailName, defaultValue = 0) {
@@ -807,6 +809,12 @@ export default {
         this.quotas = data.quotas;
         this.resourceDetails = data.resource_details;
         this.promise = null;
+      });
+      this.promise_dns = DomainsRepository.getDomains();
+      this.promise_dns.then((response) => {
+        const data = response.data;
+        this.domains = data.domains;
+        this.promise_dns = null;
       });
       return this.promise;
     },

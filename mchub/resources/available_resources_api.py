@@ -1,4 +1,4 @@
-from ..resources.api_view import ApiView
+from ..resources.api_view import APIView
 from ..models.cloud.cloud_manager import CloudManager
 from ..models.user import User
 from ..models.cloud.project import Project
@@ -9,7 +9,7 @@ from ..exceptions.invalid_usage_exception import (
 from ..database import db
 
 
-class AvailableResourcesApi(ApiView):
+class AvailableResourcesAPI(APIView):
     def get(self, user: User, hostname, cloud_id):
         if hostname:
             orm = db.session.execute(
