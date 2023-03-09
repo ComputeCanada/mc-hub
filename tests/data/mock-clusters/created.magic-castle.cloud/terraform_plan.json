@@ -1018,28 +1018,6 @@
                                     }
                                 },
                                 {
-                                    "address": "module.openstack.module.cluster_config.random_string.freeipa_passwd",
-                                    "mode": "managed",
-                                    "type": "random_string",
-                                    "name": "freeipa_passwd",
-                                    "provider_name": "registry.terraform.io/hashicorp/random",
-                                    "schema_version": 1,
-                                    "values": {
-                                        "keepers": null,
-                                        "length": 16,
-                                        "lower": true,
-                                        "min_lower": 0,
-                                        "min_numeric": 0,
-                                        "min_special": 0,
-                                        "min_upper": 0,
-                                        "number": true,
-                                        "override_special": null,
-                                        "special": false,
-                                        "upper": true
-                                    },
-                                    "sensitive_values": {}
-                                },
-                                {
                                     "address": "module.openstack.module.cluster_config.random_string.munge_key",
                                     "mode": "managed",
                                     "type": "random_string",
@@ -1104,39 +1082,6 @@
                 "after_sensitive": {
                     "triggers": {}
                 }
-            }
-        },
-        {
-            "address": "module.openstack.module.cluster_config.random_string.freeipa_passwd",
-            "module_address": "module.openstack.module.cluster_config",
-            "mode": "managed",
-            "type": "random_string",
-            "name": "freeipa_passwd",
-            "provider_name": "registry.terraform.io/hashicorp/random",
-            "change": {
-                "actions": [
-                    "create"
-                ],
-                "before": null,
-                "after": {
-                    "keepers": null,
-                    "length": 16,
-                    "lower": true,
-                    "min_lower": 0,
-                    "min_numeric": 0,
-                    "min_special": 0,
-                    "min_upper": 0,
-                    "number": true,
-                    "override_special": null,
-                    "special": false,
-                    "upper": true
-                },
-                "after_unknown": {
-                    "id": true,
-                    "result": true
-                },
-                "before_sensitive": false,
-                "after_sensitive": {}
             }
         },
         {
@@ -3474,7 +3419,6 @@
                                         "var.nb_users",
                                         "module.cluster_config.guest_passwd",
                                         "module.cluster_config",
-                                        "module.cluster_config.freeipa_passwd",
                                         "module.cluster_config",
                                         "var.sudoer_username"
                                     ]
@@ -4022,14 +3966,6 @@
                                 },
                                 "module": {
                                     "outputs": {
-                                        "freeipa_passwd": {
-                                            "expression": {
-                                                "references": [
-                                                    "random_string.freeipa_passwd.result",
-                                                    "random_string.freeipa_passwd"
-                                                ]
-                                            }
-                                        },
                                         "guest_passwd": {
                                             "expression": {
                                                 "references": [
@@ -4152,22 +4088,6 @@
                                                     "var.guest_passwd"
                                                 ]
                                             }
-                                        },
-                                        {
-                                            "address": "random_string.freeipa_passwd",
-                                            "mode": "managed",
-                                            "type": "random_string",
-                                            "name": "freeipa_passwd",
-                                            "provider_config_key": "cluster_config:random",
-                                            "expressions": {
-                                                "length": {
-                                                    "constant_value": 16
-                                                },
-                                                "special": {
-                                                    "constant_value": false
-                                                }
-                                            },
-                                            "schema_version": 1
                                         },
                                         {
                                             "address": "random_string.munge_key",

@@ -261,6 +261,8 @@ def test_allocated_resources_valid(app):
         "cores": 10,
         "volume_count": 3,
         "volume_size": 200,
+        "ports": 3, 
+        "security_groups": 1,
     }
 
 
@@ -290,6 +292,8 @@ def test_allocated_resources_missing_nodes(app):
         "cores": 0,
         "volume_count": 3,
         "volume_size": 200,
+        "ports": 0, 
+        "security_groups": 1,
     }
 
 

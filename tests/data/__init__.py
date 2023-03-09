@@ -77,7 +77,6 @@ EXISTING_CLUSTER_STATE = {
     "public_keys": ["ssh-rsa FAKE"],
     "status": "provisioning_success",
     "hostname": "valid1.magic-castle.cloud",
-    "freeipa_passwd": "FAKE",
     "expiration_date": "2029-01-01",
     "age": "a moment",
 }
@@ -321,7 +320,6 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "hostname": "buildplanning.magic-castle.cloud",
         "status": "plan_running",
-        "freeipa_passwd": None,
         "age": "a moment",
     },
     "created.magic-castle.cloud": {
@@ -330,7 +328,6 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "hostname": "created.magic-castle.cloud",
         "status": "created",
-        "freeipa_passwd": None,
         "age": "a moment",
     },
     "valid1.magic-castle.cloud": {
@@ -339,7 +336,6 @@ CLUSTERS = {
         "expiration_date": "2029-01-01",
         "hostname": "valid1.magic-castle.cloud",
         "status": "provisioning_success",
-        "freeipa_passwd": "FAKE",
         "age": "a moment",
     },
     "empty-state.magic-castle.cloud": {
@@ -348,7 +344,6 @@ CLUSTERS = {
         "hostname": "empty-state.magic-castle.cloud",
         "expiration_date": "2029-01-01",
         "status": "build_error",
-        "freeipa_passwd": None,
         "age": "a moment",
     },
     "missingfloatingips.mc.ca": {
@@ -357,7 +352,6 @@ CLUSTERS = {
         "hostname": "missingfloatingips.mc.ca",
         "expiration_date": "2029-01-01",
         "status": "build_running",
-        "freeipa_passwd": None,
         "age": "a moment",
     },
     "missingnodes.mc.ca": {
@@ -366,7 +360,6 @@ CLUSTERS = {
         "hostname": "missingnodes.mc.ca",
         "expiration_date": "2029-01-01",
         "status": "build_error",
-        "freeipa_passwd": "FAKE",
         "age": "a moment",
     },
     "noowner.magic-castle.cloud": {
@@ -375,7 +368,6 @@ CLUSTERS = {
         "hostname": "noowner.magic-castle.cloud",
         "expiration_date": "2029-01-01",
         "status": "provisioning_success",
-        "freeipa_passwd": "FAKE",
         "age": "a moment",
     },
 }
@@ -387,11 +379,6 @@ PROGRESS_DATA = {
         {
             "address": "module.openstack.module.cluster_config.null_resource.deploy_hieradata[0]",
             "type": "null_resource",
-            "change": {"actions": ["create"], "progress": "queued"},
-        },
-        {
-            "address": "module.openstack.module.cluster_config.random_string.freeipa_passwd",
-            "type": "random_string",
             "change": {"actions": ["create"], "progress": "queued"},
         },
         {

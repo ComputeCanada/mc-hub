@@ -321,7 +321,6 @@ class MagicCastle:
             **(self.applied_config if self.applied_config else self.config),
             "hostname": self.hostname,
             "status": self.status,
-            "freeipa_passwd": self.freeipa_passwd,
             "age": self.age,
             "expiration_date": self.expiration_date,
             "cloud": {"name": self.project.name, "id": self.project.id},
@@ -332,26 +331,12 @@ class MagicCastle:
         return self.orm.tf_state
 
     @property
-    def freeipa_passwd(self):
-        if self.tf_state is not None:
-            return self.tf_state.freeipa_passwd
-        else:
-            return None
-
-    @property
     def allocated_resources(self):
         if self.is_busy:
             raise BusyClusterException
 
         if self.tf_state is not None:
-            return dict(
-                instance_count=self.tf_state.instance_count,
-                ram=self.tf_state.ram,
-                cores=self.tf_state.cores,
-                volume_count=self.tf_state.volume_count,
-                volume_size=self.tf_state.volume_size,
-                public_ip=self.tf_state.public_ip,
-            )
+            return self.tf_state.to_dict()
         else:
             return {}
 

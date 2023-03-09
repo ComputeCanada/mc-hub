@@ -29,12 +29,6 @@ CLOUD_PARSER = {
     }
 }
 
-IMAGE_PARSER = parse("resources[?name=image].instances[0].attributes.name")
-FREEIPA_PASSWD_PARSER = parse(
-    "resources[?name=freeipa_passwd].instances[0].attributes.result"
-)
-
-
 class TerraformState:
     """
     TerraformState holds the state file of a cluster, i.e. the terraform.tfstate file.
@@ -46,9 +40,7 @@ class TerraformState:
         "ram",
         "volume_count",
         "volume_size",
-        "image",
         "public_ip",
-        "freeipa_passwd",
         "ports",
         "security_groups",
     ]
@@ -70,11 +62,5 @@ class TerraformState:
         self.ports = len(parser["ports"].find(tf_state))
         self.security_groups = len(parser["security_groups"].find(tf_state))
 
-        try:
-            self.image = IMAGE_PARSER.find(tf_state)[0].value
-        except:
-            self.image = ""
-        try:
-            self.freeipa_passwd = FREEIPA_PASSWD_PARSER.find(tf_state)[0].value
-        except:
-            self.freeipa_passwd = None
+    def to_dict(self):
+        return { key : getattr(self, key) for key in self.__slots__ }
