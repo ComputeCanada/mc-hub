@@ -49,6 +49,8 @@ class TerraformState:
         "image",
         "public_ip",
         "freeipa_passwd",
+        "ports",
+        "security_groups",
     ]
 
     def __init__(self, tf_state: object, cloud="openstack"):

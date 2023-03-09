@@ -256,6 +256,7 @@ def test_allocated_resources_valid(app):
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "instance_count": 3,
+        "public_ip": 1,
         "ram": 15360,
         "cores": 10,
         "volume_count": 3,
@@ -284,6 +285,7 @@ def test_allocated_resources_missing_nodes(app):
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
         "instance_count": 0,
+        "public_ip": 1,
         "ram": 0,
         "cores": 0,
         "volume_count": 3,
@@ -300,10 +302,4 @@ def test_allocated_resources_not_found(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
 
     magic_castle = MagicCastle()
-    assert magic_castle.allocated_resources == {
-        "instance_count": 0,
-        "ram": 0,
-        "cores": 0,
-        "volume_count": 0,
-        "volume_size": 0,
-    }
+    assert magic_castle.allocated_resources == {}
