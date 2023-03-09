@@ -21,20 +21,9 @@ class AvailableResourcesAPI(APIView):
                 raise ClusterNotFoundException
             project = mc.project
             allocated_resources = mc.allocated_resources
-        elif cloud_id:
-            project = db.session.get(Project, cloud_id)
-            if project is None or project not in user.projects:
-                return {
-                    "quotas": {},
-                    "possible_resources": {},
-                    "resource_details": {},
-                }
-            allocated_resources = {}
         else:
-            return {
-                "quotas": {},
-                "possible_resources": {},
-                "resource_details": {},
-            }
-        cloud = CloudManager(project=project, **allocated_resources)
-        return cloud.available_resources
+            project = db.session.get(Project, cloud_id)
+            if project not in user.projects:
+                project = None
+            allocated_resources = {}
+        return CloudManager(project, allocated_resources).available_resources

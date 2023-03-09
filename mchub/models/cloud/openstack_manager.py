@@ -37,30 +37,16 @@ class OpenStackManager:
 
     __slots__ = [
         "project",
-        "__pre_allocated_instance_count",
-        "__pre_allocated_cores",
-        "__pre_allocated_ram",
-        "__pre_allocated_volume_count",
-        "__pre_allocated_volume_size",
+        "allocated_resources",
     ]
 
     def __init__(
         self,
         project,
-        *,
-        pre_allocated_instance_count=0,
-        pre_allocated_cores=0,
-        pre_allocated_ram=0,
-        pre_allocated_volume_count=0,
-        pre_allocated_volume_size=0,
+        allocated_resources,
     ):
         self.project = project
-        self.__pre_allocated_instance_count = pre_allocated_instance_count
-        self.__pre_allocated_cores = pre_allocated_cores
-        self.__pre_allocated_ram = pre_allocated_ram
-        self.__pre_allocated_volume_count = pre_allocated_volume_count
-        self.__pre_allocated_volume_size = pre_allocated_volume_size
-
+        self.allocated_resources = allocated_resources
 
     @property
     @cache
@@ -164,7 +150,7 @@ class OpenStackManager:
     @property
     def available_instance_count(self):
         return (
-            self.__pre_allocated_instance_count
+            self.allocated_resources.get("instance_count", 0)
             + self.compute_quotas["instances"]["limit"]
             - self.compute_quotas["instances"]["in_use"]
         )
@@ -172,7 +158,7 @@ class OpenStackManager:
     @property
     def available_ram(self):
         return (
-            self.__pre_allocated_ram
+            self.allocated_resources.get("ram", 0)
             + self.compute_quotas["ram"]["limit"]
             - self.compute_quotas["ram"]["in_use"]
         )
@@ -180,7 +166,7 @@ class OpenStackManager:
     @property
     def available_vcpus(self):
         return (
-            self.__pre_allocated_cores
+            self.allocated_resources.get("cores", 0)
             + self.compute_quotas["cores"]["limit"]
             - self.compute_quotas["cores"]["in_use"]
         )
@@ -188,7 +174,7 @@ class OpenStackManager:
     @property
     def available_volume_count(self):
         return (
-            self.__pre_allocated_volume_count
+            self.allocated_resources.get("volumes", 0)
             + self.volume_quotas["volumes"]["limit"]
             - self.volume_quotas["volumes"]["in_use"]
         )
@@ -196,7 +182,7 @@ class OpenStackManager:
     @property
     def available_volume_size(self):
         return (
-            self.__pre_allocated_volume_size
+            self.allocated_resources.get("volume_size", 0)
             + self.volume_quotas["gigabytes"]["limit"]
             - self.volume_quotas["gigabytes"]["in_use"]
         )
@@ -204,7 +190,8 @@ class OpenStackManager:
     @property
     def available_floating_ip_count(self):
         return (
-            self.network_quotas["floatingip"]["limit"]
+            self.allocated_resources.get("floatingip", 0)
+            + self.network_quotas["floatingip"]["limit"]
             - self.network_quotas["floatingip"]["used"]
         )
 

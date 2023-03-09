@@ -255,11 +255,11 @@ def test_allocated_resources_valid(app):
     )
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
-        "pre_allocated_instance_count": 3,
-        "pre_allocated_ram": 15360,
-        "pre_allocated_cores": 10,
-        "pre_allocated_volume_count": 3,
-        "pre_allocated_volume_size": 200,
+        "instance_count": 3,
+        "ram": 15360,
+        "cores": 10,
+        "volume_count": 3,
+        "volume_size": 200,
     }
 
 
@@ -283,11 +283,11 @@ def test_allocated_resources_missing_nodes(app):
     )
     magic_castle = MagicCastle(orm=orm)
     assert magic_castle.allocated_resources == {
-        "pre_allocated_instance_count": 0,
-        "pre_allocated_ram": 0,
-        "pre_allocated_cores": 0,
-        "pre_allocated_volume_count": 3,
-        "pre_allocated_volume_size": 200,
+        "instance_count": 0,
+        "ram": 0,
+        "cores": 0,
+        "volume_count": 3,
+        "volume_size": 200,
     }
 
 
@@ -301,9 +301,9 @@ def test_allocated_resources_not_found(app):
 
     magic_castle = MagicCastle()
     assert magic_castle.allocated_resources == {
-        "pre_allocated_instance_count": 0,
-        "pre_allocated_ram": 0,
-        "pre_allocated_cores": 0,
-        "pre_allocated_volume_count": 0,
-        "pre_allocated_volume_size": 0,
+        "instance_count": 0,
+        "ram": 0,
+        "cores": 0,
+        "volume_count": 0,
+        "volume_size": 0,
     }

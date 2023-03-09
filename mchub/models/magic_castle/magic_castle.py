@@ -345,20 +345,14 @@ class MagicCastle:
 
         if self.tf_state is not None:
             return dict(
-                pre_allocated_instance_count=self.tf_state.instance_count,
-                pre_allocated_ram=self.tf_state.ram,
-                pre_allocated_cores=self.tf_state.cores,
-                pre_allocated_volume_count=self.tf_state.volume_count,
-                pre_allocated_volume_size=self.tf_state.volume_size,
+                instance_count=self.tf_state.instance_count,
+                ram=self.tf_state.ram,
+                cores=self.tf_state.cores,
+                volume_count=self.tf_state.volume_count,
+                volume_size=self.tf_state.volume_size,
             )
         else:
-            return dict(
-                pre_allocated_instance_count=0,
-                pre_allocated_ram=0,
-                pre_allocated_cores=0,
-                pre_allocated_volume_count=0,
-                pre_allocated_volume_size=0,
-            )
+            return {}
 
     @property
     def is_busy(self):
