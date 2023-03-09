@@ -82,6 +82,8 @@ class OpenStackManager:
             "volume_count": self.available_volume_count,
             "volume_size": self.available_volume_size,
             "ips": self.available_floating_ip,
+            "ports": self.available_ports,
+            "security_groups": self.available_security_groups,
         }
 
     @property
@@ -193,6 +195,22 @@ class OpenStackManager:
             self.allocated_resources.get("public_ip", 0)
             + self.network_quotas["floatingip"]["limit"]
             - self.network_quotas["floatingip"]["used"]
+        )
+
+    @property
+    def available_ports(self):
+        return (
+            self.allocated_resources.get("ports", 0)
+            + self.network_quotas["ports"]["limit"]
+            - self.network_quotas["ports"]["used"]
+        )
+
+    @property
+    def available_security_groups(self):
+        return (
+            self.allocated_resources.get("security_groups", 0)
+            + self.network_quotas["security_groups"]["limit"]
+            - self.network_quotas["security_groups"]["used"]
         )
 
     @property
