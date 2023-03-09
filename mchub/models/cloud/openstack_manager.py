@@ -81,7 +81,7 @@ class OpenStackManager:
             "vcpus": {"max": self.available_vcpus},
             "volume_count": {"max": self.available_volume_count},
             "volume_size": {"max": self.available_volume_size},
-            "ips": {"max": self.available_floating_ip_count},
+            "ips": {"max": self.available_floating_ip},
         }
 
     @property
@@ -188,7 +188,7 @@ class OpenStackManager:
         )
 
     @property
-    def available_floating_ip_count(self):
+    def available_floating_ip(self):
         return (
             self.allocated_resources.get("public_ip", 0)
             + self.network_quotas["floatingip"]["limit"]
