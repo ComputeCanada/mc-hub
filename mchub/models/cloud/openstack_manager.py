@@ -76,12 +76,12 @@ class OpenStackManager:
     @property
     def quotas(self):
         return {
-            "instance_count": {"max": self.available_instance_count},
-            "ram": {"max": self.available_ram},
-            "vcpus": {"max": self.available_vcpus},
-            "volume_count": {"max": self.available_volume_count},
-            "volume_size": {"max": self.available_volume_size},
-            "ips": {"max": self.available_floating_ip},
+            "instance_count": self.available_instance_count,
+            "ram": self.available_ram,
+            "vcpus": self.available_vcpus,
+            "volume_count": self.available_volume_count,
+            "volume_size": self.available_volume_size,
+            "ips": self.available_floating_ip,
         }
 
     @property
