@@ -69,12 +69,13 @@ const DEFAULT_DOMAINS =   Object.freeze({
 });
 
 const DEFAULT_QUOTAS = Object.freeze({
-  instance_count: { max: 115 },
-  ram: { max: 221184 },
-  vcpus: { max: 224 },
-  volume_count: { max: 114 },
-  volume_size: { max: 490 },
-  ips: { max: 3 },
+  instance_count: 115,
+  ram: 221184,
+  vcpus: 224,
+  ports: 200,
+  volume_count: 114,
+  volume_size: 490,
+  ips: 3,
 });
 
 const DEFAULT_RESOURCE_DETAILS = Object.freeze({
