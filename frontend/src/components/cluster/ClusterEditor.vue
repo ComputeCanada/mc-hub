@@ -508,7 +508,7 @@ export default {
       return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;
     },
     instanceCountMax() {
-      return this.quotas ? this.quotas.instance_count : 0;
+      return this.quotas ? Math.min(this.quotas.instance_count, this.quotas.ports) : 0;
     },
     ipsCountMax() {
       return this.quotas ? this.quotas.ips : 0;
