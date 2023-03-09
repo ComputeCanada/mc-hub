@@ -17,8 +17,14 @@ CLOUD_PARSER = {
         "instance_volumes": parse(
             "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
         ),
-        "floatingip": parse(
+        "public_ips": parse(
             "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.id"
+        ),
+        "ports": parse(
+            "resources[?type=openstack_networking_port_v2].instances[*].attributes.id"
+        ),
+        "security_groups": parse(
+            "resources[?type=openstack_compute_secgroup_v2].instances[*].attributes.id"
         ),
     }
 }
@@ -57,7 +63,10 @@ class TerraformState:
         self.volume_size = sum(vol.value for vol in volumes) + sum(
             vol.value for vol in inst_volumes
         )
-        self.public_ip = len(parser["floatingip"].find(tf_state))
+
+        self.public_ip = len(parser["public_ips"].find(tf_state))
+        self.ports = len(parser["ports"].find(tf_state))
+        self.security_groups = len(parser["security_groups"].find(tf_state))
 
         try:
             self.image = IMAGE_PARSER.find(tf_state)[0].value
