@@ -616,13 +616,6 @@ export default {
               newPublicIP += self.localSpecs.instances[key].count;
             }
           }
-          if (self.initialSpecs) {
-            for (let key in self.initialSpecs.instances) {
-              if (self.initialSpecs.instances[key].tags.includes("public")) {
-                newPublicIP -= self.initialSpecs.instances[key].count;
-              }
-            }
-          }
           return newPublicIP <= self.ipsCountMax || "Public IP quota exceeded";
         }
         return true;

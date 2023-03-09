@@ -2,7 +2,7 @@ from jsonpath_ng.ext import parse
 
 CLOUD_PARSER = {
     "openstack": {
-        "instance_count": parse(
+        "instances": parse(
             "resources[?type=openstack_compute_flavor_v2].instances[*].attributes.id"
         ),
         "cores": parse(
@@ -16,6 +16,9 @@ CLOUD_PARSER = {
         ),
         "instance_volumes": parse(
             "resources[?type=openstack_compute_instance_v2].instances[*].attributes.block_device[*].volume_size"
+        ),
+        "floatingip": parse(
+            "resources[?type=openstack_compute_floatingip_associate_v2].instances[*].attributes.id"
         ),
     }
 }
@@ -38,12 +41,13 @@ class TerraformState:
         "volume_count",
         "volume_size",
         "image",
+        "public_ip",
         "freeipa_passwd",
     ]
 
     def __init__(self, tf_state: object, cloud="openstack"):
         parser = CLOUD_PARSER[cloud]
-        self.instance_count = len(parser["instance_count"].find(tf_state))
+        self.instance_count = len(parser["instances"].find(tf_state))
         self.cores = sum([cores.value for cores in parser["cores"].find(tf_state)])
         self.ram = sum([ram.value for ram in parser["ram"].find(tf_state)])
 
@@ -53,6 +57,7 @@ class TerraformState:
         self.volume_size = sum(vol.value for vol in volumes) + sum(
             vol.value for vol in inst_volumes
         )
+        self.public_ip = len(parser["floatingip"].find(tf_state))
 
         try:
             self.image = IMAGE_PARSER.find(tf_state)[0].value

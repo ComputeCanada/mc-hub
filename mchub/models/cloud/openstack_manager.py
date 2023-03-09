@@ -190,7 +190,7 @@ class OpenStackManager:
     @property
     def available_floating_ip_count(self):
         return (
-            self.allocated_resources.get("floatingip", 0)
+            self.allocated_resources.get("public_ip", 0)
             + self.network_quotas["floatingip"]["limit"]
             - self.network_quotas["floatingip"]["used"]
         )

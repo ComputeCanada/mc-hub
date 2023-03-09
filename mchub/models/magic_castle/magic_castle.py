@@ -350,6 +350,7 @@ class MagicCastle:
                 cores=self.tf_state.cores,
                 volume_count=self.tf_state.volume_count,
                 volume_size=self.tf_state.volume_size,
+                public_ip=self.tf_state.public_ip,
             )
         else:
             return {}
