@@ -13,8 +13,6 @@ from marshmallow import ValidationError
 from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError
 
-from mchub.models.cloud.cloud_manager import CloudManager
-
 from .magic_castle_configuration import MagicCastleConfiguration
 from .cluster_status_code import ClusterStatusCode
 from .plan_type import PlanType

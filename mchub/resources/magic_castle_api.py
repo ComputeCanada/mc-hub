@@ -1,4 +1,3 @@
-from operator import imod
 from flask import request
 from .api_view import APIView
 from ..exceptions.invalid_usage_exception import (
