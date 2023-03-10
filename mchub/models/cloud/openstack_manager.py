@@ -99,7 +99,7 @@ class OpenStackManager:
                 for tag in TAG_MINIMUM_REQUIREMENTS
             },
             "types": [flavor.name for flavor in self.available_flavors],
-            "volumes": {},
+            "volumes": [type.name for type in self.available_volume_types],
         }
 
     @property
@@ -139,6 +139,11 @@ class OpenStackManager:
         available_flavors = list(self.connection.compute.flavors())
         available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
         return available_flavors
+
+    @property
+    @cache
+    def available_volume_types(self):
+        return list(self.connection.block_storage.types())
 
     @property
     def available_instance_count(self):
@@ -216,7 +221,7 @@ class OpenStackManager:
         # https://docs.openstack.org/api-ref/block-storage/v3/index.html?expanded=show-quotas-for-a-project-detail#show-quotas-for-a-project
         return self.connection.block_storage.get(
             f"/os-quota-sets/{self.project_id}?usage=true"
-            ).json()["quota_set"]
+        ).json()["quota_set"]
 
     @property
     @cache
@@ -230,7 +235,7 @@ class OpenStackManager:
         # https://docs.openstack.org/api-ref/compute/?expanded=show-a-quota-detail#show-a-quota
         return self.connection.compute.get(
             f"/os-quota-sets/{self.project_id}/detail"
-            ).json()["quota_set"]
+        ).json()["quota_set"]
 
     @property
     @cache
