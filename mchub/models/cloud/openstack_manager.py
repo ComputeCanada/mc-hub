@@ -141,15 +141,6 @@ class OpenStackManager:
         return available_flavors
 
     @property
-    def available_tags(self):
-        tags = {
-            "mgmt": ["mgmt", "nfs", "puppet"],
-            "login": ["login", "proxy", "public"],
-            "node": ["node"],
-        }
-        return tags
-
-    @property
     def available_instance_count(self):
         return (
             self.allocated_resources.get("instance_count", 0)
