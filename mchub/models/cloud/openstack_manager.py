@@ -1,8 +1,7 @@
 import openstack
 
 from functools import cache
-from os import environ, path
-from re import match, IGNORECASE, compile
+from re import IGNORECASE, compile
 
 VALID_IMAGES_REGEX_ARRAY = [
     compile(r"rocky-8", IGNORECASE),
