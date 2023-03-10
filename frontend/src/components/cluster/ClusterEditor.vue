@@ -627,9 +627,9 @@ export default {
       }
       // Retrieve all available types
       // Then filter based on the selected tags
-      let inst_types = this.possibleResources["types"];
+      let inst_types = this.possibleResources.types;
       for (const tag of tags) {
-        if (tag in this.possibleResources["tag_types"]) {
+        if (tag in this.possibleResources.tag_types) {
           const tag_types = new Set(this.possibleResources["tag_types"][tag]);
           inst_types = inst_types.filter((x) => tag_types.has(x));
         }
