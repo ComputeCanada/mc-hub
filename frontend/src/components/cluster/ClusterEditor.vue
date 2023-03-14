@@ -4,14 +4,28 @@
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item v-if="!stateful">
-          <v-select
-            v-model="localSpecs.cloud.id"
-            item-value="id"
-            item-text="name"
-            :items="projects"
-            label="Cloud project"
-            @change="changeCloudProject"
-          />
+          <v-row>
+            <v-col>
+              <v-select
+                v-model="localSpecs.cloud.id"
+                item-value="id"
+                item-text="name"
+                :items="projects"
+                label="Cloud project"
+                @change="changeCloudProject"
+              />
+            </v-col>
+            <v-col>
+              <v-select
+                v-model="localSpecs.region"
+                item-value="id"
+                item-text="name"
+                :items="regions"
+                label="Region"
+                @change="changeCloudProject"
+              />
+            </v-col>
+          </v-row>
         </v-list-item>
         <v-list-item v-else>
           <v-list-item-content>
@@ -57,68 +71,73 @@
           </v-menu>
         </v-list-item>
       </v-list>
-      <v-divider />
-
+      <v-list-item>
+        <v-divider />
+      </v-list-item>
       <!-- Instances -->
       <v-list class="pt-0">
         <v-list-item>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
+          <v-row>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+            </v-col>
+          </v-row>
         </v-list-item>
       </v-list>
       <v-list>
         <div :key="id" v-for="id in Object.keys(localSpecs.instances)">
           <v-list-item>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                v-model.number="localSpecs.instances[id].count"
-                label="count"
-                min="0"
-                type="number"
-                append-outer-icon="mdi-close"
-                :rules="[countRule]"
-              />
-            </v-col>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                :value="id"
-                label="hostname prefix"
-                v-on:change="changeHostnamePrefix(id, $event)"
-                :rules="[hostnamePrefixRule(id)]"
-              />
-            </v-col>
-            <v-col cols="12" sm="3" class="pt-0">
-              <type-select
-                :types="getTypes(localSpecs.instances[id].tags)"
-                v-model="localSpecs.instances[id].type"
-                label="Type"
-                :rules="[ramRule, coreRule]"
-              />
-            </v-col>
-            <v-col cols="12" sm="4" class="pt-0">
-              <v-combobox
-                v-model="localSpecs.instances[id].tags"
-                :items="TAGS"
-                label="tags"
-                :rules="[publicTagRule(id)]"
-                multiple
-              ></v-combobox>
-            </v-col>
-            <v-col cols="12" sm="1" class="pt-0">
-              <v-btn @click="rmInstanceRow(id)" text icon small color="error">
-                <v-icon> mdi-delete </v-icon>
-              </v-btn>
-            </v-col>
+            <v-row>
+              <v-col cols="12" sm="2">
+                <v-text-field
+                  v-model.number="localSpecs.instances[id].count"
+                  label="count"
+                  min="0"
+                  type="number"
+                  append-outer-icon="mdi-close"
+                  :rules="[countRule]"
+                />
+              </v-col>
+              <v-col cols="12" sm="2">
+                <v-text-field
+                  :value="id"
+                  label="hostname prefix"
+                  v-on:change="changeHostnamePrefix(id, $event)"
+                  :rules="[hostnamePrefixRule(id)]"
+                />
+              </v-col>
+              <v-col cols="12" sm="3">
+                <type-select
+                  :types="getTypes(localSpecs.instances[id].tags)"
+                  v-model="localSpecs.instances[id].type"
+                  label="Type"
+                  :rules="[ramRule, coreRule]"
+                />
+              </v-col>
+              <v-col cols="12" sm="4">
+                <v-combobox
+                  v-model="localSpecs.instances[id].tags"
+                  :items="TAGS"
+                  label="tags"
+                  :rules="[publicTagRule(id)]"
+                  multiple
+                ></v-combobox>
+              </v-col>
+              <v-col cols="12" sm="1" align-self="center">
+                <v-btn @click="rmInstanceRow(id)" text icon small color="error">
+                  <v-icon> mdi-delete </v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-list-item>
         </div>
         <div class="text-center">
@@ -129,65 +148,66 @@
       <!-- Volumes -->
       <v-list>
         <v-list-item>
-          <v-spacer></v-spacer>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
-          <v-spacer></v-spacer>
+          <v-row>
+            <v-spacer></v-spacer>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+            </v-col>
+            <v-spacer></v-spacer>
+          </v-row>
         </v-list-item>
       </v-list>
       <v-list>
         <div :key="tag" v-for="tag in Object.keys(localSpecs.volumes)">
           <div :key="id" v-for="id in Object.keys(localSpecs.volumes[tag])">
             <v-list-item>
-              <v-spacer></v-spacer>
-              <v-col cols="12" sm="2" class="pt-0">
-                <v-combobox
-                  :items="Object.keys(localSpecs.volumes)"
-                  :value="tag"
-                  label="tag"
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                ></v-combobox>
-                <!-- <v-text-field :value="tag" label="tag" readonly /> -->
-              </v-col>
-              <v-col cols="12" sm="3" class="pt-0">
-                <v-text-field
-                  :value="id"
-                  label="volume name"
-                  v-on:change="changeVolumeName(id, $event)"
-                  :rules="[volumeNameRule(id)]"
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                />
-              </v-col>
-              <v-col cols="12" sm="2" class="pt-0">
-                <v-text-field
-                  v-model.number="localSpecs.volumes[tag][id].size"
-                  type="number"
-                  label="size"
-                  prefix="GB"
-                  :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
-                  min="0"
-                  dir="rtl"
-                  reverse
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                />
-              </v-col>
-              <v-col cols="12" sm="1" class="pt-0">
-                <v-btn
-                  @click="rmVolumeRow(id)"
-                  text
-                  icon
-                  small
-                  color="error"
-                  :disabled="stateful && id in initialSpecs.volumes.nfs"
-                >
-                  <v-icon> mdi-delete </v-icon>
-                </v-btn>
-              </v-col>
-              <v-spacer></v-spacer>
+              <v-row>
+                <v-col cols="12" sm="2">
+                  <v-combobox
+                    :items="Object.keys(localSpecs.volumes)"
+                    :value="tag"
+                    label="tag"
+                    :readonly="stateful && id in initialSpecs.volumes.nfs"
+                  ></v-combobox>
+                  <!-- <v-text-field :value="tag" label="tag" readonly /> -->
+                </v-col>
+                <v-col cols="12" sm="4">
+                  <v-text-field
+                    :value="id"
+                    label="volume name"
+                    v-on:change="changeVolumeName(id, $event)"
+                    :rules="[volumeNameRule(id)]"
+                    :readonly="stateful && id in initialSpecs.volumes.nfs"
+                  />
+                </v-col>
+                <v-col cols="12" sm="2">
+                  <v-text-field
+                    v-model.number="localSpecs.volumes[tag][id].size"
+                    type="number"
+                    label="size"
+                    suffix="GB"
+                    :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
+                    min="0"
+                    :readonly="stateful && id in initialSpecs.volumes.nfs"
+                  />
+                </v-col>
+                <v-spacer></v-spacer>
+                <v-col cols="12" sm="1" align-self="center">
+                  <v-btn
+                    @click="rmVolumeRow(id)"
+                    text
+                    icon
+                    small
+                    color="error"
+                    :disabled="stateful && id in initialSpecs.volumes.nfs"
+                  >
+                    <v-icon> mdi-delete </v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
             </v-list-item>
           </div>
         </div>
@@ -499,10 +519,10 @@ export default {
       return (this.domains && this.domains.includes(this.localSpecs.domain)) || "Invalid domain provided";
     },
     volumeCountRule() {
-      return this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
+      return this.volumeCountUsed <= this.volumeCountMax || "quota exceeded";
     },
     volumeSizeRule() {
-      return this.volumeSizeUsed <= this.volumeSizeMax || "Volume size quota exceeded";
+      return this.volumeSizeUsed <= this.volumeSizeMax || "quota exceeded";
     },
     instanceCountUsed() {
       return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;

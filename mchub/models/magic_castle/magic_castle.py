@@ -321,7 +321,11 @@ class MagicCastle:
             "status": self.status,
             "age": self.age,
             "expiration_date": self.expiration_date,
-            "cloud": {"name": self.project.name, "id": self.project.id},
+            "cloud": {
+                "name": self.project.name,
+                "id": self.project.id,
+                "provider": self.project.provider,
+            },
         }
 
     @property
