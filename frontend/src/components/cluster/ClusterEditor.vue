@@ -30,7 +30,7 @@
         <v-list-item v-else>
           <v-list-item-content>
             <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
+            <v-list-item-title>{{ localSpecs.cloud.provider }} - {{ localSpecs.cloud.name }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item v-if="!existingCluster">
@@ -194,7 +194,13 @@
                     :readonly="stateful && id in initialSpecs.volumes.nfs"
                   />
                 </v-col>
-                <v-spacer></v-spacer>
+                <v-col cols="12" sm="3">
+                  <v-select
+                    v-model="localSpecs.volumes[tag][id].type"
+                    :items="getPossibleValues('volumes')"
+                    label="type"
+                  />
+                </v-col>
                 <v-col cols="12" sm="1" align-self="center">
                   <v-btn
                     @click="rmVolumeRow(id)"
@@ -379,6 +385,7 @@ export default {
       domains: null,
       resourceDetails: null,
       projects: [],
+      regions: [],
     };
   },
   watch: {
@@ -423,6 +430,15 @@ export default {
           }
         }
       }
+      for (let tag in this.localSpecs.volumes) {
+        for (let key in this.localSpecs.volumes[tag]) {
+          if (this.localSpecs.volumes[tag][key].type === null) {
+            const type = this.possibleResources.volumes[0];
+            this.localSpecs.volumes[tag][key].type = type;
+          }
+        }
+      }
+      this.VOLUME_STUB.type = this.possibleResources.volumes[0];
     },
     dirtyForm(dirty) {
       if (dirty && this.stateful) {
@@ -806,6 +822,12 @@ export default {
       for (let key in this.localSpecs.instances) {
         this.localSpecs.instances[key].type = null;
       }
+      for (let tag in this.localSpecs.volumes) {
+        for (let key in this.localSpecs.volumes[tag]) {
+          this.localSpecs.volumes[tag][key].type = null;
+        }
+      }
+      this.VOLUME_STUB.type = null;
       this.localSpecs.image = null;
       this.loadCloudResources();
     },
