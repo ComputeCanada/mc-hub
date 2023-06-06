@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v9.2.14] 2023-06-06
+
+- Bumped MAGIC_CASTLE_VERSION to 12.5.0
+
 ## [v9.2.10] 2023-02-02
 
 - Interpret image ordering priority correctly
