@@ -62,9 +62,13 @@ jobs:
         run: |
           export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
           venv/bin/python -m pytest -x -vv --build-live-cluster ../;
-      # - name: Debug with tmate on failure
-      #   if: ${{ failure() }}
-      #   uses: mxschmitt/action-tmate@v3
+      - name: Display log on failure
+        if: ${{ failure() }}
+        working-directory: ./run
+        run: |
+          cat clusters/*/terraform_plan.log
+          cat clusters/*/terraform_apply.log
+
   container:
     runs-on: ubuntu-22.04
     name: Build container
