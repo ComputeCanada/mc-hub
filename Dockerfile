@@ -15,7 +15,7 @@ RUN apt-get update && \
     pip install poetry
 
 ENV MAGIC_CASTLE_PATH=/magic_castle
-ENV MAGIC_CASTLE_VERSION=12.3.0
+ENV MAGIC_CASTLE_VERSION=12.6.7
 RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz -o magic_castle.tar.gz && \
     tar xvf magic_castle.tar.gz && \
     mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
@@ -69,7 +69,7 @@ RUN mkdir -p /home/mcu/clusters /home/mcu/database /home/mcu/credentials /home/m
 ADD .terraformrc /home/mcu
 
 ENV MAGIC_CASTLE_PATH=/magic_castle
-ENV MAGIC_CASTLE_VERSION=12.3.0
+ENV MAGIC_CASTLE_VERSION=12.6.7
 ENV MCH_DIST_PATH=/code/frontend
 
 CMD python3 -m mchub.schema_update --clean && \
