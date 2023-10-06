@@ -4,6 +4,7 @@ FROM node:18-bullseye as frontend-build-stage
 
 WORKDIR /frontend
 ADD frontend .
+ENV UV_USE_IO_URING 0
 RUN npm install && npm run build
 
 # BACKEND BUILD STAGE
