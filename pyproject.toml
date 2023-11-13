@@ -7,7 +7,7 @@ license = "BSD 3"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-Flask = "^2.2.0"
+Flask = "^2.3.2"
 Flask-SQLAlchemy = "^3.0.3"
 SQLAlchemy = "^2.0.5"
 humanize = "^4.0.0"
