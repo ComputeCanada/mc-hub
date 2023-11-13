@@ -43,23 +43,6 @@
                 >
               </v-row>
               <v-row>
-                <v-col>FreeIPA admin username</v-col>
-                <v-col>
-                  <copy-button :color="expandedContentColor" text="admin" />
-                  <code>admin</code></v-col
-                >
-              </v-row>
-              <v-row>
-                <v-col>FreeIPA admin password</v-col>
-                <v-col>
-                  <template v-if="item.freeipa_passwd">
-                    <copy-button :color="expandedContentColor" :text="item.freeipa_passwd" />
-                    <password-display :password="item.freeipa_passwd" :color="expandedContentColor" />
-                  </template>
-                  <span v-else>not available</span>
-                </v-col>
-              </v-row>
-              <v-row>
                 <v-col>Guest usernames</v-col>
                 <v-col>
                   <template v-if="item.nb_users">

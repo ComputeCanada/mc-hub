@@ -13,8 +13,6 @@ from marshmallow import ValidationError
 from sqlalchemy.sql import func
 from sqlalchemy.exc import IntegrityError
 
-from mchub.models.cloud.cloud_manager import CloudManager
-
 from .magic_castle_configuration import MagicCastleConfiguration
 from .cluster_status_code import ClusterStatusCode
 from .plan_type import PlanType
@@ -321,10 +319,13 @@ class MagicCastle:
             **(self.applied_config if self.applied_config else self.config),
             "hostname": self.hostname,
             "status": self.status,
-            "freeipa_passwd": self.freeipa_passwd,
             "age": self.age,
             "expiration_date": self.expiration_date,
-            "cloud": {"name": self.project.name, "id": self.project.id},
+            "cloud": {
+                "name": self.project.name,
+                "id": self.project.id,
+                "provider": self.project.provider,
+            },
         }
 
     @property
@@ -332,33 +333,14 @@ class MagicCastle:
         return self.orm.tf_state
 
     @property
-    def freeipa_passwd(self):
-        if self.tf_state is not None:
-            return self.tf_state.freeipa_passwd
-        else:
-            return None
-
-    @property
     def allocated_resources(self):
         if self.is_busy:
             raise BusyClusterException
 
         if self.tf_state is not None:
-            return dict(
-                pre_allocated_instance_count=self.tf_state.instance_count,
-                pre_allocated_ram=self.tf_state.ram,
-                pre_allocated_cores=self.tf_state.cores,
-                pre_allocated_volume_count=self.tf_state.volume_count,
-                pre_allocated_volume_size=self.tf_state.volume_size,
-            )
+            return self.tf_state.to_dict()
         else:
-            return dict(
-                pre_allocated_instance_count=0,
-                pre_allocated_ram=0,
-                pre_allocated_cores=0,
-                pre_allocated_volume_count=0,
-                pre_allocated_volume_size=0,
-            )
+            return {}
 
     @property
     def is_busy(self):

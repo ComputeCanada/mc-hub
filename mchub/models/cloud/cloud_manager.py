@@ -1,26 +1,36 @@
 from ..cloud.openstack_manager import OpenStackManager
-from ..cloud.dns_manager import DnsManager
 
 MANAGER_CLASSES = {
     "openstack": OpenStackManager,
 }
 
 class CloudManager:
-    def __init__(self, project, **kwargs):
-        manager_class = MANAGER_CLASSES.get(project.provider)
-        if manager_class:
-            self.manager = manager_class(project=project, **kwargs)
+    def __init__(self, project, allocated_resources):
+        if project:
+            manager_class = MANAGER_CLASSES.get(project.provider)
+            if manager_class:
+                self.manager = manager_class(project, allocated_resources)
+            else:
+                raise ValueError(f"Unknown cloud provider {project.provider}")
         else:
-            raise ValueError("Invalid cloud provider")
+            self.manager = DefaultCloudManager(project, allocated_resources)
 
     @property
     def available_resources(self):
         """
-        Retrieves the available cloud resources including resources from OpenStack
-        and available domains.
+        Retrieves the available cloud resources from the cloud provider.
         """
-        available_resources = self.manager.available_resources
-        available_resources["possible_resources"][
-            "domain"
-        ] = DnsManager.get_available_domains()
-        return available_resources
+        return self.manager.available_resources
+
+class DefaultCloudManager:
+    def __init__(self, project, allocated_resources):
+        self.project = project
+        self.allocated_resources = allocated_resources
+
+    @property
+    def available_resources(self):
+        return {
+            "quotas": {},
+            "possible_resources": {},
+            "resource_details": {},
+        }

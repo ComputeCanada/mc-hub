@@ -4,9 +4,7 @@ import re
 from collections.abc import Mapping
 
 import marshmallow
-from marshmallow import fields, ValidationError, EXCLUDE
-
-from copy import deepcopy
+from marshmallow import fields, EXCLUDE
 
 from ..cloud.dns_manager import DnsManager
 from ...configuration.magic_castle import (

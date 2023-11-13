@@ -1,7 +1,7 @@
 import openstack
 
-from os import environ, path
-from re import match, IGNORECASE, compile
+from functools import cache
+from re import IGNORECASE, compile
 
 VALID_IMAGES_REGEX_ARRAY = [
     compile(r"rocky-8", IGNORECASE),
@@ -35,60 +35,30 @@ class OpenStackManager:
     """
 
     __slots__ = [
-        "_con",
-        "_project_id",
         "project",
-        "__pre_allocated_instance_count",
-        "__pre_allocated_cores",
-        "__pre_allocated_ram",
-        "__pre_allocated_volume_count",
-        "__pre_allocated_volume_size",
-        "_volume_quotas",
-        "_compute_quotas",
-        "_network_quotas",
-        "_available_flavors",
+        "allocated_resources",
     ]
 
     def __init__(
         self,
         project,
-        *,
-        pre_allocated_instance_count=0,
-        pre_allocated_cores=0,
-        pre_allocated_ram=0,
-        pre_allocated_volume_count=0,
-        pre_allocated_volume_size=0,
+        allocated_resources,
     ):
-        self._con = None
-        self._project_id = None
         self.project = project
-        self.__pre_allocated_instance_count = pre_allocated_instance_count
-        self.__pre_allocated_cores = pre_allocated_cores
-        self.__pre_allocated_ram = pre_allocated_ram
-        self.__pre_allocated_volume_count = pre_allocated_volume_count
-        self.__pre_allocated_volume_size = pre_allocated_volume_size
-
-        self._volume_quotas = None
-        self._compute_quotas = None
-        self._network_quotas = None
-
-        self._available_flavors = None
+        self.allocated_resources = allocated_resources
 
     @property
+    @cache
     def connection(self):
-        if self._con is None:
-            # Convert OS_* environment variable in keyword arguments
-            kargs = {key[3:].lower(): value for key, value in self.project.env.items()}
-            kargs["auth_type"] = "v3applicationcredential"
-            self._con = openstack.connect(**kargs)
-
-        return self._con
+        # Convert OS_* environment variable in keyword arguments
+        kargs = {key[3:].lower(): value for key, value in self.project.env.items()}
+        kargs["auth_type"] = "v3applicationcredential"
+        return openstack.connect(**kargs)
 
     @property
+    @cache
     def project_id(self):
-        if self._project_id is None:
-            self._project_id = self.connection.current_project_id
-        return self._project_id
+        return self.connection.current_project_id
 
     @property
     def env(self):
@@ -105,12 +75,14 @@ class OpenStackManager:
     @property
     def quotas(self):
         return {
-            "instance_count": {"max": self.available_instance_count},
-            "ram": {"max": self.available_ram},
-            "vcpus": {"max": self.available_vcpus},
-            "volume_count": {"max": self.available_volume_count},
-            "volume_size": {"max": self.available_volume_size},
-            "ips": {"max": self.available_floating_ip_count},
+            "instance_count": self.available_instance_count,
+            "ram": self.available_ram,
+            "vcpus": self.available_vcpus,
+            "volume_count": self.available_volume_count,
+            "volume_size": self.available_volume_size,
+            "ips": self.available_floating_ip,
+            "ports": self.available_ports,
+            "security_groups": self.available_security_groups,
         }
 
     @property
@@ -126,7 +98,7 @@ class OpenStackManager:
                 for tag in TAG_MINIMUM_REQUIREMENTS
             },
             "types": [flavor.name for flavor in self.available_flavors],
-            "volumes": {},
+            "volumes": [type.name for type in self.available_volume_types],
         }
 
     @property
@@ -149,6 +121,7 @@ class OpenStackManager:
         }
 
     @property
+    @cache
     def images(self):
         images = []
         for image in self.connection.image.images():
@@ -160,25 +133,21 @@ class OpenStackManager:
         return [image[1] for image in images]
 
     @property
+    @cache
     def available_flavors(self):
-        if self._available_flavors is None:
-            self._available_flavors = list(self.connection.compute.flavors())
-            self._available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
-        return self._available_flavors
+        available_flavors = list(self.connection.compute.flavors())
+        available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
+        return available_flavors
 
     @property
-    def available_tags(self):
-        tags = {
-            "mgmt": ["mgmt", "nfs", "puppet"],
-            "login": ["login", "proxy", "public"],
-            "node": ["node"],
-        }
-        return tags
+    @cache
+    def available_volume_types(self):
+        return list(self.connection.block_storage.types())
 
     @property
     def available_instance_count(self):
         return (
-            self.__pre_allocated_instance_count
+            self.allocated_resources.get("instance_count", 0)
             + self.compute_quotas["instances"]["limit"]
             - self.compute_quotas["instances"]["in_use"]
         )
@@ -186,7 +155,7 @@ class OpenStackManager:
     @property
     def available_ram(self):
         return (
-            self.__pre_allocated_ram
+            self.allocated_resources.get("ram", 0)
             + self.compute_quotas["ram"]["limit"]
             - self.compute_quotas["ram"]["in_use"]
         )
@@ -194,7 +163,7 @@ class OpenStackManager:
     @property
     def available_vcpus(self):
         return (
-            self.__pre_allocated_cores
+            self.allocated_resources.get("cores", 0)
             + self.compute_quotas["cores"]["limit"]
             - self.compute_quotas["cores"]["in_use"]
         )
@@ -202,7 +171,7 @@ class OpenStackManager:
     @property
     def available_volume_count(self):
         return (
-            self.__pre_allocated_volume_count
+            self.allocated_resources.get("volumes", 0)
             + self.volume_quotas["volumes"]["limit"]
             - self.volume_quotas["volumes"]["in_use"]
         )
@@ -210,59 +179,64 @@ class OpenStackManager:
     @property
     def available_volume_size(self):
         return (
-            self.__pre_allocated_volume_size
+            self.allocated_resources.get("volume_size", 0)
             + self.volume_quotas["gigabytes"]["limit"]
             - self.volume_quotas["gigabytes"]["in_use"]
         )
 
     @property
-    def available_floating_ip_count(self):
+    def available_floating_ip(self):
         return (
-            self.network_quotas["floatingip"]["limit"]
+            self.allocated_resources.get("public_ip", 0)
+            + self.network_quotas["floatingip"]["limit"]
             - self.network_quotas["floatingip"]["used"]
         )
 
     @property
+    def available_ports(self):
+        return (
+            self.allocated_resources.get("ports", 0)
+            + self.network_quotas["ports"]["limit"]
+            - self.network_quotas["ports"]["used"]
+        )
+
+    @property
+    def available_security_groups(self):
+        return (
+            self.allocated_resources.get("security_groups", 0)
+            + self.network_quotas["security_groups"]["limit"]
+            - self.network_quotas["security_groups"]["used"]
+        )
+
+    @property
+    @cache
     def volume_quotas(self):
-        if self._volume_quotas is None:
-            # Normally, we should use self.__connection.get_volume_quotas(...) from openstack sdk.
-            # However, this method executes the action
-            # identity:list_projects from the identity api which is forbidden
-            # to some users.
-            #
-            # API documentation:
-            # https://docs.openstack.org/api-ref/block-storage/v3/index.html?expanded=show-quotas-for-a-project-detail#show-quotas-for-a-project
-            self._volume_quotas = self.connection.block_storage.get(
-                f"/os-quota-sets/{self.project_id}?usage=true"
-            ).json()["quota_set"]
-        return self._volume_quotas
+        # Normally, we should use self.__connection.get_volume_quotas(...) from openstack sdk.
+        # However, this method executes the action
+        # identity:list_projects from the identity api which is forbidden
+        # to some users.
+        #
+        # API documentation:
+        # https://docs.openstack.org/api-ref/block-storage/v3/index.html?expanded=show-quotas-for-a-project-detail#show-quotas-for-a-project
+        return self.connection.block_storage.get(
+            f"/os-quota-sets/{self.project_id}?usage=true"
+        ).json()["quota_set"]
 
     @property
+    @cache
     def compute_quotas(self):
-        if self._compute_quotas is None:
-            # Normally, we should use self.__connection.get_compute_quotas(...) from openstack sdk.
-            # However, this method executes the action
-            # identity:list_projects from the identity api which is forbidden
-            # to some users.
-            #
-            # API documentation:
-            # https://docs.openstack.org/api-ref/compute/?expanded=show-a-quota-detail#show-a-quota
-            self._compute_quotas = self.connection.compute.get(
-                f"/os-quota-sets/{self.project_id}/detail"
-            ).json()["quota_set"]
-        return self._compute_quotas
+        # Normally, we should use self.__connection.get_compute_quotas(...) from openstack sdk.
+        # However, this method executes the action
+        # identity:list_projects from the identity api which is forbidden
+        # to some users.
+        #
+        # API documentation:
+        # https://docs.openstack.org/api-ref/compute/?expanded=show-a-quota-detail#show-a-quota
+        return self.connection.compute.get(
+            f"/os-quota-sets/{self.project_id}/detail"
+        ).json()["quota_set"]
 
     @property
+    @cache
     def network_quotas(self):
-        if self._network_quotas is None:
-            # Normally, we should use self.__connection.get_network_quotas(...) from openstack sdk.
-            # However, this method executes the action
-            # identity:list_projects from the identity api which is forbidden
-            # to some users.
-            #
-            # API documentation:
-            # https://docs.openstack.org/api-ref/network/v2/?expanded=show-quota-details-for-a-tenant-detail#show-quota-details-for-a-tenant
-            self._network_quotas = self.connection.network.get(
-                f"/quotas/{self.project_id}/details.json"
-            ).json()["quota"]
-        return self._network_quotas
+        return self.connection.network.get_quota(self.project_id, details=True)

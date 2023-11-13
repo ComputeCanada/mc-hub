@@ -23,9 +23,9 @@ DEFAULT = {
     },
     "volumes": {
         "nfs": {
-            "home": {"size": 100},
-            "project": {"size": 100},
-            "scratch": {"size": 100},
+            "home": {"size": 100, "type": None},
+            "project": {"size": 100, "type": None},
+            "scratch": {"size": 100, "type": None},
         },
     },
     "public_keys": [],

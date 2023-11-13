@@ -1,11 +1,11 @@
-from .api_view import ApiView
+from .api_view import APIView
 from ..models.magic_castle.cluster_status_code import ClusterStatusCode
 from ..models.user import User
 from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
 from ..database import db
 
 
-class ProgressAPI(ApiView):
+class ProgressAPI(APIView):
     def get(self, user: User, hostname):
         orm = db.session.execute(
             db.select(MagicCastleORM).filter_by(hostname=hostname)

@@ -386,21 +386,6 @@ Terraform will perform the following actions:
       + triggers = (known after apply)
     }
 
-  # module.openstack.module.cluster_config.random_string.freeipa_passwd will be created
-  + resource "random_string" "freeipa_passwd" {
-      + id          = (known after apply)
-      + length      = 16
-      + lower       = true
-      + min_lower   = 0
-      + min_numeric = 0
-      + min_special = 0
-      + min_upper   = 0
-      + number      = true
-      + result      = (known after apply)
-      + special     = false
-      + upper       = true
-    }
-
   # module.openstack.module.cluster_config.random_string.munge_key will be created
   + resource "random_string" "munge_key" {
       + id          = (known after apply)
@@ -491,10 +476,8 @@ module.openstack.module.instance_config.tls_private_key.rsa_hostkeys["node"]: Cr
 module.openstack.module.cluster_config.random_uuid.consul_token: Creating...
 module.openstack.module.instance_config.tls_private_key.rsa_hostkeys["login"]: Creating...
 module.openstack.module.cluster_config.random_string.munge_key: Creating...
-module.openstack.module.cluster_config.random_string.freeipa_passwd: Creating...
 module.openstack.module.instance_config.tls_private_key.ssh[0]: Creating...
 module.openstack.module.instance_config.tls_private_key.rsa_hostkeys["mgmt"]: Creating...
-module.openstack.module.cluster_config.random_string.freeipa_passwd: Creation complete after 0s [id=iOKS9XldZCuN4CCU]
 module.openstack.module.cluster_config.random_string.munge_key: Creation complete after 0s [id=95xTXFn0WRBsQ1VLOxt320hMaS1otBkR]
 module.openstack.module.cluster_config.random_uuid.consul_token: Creation complete after 0s [id=a67dcbbe-ddc1-c2d4-392f-c7a9ba1b59f9]
 module.openstack.module.instance_config.random_string.puppetserver_password: Creation complete after 0s [id=FQJO7pC9IXcx6rucXf1mU8D8doRu7DAF]

@@ -1,4 +1,4 @@
-from ..resources.api_view import ApiView
+from ..resources.api_view import APIView
 from ..models.cloud.cloud_manager import CloudManager
 from ..models.user import User
 from ..models.cloud.project import Project
@@ -9,7 +9,7 @@ from ..exceptions.invalid_usage_exception import (
 from ..database import db
 
 
-class AvailableResourcesApi(ApiView):
+class AvailableResourcesAPI(APIView):
     def get(self, user: User, hostname, cloud_id):
         if hostname:
             orm = db.session.execute(
@@ -21,20 +21,9 @@ class AvailableResourcesApi(ApiView):
                 raise ClusterNotFoundException
             project = mc.project
             allocated_resources = mc.allocated_resources
-        elif cloud_id:
-            project = db.session.get(Project, cloud_id)
-            if project is None or project not in user.projects:
-                return {
-                    "quotas": {},
-                    "possible_resources": {},
-                    "resource_details": {},
-                }
-            allocated_resources = {}
         else:
-            return {
-                "quotas": {},
-                "possible_resources": {},
-                "resource_details": {},
-            }
-        cloud = CloudManager(project=project, **allocated_resources)
-        return cloud.available_resources
+            project = db.session.get(Project, cloud_id)
+            if project not in user.projects:
+                project = None
+            allocated_resources = {}
+        return CloudManager(project, allocated_resources).available_resources

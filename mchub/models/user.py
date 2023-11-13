@@ -1,5 +1,4 @@
 from subprocess import getoutput
-from typing import List
 from getpass import getuser
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
