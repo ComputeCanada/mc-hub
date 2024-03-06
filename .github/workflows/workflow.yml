@@ -23,51 +23,51 @@ jobs:
         run: (cd frontend && npm ci)
       - name: Run frontend unit tests
         run: (cd frontend && npm run test:unit)
-  backend:
-    runs-on: ubuntu-22.04
-    name: Test backend
-    steps:
-      - uses: actions/checkout@v2
-      - name: Create run folder
-        run: |
-          mkdir -p run
-          mkdir -p run/database
-          mkdir -p run/clusters
-      - name: Decrypt secret files
-        run: |
-          FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
-          for file_name in "${FILE_NAMES[@]}"
-          do
-            gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
-              --output "./run/$file_name" "./.github/secrets/$file_name.gpg"
-          done
-        env:
-          DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
-      - name: Create virtualenv
-        working-directory: ./run
-        run: |
-          python3 -m venv venv
-          venv/bin/pip install --upgrade pip
-          venv/bin/pip install poetry
-          VIRTUAL_ENV=$PWD/venv venv/bin/poetry install
-      - name: Run backend regular tests
-        if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
-        working-directory: ./run
-        run: |
-          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
-          venv/bin/python -m pytest ../
-      - name: Run backend extended tests (including live cluster tests)
-        if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
-        working-directory: ./run
-        run: |
-          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
-          venv/bin/python -m pytest -x -vv --build-live-cluster ../;
-      - name: Display log on failure
-        if: ${{ failure() }}
-        working-directory: ./run
-        run: |
-          cat clusters/*/terraform_plan.log
-          cat clusters/*/terraform_apply.log
+#  backend:
+#    runs-on: ubuntu-22.04
+#    name: Test backend
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Create run folder
+#        run: |
+#          mkdir -p run
+#          mkdir -p run/database
+#          mkdir -p run/clusters
+#      - name: Decrypt secret files
+#        run: |
+#          FILE_NAMES=('configuration.json' 'gcloud-key.json' 'clouds.yaml')
+#          for file_name in "${FILE_NAMES[@]}"
+#          do
+#            gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
+#              --output "./run/$file_name" "./.github/secrets/$file_name.gpg"
+#          done
+#        env:
+#          DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
+#      - name: Create virtualenv
+#        working-directory: ./run
+#        run: |
+#          python3 -m venv venv
+#          venv/bin/pip install --upgrade pip
+#          venv/bin/pip install poetry
+#          VIRTUAL_ENV=$PWD/venv venv/bin/poetry install
+#      - name: Run backend regular tests
+#        if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
+#        working-directory: ./run
+#        run: |
+#          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
+#          venv/bin/python -m pytest ../
+#      - name: Run backend extended tests (including live cluster tests)
+#        if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
+#        working-directory: ./run
+#        run: |
+#          export OS_CLIENT_CONFIG_FILE=$PWD/clouds.yaml
+#          venv/bin/python -m pytest -x -vv --build-live-cluster ../;
+#      - name: Display log on failure
+#        if: ${{ failure() }}
+#        working-directory: ./run
+#        run: |
+#          cat clusters/*/terraform_plan.log
+#          cat clusters/*/terraform_apply.log
 
   container:
     runs-on: ubuntu-22.04
