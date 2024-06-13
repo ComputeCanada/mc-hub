@@ -81,7 +81,11 @@ export default {
   },
   methods: {
     getTypeDescription(typeName) {
-      const namedGroupMatches = typeName.match(TYPE_REGEX).groups;
+      let namedGroupMatches = {};
+      const typeMatchRegex = typeName.match(TYPE_REGEX);
+      if (typeMatchRegex != null) {
+        namedGroupMatches = typeMatchRegex.groups;
+      }
 
       let descriptionElements = [];
       if (typeof namedGroupMatches["gpu"] !== "undefined") {
