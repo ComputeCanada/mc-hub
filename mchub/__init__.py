@@ -10,7 +10,8 @@ def create_app(db_path=None):
     from .database import db
     from .resources.magic_castle_api import MagicCastleAPI
     from .resources.progress_api import ProgressAPI
-    from .resources.available_resources_api import AvailableResourcesApi
+    from .resources.available_resources_api import AvailableResourcesAPI
+    from .resources.domains_api import DomainsAPI
     from .resources.user_api import UserAPI
     from .resources.project_api import ProjectAPI
     from .resources.template_api import TemplateAPI
@@ -54,7 +55,14 @@ def create_app(db_path=None):
         methods=["GET"],
     )
 
-    available_resources_view = AvailableResourcesApi.as_view("available_resources")
+    domains_view = DomainsAPI.as_view("domains")
+    app.add_url_rule(
+        "/api/domains/",
+        view_func=domains_view,
+        methods=["GET"],
+    )
+
+    available_resources_view = AvailableResourcesAPI.as_view("available_resources")
     app.add_url_rule(
         "/api/available-resources/host/<string:hostname>",
         view_func=available_resources_view,

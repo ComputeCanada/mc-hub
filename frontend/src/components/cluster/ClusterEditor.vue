@@ -4,19 +4,33 @@
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item v-if="!stateful">
-          <v-select
-            v-model="localSpecs.cloud.id"
-            item-value="id"
-            item-text="name"
-            :items="projects"
-            label="Cloud project"
-            @change="changeCloudProject"
-          />
+          <v-row>
+            <v-col>
+              <v-select
+                v-model="localSpecs.cloud.id"
+                item-value="id"
+                item-text="name"
+                :items="projects"
+                label="Cloud project"
+                @change="changeCloudProject"
+              />
+            </v-col>
+            <v-col>
+              <v-select
+                v-model="localSpecs.region"
+                item-value="id"
+                item-text="name"
+                :items="regions"
+                label="Region"
+                @change="changeCloudProject"
+              />
+            </v-col>
+          </v-row>
         </v-list-item>
         <v-list-item v-else>
           <v-list-item-content>
             <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
+            <v-list-item-title>{{ localSpecs.cloud.provider }} - {{ localSpecs.cloud.name }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item v-if="!existingCluster">
@@ -28,12 +42,7 @@
           />
         </v-list-item>
         <v-list-item v-if="!existingCluster">
-          <v-select
-            v-model="localSpecs.domain"
-            :items="getPossibleValues('domain')"
-            label="Domain"
-            :rules="[domainRule]"
-          />
+          <v-select v-model="localSpecs.domain" :items="getPossibleDomains()" label="Domain" :rules="[domainRule]" />
         </v-list-item>
         <v-list-item>
           <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
@@ -62,68 +71,73 @@
           </v-menu>
         </v-list-item>
       </v-list>
-      <v-divider />
-
+      <v-list-item>
+        <v-divider />
+      </v-list-item>
       <!-- Instances -->
       <v-list class="pt-0">
         <v-list-item>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
+          <v-row>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+            </v-col>
+          </v-row>
         </v-list-item>
       </v-list>
       <v-list>
         <div :key="id" v-for="id in Object.keys(localSpecs.instances)">
           <v-list-item>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                v-model.number="localSpecs.instances[id].count"
-                label="count"
-                min="0"
-                type="number"
-                append-outer-icon="mdi-close"
-                :rules="[countRule]"
-              />
-            </v-col>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                :value="id"
-                label="hostname prefix"
-                v-on:change="changeHostnamePrefix(id, $event)"
-                :rules="[hostnamePrefixRule(id)]"
-              />
-            </v-col>
-            <v-col cols="12" sm="3" class="pt-0">
-              <type-select
-                :types="getTypes(localSpecs.instances[id].tags)"
-                v-model="localSpecs.instances[id].type"
-                label="Type"
-                :rules="[ramRule, coreRule]"
-              />
-            </v-col>
-            <v-col cols="12" sm="4" class="pt-0">
-              <v-combobox
-                v-model="localSpecs.instances[id].tags"
-                :items="TAGS"
-                label="tags"
-                :rules="[publicTagRule(id)]"
-                multiple
-              ></v-combobox>
-            </v-col>
-            <v-col cols="12" sm="1" class="pt-0">
-              <v-btn @click="rmInstanceRow(id)" text icon small color="error">
-                <v-icon> mdi-delete </v-icon>
-              </v-btn>
-            </v-col>
+            <v-row>
+              <v-col cols="12" sm="2">
+                <v-text-field
+                  v-model.number="localSpecs.instances[id].count"
+                  label="count"
+                  min="0"
+                  type="number"
+                  append-outer-icon="mdi-close"
+                  :rules="[countRule]"
+                />
+              </v-col>
+              <v-col cols="12" sm="2">
+                <v-text-field
+                  :value="id"
+                  label="hostname prefix"
+                  v-on:change="changeHostnamePrefix(id, $event)"
+                  :rules="[hostnamePrefixRule(id)]"
+                />
+              </v-col>
+              <v-col cols="12" sm="3">
+                <type-select
+                  :types="getTypes(localSpecs.instances[id].tags)"
+                  v-model="localSpecs.instances[id].type"
+                  label="Type"
+                  :rules="[ramRule, coreRule]"
+                />
+              </v-col>
+              <v-col cols="12" sm="4">
+                <v-combobox
+                  v-model="localSpecs.instances[id].tags"
+                  :items="TAGS"
+                  label="tags"
+                  :rules="[publicTagRule(id)]"
+                  multiple
+                ></v-combobox>
+              </v-col>
+              <v-col cols="12" sm="1" align-self="center">
+                <v-btn @click="rmInstanceRow(id)" text icon small color="error">
+                  <v-icon> mdi-delete </v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-list-item>
         </div>
         <div class="text-center">
@@ -134,65 +148,72 @@
       <!-- Volumes -->
       <v-list>
         <v-list-item>
-          <v-spacer></v-spacer>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
-          <v-spacer></v-spacer>
+          <v-row>
+            <v-spacer></v-spacer>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+            </v-col>
+            <v-spacer></v-spacer>
+          </v-row>
         </v-list-item>
       </v-list>
       <v-list>
         <div :key="tag" v-for="tag in Object.keys(localSpecs.volumes)">
           <div :key="id" v-for="id in Object.keys(localSpecs.volumes[tag])">
             <v-list-item>
-              <v-spacer></v-spacer>
-              <v-col cols="12" sm="2" class="pt-0">
-                <v-combobox
-                  :items="Object.keys(localSpecs.volumes)"
-                  :value="tag"
-                  label="tag"
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                ></v-combobox>
-                <!-- <v-text-field :value="tag" label="tag" readonly /> -->
-              </v-col>
-              <v-col cols="12" sm="3" class="pt-0">
-                <v-text-field
-                  :value="id"
-                  label="volume name"
-                  v-on:change="changeVolumeName(id, $event)"
-                  :rules="[volumeNameRule(id)]"
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                />
-              </v-col>
-              <v-col cols="12" sm="2" class="pt-0">
-                <v-text-field
-                  v-model.number="localSpecs.volumes[tag][id].size"
-                  type="number"
-                  label="size"
-                  prefix="GB"
-                  :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
-                  min="0"
-                  dir="rtl"
-                  reverse
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                />
-              </v-col>
-              <v-col cols="12" sm="1" class="pt-0">
-                <v-btn
-                  @click="rmVolumeRow(id)"
-                  text
-                  icon
-                  small
-                  color="error"
-                  :disabled="stateful && id in initialSpecs.volumes.nfs"
-                >
-                  <v-icon> mdi-delete </v-icon>
-                </v-btn>
-              </v-col>
-              <v-spacer></v-spacer>
+              <v-row>
+                <v-col cols="12" sm="2">
+                  <v-combobox
+                    :items="Object.keys(localSpecs.volumes)"
+                    :value="tag"
+                    label="tag"
+                    :readonly="stateful && id in initialSpecs.volumes.nfs"
+                  ></v-combobox>
+                  <!-- <v-text-field :value="tag" label="tag" readonly /> -->
+                </v-col>
+                <v-col cols="12" sm="4">
+                  <v-text-field
+                    :value="id"
+                    label="volume name"
+                    v-on:change="changeVolumeName(id, $event)"
+                    :rules="[volumeNameRule(id)]"
+                    :readonly="stateful && id in initialSpecs.volumes.nfs"
+                  />
+                </v-col>
+                <v-col cols="12" sm="2">
+                  <v-text-field
+                    v-model.number="localSpecs.volumes[tag][id].size"
+                    type="number"
+                    label="size"
+                    suffix="GB"
+                    :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
+                    min="0"
+                    :readonly="stateful && id in initialSpecs.volumes.nfs"
+                  />
+                </v-col>
+                <v-col cols="12" sm="3">
+                  <v-select
+                    v-model="localSpecs.volumes[tag][id].type"
+                    :items="getPossibleValues('volumes')"
+                    label="type"
+                  />
+                </v-col>
+                <v-col cols="12" sm="1" align-self="center">
+                  <v-btn
+                    @click="rmVolumeRow(id)"
+                    text
+                    icon
+                    small
+                    color="error"
+                    :disabled="stateful && id in initialSpecs.volumes.nfs"
+                  >
+                    <v-icon> mdi-delete </v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
             </v-list-item>
           </div>
         </div>
@@ -306,6 +327,7 @@ import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
 import CodeEditor from "@/components/ui/CodeEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import DomainsRepository from "@/repositories/DomainsRepository";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import UserRepository from "@/repositories/UserRepository";
 
@@ -357,28 +379,32 @@ export default {
       nowDate: new Date().toISOString().slice(0, 10),
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       promise: null,
+      promise_dns: null,
       quotas: null,
       possibleResources: null,
+      domains: null,
       resourceDetails: null,
       projects: [],
+      regions: [],
     };
   },
   watch: {
     promise() {
       this.$emit("loading", this.loading);
     },
-    possibleResources(possibleResources) {
+    domains(domains) {
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
       if (this.localSpecs.domain === null) {
         try {
-          this.localSpecs.domain = possibleResources.domain[0];
-          this.initialSpecs.domain = possibleResources.domain[0];
+          this.localSpecs.domain = domains[0];
+          this.initialSpecs.domain = domains[0];
         } catch (err) {
           console.log("No domain available");
         }
       }
-
+    },
+    possibleResources(possibleResources) {
       // Image
       if (this.localSpecs.image === null) {
         try {
@@ -404,6 +430,15 @@ export default {
           }
         }
       }
+      for (let tag in this.localSpecs.volumes) {
+        for (let key in this.localSpecs.volumes[tag]) {
+          if (this.localSpecs.volumes[tag][key].type === null) {
+            const type = this.possibleResources.volumes[0];
+            this.localSpecs.volumes[tag][key].type = type;
+          }
+        }
+      }
+      this.VOLUME_STUB.type = this.possibleResources.volumes[0];
     },
     dirtyForm(dirty) {
       if (dirty && this.stateful) {
@@ -450,7 +485,7 @@ export default {
   },
   computed: {
     loading() {
-      return this.promise !== null;
+      return this.promise !== null && this.promise_dns !== null;
     },
     localSpecs: {
       get() {
@@ -497,25 +532,22 @@ export default {
       return true;
     },
     domainRule() {
-      return (
-        (this.possibleResources && this.possibleResources.domain.includes(this.localSpecs.domain)) ||
-        "Invalid domain provided"
-      );
+      return (this.domains && this.domains.includes(this.localSpecs.domain)) || "Invalid domain provided";
     },
     volumeCountRule() {
-      return this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
+      return this.volumeCountUsed <= this.volumeCountMax || "quota exceeded";
     },
     volumeSizeRule() {
-      return this.volumeSizeUsed <= this.volumeSizeMax || "Volume size quota exceeded";
+      return this.volumeSizeUsed <= this.volumeSizeMax || "quota exceeded";
     },
     instanceCountUsed() {
       return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;
     },
     instanceCountMax() {
-      return this.quotas ? this.quotas.instance_count.max : 0;
+      return this.quotas ? Math.min(this.quotas.instance_count, this.quotas.ports) : 0;
     },
     ipsCountMax() {
-      return this.quotas ? this.quotas.ips.max : 0;
+      return this.quotas ? this.quotas.ips : 0;
     },
     ramRule() {
       return this.ramGbUsed <= this.ramGbMax || "Ram quota exceeded";
@@ -532,7 +564,7 @@ export default {
         : 0;
     },
     ramGbMax() {
-      return this.quotas ? this.quotas.ram.max / MB_PER_GB : 0;
+      return this.quotas ? this.quotas.ram / MB_PER_GB : 0;
     },
     vcpuUsed() {
       return this.usedResourcesLoaded
@@ -543,7 +575,7 @@ export default {
         : 0;
     },
     vcpuMax() {
-      return this.quotas ? this.quotas.vcpus.max : 0;
+      return this.quotas ? this.quotas.vcpus : 0;
     },
     volumeCountUsed() {
       return this.usedResourcesLoaded
@@ -554,7 +586,7 @@ export default {
         : 0;
     },
     volumeCountMax() {
-      return this.quotas ? this.quotas.volume_count.max : 0;
+      return this.quotas ? this.quotas.volume_count : 0;
     },
     volumeSizeUsed() {
       return this.usedResourcesLoaded
@@ -563,7 +595,7 @@ export default {
         : 0;
     },
     volumeSizeMax() {
-      return this.quotas ? this.quotas.volume_size.max : 0;
+      return this.quotas ? this.quotas.volume_size : 0;
     },
     instancesVolumeSizeUsed() {
       return this.instances.reduce(
@@ -620,13 +652,6 @@ export default {
               newPublicIP += self.localSpecs.instances[key].count;
             }
           }
-          if (self.initialSpecs) {
-            for (let key in self.initialSpecs.instances) {
-              if (self.initialSpecs.instances[key].tags.includes("public")) {
-                newPublicIP -= self.initialSpecs.instances[key].count;
-              }
-            }
-          }
           return newPublicIP <= self.ipsCountMax || "Public IP quota exceeded";
         }
         return true;
@@ -638,9 +663,9 @@ export default {
       }
       // Retrieve all available types
       // Then filter based on the selected tags
-      let inst_types = this.possibleResources["types"];
+      let inst_types = this.possibleResources.types;
       for (const tag of tags) {
-        if (tag in this.possibleResources["tag_types"]) {
+        if (tag in this.possibleResources.tag_types) {
           const tag_types = new Set(this.possibleResources["tag_types"][tag]);
           inst_types = inst_types.filter((x) => tag_types.has(x));
         }
@@ -652,6 +677,13 @@ export default {
         return [];
       } else {
         return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
+      }
+    },
+    getPossibleDomains() {
+      if (this.domains === null) {
+        return [];
+      } else {
+        return this.domains;
       }
     },
     getInstanceDetail(instanceType, detailName, defaultValue = 0) {
@@ -790,6 +822,12 @@ export default {
       for (let key in this.localSpecs.instances) {
         this.localSpecs.instances[key].type = null;
       }
+      for (let tag in this.localSpecs.volumes) {
+        for (let key in this.localSpecs.volumes[tag]) {
+          this.localSpecs.volumes[tag][key].type = null;
+        }
+      }
+      this.VOLUME_STUB.type = null;
       this.localSpecs.image = null;
       this.loadCloudResources();
     },
@@ -808,7 +846,13 @@ export default {
         this.resourceDetails = data.resource_details;
         this.promise = null;
       });
-      return this.promise;
+      this.promise_dns = DomainsRepository.getDomains();
+      this.promise_dns.then((response) => {
+        const data = response.data;
+        this.domains = data.domains;
+        this.promise_dns = null;
+      });
+      return [this.promise, this.promise_dns];
     },
   },
 };

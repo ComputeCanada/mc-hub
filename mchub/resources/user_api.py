@@ -1,8 +1,8 @@
-from .api_view import ApiView
+from .api_view import APIView
 from ..models.user import User
 
 
-class UserAPI(ApiView):
+class UserAPI(APIView):
     def get(self, user: User):
         return {
             "username": user.username,

@@ -1,6 +1,5 @@
-from operator import imod
 from flask import request
-from .api_view import ApiView
+from .api_view import APIView
 from ..exceptions.invalid_usage_exception import (
     ClusterNotFoundException,
     InvalidUsageException,
@@ -11,7 +10,7 @@ from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
 from ..database import db
 
 
-class MagicCastleAPI(ApiView):
+class MagicCastleAPI(APIView):
     def get(self, user: User, hostname):
         if hostname:
             orm = db.session.execute(

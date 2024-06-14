@@ -8,6 +8,10 @@ import { cloneDeep } from "lodash";
 import moxios from 'moxios';
 import Repository from "@/repositories/Repository";
 
+import { jest } from "@jest/globals";
+
+jest.setTimeout(100);
+
 Vue.use(Vuetify);
 
 const localVue = createLocalVue();
@@ -58,16 +62,20 @@ const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
   tag_types: {"mgmt": ["p4-6gb", "c2-7.5gb-31"], "login": ["p2-3gb", "p4-6gb"], "node": ["p2-3gb", "p4-6gb"]},
   "types": ["p1-1.5gb", "p2-3gb", "p4-6gb"],
   volumes: {},
+});
+
+const DEFAULT_DOMAINS =   Object.freeze({
   domain: ["magic-castle.cloud", "mc.ca"]
 });
 
 const DEFAULT_QUOTAS = Object.freeze({
-  instance_count: { max: 115 },
-  ram: { max: 221184 },
-  vcpus: { max: 224 },
-  volume_count: { max: 114 },
-  volume_size: { max: 490 },
-  ips: { max: 3 },
+  instance_count: 115,
+  ram: 221184,
+  vcpus: 224,
+  ports: 200,
+  volume_count: 114,
+  volume_size: 490,
+  ips: 3,
 });
 
 const DEFAULT_RESOURCE_DETAILS = Object.freeze({
@@ -93,6 +101,7 @@ async function getDefaultClusterEditorWrapper(existingCluster=true, hostname="te
     }
   });
   await wrapper.vm.promise;
+  await wrapper.vm.promise_dns;
   return wrapper;
 }
 
@@ -102,23 +111,30 @@ describe("ClusterEditor", () => {
     // import and pass your custom axios instance to this method
     moxios.install(Repository)
     moxios.wait(function () {
-      let request = moxios.requests.mostRecent();
-      if(request.url.includes("/available-resources")) {
-        request.respondWith({
-          status: 200,
-          response: {
-            'possible_resources': DEFAULT_POSSIBLE_RESOURCES,
-            'quotas': DEFAULT_QUOTAS,
-            'resource_details': DEFAULT_RESOURCE_DETAILS
-          }
-        })
-      } else if (request.url.includes("/users/me")) {
-        request.respondWith({
-          status: 200,
-          response: DEFAULT_USER
-        })
-      } else {
-        console.log(request.url);
+      for(let i = 0; i < moxios.requests.count(); i++) {
+        let request = moxios.requests.at(i);
+        if(request.url.includes("/available-resources")) {
+          request.respondWith({
+            status: 200,
+            response: {
+              'possible_resources': DEFAULT_POSSIBLE_RESOURCES,
+              'quotas': DEFAULT_QUOTAS,
+              'resource_details': DEFAULT_RESOURCE_DETAILS
+            }
+          })
+        } else if (request.url.includes("/users/me")) {
+          request.respondWith({
+            status: 200,
+            response: DEFAULT_USER
+          })
+        } else if (request.url.includes("/domains")) {
+          request.respondWith({
+            status: 200,
+            response: DEFAULT_DOMAINS
+          })
+        } else {
+          console.log(request.url);
+        }
       }
     })
   })
