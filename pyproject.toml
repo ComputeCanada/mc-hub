@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mchub"
-version = "9.2.8"
+version = "9.2.20"
 description = ""
 authors = ["Frédéric Fortier-Chouinard", "Félix-Antoine Fortin <felix-antoine.fortin@calculquebec.ca>"]
 license = "BSD 3"
