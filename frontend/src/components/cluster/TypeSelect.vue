@@ -58,9 +58,7 @@ export default {
     items() {
       let items = [];
       TYPE_CATEGORIES.forEach(({ prefix, name }) => {
-        const types = this.types.filter((type) => {
-          type.startsWith(prefix) && type.match(TYPE_REGEX) != null;
-        });
+        const types = this.types.filter((type) => type.startsWith(prefix));
         if (types.length > 0) {
           if (items.length > 0) {
             items.push({ divider: true });
