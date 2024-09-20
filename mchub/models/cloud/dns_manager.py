@@ -1,5 +1,5 @@
 from ... configuration import config
-from ... configuration.magic_castle import MAGIC_CASTLE_SOURCE, MAGIC_CASTLE_ACME_KEY_PEM
+from ... configuration.magic_castle import MAGIC_CASTLE_SOURCE
 
 
 class DnsManager:
@@ -36,8 +36,6 @@ class DnsManager:
                     "name": "${module.openstack.cluster_name}",
                     "domain": "${module.openstack.domain}",
                     "public_instances": "${module.openstack.public_instances}",
-                    "ssh_private_key": "${module.openstack.ssh_private_key}",
-                    "sudoer_username": "${module.openstack.accounts.sudoer.username}",
                 }
             }
             magic_castle_configuration["dns"].update(
@@ -45,8 +43,6 @@ class DnsManager:
                     "magic_castle_configuration"
                 ]
             )
-            if MAGIC_CASTLE_ACME_KEY_PEM != "":
-                magic_castle_configuration["dns"]["acme_key_pem"] = f"${{file(\"{MAGIC_CASTLE_ACME_KEY_PEM}\")}}"
 
             return magic_castle_configuration
         else:

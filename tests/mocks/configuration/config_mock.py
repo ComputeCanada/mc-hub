@@ -24,7 +24,7 @@ BASE_CONFIGURATION = {
     "dns_providers": {
         "cf1": {
             "module": "cloudflare",
-            "magic_castle_configuration": {"email": "you@example.com"},
+            "magic_castle_configuration": {},
             "environment_variables": {
                 "CLOUDFLARE_API_TOKEN": "EXAMPLE_TOKEN",
                 "CLOUDFLARE_ZONE_API_TOKEN": "EXAMPLE_TOKEN",
@@ -34,7 +34,6 @@ BASE_CONFIGURATION = {
         "gcloud1": {
             "module": "gcloud",
             "magic_castle_configuration": {
-                "email": "you@example.com",
                 "project": "your-project-name",
                 "zone_name": "your-zone-name",
             },
@@ -75,4 +74,3 @@ def config_auth_none_mock(mocker):
     mocker.patch(
         "mchub.resources.api_view.config", new=configuration,
     )
-

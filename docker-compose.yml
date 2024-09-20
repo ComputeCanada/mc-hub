@@ -31,7 +31,6 @@ services:
     user: mcu
     environment:
       OS_CLIENT_CONFIG_FILE: /home/mcu/credentials/clouds.yaml
-      MAGIC_CASTLE_ACME_KEY_PEM: /home/mcu/credentials/acme_key.pem
 
   cleanup:
     build:

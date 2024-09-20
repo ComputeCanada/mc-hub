@@ -16,7 +16,7 @@ MINIMUM_ROOT_DISK_SIZE = 10
 # Magic Castle requires the following specs for each instance category
 TAG_MINIMUM_REQUIREMENTS = {
     "mgmt": {
-        "ram": 6144,
+        "ram": 8000,
         "vcpus": 2
     },
     "login": {
