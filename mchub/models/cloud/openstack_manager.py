@@ -5,8 +5,8 @@ from re import match, IGNORECASE, compile
 
 VALID_IMAGES_REGEX_ARRAY = [
     compile(r"rocky-8", IGNORECASE),
-    compile(r"almalinux-8", IGNORECASE),
-    compile(r"centos-8", IGNORECASE),
+    compile(r"rocky-9", IGNORECASE),
+    compile(r"almalinux-9", IGNORECASE),
 ]
 
 # Magic Castle requires 10 GB on the root disk for each node.
@@ -78,7 +78,8 @@ class OpenStackManager:
     def connection(self):
         if self._con is None:
             # Convert OS_* environment variable in keyword arguments
-            kargs = {key[3:].lower(): value for key, value in self.project.env.items()}
+            kargs = {key[3:].lower(): value for key,
+                     value in self.project.env.items()}
             kargs["auth_type"] = "v3applicationcredential"
             self._con = openstack.connect(**kargs)
 
@@ -163,7 +164,8 @@ class OpenStackManager:
     def available_flavors(self):
         if self._available_flavors is None:
             self._available_flavors = list(self.connection.compute.flavors())
-            self._available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
+            self._available_flavors.sort(
+                key=lambda flavor: (flavor.ram, flavor.vcpus))
         return self._available_flavors
 
     @property
