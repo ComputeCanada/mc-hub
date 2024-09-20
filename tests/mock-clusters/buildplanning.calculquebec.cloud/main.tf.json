@@ -5,7 +5,6 @@
     "module": {
         "openstack": {
             "source": "/home/mcu/magic_castle-openstack-11.8/openstack",
-            "generate_ssh_key": true,
             "puppetenv_rev": "11.8",
             "cluster_name": "buildplanning",
             "domain": "calculquebec.cloud",

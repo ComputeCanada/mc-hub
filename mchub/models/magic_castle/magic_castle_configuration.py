@@ -22,7 +22,6 @@ IGNORED_CONFIGURATION_FIELDS = [
     "source",
     "config_git_url",
     "config_version",
-    "generate_ssh_key",
     # Legacy fields
     "puppetenv_rev",
 ]
@@ -82,7 +81,6 @@ class MagicCastleConfiguration:
             "module": {
                 "openstack": {
                     "source": MAGIC_CASTLE_SOURCE["openstack"],
-                    "generate_ssh_key": True,
                     "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
                     "config_version": MAGIC_CASTLE_VERSION,
                     **self.to_dict(),
@@ -90,7 +88,8 @@ class MagicCastleConfiguration:
             },
         }
         main_tf_configuration["module"].update(
-            DnsManager(self._configuration["domain"]).get_magic_castle_configuration()
+            DnsManager(self._configuration["domain"]
+                       ).get_magic_castle_configuration()
         )
 
         with open(filename, "w") as main_terraform_file:

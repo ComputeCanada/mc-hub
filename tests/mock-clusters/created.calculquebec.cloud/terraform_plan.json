@@ -3402,9 +3402,6 @@
                         "domain": {
                             "constant_value": "calculquebec.cloud"
                         },
-                        "generate_ssh_key": {
-                            "constant_value": true
-                        },
                         "guest_passwd": {
                             "constant_value": "password-123"
                         },
@@ -4287,11 +4284,6 @@
                                             "var.config_version"
                                         ]
                                     },
-                                    "generate_ssh_key": {
-                                        "references": [
-                                            "var.generate_ssh_key"
-                                        ]
-                                    },
                                     "instances": {
                                         "references": [
                                             "module.design.instances",
@@ -4394,16 +4386,13 @@
                                             },
                                             "schema_version": 0,
                                             "count_expression": {
-                                                "references": [
-                                                    "var.generate_ssh_key"
-                                                ]
+                                                "references": []
                                             }
                                         }
                                     ],
                                     "variables": {
                                         "config_git_url": {},
                                         "config_version": {},
-                                        "generate_ssh_key": {},
                                         "instances": {},
                                         "public_keys": {},
                                         "puppetserver_ip": {},
@@ -4471,10 +4460,6 @@
                                     }
                                 ],
                                 "description": "List of login external firewall rules defined as map of 5 values name, from_port, to_port, ip_protocol and cidr"
-                            },
-                            "generate_ssh_key": {
-                                "default": false,
-                                "description": "If set to true, Terraform will generate an ssh key pair to connect to the cluster. Default: false"
                             },
                             "guest_passwd": {
                                 "default": "",
