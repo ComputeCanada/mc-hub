@@ -20,7 +20,8 @@ ENV MAGIC_CASTLE_VERSION=14.0.0-beta.2
 RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz -o magic_castle.tar.gz && \
     tar xvf magic_castle.tar.gz && \
     mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
-    chown -R root:root ${MAGIC_CASTLE_PATH}
+    chown -R root:root ${MAGIC_CASTLE_PATH} && \
+    sed -i 's/path.module/path.root/g' ${MAGIC_CASTLE_PATH}/common/provision/main.tf
 
 ENV TERRAFORM_VERSION 1.5.7
 RUN TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_$(dpkg --print-architecture).zip" && \
