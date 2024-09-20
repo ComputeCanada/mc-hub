@@ -5,8 +5,8 @@ from re import match, IGNORECASE, compile
 
 VALID_IMAGES_REGEX_ARRAY = [
     compile(r"rocky-8", IGNORECASE),
-    compile(r"almalinux-8", IGNORECASE),
-    compile(r"centos-8", IGNORECASE),
+    compile(r"rocky-9", IGNORECASE),
+    compile(r"almalinux-9", IGNORECASE),
 ]
 
 # Magic Castle requires 10 GB on the root disk for each node.
@@ -29,11 +29,13 @@ TAG_MINIMUM_REQUIREMENTS = {
     },
 }
 
+
 def validate_flavor(tag, flavor):
     return (
         flavor.vcpus >= TAG_MINIMUM_REQUIREMENTS[tag]["vcpus"] and
-        flavor.ram   >= TAG_MINIMUM_REQUIREMENTS[tag]["ram"]
+        flavor.ram >= TAG_MINIMUM_REQUIREMENTS[tag]["ram"]
     )
+
 
 class OpenStackManager:
     """
@@ -133,7 +135,8 @@ class OpenStackManager:
     def available_flavors(self):
         if self._available_flavors is None:
             self._available_flavors = list(self.connection.compute.flavors())
-            self._available_flavors.sort(key=lambda flavor: (flavor.ram, flavor.vcpus))
+            self._available_flavors.sort(
+                key=lambda flavor: (flavor.ram, flavor.vcpus))
         return self._available_flavors
 
     @property
