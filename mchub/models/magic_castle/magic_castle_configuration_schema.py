@@ -4,6 +4,7 @@ from marshmallow import Schema, fields, validate
 
 from .. cloud.dns_manager import DnsManager
 
+
 def validate_cluster_name(cluster_name):
     # Must follow RFC 1035's subdomain naming rules: https://tools.ietf.org/html/rfc1035#section-2.3.1
     return re.search(r"^[a-z]([a-z0-9-]*[a-z0-9]+)?$", cluster_name) is not None
@@ -24,18 +25,18 @@ class MagicCastleConfigurationSchema(Schema):
     nb_users = fields.Int(required=True)
     instances = fields.Dict(
         keys=fields.Str(),
-        values=fields.Dict(type=fields.Str(), count=fields.Int(), tags=fields.List(fields.Str())),
+        values=fields.Dict(type=fields.Str(), count=fields.Int(),
+                           tags=fields.List(fields.Str())),
         required=True,
     )
     volumes = fields.Dict(
         keys=fields.Str(),
         values=fields.Dict(
-            type=fields.Str(), 
+            type=fields.Str(),
             size=fields.Int(),
         ),
         required=True
     )
     public_keys = fields.List(fields.Str(), required=True)
     guest_passwd = fields.Str(required=True)
-    hieradata = fields.Str(missing="")
-
+    hieradata = fields.Str(missing="---")
