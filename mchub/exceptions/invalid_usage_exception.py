@@ -21,6 +21,11 @@ class BusyClusterException(InvalidUsageException):
         InvalidUsageException.__init__(self, "This cluster is busy.")
 
 
+class RunIDNotSet(InvalidUsageException):
+    def __init__(self):
+        InvalidUsageException.__init__(self, "The Terraform cloud run id is not set.")
+
+
 class ClusterExistsException(InvalidUsageException):
     def __init__(self):
         InvalidUsageException.__init__(self, "This cluster already exists.")
@@ -36,6 +41,11 @@ class PlanNotCreatedException(InvalidUsageException):
         InvalidUsageException.__init__(
             self, "The terraform plan for this cluster does not exist."
         )
+
+
+class InvalidPlanParameters(InvalidUsageException):
+    def __init__(self):
+        InvalidUsageException.__init__(self, "The plan parameters are invalid.")
 
 
 class UnauthenticatedException(InvalidUsageException):

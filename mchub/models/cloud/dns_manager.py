@@ -13,7 +13,8 @@ class DnsManager:
     def __init__(self, domain):
         self.domain = domain
         self.provider = get_config()["domains"][domain].get("dns_provider")
-        self.module = get_config()["dns_providers"][self.provider]["module"]
+        if self.provider:
+            self.module = get_config()["dns_providers"][self.provider]["module"]
 
     @staticmethod
     def get_available_domains():
@@ -46,9 +47,9 @@ class DnsManager:
                 ]
             )
             if MAGIC_CASTLE_ACME_KEY_PEM != "":
-                magic_castle_configuration["dns"][
-                    "acme_key_pem"
-                ] = f'${{file("{MAGIC_CASTLE_ACME_KEY_PEM}")}}'
+                magic_castle_configuration["dns"]["acme_key_pem"] = (
+                    f'${{file("{MAGIC_CASTLE_ACME_KEY_PEM}")}}'
+                )
 
             return magic_castle_configuration
         else:

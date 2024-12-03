@@ -1,4 +1,5 @@
 from os import path as os_path
+import logging
 
 from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
@@ -21,6 +22,12 @@ def create_app(db_path=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = db_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
+    gunicorn_error_logger = logging.getLogger("gunicorn.error")
+    if gunicorn_error_logger.handlers:
+        app.logger.handlers = gunicorn_error_logger.handlers
+        app.logger.setLevel(gunicorn_error_logger.level)
+    else:
+        app.logger.setLevel(logging.INFO)
 
     # Allows origins set in config file on all routes
     CORS(

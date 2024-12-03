@@ -8,7 +8,8 @@ from ...test_helpers import (
     alice,
     bob,
     admin,
-    fake_successful_subprocess_run,
+    mock_github_storage_api,
+    mock_terraform_cloud_api,
 )  # noqa
 
 from ...mocks.configuration.config_mock import (
@@ -21,12 +22,15 @@ def test_query_magic_castles_alice(alice):
 
     # Alice
     alice_magic_castles = alice.magic_castles
-    assert [magic_castle.hostname for magic_castle in alice_magic_castles] == [
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.database import db
+
+    assert [magic_castle.orm.hostname for magic_castle in alice_magic_castles] == [
         "buildplanning.magic-castle.cloud",
         "created.magic-castle.cloud",
         "valid1.magic-castle.cloud",
     ]
-    assert [magic_castle.status for magic_castle in alice_magic_castles] == [
+    assert [magic_castle.orm.status for magic_castle in alice_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
         ClusterStatusCode.PROVISIONING_SUCCESS,
@@ -44,7 +48,7 @@ def test_query_magic_castles_bob(bob):
         "missingnodes.mc.ca",
         "noowner.magic-castle.cloud",
     ]
-    assert [magic_castle.status for magic_castle in bob_magic_castles] == [
+    assert [magic_castle.orm.status for magic_castle in bob_magic_castles] == [
         ClusterStatusCode.BUILD_ERROR,
         ClusterStatusCode.BUILD_RUNNING,
         ClusterStatusCode.BUILD_ERROR,
@@ -66,7 +70,7 @@ def test_query_magic_castles_admin(admin):
         "missingnodes.mc.ca",
         "noowner.magic-castle.cloud",
     ]
-    assert [magic_castle.status for magic_castle in admin_magic_castles] == [
+    assert [magic_castle.orm.status for magic_castle in admin_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
         ClusterStatusCode.PROVISIONING_SUCCESS,
@@ -77,7 +81,7 @@ def test_query_magic_castles_admin(admin):
     ]
 
 
-@pytest.mark.usefixtures("fake_successful_subprocess_run")
+@pytest.mark.usefixtures("mock_github_storage_api")
 def test_create_empty_magic_castle(alice):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
@@ -117,5 +121,4 @@ def test_create_empty_magic_castle(alice):
     )
     magic_castle2 = alice.magic_castles[-1]
     assert magic_castle2.hostname == "alice123.mc.ca"
-    assert magic_castle2.status == ClusterStatusCode.CREATED
-    assert magic_castle2.plan_type == PlanType.BUILD
+    assert magic_castle2.orm.status == ClusterStatusCode.PLAN_RUNNING

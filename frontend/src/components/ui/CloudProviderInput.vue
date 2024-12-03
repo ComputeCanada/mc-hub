@@ -17,6 +17,9 @@
               <v-list-item>
                 <v-text-field v-model="newProject.name" label="Project name"></v-text-field>
               </v-list-item>
+              <v-list-item>
+                <v-text-field v-model="newProject.github_template" label="Github Template"></v-text-field>
+              </v-list-item>
             </v-list>
             <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
               <v-list-item>
@@ -52,6 +55,7 @@ export default {
       defaultProject: {
         name: "",
         provider: "openstack",
+        github_template: "",
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -61,6 +65,7 @@ export default {
       newProject: {
         name: "",
         provider: "openstack",
+        github_template: "",
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",

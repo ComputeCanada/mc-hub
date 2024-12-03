@@ -23,11 +23,14 @@ class Project(db.Model):
     name = db.Column(db.String(), nullable=False)
     admin_id = db.Column(db.Integer, nullable=False)
     provider = db.Column(db.Enum(Provider), nullable=False)
+    github_template = db.Column(db.String(), nullable=False)
     env = db.Column(db.PickleType())
+    tfcloud_project_id = db.Column(db.String(), nullable=False)
     magic_castles = db.relationship(
         "MagicCastleORM",
         back_populates="project",
         cascade_backrefs=False,
+        cascade="all, delete-orphan",
     )
 
 
