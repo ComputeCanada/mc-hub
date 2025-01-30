@@ -37,7 +37,7 @@ WORKDIR /code
 ADD poetry.lock pyproject.toml /code/
 COPY mchub /code/mchub
 
-RUN poetry install --no-dev --no-ansi && \
+RUN poetry install --without dev --no-ansi && \
     pip uninstall -y poetry
 
 FROM python:3.11-slim-bullseye as base-server
