@@ -7,7 +7,7 @@
       </v-btn>
     </template>
     <v-list>
-      <v-list-item @click="projects">
+      <v-list-item v-if="currentUser.is_admin" @click="projects">
         <v-list-item-title> <v-icon class="mr-4">mdi-cloud-braces</v-icon>Projects </v-list-item-title>
       </v-list-item>
       <v-list-item v-if="currentUser.usertype == 'saml'" @click="logout">
@@ -22,7 +22,7 @@ import UserRepository from "@/repositories/UserRepository";
 export default {
   data() {
     return {
-      currentUser: { full_name: null, username: null, usertype: "local", public_keys: [] },
+      currentUser: { full_name: null, username: null, usertype: "local", public_keys: [], is_admin: false },
     };
   },
   async created() {

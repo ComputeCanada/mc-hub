@@ -8,4 +8,5 @@ class UserAPI(ApiView):
             "username": user.username,
             "usertype": user.usertype,
             "public_keys": user.public_keys,
+            "is_admin": getattr(user, "is_admin", True),
         }

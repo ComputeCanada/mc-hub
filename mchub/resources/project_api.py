@@ -41,6 +41,10 @@ class ProjectAPI(ApiView):
             ]
 
     def post(self, user: User):
+        if not getattr(user, "is_admin", False):
+            raise InvalidUsageException(
+                "Only admins can create projects", status_code=403
+            )
         data = request.get_json()
         if not data:
             raise InvalidUsageException("No json data was provided")
