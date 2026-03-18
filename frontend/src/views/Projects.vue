@@ -7,7 +7,7 @@
             <v-toolbar-title>Your Projects</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <cloud-provider-input @newProject="updateProjectList" />
+            <cloud-provider-input @newProject="updateProjectList" :default-github-template="githubDefaultTemplate" />
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
@@ -25,6 +25,7 @@
 
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
+import UserRepository from "@/repositories/UserRepository";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
 import ProjectMembership from "@/components/ui/ProjectMembership";
 
@@ -37,6 +38,7 @@ export default {
   data() {
     return {
       projects: [],
+      githubDefaultTemplate: null,
       headers: [
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
@@ -45,8 +47,10 @@ export default {
       ],
     };
   },
-  created() {
+  async created() {
     this.updateProjectList();
+    const user = (await UserRepository.getCurrent()).data;
+    this.githubDefaultTemplate = user.github_default_template;
   },
   methods: {
     async updateProjectList() {

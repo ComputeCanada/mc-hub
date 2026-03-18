@@ -42,6 +42,7 @@ An example `configuration.json` is shown below.
   },
   "github_token": "EXAMPLE_GITHUB_TOKEN",
   "github_organization": "EXAMPLE_GITHUB_ORGANIZATION",
+  "github_default_template": "owner/repo-template",
   "tfcloud_api_token": "EXAMPLE_TF_TOKEN",
   "tfcloud_organization": "EXAMPLE_TFCLOUD_ORGANIZATION",
   "tfcloud_oauth_vcs_token_id": "VCS_OAUTH_ID"
@@ -147,6 +148,15 @@ A [GitHub personal access token](https://github.com/settings/tokens) with approp
 ### `github_organization`
 
 The name of the GitHub organization where Magic Castle repositories will be created and managed. MC Hub will use the `github_token` to access this organization and create project repositories on behalf of users.
+
+### `github_default_template`
+
+The default GitHub template repository to use when creating a new project. When set, this value is pre-filled in the project creation form and used automatically if no template is specified.
+
+Two formats are supported:
+
+- **Repository name only** (e.g. `"my-template"`): the template is looked up within `github_organization`. This supports both public and private repositories, as long as `github_token` has access to the organization.
+- **Full `owner/repo` reference** (e.g. `"owner/repo-template"`): the template is fetched globally. This is useful for public templates hosted outside of `github_organization`. Private repositories outside the organization are also supported if `github_token` has read access to them.
 
 ### `tfcloud_api_token`
 

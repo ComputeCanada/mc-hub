@@ -25,6 +25,7 @@ class ConfigurationSchema(Schema):
     debug = fields.Boolean(load_default=True)
     github_token = fields.Str()
     github_organization = fields.Str()
+    github_default_template = fields.Str()
     tfcloud_api_token = fields.Str()
     tfcloud_organization = fields.Str()
     tfcloud_oauth_vcs_token_id = fields.Str()
