@@ -74,7 +74,10 @@ class GithubStorage:
 
     def create_repo(self, hostname, template_name):
         org = self.github.get_organization(self.organization)
-        self.template_repo = org.get_repo(template_name)
+        if "/" in template_name:
+            self.template_repo = self.github.get_repo(template_name)
+        else:
+            self.template_repo = org.get_repo(template_name)
 
         repo_name = self._get_repo_name(hostname)
 
