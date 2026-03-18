@@ -20,6 +20,9 @@
               <v-list-item>
                 <v-text-field v-model="newProject.github_template" label="Github Template"></v-text-field>
               </v-list-item>
+              <v-list-item>
+                <v-text-field v-model="newProject.agent_pool_name" label="Agent Pool Name (optional)" clearable></v-text-field>
+              </v-list-item>
             </v-list>
             <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
               <v-list-item>
@@ -56,6 +59,7 @@ export default {
         name: "",
         provider: "openstack",
         github_template: "",
+        agent_pool_name: "",
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -66,6 +70,7 @@ export default {
         name: "",
         provider: "openstack",
         github_template: "",
+        agent_pool_name: "",
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -81,7 +86,11 @@ export default {
   },
   methods: {
     async add() {
-      await ProjectRepository.post(this.newProject);
+      const payload = { ...this.newProject };
+      if (!payload.agent_pool_name) {
+        delete payload.agent_pool_name;
+      }
+      await ProjectRepository.post(payload);
       this.$emit("newProject");
       this.newProject = Object.assign({}, this.defaultProject);
       this.close();

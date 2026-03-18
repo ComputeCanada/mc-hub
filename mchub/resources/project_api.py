@@ -55,13 +55,14 @@ class ProjectAPI(ApiView):
             github_template = data["github_template"]
         except KeyError as err:
             raise InvalidUsageException(f"Missing required field {err}")
+        agent_pool_name = data.get("agent_pool_name")
 
         try:
             env = ENV_VALIDATORS[provider](env)
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
 
-        tfcloud_project_id = get_terraform_cloud().create_project(name)
+        tfcloud_project_id = get_terraform_cloud().create_project(name, agent_pool_name=agent_pool_name)
 
         terraform_vars = []
         for k, v in env.items():

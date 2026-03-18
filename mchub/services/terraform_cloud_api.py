@@ -78,22 +78,42 @@ class TerraformCloud:
             )
         return run_id
 
-    def create_project(self, project_name):
+    def get_agent_pool_id(self, agent_pool_name: str) -> str:
+        url = f"{self.BASE_URL}/organizations/{self.organisation_name}/agent-pools"
+        response = self._request("GET", url, params={"filter[name]": agent_pool_name})
+        try:
+            return response.json()["data"][0]["id"]
+        except Exception:
+            raise TerraformCloudException(
+                "Could not find agent pool",
+                additional_details=f"{agent_pool_name=}, error: {response.text}",
+            )
+
+    def create_project(self, project_name, agent_pool_name: Optional[str] = None):
         url = f"{self.BASE_URL}/organizations/{self.organisation_name}/projects"
+
+        attributes = {
+            "name": project_name,
+            "description": f"MCHub project: {project_name}",
+        }
+        relationships = {
+            "organization": {
+                "data": {"id": self.organisation_name, "type": "organizations"}
+            }
+        }
+
+        if agent_pool_name:
+            agent_pool_id = self.get_agent_pool_id(agent_pool_name)
+            attributes["default-execution-mode"] = "agent"
+            relationships["default-agent-pool"] = {"data": {"type": "agent-pools", "id": agent_pool_id}}
+        else:
+            attributes["default-execution-mode"] = "default"
+
         payload = {
             "data": {
-                "attributes": {
-                    "name": project_name,
-                    "description": f"MCHub project: {project_name}",
-                    "default-execution-mode": "default",
-                    # "setting-overwrites": null,
-                },
+                "attributes": attributes,
                 "type": "projects",
-                "relationships": {
-                    "organization": {
-                        "data": {"id": self.organisation_name, "type": "organizations"}
-                    }
-                },
+                "relationships": relationships,
             }
         }
         response = self._request("POST", url, json=payload)

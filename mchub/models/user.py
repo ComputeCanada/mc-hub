@@ -88,6 +88,10 @@ class LocalUser(User):
             public_keys=public_keys,
         )
 
+    @property
+    def is_admin(self):
+        return True
+
 
 class SAMLUser(User):
     """
