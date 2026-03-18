@@ -133,7 +133,6 @@ class TerraformCloud:
                 "type": "workspaces",
                 "attributes": {
                     "name": workspace_name,
-                    "execution-mode": "remote",
                     "auto-apply": "false",
                     "auto-apply-run-trigger": "false",
                     "file-triggers-enabled": "false",
