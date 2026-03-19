@@ -3,12 +3,14 @@ import re
 
 from collections.abc import Mapping
 
+
 import marshmallow
 from marshmallow import fields, ValidationError, EXCLUDE
 
 from copy import deepcopy
 
 from ..cloud.dns_manager import DnsManager
+from ...configuration import get_config
 from ...configuration.magic_castle import (
     MAGIC_CASTLE_SOURCE,
     MAGIC_CASTLE_VERSION,
@@ -72,13 +74,14 @@ class MagicCastleConfiguration(Mapping):
 
     __slots__ = ["_config", "provider"]
 
-    def __init__(self, provider, configuration):
+    def __init__(self, provider, cluster_configuration):
         """
         Initializes a MagicCastleConfiguration and validates the configuration schema, if present.
         """
+
         self.provider = provider
         self._config = Schema().load(
-            configuration,
+            cluster_configuration,
             unknown=EXCLUDE,
         )
 
@@ -99,46 +102,21 @@ class MagicCastleConfiguration(Mapping):
     def domain(self):
         return self["domain"]
 
-    @classmethod
-    def get_from_main_file(cls, filename):
+    def get_var_tf(self):
         """
-        Returns a new MagicCastleConfiguration object with the configuration parsed from the main.tf.json file.
-
-        :param filename: path to the main.tf.json file
-        :return: The MagicCastleConfiguration object associated with the cluster.
-        """
-        with open(filename, "r") as main_tf:
-            main_tf_data = json.load(main_tf)
-        modules = main_tf_data["module"]
-        modules.pop("dns", None)
-        provider = list(modules.keys())[0]
-        configuration = modules[provider]
-
-        for field in IGNORED_CONFIGURATION_FIELDS:
-            configuration.pop(field, None)
-
-        return cls(provider, configuration)
-
-    def write(self, filename):
-        """
-        Formats the configuration and writes it to the cluster's main.tf.json file.
+        Formats the configuration and writes it to the cluster's var.tf.json file.
         """
 
-        main_tf_data = {
-            "terraform": {"required_version": TERRAFORM_REQUIRED_VERSION},
-            "module": {
-                self.provider: {
-                    "source": MAGIC_CASTLE_SOURCE[self.provider],
-                    "generate_ssh_key": True,
-                    "config_git_url": MAGIC_CASTLE_PUPPET_CONFIGURATION_URL,
-                    "config_version": MAGIC_CASTLE_VERSION,
-                    **self,
-                }
-            },
+        var_tf_data = {
+            "instances": self["instances"],
+            "domain": self["domain"],
+            "cluster_name": self["cluster_name"],
+            "image": self["image"],
+            "nb_users": self["nb_users"],
+            "volumes": self["volumes"],
+            "public_keys": self["public_keys"],
+            "guest_passwd": self["guest_passwd"],
+            "hieradata": self["hieradata"],
         }
-        main_tf_data["module"].update(
-            DnsManager(self["domain"]).get_magic_castle_configuration()
-        )
 
-        with open(filename, "w") as main_terraform_file:
-            json.dump(main_tf_data, main_terraform_file)
+        return var_tf_data

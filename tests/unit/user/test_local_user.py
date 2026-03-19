@@ -3,8 +3,9 @@ import pytest
 from ...test_helpers import (
     app,
     generate_test_clusters,
-    fake_successful_subprocess_run,
     mock_clusters_path,
+    mock_github_storage_api,
+    mock_terraform_cloud_api,
 )  # noqa
 from ...mocks.configuration.config_mock import (
     config_auth_none_mock as config_mock,
@@ -25,7 +26,7 @@ def test_query_magic_castles(app):
         "noowner.magic-castle.cloud",
         "valid1.magic-castle.cloud",
     ]
-    assert [magic_castle.status for magic_castle in all_magic_castles] == [
+    assert [magic_castle.orm.status for magic_castle in all_magic_castles] == [
         ClusterStatusCode.PLAN_RUNNING,
         ClusterStatusCode.CREATED,
         ClusterStatusCode.BUILD_ERROR,
@@ -37,7 +38,7 @@ def test_query_magic_castles(app):
     ]
 
 
-@pytest.mark.usefixtures("fake_successful_subprocess_run")
+@pytest.mark.usefixtures("mock_github_storage_api")
 def test_create_empty_magic_castle(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
@@ -79,7 +80,7 @@ def test_create_empty_magic_castle(app):
     )
 
     data = db.session.get(MagicCastleORM, magic_castle.orm.id)
-    assert data.status == ClusterStatusCode.CREATED
+    assert data.status == ClusterStatusCode.PLAN_RUNNING
 
 
 def test_query_magic_castles(app):

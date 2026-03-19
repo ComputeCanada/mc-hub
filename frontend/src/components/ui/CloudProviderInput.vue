@@ -17,6 +17,19 @@
               <v-list-item>
                 <v-text-field v-model="newProject.name" label="Project name"></v-text-field>
               </v-list-item>
+              <v-list-item>
+                <v-text-field
+                  v-model="newProject.github_template"
+                  label="Github Template (Optional)"
+                  :placeholder="defaultGithubTemplate || ''"
+                  :hint="defaultGithubTemplate ? `Default: ${defaultGithubTemplate}` : ''"
+                  persistent-hint
+                  clearable
+                ></v-text-field>
+              </v-list-item>
+              <v-list-item>
+                <v-text-field v-model="newProject.agent_pool_name" label="Agent Pool Name (optional)" clearable></v-text-field>
+              </v-list-item>
             </v-list>
             <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
               <v-list-item>
@@ -41,6 +54,12 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 export default {
   name: "CloudProviderInput",
   emits: ["newProject"],
+  props: {
+    defaultGithubTemplate: {
+      type: String,
+      default: null,
+    },
+  },
   data() {
     return {
       dialog: false,
@@ -52,6 +71,8 @@ export default {
       defaultProject: {
         name: "",
         provider: "openstack",
+        github_template: "",
+        agent_pool_name: "",
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -61,6 +82,8 @@ export default {
       newProject: {
         name: "",
         provider: "openstack",
+        github_template: "",
+        agent_pool_name: "",
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -76,7 +99,14 @@ export default {
   },
   methods: {
     async add() {
-      await ProjectRepository.post(this.newProject);
+      const payload = { ...this.newProject };
+      if (!payload.agent_pool_name) {
+        delete payload.agent_pool_name;
+      }
+      if (!payload.github_template) {
+        payload.github_template = this.defaultGithubTemplate || "";
+      }
+      await ProjectRepository.post(payload);
       this.$emit("newProject");
       this.newProject = Object.assign({}, this.defaultProject);
       this.close();

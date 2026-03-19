@@ -3,20 +3,23 @@ import pytest
 from copy import deepcopy
 from subprocess import CalledProcessError
 
+
 from ...test_helpers import (
     client,
     app,
     generate_test_clusters,
-    fake_successful_subprocess_run,
     mock_clusters_path,
+    mock_github_storage_api,
+    mock_terraform_cloud_api,
+    mock_status_logic,
 )  # noqa;
 from ...mocks.configuration.config_mock import (
     config_auth_none_mock as config_mock,
 )  # noqa;
+from ...mocks.github_api_mock import GithubStorageMock
 from ...data import CLUSTERS_CONFIG, VALID_CLUSTER_CONFIGURATION
 
 
-@pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_magic_castle_plan_valid(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
 
@@ -24,7 +27,6 @@ def test_create_magic_castle_plan_valid(app):
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
 
-@pytest.mark.usefixtures("fake_successful_subprocess_run")
 def test_create_magic_castle_twice(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.exceptions.invalid_usage_exception import (
@@ -39,67 +41,22 @@ def test_create_magic_castle_twice(app):
         cluster2.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
 
-def test_apply_before_planning(app):
-    from mchub.models.magic_castle.magic_castle import MagicCastle
-    from mchub.exceptions.invalid_usage_exception import (
-        PlanNotCreatedException,
-    )
-
-    cluster = MagicCastle()
-    with pytest.raises(PlanNotCreatedException):
-        cluster.apply()
-
-
 def test_create_magic_castle_init_fail(app, monkeypatch):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.exceptions.server_exception import PlanException
 
-    def fake_run(process_args, *args, **kwargs):
-        if process_args == ["terraform", "init", "-no-color", "-input=false"]:
-            raise CalledProcessError(1, "terraform init")
+    from mchub.services.github_api import _github_storage_instance
 
-    monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
-    cluster = MagicCastle()
-    with pytest.raises(PlanException, match="Could not initialize Terraform modules."):
-        cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    # Define a function that raises the exception you want
+    def raise_on_write(*args, **kwargs):
+        raise RuntimeError("GitHub write failed")
 
+    # Patch the method on the existing mock instance
+    monkeypatch.setattr(_github_storage_instance, "write", raise_on_write)
 
-def test_create_magic_castle_plan_fail(app, monkeypatch):
-    from mchub.models.magic_castle.magic_castle import MagicCastle
-    from mchub.exceptions.server_exception import PlanException
-
-    def fake_run(process_args, *args, **kwargs):
-        if process_args[:2] == [
-            "terraform",
-            "plan",
-        ]:
-            raise CalledProcessError(1, "terraform plan")
-
-    monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
     cluster = MagicCastle()
     with pytest.raises(
-        PlanException, match="An error occurred while planning changes."
-    ):
-        cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
-
-
-def test_create_magic_castle_plan_export_fail(app, monkeypatch):
-    from mchub.models.magic_castle.magic_castle import MagicCastle
-    from mchub.exceptions.server_exception import PlanException
-
-    def fake_run(process_args, *args, **kwargs):
-        if process_args[:4] == [
-            "terraform",
-            "show",
-            "-no-color",
-            "-json",
-        ]:
-            raise CalledProcessError(1, "terraform show")
-
-    monkeypatch.setattr("mchub.models.magic_castle.magic_castle.run", fake_run)
-    cluster = MagicCastle()
-    with pytest.raises(
-        PlanException, match="An error occurred while exporting planned changes."
+        PlanException, match="Could not write variables.tf on the storage backend."
     ):
         cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
@@ -113,19 +70,19 @@ def test_get_status_valid(app):
         db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
     )
     created = MagicCastle(orm=orm)
-    assert created.status == ClusterStatusCode.CREATED
+    assert created.orm.status == ClusterStatusCode.CREATED
 
     orm = db.session.scalar(
         db.select(MagicCastleORM).filter_by(hostname="buildplanning.magic-castle.cloud")
     )
     buildplanning = MagicCastle(orm=orm)
-    assert buildplanning.status == ClusterStatusCode.PLAN_RUNNING
+    assert buildplanning.orm.status == ClusterStatusCode.PLAN_RUNNING
 
     orm = db.session.scalar(
         db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
     )
     valid1 = MagicCastle(orm=orm)
-    assert valid1.status == ClusterStatusCode.PROVISIONING_SUCCESS
+    assert valid1.orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
 def test_get_status_errors(app):
@@ -137,7 +94,7 @@ def test_get_status_errors(app):
         db.select(MagicCastleORM).filter_by(hostname="missingnodes.mc.ca")
     )
     missingnodes = MagicCastle(orm=orm)
-    assert missingnodes.status == ClusterStatusCode.BUILD_ERROR
+    assert missingnodes.orm.status == ClusterStatusCode.BUILD_ERROR
 
 
 def test_get_status_not_found(app):
@@ -149,50 +106,9 @@ def test_get_status_not_found(app):
         db.select(MagicCastleORM).filter_by(hostname="nonexisting.mc.ca")
     )
     magic_castle1 = MagicCastle(orm=orm)
-    assert magic_castle1.status == ClusterStatusCode.NOT_FOUND
+    assert magic_castle1.orm.status == ClusterStatusCode.NOT_FOUND
     magic_castle2 = MagicCastle()
-    assert magic_castle2.status == ClusterStatusCode.NOT_FOUND
-
-
-def test_get_plan_type_build(app):
-    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
-    from mchub.models.magic_castle.plan_type import PlanType
-    from mchub.database import db
-
-    orm = db.session.scalar(
-        db.select(MagicCastleORM).filter_by(hostname="buildplanning.magic-castle.cloud")
-    )
-    build_planning = MagicCastle(orm=orm)
-    assert build_planning.plan_type == PlanType.BUILD
-    orm = db.session.scalar(
-        db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
-    )
-    created = MagicCastle(orm=orm)
-    assert created.plan_type == PlanType.BUILD
-
-
-def test_get_plan_type_destroy(app):
-    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
-    from mchub.models.magic_castle.plan_type import PlanType
-    from mchub.database import db
-
-    orm = db.session.scalar(
-        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
-    )
-    magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.plan_type == PlanType.DESTROY
-
-
-def test_get_plan_type_none(app):
-    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
-    from mchub.models.magic_castle.plan_type import PlanType
-    from mchub.database import db
-
-    orm = db.session.scalar(
-        db.select(MagicCastleORM).filter_by(hostname="missingfloatingips.mc.ca")
-    )
-    magic_castle = MagicCastle(orm=orm)
-    assert magic_castle.plan_type == PlanType.NONE
+    assert magic_castle2.orm.status == ClusterStatusCode.NOT_FOUND
 
 
 def test_config_valid(app):
@@ -291,6 +207,7 @@ def test_allocated_resources_missing_nodes(app):
     }
 
 
+@pytest.mark.usefixtures("mock_status_logic")
 def test_allocated_resources_not_found(app):
     """
     Mock context :

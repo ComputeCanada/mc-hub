@@ -8,72 +8,50 @@ ENV UV_USE_IO_URING 0
 RUN npm install && npm run build
 
 # BACKEND BUILD STAGE
-
-FROM python:3.11-slim-bullseye as backend-build-stage
+FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim AS backend-build-stage
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y curl git gcc linux-libc-dev libc6-dev unzip && \
-    pip install poetry
-
-ENV MAGIC_CASTLE_PATH=/magic_castle
-ENV MAGIC_CASTLE_VERSION=14.0.0-beta.2
-RUN curl -L https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz -o magic_castle.tar.gz && \
-    tar xvf magic_castle.tar.gz && \
-    mv magic_castle-* ${MAGIC_CASTLE_PATH} && \
-    chown -R root:root ${MAGIC_CASTLE_PATH}
-
-ENV TERRAFORM_VERSION 1.5.7
-RUN TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_$(dpkg --print-architecture).zip" && \
-    curl -L ${TERRAFORM_URL} -o terraform.zip && \
-    unzip terraform.zip -d /usr/local/bin
-
-ENV POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_CACHE_DIR='/var/cache/pypoetry' \
-    POETRY_HOME='/usr/local'
+    apt-get install --no-install-recommends -y gcc linux-libc-dev libc6-dev
 
 WORKDIR /code
-ADD poetry.lock pyproject.toml /code/
 COPY mchub /code/mchub
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-dev
 
-RUN poetry install --no-dev --no-ansi && \
-    pip uninstall -y poetry
-
-FROM python:3.11-slim-bullseye as base-server
+FROM python:3.13-slim-trixie as base-server
 
 COPY --from=backend-build-stage /code /code
-COPY --from=backend-build-stage /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
 ## Magic Castle User
 RUN adduser --disabled-password mcu && \
     mkdir -p /home/mcu && \
     chown -R mcu:mcu /home/mcu
 
+ENV PATH="/code/.venv/bin:$PATH"
+
 FROM base-server as cleanup-daemon
 USER mcu
 WORKDIR /home/mcu
-CMD python3 -m mchub.services.cull_expired_cluster
+CMD python -m mchub.services.cull_expired_cluster
 
 ## PRODUCTION IMAGE
 FROM base-server as production-server
 
 USER root
-COPY --from=backend-build-stage /magic_castle /magic_castle
-COPY --from=backend-build-stage /usr/local/bin/terraform /usr/local/bin/terraform
 COPY --from=frontend-build-stage /frontend/dist /code/frontend
 
 USER mcu
 WORKDIR /home/mcu
 
-RUN mkdir -p /home/mcu/clusters /home/mcu/database /home/mcu/credentials /home/mcu/.terraform.d/plugin-cache
+RUN mkdir -p /home/mcu/clusters /home/mcu/database /home/mcu/credentials
 
-ADD .terraformrc /home/mcu
-
-ENV MAGIC_CASTLE_PATH=/magic_castle
-ENV MAGIC_CASTLE_VERSION=14.0.0-beta.2
 ENV MCH_DIST_PATH=/code/frontend
 
-CMD python3 -m mchub.schema_update --clean && \
-    python3 -m mchub.init_clusters && \
-    python3 -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
-#CMD python3 -m mchub.wsgi
+CMD python -m mchub.schema_update --clean && \
+    python -m mchub.init_clusters && \
+    python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"

@@ -46,3 +46,19 @@ class PlanException(ServerException):
         :param additional_details: Additional details which will be logged but not shown to the user.
         """
         super().__init__(message, additional_details=additional_details)
+
+
+class TerraformCloudException(ServerException):
+    def __init__(
+        self,
+        message: str = "An error occurred on Terraform Cloud request",
+        *,
+        additional_details: str = "",
+    ):
+        """
+        Instantiates an exception related to an error happening during the cluster plan phase.
+
+        :param message: The error message, which will be logged and displayed to the user.
+        :param additional_details: Additional details which will be logged but not shown to the user.
+        """
+        super().__init__(message, additional_details=additional_details)

@@ -90,6 +90,8 @@ import ClusterEditor from "@/components/cluster/ClusterEditor";
 import { isEqual } from "lodash";
 
 const POLL_STATUS_INTERVAL = 1000;
+const PLAN_START_TIMEOUT_MS = 1500;
+const MAX_PLAN_WAIT_MS = 5 * 60 * 1000;
 
 export default {
   name: "ClusterDisplay",
@@ -247,8 +249,10 @@ export default {
       let isCommited = false;
       let showPlan = "0";
       this.clusterPlanRunningDialog = true;
+      const createPromise = MagicCastleRepository.create(this.magicCastle);
+      createPromise.catch(() => {});
       try {
-        await MagicCastleRepository.create(this.magicCastle);
+        await Promise.race([createPromise, this.sleep(PLAN_START_TIMEOUT_MS)]);
         isCommited = true;
         showPlan = "1";
       } catch (error) {
@@ -257,7 +261,9 @@ export default {
           isCommited = true;
         } else if (error.request) {
           console.log(error.request);
-          this.showError("Plan creation request was made but no response was received.");
+          // The request may have been accepted but the response timed out.
+          isCommited = true;
+          showPlan = "1";
         } else {
           console.log(error.message);
           this.showError("Plan creation request setting up triggered an error.");
@@ -308,14 +314,33 @@ export default {
       }
     ) {
       this.resourcesChanges = [];
+      const hostname = this.getClusterHostname();
       try {
         // Create plan
         this.clusterPlanRunningDialog = true;
-        await options.planCreator();
+        const planPromise = options.planCreator();
+        planPromise.catch(() => {});
+        try {
+          await Promise.race([planPromise, this.sleep(PLAN_START_TIMEOUT_MS)]);
+        } catch (e) {
+          if (e.response) {
+            throw e;
+          }
+          if (!e.request) {
+            throw e;
+          }
+          // If the request timed out, keep going and poll for plan status.
+        }
 
         // Fetch plan
-        const { message, progress } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        this.resourcesChanges = progress.filter((resource) => !isEqual(resource.change.actions, ["no-op"])) || [];
+        const { status, message, progress } = await this.waitForPlanCompletion(hostname);
+        if (status === ClusterStatusCode.PLAN_ERROR) {
+          this.showError(message || "An error occurred while generating the plan.");
+          this.clusterPlanRunningDialog = false;
+          return;
+        }
+        this.resourcesChanges =
+          (progress || []).filter((resource) => !isEqual(resource.change.actions, ["no-op"])) || [];
         this.clusterPlanRunningDialog = false;
 
         // Display plan
@@ -330,8 +355,44 @@ export default {
         }
       } catch (e) {
         this.clusterPlanRunningDialog = false;
-        this.showError(e.response.data.message);
+        if (e.response) {
+          this.showError(e.response.data.message);
+        } else if (e.request) {
+          this.showError("Plan creation request was made but no response was received.");
+        } else if (e.message) {
+          this.showError(e.message);
+        } else {
+          this.showError("Plan creation request setting up triggered an error.");
+        }
       }
+    },
+    getClusterHostname() {
+      if (this.hostname) {
+        return this.hostname;
+      }
+      if (!this.magicCastle) {
+        return null;
+      }
+      return `${this.magicCastle.cluster_name}.${this.magicCastle.domain}`;
+    },
+    async waitForPlanCompletion(hostname) {
+      if (!hostname) {
+        throw new Error("Cluster hostname is missing.");
+      }
+      const start = Date.now();
+      for (;;) {
+        const { status, message, progress } = (await MagicCastleRepository.getStatus(hostname)).data;
+        if (status === ClusterStatusCode.CREATED || status === ClusterStatusCode.PLAN_ERROR) {
+          return { status, message, progress };
+        }
+        if (Date.now() - start > MAX_PLAN_WAIT_MS) {
+          throw new Error("Plan generation is taking too long. Please try again later.");
+        }
+        await this.sleep(POLL_STATUS_INTERVAL);
+      }
+    },
+    sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
     },
     unloadCluster() {
       this.magicCastle = null;

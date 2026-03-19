@@ -3,6 +3,7 @@ from typing import List
 from getpass import getuser
 
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
+from ..configuration import get_config
 from ..database import db
 from .cloud.project import Project
 
@@ -52,6 +53,10 @@ class User:
         self.public_keys = public_keys
 
     @property
+    def is_admin(self):
+        return self.orm.scoped_id in get_config().get("admins", [])
+
+    @property
     def projects(self):
         return self.orm.projects
 
@@ -82,6 +87,10 @@ class LocalUser(User):
             usertype="local",
             public_keys=public_keys,
         )
+
+    @property
+    def is_admin(self):
+        return True
 
 
 class SAMLUser(User):

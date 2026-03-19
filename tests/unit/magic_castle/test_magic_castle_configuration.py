@@ -61,62 +61,6 @@ def test_constructor_invalid_domain():
         MagicCastleConfiguration("openstack", config)
 
 
-def test_get_from_main_file_valid():
-    from mchub.models.magic_castle.magic_castle_configuration import (
-        MagicCastleConfiguration,
-    )
-
-    config = MagicCastleConfiguration.get_from_main_file(
-        path.join(MOCK_CLUSTERS_PATH, "missingnodes.mc.ca", "main.tf.json")
-    )
-    assert config == CLUSTERS_CONFIG["missingnodes.mc.ca"]
-
-
-def test_get_from_main_file_not_found():
-    from mchub.models.magic_castle.magic_castle_configuration import (
-        MagicCastleConfiguration,
-    )
-
-    with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_main_file("empty")
-    with pytest.raises(FileNotFoundError):
-        MagicCastleConfiguration.get_from_main_file("non-existing")
-
-
-def test_write():
-    from mchub.models.magic_castle.magic_castle_configuration import (
-        MagicCastleConfiguration,
-    )
-
-    CONFIG_DICT = {
-        "cluster_name": "missingnodes",
-        "domain": "mc.ca",
-        "image": "Rocky-8.7-x64-2023-02",
-        "nb_users": 30,
-        "instances": {
-            "mgmt": {"type": "", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
-            "login": {"type": "", "count": 1, "tags": ["login", "proxy", "public"]},
-            "node": {"type": "", "count": 12, "tags": ["node"]},
-        },
-        "volumes": {
-            "nfs": {
-                "home": {"size": 400},
-                "project": {"size": 12},
-                "scratch": {"size": 50},
-            }
-        },
-        "public_keys": ["ssh-rsa FOOBAR"],
-        "hieradata": "",
-        "guest_passwd": "",
-    }
-
-    modified_config = MagicCastleConfiguration("openstack", CONFIG_DICT)
-    path_ = path.join(MOCK_CLUSTERS_PATH, "missingnodes.mc.ca", "main.tf.json")
-    modified_config.write(path_)
-    saved_config = MagicCastleConfiguration.get_from_main_file(path_)
-    assert saved_config == CONFIG_DICT
-
-
 def test_properties():
     from mchub.models.magic_castle.magic_castle_configuration import (
         MagicCastleConfiguration,

@@ -1,26 +1,26 @@
+import time
 import datetime
+import github
+import requests
 import json
 import logging
+from cachetools import cached, TTLCache
 
 import humanize
 
-from os import path, environ, mkdir, remove, scandir, rename, symlink
-from subprocess import run, CalledProcessError
-from shutil import rmtree
-from threading import Thread
-
 from marshmallow import ValidationError
-from sqlalchemy.sql import func
+from sqlalchemy.sql import except_, func
 from sqlalchemy.exc import IntegrityError
 
 from mchub.models.cloud.cloud_manager import CloudManager
+from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
 
 from .magic_castle_configuration import MagicCastleConfiguration
 from .cluster_status_code import ClusterStatusCode
-from .plan_type import PlanType
 
-from ..terraform.terraform_state import TerraformState
+from ..terraform_cloud import TerraformCloudRunORM
 from ..terraform.terraform_plan_parser import TerraformPlanParser
+from ..terraform.terraform_state import TerraformState
 from ..cloud.dns_manager import DnsManager
 from ..cloud.project import Project
 from ..puppet.provisioning_manager import ProvisioningManager, MAX_PROVISIONING_TIME
@@ -35,97 +35,47 @@ from ...configuration.env import CLUSTERS_PATH
 from ...exceptions.invalid_usage_exception import (
     ClusterNotFoundException,
     ClusterExistsException,
+    InvalidPlanParameters,
     InvalidUsageException,
     BusyClusterException,
     PlanNotCreatedException,
+    RunIDNotSet,
 )
 from ...exceptions.server_exception import (
     PlanException,
+    TerraformCloudException,
 )
 
 from ...database import db
+
+from ...services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
+from ...services.github_api import get_github_storage
 
 
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
-
-
-def terraform_apply(cluster_id, env, main_path, destroy):
-    log_path = path.join(main_path, TERRAFORM_APPLY_LOG_FILENAME)
-    plan_path = path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME)
-    try:
-        with open(log_path, "w") as output_file:
-            run(
-                [
-                    "terraform",
-                    "apply",
-                    "-input=false",
-                    "-no-color",
-                    "-auto-approve",
-                    plan_path,
-                ],
-                cwd=main_path,
-                stdout=output_file,
-                stderr=output_file,
-                check=True,
-                env=env,
-            )
-    except CalledProcessError as err:
-        logging.error(f"An error occurred while running terraform apply: {err}")
-        if destroy:
-            status = ClusterStatusCode.DESTROY_ERROR
-        else:
-            status = ClusterStatusCode.BUILD_ERROR
-        # Disable removal from database
-        destroy = False
-    else:
-        if not destroy:
-            status = ClusterStatusCode.PROVISIONING_RUNNING
-    finally:
-        # Remove plan
-        if destroy:
-            rmtree(main_path, ignore_errors=True)
-        else:
-            remove(path.join(main_path, TERRAFORM_PLAN_BINARY_FILENAME))
-
-        # Retrieve terraform state
-        try:
-            with open(
-                path.join(main_path, TERRAFORM_STATE_FILENAME), "r"
-            ) as tf_state_file:
-                tf_state = TerraformState(json.load(tf_state_file))
-        except (FileNotFoundError, json.decoder.JSONDecodeError):
-            tf_state = None
-
-        # Save results in database
-        from ... import create_app
-
-        with create_app().app_context():
-            orm = db.session.get(MagicCastleORM, cluster_id)
-            if destroy:
-                db.session.delete(orm)
-            else:
-                orm.plan_type = PlanType.NONE
-                orm.plan = None
-                orm.status = status
-                orm.tf_state = tf_state
-                orm.applied_config = orm.config
-            db.session.commit()
+logger = logging.getLogger(__name__)
 
 
 class MagicCastleORM(db.Model):
     __tablename__ = "magiccastle"
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(256), unique=True, nullable=False)
+
+    tfcloud_workspace = db.Column(db.String(256))
+    tfcloud_run = db.relationship(
+        "TerraformCloudRunORM",
+        back_populates="magic_castle",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
-    plan_type = db.Column(db.Enum(PlanType), default=PlanType.NONE)
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
     config = db.Column(db.PickleType())
     applied_config = db.Column(db.PickleType())
-    tf_state = db.Column(db.PickleType())
-    plan = db.Column(db.PickleType())
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
     project = db.relationship(
         "Project",
@@ -133,6 +83,12 @@ class MagicCastleORM(db.Model):
         uselist=False,
         cascade_backrefs=False,
     )
+
+
+@cached(cache=TTLCache(maxsize=1024, ttl=10))
+def get_tf_status_cache(run_id):
+    tf = get_terraform_cloud()
+    return tf.get_run_status(run_id)
 
 
 class MagicCastle:
@@ -153,8 +109,8 @@ class MagicCastle:
         else:
             self.orm = MagicCastleORM(
                 status=ClusterStatusCode.NOT_FOUND,
-                plan_type=PlanType.NONE,
                 config={},
+                tfcloud_run=TerraformCloudRunORM(),
             )
 
     @property
@@ -166,12 +122,12 @@ class MagicCastle:
         return self.config.domain
 
     @property
-    def path(self):
-        return path.join(CLUSTERS_PATH, self.hostname)
+    def tfcloud_workspace(self):
+        return self.orm.tfcloud_workspace
 
     @property
-    def main_file(self):
-        return path.join(self.path, MAIN_TERRAFORM_FILENAME)
+    def tfcloud_run(self):
+        return self.orm.tfcloud_run
 
     @property
     def cloud_id(self):
@@ -204,6 +160,8 @@ class MagicCastle:
         return self.orm.applied_config
 
     def set_configuration(self, configuration: dict):
+        logger.debug(f"Call <{self.__class__.__name__}>:set_configuration")
+
         expect_tf_changes = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
         cloud_id = configuration.pop("cloud")["id"]
@@ -223,97 +181,107 @@ class MagicCastle:
             expect_tf_changes = True
         return expect_tf_changes
 
+    def _update_status_from_tf_cloud(self):
+        """
+        Fetch all the updates from the Terraform Cloud api if the run_id is started,
+        otherwise get status from db.
+        This update the status, plan, apply log and tf_state
+        """
+        if self.tfcloud_run.run_id:
+            # Update status from Terraform Cloud
+            try:
+                tf_status, is_destroy = get_tf_status_cache(self.tfcloud_run.run_id)
+            except TerraformCloudException as e:
+                logger.error(
+                    f"Error on {self.orm.tfcloud_workspace}, error={e.message}"
+                )
+                return self.orm.status
+
+            if tf_status is not None and is_destroy is not None:
+                self.status = ClusterStatusCode.from_tfcloudstatus(
+                    tf_status, is_destroy
+                )
+
+            # Fetch the apply_log
+            if self.plan and not self.apply_url:
+                tf = get_terraform_cloud()
+                apply_url = tf.get_run_apply_log(self.tfcloud_run.run_id)
+                logger.info(f"Update apply log for {self.tfcloud_run.run_id=}")
+                self.apply_url = apply_url
+
+            # Fetch the tf state
+            if self.tf_state is None and ClusterStatusCode.is_provisioning(
+                self.orm.status
+            ):
+                tf = get_terraform_cloud()
+                tf_state = tf.get_tf_state(self.orm.tfcloud_workspace)
+                if tf_state is not None:
+                    self.tf_state = TerraformState(tf_state)
+                    logger.info(f"Update tf_state {self.tfcloud_run.run_id=}")
+
     @property
     def status(self) -> ClusterStatusCode:
+        if self.orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING:
+            return ClusterStatusCode.PLAN_RUNNING
+
+        self._update_status_from_tf_cloud()
+
         if self.orm.status == ClusterStatusCode.PROVISIONING_RUNNING:
             now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             if ProvisioningManager.check_online(self.hostname):
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
             elif MAX_PROVISIONING_TIME < (now - self.orm.created).total_seconds():
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
+        elif self.orm.status == ClusterStatusCode.DESTROY_SUCCESS:
+            self.delete()
+            return ClusterStatusCode.DESTROY_SUCCESS
 
+        db.session.commit()
         return self.orm.status
 
     @status.setter
     def status(self, status: ClusterStatusCode):
-        self.orm.status = status
-        db.session.commit()
+        if status != self.orm.status:
+            self.orm.status = status
+            db.session.commit()
 
-        # Log cluster status updates for log analytics
-        print(
-            json.dumps(
-                {
-                    "hostname": self.hostname,
-                    "status": self.orm.status,
-                }
-            ),
-            flush=True,
-        )
-
-    def rotate_terraform_logs(self, *, apply: bool):
-        """
-        Rotates filenames for logs generated by running `terraform plan` or `terraform apply`.
-
-        For instance, it will rename an existing file named terraform_plan.log to terraform_plan.log.1.
-        Any log file already ending with a number will have its number incremented by one
-        (e.g.  terraform_plan.log.1 would be renamed to terraform_plan.log.2).
-
-        :param apply: True to rotate logs of `terraform apply`, False to rotate logs of `terraform plan`.
-        """
-        if apply:
-            base_file_name = TERRAFORM_APPLY_LOG_FILENAME
-        else:
-            base_file_name = TERRAFORM_PLAN_LOG_FILENAME
-
-        logs_path = path.join(CLUSTERS_PATH, self.hostname)
-        old_file_names = []
-        with scandir(logs_path) as it:
-            for entry in it:
-                if entry.is_file() and entry.name.startswith(base_file_name):
-                    old_file_names.append(entry.name)
-
-        # Sort alphabetically to always rename the log file with the highest index first
-        old_file_names.sort(reverse=True)
-        for old_file_name in old_file_names:
-            if old_file_name == base_file_name:
-                # terraform_apply.log becomes terraform_apply.log.1
-                new_file_index = 1
-            else:
-                # terraform_apply.log.1 becomes terraform_apply.log.2 and so on
-                new_file_index = int(old_file_name.split(".")[-1]) + 1
-            new_file_name = f"{base_file_name}.{new_file_index}"
-            rename(
-                path.join(self.path, old_file_name),
-                path.join(self.path, new_file_name),
-            )
-
-    @property
-    def plan_type(self) -> PlanType:
-        return self.orm.plan_type
-
-    @plan_type.setter
-    def plan_type(self, plan_type: PlanType):
-        self.orm.plan_type = plan_type
+    @tfcloud_run.setter
+    def tfcloud_run(self, tfcloud_run: TerraformCloudRunORM):
+        self.orm.tfcloud_run = tfcloud_run
 
     @property
     def plan(self) -> dict:
-        return self.orm.plan
+        return self.orm.tfcloud_run.plan
 
     @plan.setter
     def plan(self, plan: dict):
-        self.orm.plan = plan
+        self.orm.tfcloud_run.plan = plan
+        db.session.commit()
+
+    @property
+    def tf_state(self) -> TerraformState:
+        return self.orm.tfcloud_run.tf_state
+
+    @tf_state.setter
+    def tf_state(self, tf_state: TerraformState):
+        self.orm.tfcloud_run.tf_state = tf_state
+
+    @property
+    def apply_url(self) -> str:
+        return self.orm.tfcloud_run.apply_log_url
+
+    @apply_url.setter
+    def apply_url(self, apply_url: str):
+        self.orm.tfcloud_run.apply_log_url = apply_url
 
     def get_progress(self):
-        if self.plan is None:
-            return None
+        if self.apply_url and self.plan:
+            res = requests.get(self.apply_url)
+            apply_log = ""
+            if res.status_code == 200:
+                apply_log = res.text
 
-        try:
-            with open(path.join(self.path, TERRAFORM_APPLY_LOG_FILENAME), "r") as file:
-                terraform_output = file.read()
-        except FileNotFoundError:
-            # terraform apply was not launched yet, therefore the log file does not exist
-            terraform_output = ""
-        return TerraformPlanParser.get_done_changes(self.plan, terraform_output)
+            return TerraformPlanParser.get_done_changes(self.plan, apply_log)
 
     @property
     def state(self):
@@ -326,10 +294,6 @@ class MagicCastle:
             "expiration_date": self.expiration_date,
             "cloud": {"name": self.project.name, "id": self.project.id},
         }
-
-    @property
-    def tf_state(self):
-        return self.orm.tf_state
 
     @property
     def freeipa_passwd(self):
@@ -362,7 +326,7 @@ class MagicCastle:
 
     @property
     def is_busy(self):
-        return self.status in [
+        return self.orm.status in [
             ClusterStatusCode.PLAN_RUNNING,
             ClusterStatusCode.BUILD_RUNNING,
             ClusterStatusCode.DESTROY_RUNNING,
@@ -373,232 +337,148 @@ class MagicCastle:
         return self.status != ClusterStatusCode.NOT_FOUND
 
     def plan_creation(self, data):
+        logger.debug(f"Call <{type(self).__name__}>:plan_creation")
+
         self.set_configuration(data)
-        self.plan_type = PlanType.BUILD
         db.session.add(self.orm)
         try:
             db.session.commit()
         except IntegrityError:
             raise ClusterExistsException
 
-        # Create cluster folder on the filesystem
+        github_repo_fullname = get_github_storage().create_repo(
+            self.hostname, self.project.github_template
+        )
+
+        workspace_name = github_repo_fullname.split("/")[-1]
+
+        tf = get_terraform_cloud()
+        workspace_id = tf.create_workspace(
+            workspace_name, github_repo_fullname, self.orm.project.tfcloud_project_id
+        )
+        dns_envs = DnsManager(self.domain).get_environment_variables()
+        terraform_vars = []
+        for k, v in dns_envs.items():
+            terraform_vars.append(
+                TerraformCloudVariable(name=k, value=v, sensitive=True)
+            )
+        tf.set_workspace_variable_set(workspace_id, terraform_vars)
+
+        logger.info(
+            f"{self.hostname}: terraformcloud workspace=<{workspace_id}> created"
+        )
+
+        # Write the main terraform file to storage backend
         try:
-            mkdir(self.path)
+            var_tf = self.config.get_var_tf()
+            github_commit = get_github_storage().write(var_tf, self.hostname)
         except Exception as error:
             self.delete()
             raise PlanException(
-                "Could not create cluster folder on the filesystem.",
+                "Could not write variables.tf on the storage backend.",
                 additional_details=f"hostname: {self.hostname}, error: {error}",
             )
+        logger.info(
+            f"{self.hostname}: New commit <{github_commit}> on repo <{github_repo_fullname}>"
+        )
 
-        if MAGIC_CASTLE_PATH[:3] != "git":
-            symlink(
-                path.join(MAGIC_CASTLE_PATH, self.project.provider),
-                path.join(self.path, self.project.provider),
-            )
-            symlink(
-                path.join(MAGIC_CASTLE_PATH, "dns"),
-                path.join(self.path, "dns"),
-            )
+        self.orm.tfcloud_workspace = workspace_id
 
-        # Write the main terraform file
-        try:
-            self.config.write(self.main_file)
-        except Exception as error:
-            self.delete()
-            raise PlanException(
-                "Could not write main.tf.json on the filesystem.",
-                additional_details=f"hostname: {self.hostname}, error: {error}",
-            )
-
-        # Initialize terraform modules
-        try:
-            run(
-                ["terraform", "init", "-no-color", "-input=false"],
-                cwd=self.path,
-                capture_output=True,
-                check=True,
-            )
-        except Exception as error:
-            self.delete()
-            raise PlanException(
-                "Could not initialize Terraform modules.",
-                additional_details=f"hostname: {self.hostname}, error: {error}",
-            )
-
-        self.status = ClusterStatusCode.CREATED
-        self.create_plan()
+        self.create_plan(github_sha=github_commit)
+        db.session.commit()
 
     def plan_modification(self, data):
+        logger.debug(f"Call <{self.__class__.__name__}>:plan_modification")
+
         if not self.found:
             raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
 
         config_changed = self.set_configuration(data)
-        prev_plan_type = self.plan_type
-        self.plan_type = PlanType.BUILD
-        db.session.commit()
 
         # Check if main_file has changed before writing
         # and planning a change, some modifications may
         # only be reflected in the database and do not
         # require a plan.
-        if config_changed:
-            self.config.write(self.main_file)
-
-        if (
-            config_changed
-            or self.status
-            in (
-                ClusterStatusCode.PLAN_ERROR,
-                ClusterStatusCode.BUILD_ERROR,
-            )
-            or prev_plan_type != PlanType.BUILD
-        ):
-            self.remove_existing_plan()
-            self.rotate_terraform_logs(apply=False)
-            self.create_plan()
+        # Add an exception if the cluster is stuck in a destroy error
+        if config_changed or self.status == ClusterStatusCode.DESTROY_ERROR:
+            try:
+                var_tf = self.config.get_var_tf()
+                sha = get_github_storage().write(var_tf, self.hostname)
+            except Exception as error:
+                raise PlanException(
+                    "Could not write variables.tf on the storage backend.",
+                    additional_details=f"hostname: {self.hostname}, error: {error}",
+                )
+            self.create_plan(github_sha=sha)
+            db.session.commit()
 
     def plan_destruction(self):
+        logger.debug(f"Call <{self.__class__.__name__}:plan_destruction>")
         if self.is_busy:
             raise BusyClusterException
 
-        self.plan_type = PlanType.DESTROY
-        if self.tf_state is not None:
-            self.remove_existing_plan()
-            self.rotate_terraform_logs(apply=False)
-            self.create_plan()
-        else:
+        if self.orm.tfcloud_workspace is None:
             self.delete()
-
-    def create_plan(self):
-        destroy = self.plan_type == PlanType.DESTROY
-        self.status = ClusterStatusCode.PLAN_RUNNING
-
-        environment_variables = environ.copy()
-        dns_manager = DnsManager(self.domain)
-        environment_variables.update(dns_manager.get_environment_variables())
-        environment_variables.update(self.project.env)
-        plan_log = path.join(self.path, TERRAFORM_PLAN_LOG_FILENAME)
-        try:
-            with open(plan_log, "w") as output_file:
-                run(
-                    [
-                        "terraform",
-                        "plan",
-                        "-input=false",
-                        "-no-color",
-                        "-refresh=" + ("true" if destroy else "false"),
-                        "-destroy=" + ("true" if destroy else "false"),
-                        "-out=" + path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME),
-                    ],
-                    cwd=self.path,
-                    env=environment_variables,
-                    stdout=output_file,
-                    stderr=output_file,
-                    check=True,
-                )
-        except CalledProcessError:
-            self.status = ClusterStatusCode.PLAN_ERROR
-            with open(plan_log, "r") as input_file:
-                log = input_file.read()
-            raise PlanException(
-                "An error occurred while planning changes.",
-                additional_details=f"hostname: {self.hostname}\nlog: {log}",
-            )
-        except BaseException as err:
-            self.status = ClusterStatusCode.PLAN_ERROR
-            raise PlanException(
-                "An error occurred while planning changes.",
-                additional_details=f"hostname: {self.hostname}\nerror: {err}",
-            )
-
-        try:
-            proc = run(
-                [
-                    "terraform",
-                    "show",
-                    "-no-color",
-                    "-json",
-                    path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME),
-                ],
-                cwd=self.path,
-                capture_output=True,
-                check=True,
-            )
-        except CalledProcessError:
-            self.status = ClusterStatusCode.PLAN_ERROR
-            raise PlanException(
-                "An error occurred while exporting planned changes.",
-                additional_details=f"hostname: {self.hostname}",
-            )
-        except BaseException as err:
-            self.status = ClusterStatusCode.PLAN_ERROR
-            raise PlanException(
-                "An error occurred while exporting planned changes.",
-                additional_details=f"hostname: {self.hostname}\nerror: {err}",
-            )
-
-        try:
-            self.plan = json.loads(proc.stdout)
-        except json.JSONDecodeError:
-            self.status = ClusterStatusCode.PLAN_ERROR
-            raise PlanException(
-                "An error occurred while parsing planned changes.",
-                additional_details=f"hostname: {self.hostname}",
-            )
-        except BaseException as err:
-            self.status = ClusterStatusCode.PLAN_ERROR
-            raise PlanException(
-                "An error occurred while parsing planned changes.",
-                additional_details=f"hostname: {self.hostname}\nerror: {err}",
-            )
-
-        if self.tf_state:
-            self.status = ClusterStatusCode.PROVISIONING_RUNNING
         else:
-            self.status = ClusterStatusCode.CREATED
-        db.session.commit()
+            tf = get_terraform_cloud()
+            run_id = tf.destroy_plan(self.orm.tfcloud_workspace)
+            logger.info(
+                f"{self.hostname}: Apply destroy on workspace_id={self.orm.tfcloud_workspace} with run_id={run_id}"
+            )
+            self.create_plan(run_id=run_id)
+            db.session.commit()
 
-    def apply(self):
-        if self.plan is None or not path.exists(
-            path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME)
-        ):
-            raise PlanNotCreatedException
-        if self.is_busy:
-            raise BusyClusterException
+    def create_plan(self, github_sha=None, run_id=None):
+        logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
+        self.tfcloud_run = TerraformCloudRunORM()
 
-        if self.plan_type == PlanType.BUILD:
-            self.status = ClusterStatusCode.BUILD_RUNNING
-            destroy = False
-        elif self.plan_type == PlanType.DESTROY:
-            self.status = ClusterStatusCode.DESTROY_RUNNING
-            destroy = True
-        else:
-            raise PlanNotCreatedException
+        try:
+            if github_sha is None and run_id is None:
+                raise InvalidPlanParameters
 
-        env = environ.copy()
-        if destroy:
-            env["TF_WARN_OUTPUT_ERRORS"] = "1"
-        env.update(self.project.env)
-        env.update(DnsManager(self.domain).get_environment_variables())
+            tf = get_terraform_cloud()
+            while run_id is None:
+                run_id = tf.get_run_by_commit(self.tfcloud_workspace, github_sha)
+                if run_id is None:
+                    time.sleep(10)
+            logger.debug(f"{github_sha=} match {run_id=}")
 
-        self.rotate_terraform_logs(apply=True)
-        Thread(
-            target=terraform_apply, args=[self.orm.id, env, self.path, destroy]
-        ).start()
+            self.orm.tfcloud_run.run_id = run_id
+            db.session.commit()
+
+            # A previous planned/pending runs can block the current run from running.
+            # Force excecute the current run
+            tf.force_execute(run_id)
+
+            # Fetch lastest plan if currently empty
+            while not self.plan:
+                plan = tf.get_run_plan_log_json(run_id)
+                if plan is not None:
+                    self.plan = plan
+                    logger.info(f"Plan Updated for {run_id=}")
+                else:
+                    logger.debug("wait for plan")
+                    time.sleep(10)
+
+            # self.status = ClusterStatusCode.PLAN_RUNNING
+        except Exception:
+            db.session.rollback()
+            # self.status = ClusterStatusCode.PLAN_ERROR
+            raise
 
     def delete(self):
-        # Removes the content of the cluster's folder, even if not empty
-        rmtree(self.path, ignore_errors=True)
         db.session.delete(self.orm)
         db.session.commit()
 
-    def remove_existing_plan(self):
-        try:
-            # Remove existing plan, if it exists
-            remove(path.join(self.path, TERRAFORM_PLAN_BINARY_FILENAME))
-        except FileNotFoundError:
-            # Must be a new cluster, without existing plans
-            pass
+    def apply(self):
+        if self.plan is None:
+            raise PlanNotCreatedException
+        if self.is_busy:
+            raise BusyClusterException
+        if self.tfcloud_run.run_id is None:
+            raise RunIDNotSet
+
+        tf = get_terraform_cloud()
+        tf.apply_run(self.tfcloud_run.run_id)

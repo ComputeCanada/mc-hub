@@ -41,7 +41,7 @@ class TerraformState:
         "freeipa_passwd",
     ]
 
-    def __init__(self, tf_state: object, cloud="openstack"):
+    def __init__(self, tf_state: dict, cloud="openstack"):
         parser = CLOUD_PARSER[cloud]
         self.instance_count = len(parser["instance_count"].find(tf_state))
         self.cores = sum([cores.value for cores in parser["cores"].find(tf_state)])

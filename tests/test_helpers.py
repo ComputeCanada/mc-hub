@@ -8,8 +8,12 @@ from os import path
 from shutil import rmtree, copytree
 
 from unittest.mock import Mock
+
+from .mocks.github_api_mock import GithubStorageMock
 from .mocks.openstack.openstack_connection_mock import OpenStackConnectionMock
-from .data import CLUSTERS, PLAN_TYPE, BOB_HEADERS, ALICE_HEADERS
+from .mocks.terraform_cloud import TerraformCloudMock
+from .data import CLUSTERS, BOB_HEADERS, ALICE_HEADERS, CLUSTERS_CONFIG
+from mchub.models.terraform_cloud import TerraformCloudRunORM
 
 MOCK_CLUSTERS_PATH = path.join("/tmp", "clusters")
 
@@ -32,10 +36,10 @@ def app(config_mock, generate_test_clusters):
     from mchub import create_app
     from mchub.database import db
     from mchub.models.cloud.project import Project
-    from mchub.models.terraform.terraform_state import TerraformState
     from mchub.models.magic_castle.magic_castle_configuration import (
         MagicCastleConfiguration,
     )
+    from mchub.models.terraform.terraform_state import TerraformState
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
     from mchub.models.user import UserORM
 
@@ -62,6 +66,8 @@ def app(config_mock, generate_test_clusters):
                 "OS_APPLICATION_CREDENTIAL_ID": "'z3vjwfkwqocqo2kpowkxf50uvjfkqeqt'",
                 "OS_APPLICATION_CREDENTIAL_SECRET": "'ibrp7kj6labtp-s1fuu82afxrkz8w3kzjrx052ap8coljqjwiacmrxhvtf8dxce77ck8m8u6pbrgv8ezraoe4r'",
             },
+            github_template="github_template",
+            tfcloud_project_id="tfcloud_id",
         )
         project_bob = Project(
             name="project-bob",
@@ -72,6 +78,8 @@ def app(config_mock, generate_test_clusters):
                 "OS_APPLICATION_CREDENTIAL_ID": "'z3vjwfkwqocqo2kpowkxf50uvjfkqeqt'",
                 "OS_APPLICATION_CREDENTIAL_SECRET": "'ibrp7kj6labtp-s1fuu82afxrkz8w3kzjrx052ap8coljqjwiacmrxhvtf8dxce77ck8m8u6pbrgv8ezraoe4r'",
             },
+            github_template="github_template",
+            tfcloud_project_id="tfcloud_id",
         )
         local_user.projects.append(project_alice)
         local_user.projects.append(project_bob)
@@ -84,11 +92,6 @@ def app(config_mock, generate_test_clusters):
         for key, data in CLUSTERS.items():
             hostname = key
             project = db.session.get(Project, data["cloud"]["id"])
-            main = path.join(
-                MOCK_CLUSTERS_PATH,
-                hostname,
-                "main.tf.json",
-            )
             state = path.join(
                 MOCK_CLUSTERS_PATH,
                 hostname,
@@ -105,7 +108,7 @@ def app(config_mock, generate_test_clusters):
             except FileNotFoundError:
                 tf_state = None
             try:
-                config = MagicCastleConfiguration.get_from_main_file(main)
+                config = MagicCastleConfiguration("", data)
             except FileNotFoundError:
                 config = None
             try:
@@ -119,10 +122,8 @@ def app(config_mock, generate_test_clusters):
                 status=data["status"],
                 expiration_date=data["expiration_date"],
                 config=config,
-                tf_state=tf_state,
-                plan_type=PLAN_TYPE[key],
-                plan=plan,
                 created=datetime(2022, 1, 1),
+                tfcloud_run=TerraformCloudRunORM(tf_state=tf_state, plan=plan),
             )
             db.session.add(cluster)
         db.session.commit()
@@ -210,8 +211,31 @@ def mock_openstack_manager(mocker):
     mocker.patch("openstack.connect", return_value=OpenStackConnectionMock())
 
 
-@pytest.fixture
-def fake_successful_subprocess_run(mocker):
-    mock = Mock()
-    mock.stdout = "{}"
-    mocker.patch("mchub.models.magic_castle.magic_castle.run", return_value=mock)
+@pytest.fixture(autouse=True)
+def mock_terraform_cloud_api(mocker):
+    mocker.patch(
+        "mchub.services.terraform_cloud_api._terraform_cloud_instance",
+        TerraformCloudMock(),
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_github_storage_api(mocker):
+    mocker.patch(
+        "mchub.services.github_api._github_storage_instance",
+        GithubStorageMock(),
+    )
+
+
+def status_orm_return(self, *args, **kwargs):
+    return self.orm.status
+
+
+@pytest.fixture()
+def mock_status_logic(mocker):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+
+    mocker.patch.object(
+        MagicCastle, "status", new=property(lambda self: self.orm.status)
+    )
+    # mocker.patch.object(MagicCastle, "status", side_effect=status_orm_return)

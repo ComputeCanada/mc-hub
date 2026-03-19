@@ -39,7 +39,13 @@ An example `configuration.json` is shown below.
         "GCE_SERVICE_ACCOUNT_FILE": "/home/mcu/credentials/gcloud-key.json"
       }
     }
-  }
+  },
+  "github_token": "EXAMPLE_GITHUB_TOKEN",
+  "github_organization": "EXAMPLE_GITHUB_ORGANIZATION",
+  "github_default_template": "owner/repo-template",
+  "tfcloud_api_token": "EXAMPLE_TF_TOKEN",
+  "tfcloud_organization": "EXAMPLE_TFCLOUD_ORGANIZATION",
+  "tfcloud_oauth_vcs_token_id": "VCS_OAUTH_ID"
 }
 ```
 
@@ -133,3 +139,35 @@ The name of the Google Cloud managed zone.
 ### `dns_providers.gcloud.environment_variables`
 
 The environment variables required by Google Cloud refer to the path of the Google Cloud account's JSON key, which is always located in `/home/mcu/credentials/gcloud-key.json` in MC Hub. You don't need to modify this.
+
+
+### `github_token`
+
+A [GitHub personal access token](https://github.com/settings/tokens) with appropriate permissions. This token is used by MC Hub to interact with the GitHub API for operations such as repository creation, issue tracking, or CI integration. The token should have at least the `repo` and `admin:org` scopes if working within an organization.
+
+### `github_organization`
+
+The name of the GitHub organization where Magic Castle repositories will be created and managed. MC Hub will use the `github_token` to access this organization and create project repositories on behalf of users.
+
+### `github_default_template`
+
+The default GitHub template repository to use when creating a new project. When set, this value is pre-filled in the project creation form and used automatically if no template is specified.
+
+Two formats are supported:
+
+- **Repository name only** (e.g. `"my-template"`): the template is looked up within `github_organization`. This supports both public and private repositories, as long as `github_token` has access to the organization.
+- **Full `owner/repo` reference** (e.g. `"owner/repo-template"`): the template is fetched globally. This is useful for public templates hosted outside of `github_organization`. Private repositories outside the organization are also supported if `github_token` has read access to them.
+
+### `tfcloud_api_token`
+
+A [Terraform Cloud API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) used to authenticate with the Terraform Cloud API. You can use either a **user token** or a **team token**, but **organization tokens are not supported** — they lack permissions required for certain operations, such as triggering a destroy run.
+
+The token must belong to a user or team that has sufficient privileges within the Terraform Cloud organization specified in `tfcloud_organization`. This token is used by MC Hub to create and manage workspaces, trigger runs, and perform operations like apply and destroy.
+
+### `tfcloud_organization`
+
+The name of your [Terraform Cloud organization](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/organizations). This is where MC Hub will create and manage workspaces for each cluster deployment.
+
+### `tfcloud_oauth_vcs_token_id`
+
+The ID of the [OAuth VCS connection](https://developer.hashicorp.com/terraform/cloud-docs/vcs) between Terraform Cloud and your version control system (e.g., GitHub). This ID allows Terraform Cloud to access the Git repositories for each cluster. You can find or generate this token in the Terraform Cloud UI under “VCS Providers” when setting up a GitHub connection.

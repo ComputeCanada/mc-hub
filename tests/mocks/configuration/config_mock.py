@@ -45,12 +45,18 @@ BASE_CONFIGURATION = {
             },
         },
     },
+    "github_token": "EXAMPLE_TOKEN",
+    "github_organization": "github_org",
+    "tfcloud_api_token": "EXAMPLE_TOKEN",
+    "tfcloud_organization": "tfcloud_org",
+    "tfcloud_oauth_vcs_token_id": "tfcloud_oauth",
 }
 
 
 @pytest.fixture(autouse=True)
 def config_auth_saml_mock(mocker):
     from mchub.models.auth_type import AuthType
+
     configuration = BASE_CONFIGURATION.copy()
     configuration["auth_type"] = [AuthType.SAML]
     mocker.patch(
@@ -62,6 +68,7 @@ def config_auth_saml_mock(mocker):
 @pytest.fixture(autouse=True)
 def config_auth_none_mock(mocker):
     from mchub.models.auth_type import AuthType
+
     configuration = BASE_CONFIGURATION.copy()
     configuration["auth_type"] = [AuthType.NONE]
     mocker.patch(

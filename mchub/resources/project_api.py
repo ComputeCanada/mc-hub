@@ -3,6 +3,7 @@ from flask import request
 from .api_view import ApiView
 from ..database import db
 from ..models.user import User, UserORM
+from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
@@ -19,6 +20,7 @@ class ProjectAPI(ApiView):
                 "id": project.id,
                 "name": project.name,
                 "provider": project.provider,
+                "github_template": project.github_template,
                 "nb_clusters": len(project.magic_castles),
                 "admin": project.admin_id == user.orm.id,
                 "members": [member.scoped_id for member in project.members]
@@ -31,6 +33,7 @@ class ProjectAPI(ApiView):
                     "id": project.id,
                     "name": project.name,
                     "provider": project.provider,
+                    "github_template": project.github_template,
                     "nb_clusters": len(project.magic_castles),
                     "admin": project.admin_id == user.orm.id,
                 }
@@ -38,6 +41,10 @@ class ProjectAPI(ApiView):
             ]
 
     def post(self, user: User):
+        if not getattr(user, "is_admin", False):
+            raise InvalidUsageException(
+                "Only admins can create projects", status_code=403
+            )
         data = request.get_json()
         if not data:
             raise InvalidUsageException("No json data was provided")
@@ -45,19 +52,40 @@ class ProjectAPI(ApiView):
             provider = Provider(data["provider"])
             env = data["env"]
             name = data["name"]
+            github_template = data["github_template"]
         except KeyError as err:
             raise InvalidUsageException(f"Missing required field {err}")
+        agent_pool_name = data.get("agent_pool_name")
 
         try:
             env = ENV_VALIDATORS[provider](env)
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
 
+        tfcloud_project_id = get_terraform_cloud().create_project(name, agent_pool_name=agent_pool_name)
+
+        terraform_vars = []
+        for k, v in env.items():
+            sensitive = True if "SECRET" in k else False
+            terraform_vars.append(
+                TerraformCloudVariable(name=k, value=v, sensitive=sensitive)
+            )
+        get_terraform_cloud().set_project_variable_set(
+            tfcloud_project_id, name, terraform_vars
+        )
+
         if user.orm.id is None:
             db.session.add(user.orm)
             db.session.commit()
 
-        project = Project(name=name, admin_id=user.orm.id, provider=provider, env=env)
+        project = Project(
+            name=name,
+            admin_id=user.orm.id,
+            provider=provider,
+            env=env,
+            github_template=github_template,
+            tfcloud_project_id=tfcloud_project_id,
+        )
         user.orm.projects.append(project)
         db.session.add(project)
         db.session.commit()
@@ -65,6 +93,7 @@ class ProjectAPI(ApiView):
             "id": project.id,
             "name": project.name,
             "provider": project.provider,
+            "github_template": project.github_template,
             "nb_clusters": len(project.magic_castles),
             "admin": project.admin_id == user.orm.id,
         }, 200
