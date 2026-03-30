@@ -8,6 +8,9 @@ from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
 )
+from ..exceptions.server_exception import (
+    TerraformCloudException,
+)
 
 
 class ProjectAPI(ApiView):
@@ -62,7 +65,12 @@ class ProjectAPI(ApiView):
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
 
-        tfcloud_project_id = get_terraform_cloud().create_project(name, agent_pool_name=agent_pool_name)
+        try:
+            tfcloud_project_id = get_terraform_cloud().create_project(
+                name, agent_pool_name=agent_pool_name
+            )
+        except TerraformCloudException:
+            raise InvalidUsageException(f"Error with Terraform Cloud project creation")
 
         terraform_vars = []
         for k, v in env.items():

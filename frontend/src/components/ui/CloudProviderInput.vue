@@ -3,6 +3,7 @@
     <template v-slot:activator="{ on, attrs }">
       <v-btn color="primary" dark class="mb-2" v-bind="attrs" v-on="on"> Add Project </v-btn>
     </template>
+    <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <v-card>
       <v-card-title>
         <span class="text-h5">Add Project</span>
@@ -50,9 +51,11 @@
 
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
+import MessageDialog from "@/components/ui/MessageDialog";
 
 export default {
   name: "CloudProviderInput",
+  components: { MessageDialog },
   emits: ["newProject"],
   props: {
     defaultGithubTemplate: {
@@ -63,6 +66,8 @@ export default {
   data() {
     return {
       dialog: false,
+      errorDialog: false,
+      errorMessage: "",
       providers: ["openstack", "aws"],
       provider_var: {
         openstack: ["OS_AUTH_URL", "OS_APPLICATION_CREDENTIAL_ID", "OS_APPLICATION_CREDENTIAL_SECRET"],
@@ -106,7 +111,13 @@ export default {
       if (!payload.github_template) {
         payload.github_template = this.defaultGithubTemplate || "";
       }
-      await ProjectRepository.post(payload);
+      try {
+        await ProjectRepository.post(payload);
+      } catch (e) {
+        this.errorMessage = e.response?.data?.message ?? "An error occurred while creating the project.";
+        this.errorDialog = true;
+        return;
+      }
       this.$emit("newProject");
       this.newProject = Object.assign({}, this.defaultProject);
       this.close();
