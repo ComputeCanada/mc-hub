@@ -469,6 +469,9 @@ class MagicCastle:
             raise
 
     def delete(self):
+        if self.tfcloud_workspace:
+            tf = get_terraform_cloud()
+            tf.add_workspace_tag(self.tfcloud_workspace, "deleted")
         db.session.delete(self.orm)
         db.session.commit()
 
