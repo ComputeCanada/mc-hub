@@ -48,6 +48,16 @@ class PlanException(ServerException):
         super().__init__(message, additional_details=additional_details)
 
 
+class GithubStorageException(ServerException):
+    def __init__(
+        self,
+        message: str = "An error occurred on a GitHub request",
+        *,
+        additional_details: str = "",
+    ):
+        super().__init__(message, additional_details=additional_details)
+
+
 class TerraformCloudException(ServerException):
     def __init__(
         self,
