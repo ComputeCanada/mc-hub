@@ -114,7 +114,7 @@ class GithubStorage:
         org = self.github.get_organization(self.organization)
         repo = org.get_repo(repo_name)
 
-        tf_str = json.dumps(tf_data)
+        tf_str = json.dumps(tf_data, indent=2)
 
         try:
             file = repo.get_contents(filename)
