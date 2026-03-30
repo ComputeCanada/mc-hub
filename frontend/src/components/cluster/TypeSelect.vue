@@ -10,8 +10,8 @@
 </template>
 
 <script>
-const TYPE_REGEX =
-  /^(?:g(?<gpu>[0-9]+)(?:-(?<gpu_ram>[0-9.]+)gb)?-)?[pc](?<cpu>[0-9]+)-(?:(?<ram>[0-9.]+)gb)(?:-(?<disk>[0-9.]+))?/;
+const GPU_REGEX = /^g(?<gpu>[0-9]+)(?:-(?<gpu_ram>[0-9.]+)gb)?-/;
+const DISK_REGEX = /[pc][0-9]+-[0-9.]+gb-(?<disk>[0-9.]+)/;
 const TYPE_CATEGORIES = [
   {
     prefix: "p",
@@ -58,7 +58,7 @@ export default {
     items() {
       let items = [];
       TYPE_CATEGORIES.forEach(({ prefix, name }) => {
-        const types = this.types.filter((type) => type.startsWith(prefix));
+        const types = this.types.filter((type) => type.name.startsWith(prefix));
         if (types.length > 0) {
           if (items.length > 0) {
             items.push({ divider: true });
@@ -67,7 +67,7 @@ export default {
           items = items.concat(
             types.map((type) => {
               return {
-                text: type,
+                text: type.name,
                 description: this.getTypeDescription(type),
               };
             })
@@ -78,25 +78,24 @@ export default {
     },
   },
   methods: {
-    getTypeDescription(typeName) {
-      let namedGroupMatches = {};
-      const typeMatchRegex = typeName.match(TYPE_REGEX);
-      if (typeMatchRegex != null) {
-        namedGroupMatches = typeMatchRegex.groups;
-      }
-
+    getTypeDescription(typeObj) {
       let descriptionElements = [];
-      if (typeof namedGroupMatches["gpu"] !== "undefined") {
-        let gpuDescription = `${namedGroupMatches.gpu} vGPU`;
-        if (typeof namedGroupMatches["gpu_ram"] !== "undefined") {
-          gpuDescription += ` (${namedGroupMatches.gpu_ram} GB)`;
+
+      const gpuMatch = typeObj.name.match(GPU_REGEX);
+      if (gpuMatch) {
+        let gpuDescription = `${gpuMatch.groups.gpu} vGPU`;
+        if (gpuMatch.groups.gpu_ram) {
+          gpuDescription += ` (${gpuMatch.groups.gpu_ram} GB)`;
         }
         descriptionElements.push(gpuDescription);
       }
-      descriptionElements.push(`${namedGroupMatches.cpu} vCPU`);
-      descriptionElements.push(`${namedGroupMatches.ram} GB RAM`);
-      if (typeof namedGroupMatches["disk"] !== "undefined") {
-        descriptionElements.push(`${namedGroupMatches.disk} GB ephemeral storage`);
+
+      descriptionElements.push(`${typeObj.vcpus} vCPU`);
+      descriptionElements.push(`${typeObj.ram / 1024} GB RAM`);
+
+      const diskMatch = typeObj.name.match(DISK_REGEX);
+      if (diskMatch) {
+        descriptionElements.push(`${diskMatch.groups.disk} GB ephemeral storage`);
       }
 
       return descriptionElements.join(", ");

@@ -394,9 +394,9 @@ export default {
         if (this.localSpecs.instances[key].type === null) {
           try {
             const type = this.getTypes(this.localSpecs.instances[key].tags)[0];
-            this.localSpecs.instances[key].type = type;
+            this.localSpecs.instances[key].type = type?.name;
             if (key in this.initialSpecs.instances) {
-              this.initialSpecs.instances[key].type = type;
+              this.initialSpecs.instances[key].type = type?.name;
             }
           } catch (err) {
             console.log("No instance type available for " + key);
@@ -633,19 +633,20 @@ export default {
       };
     },
     getTypes(tags) {
-      if (this.possibleResources === null) {
+      if (this.possibleResources === null || this.resourceDetails === null) {
         return [];
       }
       // Retrieve all available types
       // Then filter based on the selected tags
-      let inst_types = this.possibleResources["types"];
+      let allowedNames = this.possibleResources["types"];
       for (const tag of tags) {
         if (tag in this.possibleResources["tag_types"]) {
           const tag_types = new Set(this.possibleResources["tag_types"][tag]);
-          inst_types = inst_types.filter((x) => tag_types.has(x));
+          allowedNames = allowedNames.filter((x) => tag_types.has(x));
         }
       }
-      return inst_types;
+      const allowedNamesSet = new Set(allowedNames);
+      return this.resourceDetails.instance_types.filter((t) => allowedNamesSet.has(t.name));
     },
     getPossibleValues(fieldPath) {
       if (this.possibleResources === null) {
@@ -721,17 +722,17 @@ export default {
         new_row_key = "mgmt";
         stub["count"] = 1;
         stub["tags"] = ["mgmt", "puppet", "nfs"];
-        stub["type"] = this.getTypes(stub["tags"])[0];
+        stub["type"] = this.getTypes(stub["tags"])[0]?.name;
       } else if (!all_tags.has("login")) {
         new_row_key = "login";
         stub["count"] = 1;
         stub["tags"] = ["login", "proxy", "public"];
-        stub["type"] = this.getTypes(stub["tags"])[0];
+        stub["type"] = this.getTypes(stub["tags"])[0]?.name;
       } else if (!all_tags.has("node")) {
         new_row_key = "node";
         stub["count"] = 1;
         stub["tags"] = ["node"];
-        stub["type"] = this.getTypes(stub["tags"])[0];
+        stub["type"] = this.getTypes(stub["tags"])[0]?.name;
       } else {
         const key = keys[keys.length - 1];
         let prefix;
