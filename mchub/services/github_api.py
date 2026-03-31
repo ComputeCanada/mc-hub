@@ -1,4 +1,5 @@
 from ..configuration import get_config
+from ..exceptions.server_exception import GithubStorageException
 
 from github import Github
 from github import Auth
@@ -72,12 +73,25 @@ class GithubStorage:
             except Exception as e:
                 raise e
 
-    def create_repo(self, hostname, template_name):
+    def _get_template_repo(self, template_name):
         org = self.github.get_organization(self.organization)
         if "/" in template_name:
-            self.template_repo = self.github.get_repo(template_name)
+            return self.github.get_repo(template_name)
         else:
-            self.template_repo = org.get_repo(template_name)
+            return org.get_repo(template_name)
+
+    def validate_template(self, template_name):
+        try:
+            self._get_template_repo(template_name)
+        except GithubException as e:
+            if e.status == 404:
+                raise GithubStorageException(
+                    f"Github template repo '{template_name}' not found",
+                )
+            raise
+
+    def create_repo(self, hostname, template_name):
+        self.template_repo = self._get_template_repo(template_name)
 
         repo_name = self._get_repo_name(hostname)
 
@@ -114,7 +128,7 @@ class GithubStorage:
         org = self.github.get_organization(self.organization)
         repo = org.get_repo(repo_name)
 
-        tf_str = json.dumps(tf_data)
+        tf_str = json.dumps(tf_data, indent=2)
 
         try:
             file = repo.get_contents(filename)

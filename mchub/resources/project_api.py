@@ -4,9 +4,14 @@ from .api_view import ApiView
 from ..database import db
 from ..models.user import User, UserORM
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
+from ..services.github_api import get_github_storage
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
+)
+from ..exceptions.server_exception import (
+    TerraformCloudException,
+    GithubStorageException,
 )
 
 
@@ -62,7 +67,18 @@ class ProjectAPI(ApiView):
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
 
-        tfcloud_project_id = get_terraform_cloud().create_project(name, agent_pool_name=agent_pool_name)
+        if github_template:
+            try:
+                get_github_storage().validate_template(github_template)
+            except GithubStorageException as e:
+                raise InvalidUsageException(str(e))
+
+        try:
+            tfcloud_project_id = get_terraform_cloud().create_project(
+                name, agent_pool_name=agent_pool_name
+            )
+        except TerraformCloudException:
+            raise InvalidUsageException(f"Error with Terraform Cloud project creation")
 
         terraform_vars = []
         for k, v in env.items():
@@ -109,6 +125,18 @@ class ProjectAPI(ApiView):
         data = request.get_json()
         if not data:
             raise InvalidUsageException("No json data was provided")
+
+        if "github_template" in data:
+            if project.admin_id != user.orm.id:
+                raise InvalidUsageException(
+                    "Cannot edit github template of a project you are not the admin of"
+                )
+            if data["github_template"]:
+                try:
+                    get_github_storage().validate_template(data["github_template"])
+                except GithubStorageException as e:
+                    raise InvalidUsageException(str(e))
+            project.github_template = data["github_template"]
 
         add_members = data.get("add", [])
         del_members = data.get("del", [])

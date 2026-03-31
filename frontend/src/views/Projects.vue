@@ -11,7 +11,7 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <project-membership :id="item.id" />
+          <project-membership :id="item.id" :admin="item.admin" />
           <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
             <v-icon> mdi-delete </v-icon>
             delete

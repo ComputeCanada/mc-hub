@@ -351,6 +351,16 @@ class TerraformCloud:
                 additional_details=f"{run_id=}, error: {res.text}",
             )
 
+    def add_workspace_tag(self, workspace_id, tag):
+        url = f"{self.BASE_URL}/workspaces/{workspace_id}/relationships/tags"
+        payload = {"data": [{"type": "tags", "attributes": {"name": tag}}]}
+        res = self._request("POST", url, json=payload)
+        if res.status_code != 204:
+            raise TerraformCloudException(
+                "Could not add tag to workspace",
+                additional_details=f"{workspace_id=}, {tag=}, error: {res.text}",
+            )
+
     def force_execute(self, run_id):
         url = f"{self.BASE_URL}/runs/{run_id}/actions/force-execute"
         res = self._request("POST", url)
