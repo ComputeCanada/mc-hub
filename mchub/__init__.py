@@ -3,6 +3,7 @@ import logging
 
 from flask import Flask, send_file, send_from_directory
 from flask_cors import CORS
+from flask_migrate import Migrate
 
 
 def create_app(db_path=None):
@@ -15,6 +16,7 @@ def create_app(db_path=None):
     from .resources.user_api import UserAPI
     from .resources.project_api import ProjectAPI
     from .resources.template_api import TemplateAPI
+    from .resources.tfcloud_proxy import tfcloud_proxy
 
     if db_path is None:
         db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
@@ -22,6 +24,8 @@ def create_app(db_path=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = db_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
+    migrations_dir = os_path.join(os_path.dirname(os_path.dirname(__file__)), "migrations")
+    Migrate(app, db, directory=migrations_dir, render_as_batch=True)
     gunicorn_error_logger = logging.getLogger("gunicorn.error")
     if gunicorn_error_logger.handlers:
         app.logger.handlers = gunicorn_error_logger.handlers
@@ -80,6 +84,12 @@ def create_app(db_path=None):
         "/api/template/<string:template_name>",
         view_func=template_view,
         methods=["GET"],
+    )
+
+    app.add_url_rule(
+        "/api/tfcloud-proxy/<path:path>",
+        view_func=tfcloud_proxy,
+        methods=["GET", "POST", "PATCH"],
     )
 
     user_view = UserAPI.as_view("user")

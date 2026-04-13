@@ -8,6 +8,7 @@ An example `configuration.json` is shown below.
 {
   "auth_type": ["NONE"],
   "admins": [],
+  "mchub_url": "https://mc-hub.example.com",
   "cors_allowed_origins": ["https://mc-hub.example.com"],
   "domains": {
     "magic-castle.cloud": {
@@ -139,7 +140,6 @@ The name of the Google Cloud managed zone.
 ### `dns_providers.gcloud.environment_variables`
 
 The environment variables required by Google Cloud refer to the path of the Google Cloud account's JSON key, which is always located in `/home/mcu/credentials/gcloud-key.json` in MC Hub. You don't need to modify this.
-
 
 ### `github_token`
 

@@ -43,3 +43,6 @@ class TerraformCloudMock:
 
     def force_execute(self, run_id):
         return
+
+    def add_workspace_tag(self, workspace_id, tag):
+        return

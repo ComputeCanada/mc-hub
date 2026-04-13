@@ -18,6 +18,7 @@ RUN apt-get update && \
 
 WORKDIR /code
 COPY mchub /code/mchub
+COPY migrations /code/migrations
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
@@ -51,7 +52,9 @@ WORKDIR /home/mcu
 RUN mkdir -p /home/mcu/clusters /home/mcu/database /home/mcu/credentials
 
 ENV MCH_DIST_PATH=/code/frontend
+ENV FLASK_APP="mchub:create_app"
 
-CMD python -m mchub.schema_update --clean && \
+CMD flask db upgrade && \
+    python -m mchub.schema_update && \
     python -m mchub.init_clusters && \
     python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"

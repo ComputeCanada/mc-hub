@@ -16,6 +16,8 @@ class TerraformCloudVariable:
     name: str
     value: str
     sensitive: bool
+    hcl: bool = False
+    category: str = "env"
 
     def to_dict(self):
         return {
@@ -24,8 +26,8 @@ class TerraformCloudVariable:
                 "key": self.name,
                 "value": self.value,
                 "description": "",
-                "category": "env",
-                "hcl": False,
+                "category": self.category,
+                "hcl": self.hcl,
                 "sensitive": self.sensitive,
             },
         }
@@ -206,8 +208,8 @@ class TerraformCloud:
                         "key": variable.name,
                         "value": variable.value,
                         "description": "",
-                        "category": "env",
-                        "hcl": False,
+                        "category": variable.category,
+                        "hcl": variable.hcl,
                         "sensitive": variable.sensitive,
                     },
                     "relationships": {
