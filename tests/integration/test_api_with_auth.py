@@ -32,12 +32,16 @@ def test_get_current_user_authentified(client):
         "username": "alice",
         "usertype": "saml",
         "public_keys": ["ssh-rsa FAKE"],
+        "is_admin": False,
+        "github_default_template": None,
     }
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
     assert res.get_json() == {
         "username": "bob12.bobby",
         "usertype": "saml",
         "public_keys": ["ssh-rsa FAKE"],
+        "is_admin": False,
+        "github_default_template": None,
     }
 
 

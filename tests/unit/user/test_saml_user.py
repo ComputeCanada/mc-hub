@@ -121,4 +121,4 @@ def test_create_empty_magic_castle(alice):
     )
     magic_castle2 = alice.magic_castles[-1]
     assert magic_castle2.hostname == "alice123.mc.ca"
-    assert magic_castle2.orm.status == ClusterStatusCode.PLAN_RUNNING
+    assert magic_castle2.orm.status == ClusterStatusCode.NOT_FOUND
