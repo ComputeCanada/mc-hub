@@ -171,7 +171,7 @@ def test_set_variable_set_success(tf_cloud_client, mock_request):
         TerraformCloudVariable("VAR2", "value2", True),
     ]
 
-    tf_cloud_client.set_variable_set("project-id-1", "project-name-1", variables)
+    tf_cloud_client.set_project_variable_set("project-id-1", "project-name-1", variables)
 
     mock_request.assert_called_once()
 
@@ -190,7 +190,7 @@ def test_set_variable_set_failure(tf_cloud_client, mock_request):
     variables = [TerraformCloudVariable("VAR1", "value1", False)]
 
     with pytest.raises(TerraformCloudException) as excinfo:
-        tf_cloud_client.set_variable_set("proj-id", "proj-name", variables)
+        tf_cloud_client.set_project_variable_set("proj-id", "proj-name", variables)
 
     assert "Could not set variable set" in str(excinfo.value)
 

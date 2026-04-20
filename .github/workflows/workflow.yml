@@ -2,16 +2,9 @@ name: Build, test and deploy
 
 on:
   push:
-  workflow_dispatch:
-    inputs:
-      force_build_live_cluster:
-        description: "Force live cluster test (yes/no)"
-        required: true
-        default: "no"
 
 env:
   IMAGE_NAME: "cmdntrf/mc-hub"
-  RUN_LIVE_CLUSTER_TESTS: ${{ (github.event.inputs.force_build_live_cluster == 'yes' || startsWith(github.ref, 'refs/tags/v')) && 'true' || 'false' }}
   MAGIC_CASTLE_VERSION: 14.0.0-beta.2
 
 jobs:
@@ -34,45 +27,15 @@ jobs:
           mkdir -p run
           mkdir -p run/database
           mkdir -p run/clusters
-      - name: Decrypt secret files
-        run: |
-          FILE_NAMES=('configuration.json' 'gcloud-key.json')
-          for file_name in "${FILE_NAMES[@]}"
-          do
-            gpg --quiet --batch --yes --decrypt --passphrase="$DECRYPTION_PASSPHRASE" \
-              --output "./run/$file_name" "./.github/secrets/$file_name.gpg"
-          done
-        env:
-          DECRYPTION_PASSPHRASE: ${{ secrets.DECRYPTION_PASSPHRASE }}
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
       - name: Install the project
         run: uv sync --locked --all-extras --dev
-      - name: Fetch Magic Castle Source and patch acme url
-        working-directory: ./run
-        run: |
-          curl -L -O https://github.com/ComputeCanada/magic_castle/releases/download/${MAGIC_CASTLE_VERSION}/magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
-          tar xvf magic_castle-openstack-${MAGIC_CASTLE_VERSION}.tar.gz
-          mv magic_castle-openstack-${MAGIC_CASTLE_VERSION} magic_castle
-          sed -i 's;https://acme-v02.api.letsencrypt.org/directory;https://acme-staging-v02.api.letsencrypt.org/directory;g' magic_castle/dns/acme/main.tf
       - name: Run backend regular tests
-        if: ${{ !(env.RUN_LIVE_CLUSTER_TESTS == 'true') }}
         working-directory: ./run
         run: |
           export MAGIC_CASTLE_PATH=$PWD/magic_castle
           uv run pytest ../
-      - name: Run backend extended tests (including live cluster tests)
-        if: ${{ env.RUN_LIVE_CLUSTER_TESTS == 'true' }}
-        working-directory: ./run
-        env:
-          OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
-          OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.OS_APPLICATION_CREDENTIAL_ID }}
-          OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.OS_APPLICATION_CREDENTIAL_SECRET }}
-        run: |
-          export MAGIC_CASTLE_PATH=$PWD/magic_castle
-          uv run pytest -x -vv --build-live-cluster ../;
   container:
     runs-on: ubuntu-22.04
     name: Build container

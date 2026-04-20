@@ -18,6 +18,11 @@ class TerraformCloudMock:
     ):
         return None
 
+    def set_workspace_variable_set(
+        self, workspace_id, variables: List[TerraformCloudVariable]
+    ):
+        return None
+
     def get_run_apply_log(self, run_id):
         return None
 
