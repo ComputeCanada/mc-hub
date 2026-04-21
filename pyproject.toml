@@ -29,7 +29,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=7.2.2,<8",
+    "pytest>=9.0.3,<10",
     "pytest-flask>=1.2.0,<2",
     "pytest-mock>=3.10.0,<4",
     "freezegun>=1.2.2,<2",
