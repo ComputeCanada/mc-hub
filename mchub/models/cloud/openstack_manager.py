@@ -12,7 +12,6 @@ VALID_IMAGES_REGEX_ARRAY = [
 # Otherwise, it creates and mounts an external volume of 10 GB.
 MINIMUM_ROOT_DISK_SIZE = 10
 
-# Magic Castle requires the following specs for each instance category
 TAG_MINIMUM_REQUIREMENTS = {
     "mgmt": {"ram": 6144, "vcpus": 2},
     "login": {"ram": 2048, "vcpus": 2},

@@ -29,6 +29,7 @@ class ConfigurationSchema(Schema):
     tfcloud_api_token = fields.Str()
     tfcloud_organization = fields.Str()
     tfcloud_oauth_vcs_token_id = fields.Str()
+    mchub_url = fields.Str(load_default=None)
 
     # validation
     #         if AuthType.TOKEN in data["auth_type"] and data.get("token", "") == "":

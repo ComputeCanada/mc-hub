@@ -1,5 +1,6 @@
 import time
 import datetime
+import secrets
 import github
 import requests
 import json
@@ -48,6 +49,7 @@ from ...exceptions.server_exception import (
 
 from ...database import db
 
+from ...configuration import get_config
 from ...services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
 from ...services.github_api import get_github_storage
 
@@ -64,6 +66,7 @@ class MagicCastleORM(db.Model):
     hostname = db.Column(db.String(256), unique=True, nullable=False)
 
     tfcloud_workspace = db.Column(db.String(256))
+    cluster_token = db.Column(db.String(64), unique=True)
     tfcloud_run = db.relationship(
         "TerraformCloudRunORM",
         back_populates="magic_castle",
@@ -124,6 +127,10 @@ class MagicCastle:
     @property
     def tfcloud_workspace(self):
         return self.orm.tfcloud_workspace
+
+    @property
+    def cluster_token(self):
+        return self.orm.cluster_token
 
     @property
     def tfcloud_run(self):
@@ -336,6 +343,19 @@ class MagicCastle:
     def found(self):
         return self.status != ClusterStatusCode.NOT_FOUND
 
+    def _get_var_tf(self):
+        var_tf = self.config.get_var_tf()
+        if self.cluster_token:
+            mchub_url = get_config().get("mchub_url")
+            proxy_hieradata = (
+                f"profile::slurm::controller::tfe_token: {self.cluster_token}\n"
+                f"profile::slurm::controller::tfe_workspace: {self.tfcloud_workspace}\n"
+                f"profile::slurm::controller::tfe_api_url: {mchub_url}/api/tfcloud-proxy"
+            )
+            existing = var_tf["hieradata"].strip()
+            var_tf["hieradata"] = f"{existing}\n{proxy_hieradata}" if existing else proxy_hieradata
+        return var_tf
+
     def plan_creation(self, data):
         logger.debug(f"Call <{type(self).__name__}>:plan_creation")
 
@@ -357,12 +377,17 @@ class MagicCastle:
             workspace_name, github_repo_fullname, self.orm.project.tfcloud_project_id
         )
         dns_envs = DnsManager(self.domain).get_environment_variables()
-        terraform_vars = []
-        for k, v in dns_envs.items():
-            terraform_vars.append(
-                TerraformCloudVariable(name=k, value=v, sensitive=True)
-            )
+        terraform_vars = [TerraformCloudVariable(name=k, value=v, sensitive=True) for k, v in dns_envs.items()]
+        terraform_vars.append(
+            TerraformCloudVariable(name="pool", value="[]", sensitive=False, hcl=True, category="terraform")
+        )
         tf.set_workspace_variable_set(workspace_id, terraform_vars)
+
+        mchub_url = get_config().get("mchub_url")
+        if mchub_url:
+            self.orm.cluster_token = secrets.token_urlsafe(32)
+
+        self.orm.tfcloud_workspace = workspace_id
 
         logger.info(
             f"{self.hostname}: terraformcloud workspace=<{workspace_id}> created"
@@ -370,7 +395,7 @@ class MagicCastle:
 
         # Write the main terraform file to storage backend
         try:
-            var_tf = self.config.get_var_tf()
+            var_tf = self._get_var_tf()
             github_commit = get_github_storage().write(var_tf, self.hostname)
         except Exception as error:
             self.delete()
@@ -381,8 +406,6 @@ class MagicCastle:
         logger.info(
             f"{self.hostname}: New commit <{github_commit}> on repo <{github_repo_fullname}>"
         )
-
-        self.orm.tfcloud_workspace = workspace_id
 
         self.create_plan(github_sha=github_commit)
         db.session.commit()
@@ -404,7 +427,7 @@ class MagicCastle:
         # Add an exception if the cluster is stuck in a destroy error
         if config_changed or self.status == ClusterStatusCode.DESTROY_ERROR:
             try:
-                var_tf = self.config.get_var_tf()
+                var_tf = self._get_var_tf()
                 sha = get_github_storage().write(var_tf, self.hostname)
             except Exception as error:
                 raise PlanException(

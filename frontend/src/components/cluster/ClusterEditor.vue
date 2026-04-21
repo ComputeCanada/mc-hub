@@ -342,7 +342,7 @@ export default {
     return {
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
       VOLUME_STUB: { size: 50 },
-      TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node"],
+      TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node", "pool"],
       validForm: true,
       initialSpecs: null,
 
