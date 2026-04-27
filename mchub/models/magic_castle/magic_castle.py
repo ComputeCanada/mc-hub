@@ -7,6 +7,15 @@ import json
 import logging
 from cachetools import cached, TTLCache
 
+import base64
+import yaml
+
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.serialization import pkcs7
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+
 import humanize
 
 from marshmallow import ValidationError
@@ -54,6 +63,103 @@ from ...services.terraform_cloud_api import get_terraform_cloud, TerraformCloudV
 from ...services.github_api import get_github_storage
 
 
+def _encrypt_eyaml(value: str, cert_pem: str) -> str:
+    cert = x509.load_pem_x509_certificate(cert_pem.encode())
+    encrypted_der = (
+        pkcs7.PKCS7EnvelopeBuilder()
+        .set_data(value.encode())
+        .add_recipient(cert)
+        .encrypt(serialization.Encoding.DER, [])
+    )
+    return f"ENC[PKCS7,{base64.b64encode(encrypted_der).decode()}]"
+
+
+def _hieradata_to_entries(hieradata: str) -> list:
+    """Parse a hieradata YAML string into a list of {key, value, encrypt} dicts.
+    ENC[...] values are masked (value=None, encrypt=True)."""
+    if not hieradata or not hieradata.strip():
+        return []
+    try:
+        parsed = yaml.safe_load(hieradata)
+    except yaml.YAMLError:
+        return []
+    if not isinstance(parsed, dict):
+        return []
+
+    entries = []
+    for key, value in parsed.items():
+        if isinstance(value, str) and value.startswith("ENC["):
+            entries.append({"key": key, "value": None, "encrypt": True})
+        elif isinstance(value, bool):
+            entries.append({"key": key, "value": "true" if value else "false", "encrypt": False})
+        elif isinstance(value, (int, float)):
+            entries.append({"key": key, "value": str(value), "encrypt": False})
+        elif isinstance(value, str):
+            entries.append({"key": key, "value": value, "encrypt": False})
+        else:
+            entries.append({"key": key, "value": yaml.dump(value, default_flow_style=True).strip(), "encrypt": False})
+    return entries
+
+
+def _entries_to_hieradata(entries: list, existing_hieradata: str, eyaml_public_key: str) -> str:
+    """Convert a list of {key, value, encrypt} entries to a hieradata YAML string."""
+    existing = {}
+    if existing_hieradata:
+        try:
+            parsed = yaml.safe_load(existing_hieradata)
+            if isinstance(parsed, dict):
+                existing = parsed
+        except yaml.YAMLError:
+            pass
+
+    result = {}
+    for entry in entries:
+        key = entry.get("key", "").strip()
+        if not key:
+            continue
+        value = entry.get("value")
+        encrypt = entry.get("encrypt", False)
+
+        if encrypt and value is None:
+            if key in existing:
+                result[key] = existing[key]
+        elif encrypt and value is not None and eyaml_public_key:
+            result[key] = _encrypt_eyaml(str(value), eyaml_public_key)
+        elif not encrypt and value is not None:
+            try:
+                result[key] = yaml.safe_load(str(value))
+            except yaml.YAMLError:
+                result[key] = str(value)
+
+    if not result:
+        return ""
+    return yaml.dump(result, default_flow_style=False, allow_unicode=True).rstrip()
+
+
+def _generate_eyaml_keypair():
+    """Generate an RSA-2048 key pair and self-signed certificate for eyaml encryption.
+    Returns (private_key_pem, certificate_pem) as strings."""
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, u"mchub-eyaml")])
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(private_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.utcnow())
+        .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=3650))
+        .sign(private_key, hashes.SHA256())
+    )
+    private_key_pem = private_key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption(),
+    ).decode()
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM).decode()
+    return private_key_pem, cert_pem
+
+
 TERRAFORM_PLAN_BINARY_FILENAME = "terraform_plan"
 TERRAFORM_APPLY_LOG_FILENAME = "terraform_apply.log"
 TERRAFORM_PLAN_LOG_FILENAME = "terraform_plan.log"
@@ -79,6 +185,7 @@ class MagicCastleORM(db.Model):
     expiration_date = db.Column(db.String(32))
     config = db.Column(db.PickleType())
     applied_config = db.Column(db.PickleType())
+    eyaml_public_key = db.Column(db.Text)
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
     project = db.relationship(
         "Project",
@@ -172,6 +279,13 @@ class MagicCastle:
         expect_tf_changes = False
         self.orm.expiration_date = configuration.pop("expiration_date", None)
         cloud_id = configuration.pop("cloud")["id"]
+
+        hieradata_entries = configuration.pop("hieradata_entries", None)
+        if hieradata_entries is not None:
+            existing_hieradata = self.config.get("hieradata", "") if self.config else ""
+            configuration["hieradata"] = _entries_to_hieradata(
+                hieradata_entries, existing_hieradata, self.orm.eyaml_public_key
+            )
 
         if self.orm.project is None or self.orm.project.id != cloud_id:
             self.orm.project = db.session.get(Project, cloud_id)
@@ -292,14 +406,16 @@ class MagicCastle:
 
     @property
     def state(self):
+        config = self.applied_config if self.applied_config else self.config
         return {
-            **(self.applied_config if self.applied_config else self.config),
+            **config,
             "hostname": self.hostname,
             "status": self.status,
             "freeipa_passwd": self.freeipa_passwd,
             "age": self.age,
             "expiration_date": self.expiration_date,
             "cloud": {"name": self.project.name, "id": self.project.id},
+            "hieradata_entries": _hieradata_to_entries(config.get("hieradata", "")),
         }
 
     @property
@@ -347,8 +463,11 @@ class MagicCastle:
         var_tf = self.config.get_var_tf()
         if self.cluster_token:
             mchub_url = get_config().get("mchub_url")
+            tfe_token = self.cluster_token
+            if self.orm.eyaml_public_key:
+                tfe_token = _encrypt_eyaml(self.cluster_token, self.orm.eyaml_public_key)
             proxy_hieradata = (
-                f"profile::slurm::controller::tfe_token: {self.cluster_token}\n"
+                f"profile::slurm::controller::tfe_token: {tfe_token}\n"
                 f"profile::slurm::controller::tfe_workspace: {self.tfcloud_workspace}\n"
                 f"profile::slurm::controller::tfe_api_url: {mchub_url}/api/tfcloud-proxy"
             )
@@ -381,6 +500,14 @@ class MagicCastle:
         terraform_vars.append(
             TerraformCloudVariable(name="pool", value="[]", sensitive=False, hcl=True, category="terraform")
         )
+
+        eyaml_private_key, eyaml_public_key = _generate_eyaml_keypair()
+        self.orm.eyaml_public_key = eyaml_public_key
+        eyaml_private_key_b64 = base64.b64encode(eyaml_private_key.encode()).decode()
+        terraform_vars.append(
+            TerraformCloudVariable(name="tfc_eyaml_key", value=eyaml_private_key_b64, sensitive=True, category="terraform")
+        )
+
         tf.set_workspace_variable_set(workspace_id, terraform_vars)
 
         mchub_url = get_config().get("mchub_url")

@@ -31,4 +31,5 @@ DEFAULT = {
     "public_keys": [],
     "guest_passwd": "",
     "hieradata": "",
+    "hieradata_entries": [],
 }
