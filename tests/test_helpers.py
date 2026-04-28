@@ -59,7 +59,6 @@ def app(config_mock, generate_test_clusters):
 
         project_alice = Project(
             name="project-alice",
-            admin_id=alice_user.id,
             provider="openstack",
             env={
                 "OS_AUTH_URL": "http://localhost:5000/v3",
@@ -72,7 +71,6 @@ def app(config_mock, generate_test_clusters):
         project_bob = Project(
             name="project-bob",
             provider="openstack",
-            admin_id=bob_user.id,
             env={
                 "OS_AUTH_URL": "http://localhost:5000/v3",
                 "OS_APPLICATION_CREDENTIAL_ID": "'z3vjwfkwqocqo2kpowkxf50uvjfkqeqt'",
@@ -81,10 +79,10 @@ def app(config_mock, generate_test_clusters):
             github_template="github_template",
             tfcloud_project_id="tfcloud_id",
         )
+        project_alice.admins.append(alice_user)
+        project_bob.admins.append(bob_user)
         local_user.projects.append(project_alice)
         local_user.projects.append(project_bob)
-        alice_user.projects.append(project_alice)
-        bob_user.projects.append(project_bob)
         db.session.add(project_alice)
         db.session.add(project_bob)
         db.session.commit()

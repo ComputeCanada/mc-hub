@@ -186,6 +186,7 @@ class MagicCastleORM(db.Model):
     config = db.Column(db.PickleType())
     applied_config = db.Column(db.PickleType())
     eyaml_public_key = db.Column(db.Text)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
     project = db.relationship(
         "Project",
@@ -475,10 +476,11 @@ class MagicCastle:
             var_tf["hieradata"] = f"{existing}\n{proxy_hieradata}" if existing else proxy_hieradata
         return var_tf
 
-    def plan_creation(self, data):
+    def plan_creation(self, data, created_by_user_id=None):
         logger.debug(f"Call <{type(self).__name__}>:plan_creation")
 
         self.set_configuration(data)
+        self.orm.created_by_user_id = created_by_user_id
         db.session.add(self.orm)
         try:
             db.session.commit()

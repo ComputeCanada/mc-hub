@@ -17,15 +17,36 @@ class Provider(str, enum.Enum):
     OVH = "ovh"
 
 
+project_admins = db.Table(
+    "project_admins",
+    db.Column("user_id", db.Integer, db.ForeignKey("user.id"), primary_key=True),
+    db.Column("project_id", db.Integer, db.ForeignKey("project.id"), primary_key=True),
+)
+
+
 class Project(db.Model):
     __tablename__ = "project"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    admin_id = db.Column(db.Integer, nullable=False)
     provider = db.Column(db.Enum(Provider), nullable=False)
     github_template = db.Column(db.String(), nullable=False)
     env = db.Column(db.PickleType())
     tfcloud_project_id = db.Column(db.String(), nullable=False)
+    admins = db.relationship(
+        "UserORM",
+        secondary=project_admins,
+        lazy="subquery",
+        cascade_backrefs=False,
+    )
+    @property
+    def members(self):
+        seen = {u.id for u in self.admins}
+        result = list(self.admins)
+        for u in self._direct_members:
+            if u.id not in seen:
+                result.append(u)
+        return result
+
     magic_castles = db.relationship(
         "MagicCastleORM",
         back_populates="project",
