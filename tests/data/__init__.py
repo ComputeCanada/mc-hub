@@ -21,6 +21,7 @@ DEFAULT_TEMPLATE = {
     "public_keys": [],
     "guest_passwd": "",
     "hieradata": "",
+    "hieradata_entries": [],
 }
 
 NON_EXISTING_CLUSTER_CONFIGURATION = {
@@ -80,6 +81,7 @@ EXISTING_CLUSTER_STATE = {
     "freeipa_passwd": "FAKE",
     "expiration_date": "2029-01-01",
     "age": "a moment",
+    "hieradata_entries": [],
 }
 
 ALICE_HEADERS = {
@@ -323,6 +325,7 @@ CLUSTERS = {
         "status": "plan_running",
         "freeipa_passwd": None,
         "age": "a moment",
+        "hieradata_entries": [],
     },
     "created.magic-castle.cloud": {
         **CLUSTERS_CONFIG["created.magic-castle.cloud"],
@@ -332,6 +335,7 @@ CLUSTERS = {
         "status": "created",
         "freeipa_passwd": None,
         "age": "a moment",
+        "hieradata_entries": [],
     },
     "valid1.magic-castle.cloud": {
         **CLUSTERS_CONFIG["valid1.magic-castle.cloud"],
@@ -341,6 +345,7 @@ CLUSTERS = {
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
         "age": "a moment",
+        "hieradata_entries": [],
     },
     "empty-state.magic-castle.cloud": {
         **CLUSTERS_CONFIG["empty-state.magic-castle.cloud"],
@@ -350,6 +355,7 @@ CLUSTERS = {
         "status": "build_error",
         "freeipa_passwd": None,
         "age": "a moment",
+        "hieradata_entries": [],
     },
     "missingfloatingips.mc.ca": {
         **CLUSTERS_CONFIG["missingfloatingips.mc.ca"],
@@ -359,6 +365,7 @@ CLUSTERS = {
         "status": "build_running",
         "freeipa_passwd": None,
         "age": "a moment",
+        "hieradata_entries": [],
     },
     "missingnodes.mc.ca": {
         **CLUSTERS_CONFIG["missingnodes.mc.ca"],
@@ -368,6 +375,7 @@ CLUSTERS = {
         "status": "build_error",
         "freeipa_passwd": "FAKE",
         "age": "a moment",
+        "hieradata_entries": [],
     },
     "noowner.magic-castle.cloud": {
         **CLUSTERS_CONFIG["noowner.magic-castle.cloud"],
@@ -377,6 +385,7 @@ CLUSTERS = {
         "status": "provisioning_success",
         "freeipa_passwd": "FAKE",
         "age": "a moment",
+        "hieradata_entries": [],
     },
 }
 

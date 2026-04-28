@@ -498,6 +498,7 @@ dependencies = [
     { name = "marshmallow" },
     { name = "openstacksdk" },
     { name = "pygithub" },
+    { name = "pyyaml" },
     { name = "sqlalchemy" },
 ]
 
@@ -522,6 +523,7 @@ requires-dist = [
     { name = "marshmallow", specifier = "~=3.19.0" },
     { name = "openstacksdk", specifier = ">=1.0.0,<2" },
     { name = "pygithub", specifier = ">=2.8.1,<3" },
+    { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "sqlalchemy", specifier = ">=2.0.5,<3" },
 ]
 

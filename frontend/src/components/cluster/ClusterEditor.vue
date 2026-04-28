@@ -277,12 +277,7 @@
                 >.
               </span>
 
-              <code-editor
-                v-model="localSpecs.hieradata"
-                language="yaml"
-                placeholder='profile::base::admin_email: "me@example.org"
-jupyterhub::enable_otp_auth: false'
-              />
+              <hieradata-editor v-model="localSpecs.hieradata_entries" />
             </v-list-item-content>
           </v-list-item>
         </v-list-group>
@@ -304,7 +299,7 @@ import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
-import CodeEditor from "@/components/ui/CodeEditor";
+import HieradataEditor from "@/components/ui/HieradataEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import UserRepository from "@/repositories/UserRepository";
@@ -318,7 +313,7 @@ const SSH_PUBLIC_KEY_REGEX =
 export default {
   name: "ClusterEditor",
   components: {
-    CodeEditor,
+    HieradataEditor,
     TypeSelect,
     ResourceUsageDisplay,
   },
@@ -469,7 +464,7 @@ export default {
         "nb_users",
         "domain",
         "cluster_name",
-        "hieradata",
+        "hieradata_entries",
         "image",
         "public_keys",
         "guest_passwd",
@@ -814,9 +809,3 @@ export default {
   },
 };
 </script>
-<style scoped>
-.hieradata-editor {
-  font-size: 10pt;
-  font-family: "Consolas", "Deja Vu Sans Mono", "Bitstream Vera Sans Mono", monospace;
-}
-</style>
