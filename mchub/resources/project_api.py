@@ -137,6 +137,26 @@ class ProjectAPI(ApiView):
                     raise InvalidUsageException(str(e))
             project.github_template = data["github_template"]
 
+        if "agent_pool_name" in data:
+            try:
+                get_terraform_cloud().update_project(project.tfcloud_project_id, data["agent_pool_name"])
+            except TerraformCloudException:
+                raise InvalidUsageException("Error updating agent pool")
+
+        if "env" in data:
+            try:
+                env = ENV_VALIDATORS[project.provider](data["env"])
+            except Exception:
+                raise InvalidUsageException("Missing required environment variables")
+            terraform_vars = [
+                TerraformCloudVariable(name=k, value=v, sensitive="SECRET" in k)
+                for k, v in env.items()
+            ]
+            get_terraform_cloud().replace_project_variable_set(
+                project.tfcloud_project_id, project.name, terraform_vars
+            )
+            project.env = env
+
         add_members = data.get("add", [])
         del_members = data.get("del", [])
         add_admins = data.get("add_admins", [])

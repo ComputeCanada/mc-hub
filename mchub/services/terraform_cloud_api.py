@@ -129,6 +129,31 @@ class TerraformCloud:
             )
         return project_id
 
+    def update_project(self, project_id, agent_pool_name: Optional[str]):
+        url = f"{self.BASE_URL}/projects/{project_id}"
+        if agent_pool_name:
+            agent_pool_id = self.get_agent_pool_id(agent_pool_name)
+            attributes = {"default-execution-mode": "agent"}
+            relationships = {"default-agent-pool": {"data": {"type": "agent-pools", "id": agent_pool_id}}}
+        else:
+            agent_pool_id = None
+            attributes = {"default-execution-mode": "default"}
+            relationships = {}
+        payload = {
+            "data": {
+                "type": "projects",
+                "id": project_id,
+                "attributes": attributes,
+                "relationships": relationships,
+            }
+        }
+        response = self._request("PATCH", url, json=payload)
+        if response.status_code != 200:
+            raise TerraformCloudException(
+                "Could not update project",
+                additional_details=f"{project_id=}, error: {response.text}",
+            )
+
     def create_workspace(self, workspace_name, repo_full_name, project_id):
         workspace_payload = {
             "data": {
@@ -195,6 +220,14 @@ class TerraformCloud:
                 "Could not set variable set",
                 additional_details=f"{self.organisation_name=}, {project_name=} vars={[v.name for v in variables]}, error: {res.text}",
             )
+        return res.json()["data"]["id"]
+
+    def replace_project_variable_set(self, project_id, project_name, variables: List[TerraformCloudVariable]):
+        url = f"{self.BASE_URL}/projects/{project_id}/varsets"
+        res = self._request("GET", url)
+        for varset in res.json().get("data", []):
+            self._request("DELETE", f"{self.BASE_URL}/varsets/{varset['id']}")
+        self.set_project_variable_set(project_id, project_name, variables)
 
     def set_workspace_variable_set(
         self, workspace_id, variables: List[TerraformCloudVariable]

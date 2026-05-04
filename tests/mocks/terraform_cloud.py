@@ -10,10 +10,18 @@ class TerraformCloudMock:
     def create_project(self, project_name):
         return "MOCK_PROJECT_ID"
 
+    def update_project(self, project_id, agent_pool_name):
+        return None
+
     def create_workspace(self, workspace_name, repo_full_name, project_id):
         return "MOCK_WORKSPACE_ID"
 
-    def set_variable_set(
+    def set_project_variable_set(
+        self, project_id, project_name, variables: List[TerraformCloudVariable]
+    ):
+        return "MOCK_VARSET_ID"
+
+    def replace_project_variable_set(
         self, project_id, project_name, variables: List[TerraformCloudVariable]
     ):
         return None
