@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
     <template v-slot:activator="{ on, attrs }">
-      <v-btn v-if="admin" color="secondary" text v-bind="attrs" v-on="on"> <v-icon>mdi-pencil</v-icon> edit </v-btn>
+      <v-btn color="secondary" text v-bind="attrs" v-on="on" :disabled="!admin"> <v-icon>mdi-pencil</v-icon> edit </v-btn>
     </template>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <v-card>
@@ -14,6 +14,21 @@
             <v-list-item v-if="admin">
               <v-text-field v-model="githubTemplate" label="Github Template" clearable />
             </v-list-item>
+            <v-list-item v-if="admin">
+              <v-text-field v-model="agentPoolName" label="Agent Pool Name" hint="Leave empty to keep existing" persistent-hint clearable />
+            </v-list-item>
+            <template v-if="admin && project.provider === 'openstack'">
+              <v-subheader>Cloud Credentials</v-subheader>
+              <v-list-item>
+                <v-text-field v-model="env.OS_AUTH_URL" label="OS_AUTH_URL" hint="Leave empty to keep existing" persistent-hint />
+              </v-list-item>
+              <v-list-item>
+                <v-text-field v-model="env.OS_APPLICATION_CREDENTIAL_ID" label="OS_APPLICATION_CREDENTIAL_ID" hint="Leave empty to keep existing" persistent-hint />
+              </v-list-item>
+              <v-list-item>
+                <v-text-field v-model="env.OS_APPLICATION_CREDENTIAL_SECRET" label="OS_APPLICATION_CREDENTIAL_SECRET" hint="Leave empty to keep existing" persistent-hint type="password" />
+              </v-list-item>
+            </template>
             <v-subheader>Members</v-subheader>
             <v-list-item v-for="entry in entries" :key="entry.username" dense>
               <v-list-item-content>{{ entry.username }}</v-list-item-content>
@@ -87,6 +102,8 @@ export default {
       newMember: "",
       newMemberIsAdmin: false,
       githubTemplate: "",
+      agentPoolName: "",
+      env: { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" },
     };
   },
   watch: {
@@ -130,6 +147,19 @@ export default {
       if (this.admin && this.githubTemplate !== this.project.github_template) {
         payload.github_template = this.githubTemplate ?? "";
       }
+      if (this.admin && this.agentPoolName) {
+        payload.agent_pool_name = this.agentPoolName;
+      }
+      const envValues = Object.values(this.env);
+      if (envValues.some((v) => v)) {
+        if (envValues.every((v) => v)) {
+          payload.env = { ...this.env };
+        } else {
+          this.errorMessage = "All credential fields must be filled to update credentials.";
+          this.errorDialog = true;
+          return;
+        }
+      }
       try {
         await ProjectRepository.patch(this.id, payload);
       } catch (e) {
@@ -145,6 +175,8 @@ export default {
       this.newMember = "";
       this.newMemberIsAdmin = false;
       this.githubTemplate = "";
+      this.agentPoolName = "";
+      this.env = { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" };
       this.dialog = false;
     },
   },

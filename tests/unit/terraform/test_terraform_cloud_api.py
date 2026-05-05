@@ -164,7 +164,7 @@ def test_create_workspace_failure(tf_cloud_client, mock_request):
 
 def test_set_variable_set_success(tf_cloud_client, mock_request):
     """Tests successful creation of a variable set."""
-    mock_request.return_value = mock_response(201)
+    mock_request.return_value = mock_response(201, json_data={"data": {"id": "varset-123"}})
 
     variables = [
         TerraformCloudVariable("VAR1", "value1", False),
