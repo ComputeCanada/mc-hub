@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
     <template v-slot:activator="{ on, attrs }">
-      <v-btn color="secondary" text v-bind="attrs" v-on="on"> <v-icon>mdi-pencil</v-icon> edit </v-btn>
+      <v-btn v-if="admin" color="secondary" text v-bind="attrs" v-on="on"> <v-icon>mdi-pencil</v-icon> edit </v-btn>
     </template>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <v-card>
@@ -14,8 +14,26 @@
             <v-list-item v-if="admin">
               <v-text-field v-model="githubTemplate" label="Github Template" clearable />
             </v-list-item>
-            <v-list-item>
-              <v-combobox v-model="members" label="Members" multiple chips append-icon deletable-chips />
+            <v-subheader>Members</v-subheader>
+            <v-list-item v-for="entry in entries" :key="entry.username" dense>
+              <v-list-item-content>{{ entry.username }}</v-list-item-content>
+              <v-list-item-action>
+                <v-tooltip bottom>
+                  <template #activator="{ on, attrs }">
+                    <v-simple-checkbox
+                      v-model="entry.isAdmin"
+                      v-bind="attrs"
+                      v-on="on"
+                    />
+                  </template>
+                  <span>Admin</span>
+                </v-tooltip>
+              </v-list-item-action>
+              <v-list-item-action>
+                <v-btn icon small @click="removeMember(entry.username)">
+                  <v-icon small>mdi-delete</v-icon>
+                </v-btn>
+              </v-list-item-action>
             </v-list-item>
             <v-list-item>
               <v-text-field
@@ -24,10 +42,17 @@
                 type="text"
                 clearable
                 filled
-                label="Add a new member"
+                label="Add a member"
+                hint="Check the box to make them admin"
                 @click:append-outer="addMember"
                 v-on:keyup.enter="addMember"
               />
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-simple-checkbox v-model="newMemberIsAdmin" class="ml-2" v-bind="attrs" v-on="on" />
+                </template>
+                <span>Admin</span>
+              </v-tooltip>
             </v-list-item>
           </v-list>
         </v-container>
@@ -49,14 +74,8 @@ export default {
   name: "ProjectMembership",
   components: { MessageDialog },
   props: {
-    id: {
-      type: Number,
-      required: true,
-    },
-    admin: {
-      type: Boolean,
-      default: false,
-    },
+    id: { type: Number, required: true },
+    admin: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -64,8 +83,9 @@ export default {
       errorDialog: false,
       errorMessage: "",
       project: {},
-      members: [],
+      entries: [], // [{ username, isAdmin }]
       newMember: "",
+      newMemberIsAdmin: false,
       githubTemplate: "",
     };
   },
@@ -73,7 +93,11 @@ export default {
     async dialog(val) {
       if (val) {
         this.project = (await ProjectRepository.get(this.id)).data;
-        this.members = [...this.project.members];
+        const adminSet = new Set(this.project.admins);
+        this.entries = this.project.members.map((username) => ({
+          username,
+          isAdmin: adminSet.has(username),
+        }));
         this.githubTemplate = this.project.github_template;
       } else {
         this.close();
@@ -82,17 +106,27 @@ export default {
   },
   methods: {
     addMember() {
-      if (this.newMember !== "") {
-        this.members.push(this.newMember);
+      if (this.newMember && !this.entries.find((e) => e.username === this.newMember)) {
+        this.entries.push({ username: this.newMember, isAdmin: this.newMemberIsAdmin });
         this.newMember = "";
+        this.newMemberIsAdmin = false;
       }
     },
+    removeMember(username) {
+      this.entries = this.entries.filter((e) => e.username !== username);
+    },
     async save() {
-      const old_members = new Set(this.project.members);
-      const new_members = new Set(this.members);
-      const add_members = [...new_members].filter((x) => !old_members.has(x));
-      const del_members = [...old_members].filter((x) => !new_members.has(x));
-      const payload = { add: add_members, del: del_members };
+      const oldMembers = new Set(this.project.members);
+      const oldAdmins = new Set(this.project.admins);
+      const newMembers = new Set(this.entries.map((e) => e.username));
+      const newAdmins = new Set(this.entries.filter((e) => e.isAdmin).map((e) => e.username));
+
+      const payload = {
+        add: [...newMembers].filter((x) => !oldMembers.has(x)),
+        del: [...oldMembers].filter((x) => !newMembers.has(x)),
+        add_admins: [...newAdmins].filter((x) => !oldAdmins.has(x)),
+        del_admins: [...oldAdmins].filter((x) => !newAdmins.has(x)),
+      };
       if (this.admin && this.githubTemplate !== this.project.github_template) {
         payload.github_template = this.githubTemplate ?? "";
       }
@@ -107,7 +141,9 @@ export default {
     },
     close() {
       this.project = {};
-      this.members = [];
+      this.entries = [];
+      this.newMember = "";
+      this.newMemberIsAdmin = false;
       this.githubTemplate = "";
       this.dialog = false;
     },

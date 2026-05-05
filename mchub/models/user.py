@@ -5,7 +5,7 @@ from getpass import getuser
 from .magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..configuration import get_config
 from ..database import db
-from .cloud.project import Project
+from .cloud.project import Project, project_admins
 
 
 projects = db.Table(
@@ -23,7 +23,7 @@ class UserORM(db.Model):
         "Project",
         secondary=projects,
         lazy="subquery",
-        backref=db.backref("members", lazy=True),
+        backref=db.backref("_direct_members", lazy=True),
         order_by="Project.id",
         cascade_backrefs=False,
     )
@@ -56,17 +56,40 @@ class User:
     def is_admin(self):
         return self.orm.scoped_id in get_config().get("admins", [])
 
+    def is_project_admin(self, project):
+        return self.orm in project.admins
+
+    def can_access_cluster(self, orm):
+        return self.is_project_admin(orm.project) or orm.created_by_user_id == self.orm.id
+
     @property
     def projects(self):
-        return self.orm.projects
+        direct = self.orm.projects
+        direct_ids = {p.id for p in direct}
+        admin_projects = db.session.scalars(
+            db.select(Project)
+            .join(project_admins, project_admins.c.project_id == Project.id)
+            .where(project_admins.c.user_id == self.orm.id)
+        ).all()
+        result = list(direct)
+        for p in admin_projects:
+            if p.id not in direct_ids:
+                result.append(p)
+        return result
 
     @property
     def magic_castles(self):
-        return [
-            MagicCastle(orm=mc_orm)
-            for project in self.projects
-            for mc_orm in project.magic_castles
-        ]
+        result = []
+        for project in self.projects:
+            if self.is_project_admin(project):
+                result.extend([MagicCastle(orm=mc_orm) for mc_orm in project.magic_castles])
+            else:
+                result.extend([
+                    MagicCastle(orm=mc_orm)
+                    for mc_orm in project.magic_castles
+                    if mc_orm.created_by_user_id == self.orm.id
+                ])
+        return result
 
 
 class LocalUser(User):
@@ -90,6 +113,12 @@ class LocalUser(User):
 
     @property
     def is_admin(self):
+        return True
+
+    def is_project_admin(self, project):
+        return True
+
+    def can_access_cluster(self, orm):
         return True
 
 

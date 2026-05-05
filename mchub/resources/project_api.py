@@ -19,17 +19,21 @@ class ProjectAPI(ApiView):
     def get(self, user: User, id: int = None):
         if id is not None:
             project = db.session.get(Project, id)
-            if project is None or project not in user.orm.projects:
+            if project is None or project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
+            is_admin = user.is_project_admin(project)
             return {
                 "id": project.id,
                 "name": project.name,
                 "provider": project.provider,
                 "github_template": project.github_template,
                 "nb_clusters": len(project.magic_castles),
-                "admin": project.admin_id == user.orm.id,
+                "admin": is_admin,
                 "members": [member.scoped_id for member in project.members]
-                if project.admin_id == user.orm.id
+                if is_admin
+                else [],
+                "admins": [admin.scoped_id for admin in project.admins]
+                if is_admin
                 else [],
             }
         else:
@@ -40,7 +44,7 @@ class ProjectAPI(ApiView):
                     "provider": project.provider,
                     "github_template": project.github_template,
                     "nb_clusters": len(project.magic_castles),
-                    "admin": project.admin_id == user.orm.id,
+                    "admin": user.is_project_admin(project),
                 }
                 for project in user.projects
             ]
@@ -96,13 +100,12 @@ class ProjectAPI(ApiView):
 
         project = Project(
             name=name,
-            admin_id=user.orm.id,
             provider=provider,
             env=env,
             github_template=github_template,
             tfcloud_project_id=tfcloud_project_id,
         )
-        user.orm.projects.append(project)
+        project.admins.append(user.orm)
         db.session.add(project)
         db.session.commit()
         return {
@@ -111,14 +114,14 @@ class ProjectAPI(ApiView):
             "provider": project.provider,
             "github_template": project.github_template,
             "nb_clusters": len(project.magic_castles),
-            "admin": project.admin_id == user.orm.id,
+            "admin": True,
         }, 200
 
     def patch(self, user: User, id: int):
         project = db.session.get(Project, id)
-        if project is None or project not in user.orm.projects:
+        if project is None or project not in user.projects:
             raise InvalidUsageException("Invalid project id")
-        if project.admin_id != user.orm.id:
+        if not user.is_project_admin(project):
             raise InvalidUsageException(
                 "Cannot edit project membership that you are not the admin of"
             )
@@ -127,10 +130,6 @@ class ProjectAPI(ApiView):
             raise InvalidUsageException("No json data was provided")
 
         if "github_template" in data:
-            if project.admin_id != user.orm.id:
-                raise InvalidUsageException(
-                    "Cannot edit github template of a project you are not the admin of"
-                )
             if data["github_template"]:
                 try:
                     get_github_storage().validate_template(data["github_template"])
@@ -140,6 +139,8 @@ class ProjectAPI(ApiView):
 
         add_members = data.get("add", [])
         del_members = data.get("del", [])
+        add_admins = data.get("add_admins", [])
+        del_admins = data.get("del_admins", [])
 
         default_domain = user.domain
 
@@ -152,7 +153,8 @@ class ProjectAPI(ApiView):
             if not member:
                 member = UserORM(scoped_id=username)
                 db.session.add(member)
-            member.projects.append(project)
+            if project not in member.projects:
+                member.projects.append(project)
 
         for username in del_members:
             if "@" not in username:
@@ -161,16 +163,44 @@ class ProjectAPI(ApiView):
                 db.select(UserORM).filter_by(scoped_id=username)
             ).scalar_one_or_none()
             if member and member.id != user.orm.id:
+                if project in member.projects:
+                    member.projects.remove(project)
+                if member in project.admins:
+                    project.admins.remove(member)
+
+        for username in add_admins:
+            if "@" not in username:
+                username = f"{username}@{default_domain}"
+            member = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=username)
+            ).scalar_one_or_none()
+            if not member:
+                member = UserORM(scoped_id=username)
+                db.session.add(member)
+            if project in member.projects:
                 member.projects.remove(project)
+            if member not in project.admins:
+                project.admins.append(member)
+
+        for username in del_admins:
+            if "@" not in username:
+                username = f"{username}@{default_domain}"
+            member = db.session.execute(
+                db.select(UserORM).filter_by(scoped_id=username)
+            ).scalar_one_or_none()
+            if member and member.id != user.orm.id and member in project.admins:
+                project.admins.remove(member)
+                if project not in member.projects:
+                    member.projects.append(project)
 
         db.session.commit()
         return {}, 200
 
     def delete(self, user: User, id: int):
         project = db.session.get(Project, id)
-        if project is None or project not in user.orm.projects:
+        if project is None or project not in user.projects:
             raise InvalidUsageException("Invalid project id")
-        if project.admin_id != user.orm.id:
+        if not user.is_project_admin(project):
             raise InvalidUsageException(
                 "Cannot remove project that you are not the admin of"
             )

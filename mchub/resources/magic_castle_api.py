@@ -71,7 +71,7 @@ class MagicCastleAPI(ApiView):
             orm = db.session.execute(
                 db.select(MagicCastleORM).filter_by(hostname=hostname)
             ).scalar_one_or_none()
-            if orm and orm.project in user.projects:
+            if orm and orm.project in user.projects and user.can_access_cluster(orm):
                 return MagicCastle(orm).state
             else:
                 raise ClusterNotFoundException
@@ -84,7 +84,7 @@ class MagicCastleAPI(ApiView):
             orm = db.session.execute(
                 db.select(MagicCastleORM).filter_by(hostname=hostname)
             ).scalar_one_or_none()
-            if not (orm and orm.project in user.projects):
+            if not (orm and orm.project in user.projects and user.can_access_cluster(orm)):
                 raise ClusterNotFoundException
 
             def apply_cluster(hostname):
@@ -107,14 +107,15 @@ class MagicCastleAPI(ApiView):
             if project and project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
 
-            self._run_in_background(app, MagicCastle().plan_creation, json_data)
+            user_id = user.orm.id
+            self._run_in_background(app, MagicCastle().plan_creation, json_data, user_id)
             return {}, 202
 
     def put(self, user: User, hostname):
         orm = db.session.execute(
             db.select(MagicCastleORM).filter_by(hostname=hostname)
         ).scalar_one_or_none()
-        if not (orm and orm.project in user.projects):
+        if not (orm and orm.project in user.projects and user.can_access_cluster(orm)):
             raise ClusterNotFoundException
 
         json_data = request.get_json()
@@ -140,7 +141,7 @@ class MagicCastleAPI(ApiView):
         orm = db.session.execute(
             db.select(MagicCastleORM).filter_by(hostname=hostname)
         ).scalar_one_or_none()
-        if not (orm and orm.project in user.projects):
+        if not (orm and orm.project in user.projects and user.can_access_cluster(orm)):
             raise ClusterNotFoundException
 
         app = current_app._get_current_object()
