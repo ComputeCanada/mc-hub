@@ -4,8 +4,8 @@ from os import environ, path
 from re import match, IGNORECASE, compile
 
 VALID_IMAGES_REGEX_ARRAY = [
-    compile(r"rocky-9", IGNORECASE),
     compile(r"almalinux-9", IGNORECASE),
+    compile(r"rocky-9", IGNORECASE),
 ]
 
 # Magic Castle requires 10 GB on the root disk for each node.
@@ -152,10 +152,11 @@ class OpenStackManager:
         for image in self.connection.image.images():
             for idx, pattern in enumerate(VALID_IMAGES_REGEX_ARRAY):
                 if pattern.match(image.name):
-                    images.append((idx, image.name))
+                    images.append((idx, image.created_at, image.name))
                     break
-        images.sort()
-        return [image[1] for image in images]
+        images.sort(key=lambda x: x[1], reverse=True)
+        images.sort(key=lambda x: x[0])
+        return [image[2] for image in images]
 
     @property
     def available_flavors(self):
