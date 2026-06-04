@@ -470,7 +470,7 @@ class MagicCastle:
             proxy_hieradata = (
                 f"profile::slurm::controller::tfe_token: {tfe_token}\n"
                 f"profile::slurm::controller::tfe_workspace: {self.tfcloud_workspace}\n"
-                f"profile::slurm::controller::tfe_api_url: {mchub_url}/api/tfcloud-proxy"
+                f"profile::slurm::controller::tfe_proxy_url: {mchub_url}/api/tfcloud-proxy"
             )
             existing = var_tf["hieradata"].strip()
             var_tf["hieradata"] = f"{existing}\n{proxy_hieradata}" if existing else proxy_hieradata
