@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: Test frontend
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install NPM dependencies
         run: (cd frontend && npm ci)
       - name: Run frontend unit tests
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: Test backend
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Create run folder
         run: |
           mkdir -p run
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: Build container
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Build Docker image
         if: startsWith(github.ref, 'refs/tags/v')
         run: docker build --tag "$IMAGE_NAME" --target production-server .
