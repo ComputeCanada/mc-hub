@@ -8,7 +8,7 @@ env:
 
 jobs:
   frontend:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Test frontend
     steps:
       - uses: actions/checkout@v6
@@ -17,7 +17,7 @@ jobs:
       - name: Run frontend unit tests
         run: (cd frontend && npm run test:unit)
   backend:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Test backend
     steps:
       - uses: actions/checkout@v6
@@ -36,7 +36,7 @@ jobs:
           export MAGIC_CASTLE_PATH=$PWD/magic_castle
           uv run pytest ../
   container:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Build container
     steps:
       - uses: actions/checkout@v6
