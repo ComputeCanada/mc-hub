@@ -20,15 +20,15 @@ class ProvisioningManager:
         try:
             return (
                 requests.head(
-                    f"https://jupyter.{hostname}", timeout=0.1, verify=False
+                    f"https://jupyter.{hostname}", timeout=0.1, verify=True
                 ).status_code
                 == 405
                 and requests.head(
-                    f"https://ipa.{hostname}", timeout=0.1, verify=False
+                    f"https://ipa.{hostname}", timeout=0.1, verify=True
                 ).status_code
                 == 301
                 and requests.head(
-                    f"https://mokey.{hostname}", timeout=0.1, verify=False
+                    f"https://mokey.{hostname}", timeout=0.1, verify=True
                 ).status_code
                 == 405
             )
