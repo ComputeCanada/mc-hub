@@ -168,5 +168,10 @@ class MagicCastleAPI(ApiView):
                 raise ClusterNotFoundException
             MagicCastle(orm).plan_destruction()
 
+        # Make the planning transition visible before returning 202. Callers that
+        # wait for CREATED can then be sure they are observing the destroy plan,
+        # rather than a previously-created plan.
+        orm.status = ClusterStatusCode.BACKGROUND_TASK_RUNNING
+        db.session.commit()
         self._run_in_background(app, destroy_cluster, hostname, hostname=hostname)
         return {}, 202
