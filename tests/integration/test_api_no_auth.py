@@ -71,6 +71,70 @@ def test_get_state_non_existing(client):
     assert res.status_code != 200
 
 
+def test_apply_rejects_cluster_while_plan_is_running(client, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
+    orm.status = ClusterStatusCode.PLAN_RUNNING
+    db.session.commit()
+    background_task = mocker.patch.object(MagicCastleAPI, "_run_in_background")
+
+    res = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/apply")
+
+    assert res.status_code == 400
+    assert res.get_json() == {"message": "This cluster is busy."}
+    background_task.assert_not_called()
+
+
+def test_apply_rejects_missing_plan_before_starting_worker(client, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
+    orm.status = ClusterStatusCode.CREATED
+    orm.tfcloud_run.plan = None
+    db.session.commit()
+    background_task = mocker.patch.object(MagicCastleAPI, "_run_in_background")
+
+    res = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/apply")
+
+    assert res.status_code == 400
+    assert res.get_json() == {
+        "message": "The terraform plan for this cluster does not exist."
+    }
+    background_task.assert_not_called()
+
+
+def test_apply_starts_worker_when_plan_is_ready(client, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)
+    )
+    orm.status = ClusterStatusCode.CREATED
+    orm.tfcloud_run.run_id = "READY_RUN"
+    orm.tfcloud_run.plan = {"READY": "PLAN"}
+    db.session.commit()
+    background_task = mocker.patch.object(MagicCastleAPI, "_run_in_background")
+
+    res = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/apply")
+
+    assert res.status_code == 202
+    background_task.assert_called_once()
+
+
 # TODO: Fix this?
 # GET /api/magic-castles/<hostname>/status
 # def test_get_status(mocker, client):

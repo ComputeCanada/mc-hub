@@ -27,6 +27,29 @@ def test_create_magic_castle_plan_valid(app):
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
 
+def test_planned_status_waits_for_local_plan(app):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(
+            hostname="valid1.magic-castle.cloud"
+        )
+    )
+    cluster = MagicCastle(orm)
+    cluster.tfcloud_run.run_id = "RUN_WITH_DELAYED_PLAN"
+    cluster.tfcloud_run.plan = None
+    orm.status = ClusterStatusCode.PLAN_RUNNING
+    db.session.commit()
+
+    assert cluster.status == ClusterStatusCode.PLAN_RUNNING
+
+    cluster.tfcloud_run.plan = {"MOCK": "PLAN_LOG"}
+    db.session.commit()
+    assert cluster.status == ClusterStatusCode.CREATED
+
+
 def test_create_magic_castle_twice(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.exceptions.invalid_usage_exception import (

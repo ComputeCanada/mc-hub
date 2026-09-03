@@ -80,7 +80,7 @@ def test_create_empty_magic_castle(app):
     )
 
     data = db.session.get(MagicCastleORM, magic_castle.orm.id)
-    assert data.status == ClusterStatusCode.NOT_FOUND
+    assert data.status == ClusterStatusCode.CREATED
 
 
 def test_query_magic_castles(app):
