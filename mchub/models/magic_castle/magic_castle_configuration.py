@@ -30,11 +30,13 @@ IGNORED_CONFIGURATION_FIELDS = [
 
 def validate_cluster_name(cluster_name):
     # Must follow RFC 1035's subdomain naming rules: https://tools.ietf.org/html/rfc1035#section-2.3.1
-    return re.search(r"^[a-z]([a-z0-9-]*[a-z0-9]+)?$", cluster_name) is not None
+    if re.search(r"^[a-z]([a-z0-9-]*[a-z0-9]+)?$", cluster_name) is None:
+        raise ValidationError("Invalid value.")
 
 
 def validate_domain(domain):
-    return domain in DnsManager.get_available_domains()
+    if domain not in DnsManager.get_available_domains():
+        raise ValidationError("Invalid value.")
 
 
 class Schema(marshmallow.Schema):
