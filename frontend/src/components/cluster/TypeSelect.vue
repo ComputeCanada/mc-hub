@@ -25,6 +25,10 @@ const TYPE_CATEGORIES = [
     prefix: "g",
     name: "GPU types",
   },
+  {
+    prefix: "ha",
+    name: "High availability types",
+  },
 ];
 export default {
   name: "TypeSelect",
@@ -74,6 +78,24 @@ export default {
           );
         }
       });
+
+      const otherTypes = this.types.filter(
+        (type) => !TYPE_CATEGORIES.some(({ prefix }) => type.name.startsWith(prefix))
+      );
+      if (otherTypes.length > 0) {
+        if (items.length > 0) {
+          items.push({ divider: true });
+        }
+        items.push({ header: "Other types" });
+        items = items.concat(
+          otherTypes.map((type) => {
+            return {
+              text: type.name,
+              description: this.getTypeDescription(type),
+            };
+          })
+        );
+      }
       return items;
     },
   },
