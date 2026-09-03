@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mchub"
-version = "10.2.7"
+version = "11.3.0"
 description = ""
 authors = [
     { name = "Frédéric Fortier-Chouinard" },
