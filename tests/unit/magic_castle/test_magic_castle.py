@@ -27,6 +27,32 @@ def test_create_magic_castle_plan_valid(app):
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
 
+def test_create_plan_reuses_tfcloud_run(app):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.terraform_cloud import TerraformCloudRunORM
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(
+            hostname="valid1.magic-castle.cloud"
+        )
+    )
+    cluster = MagicCastle(orm)
+    original_run_id = cluster.tfcloud_run.id
+
+    cluster.create_plan(run_id="REPLACEMENT_RUN_ID")
+
+    runs = db.session.scalars(
+        db.select(TerraformCloudRunORM).filter_by(magic_castle_id=orm.id)
+    ).all()
+    assert len(runs) == 1
+    assert runs[0].id == original_run_id
+    assert runs[0].run_id == "REPLACEMENT_RUN_ID"
+    assert runs[0].plan == {"MOCK": "PLAN_LOG"}
+    assert runs[0].apply_log_url is None
+    assert runs[0].tf_state is None
+
+
 def test_create_magic_castle_twice(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.exceptions.invalid_usage_exception import (
