@@ -481,7 +481,7 @@ wheels = [
 
 [[package]]
 name = "mchub"
-version = "11.4.0"
+version = "11.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "cachetools" },
