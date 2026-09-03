@@ -320,9 +320,15 @@ class MagicCastle:
                 return self.orm.status
 
             if tf_status is not None and is_destroy is not None:
-                self.status = ClusterStatusCode.from_tfcloudstatus(
+                status = ClusterStatusCode.from_tfcloudstatus(
                     tf_status, is_destroy
                 )
+                # Terraform Cloud can report a completed plan before its plan
+                # JSON is available. Keep clients polling until the plan has
+                # actually been persisted locally.
+                if status == ClusterStatusCode.CREATED and self.plan is None:
+                    status = ClusterStatusCode.PLAN_RUNNING
+                self.status = status
 
             # Fetch the apply_log
             if self.plan and not self.apply_url:
@@ -481,6 +487,7 @@ class MagicCastle:
 
         self.set_configuration(data)
         self.orm.created_by_user_id = created_by_user_id
+        self.orm.status = ClusterStatusCode.PLAN_RUNNING
         db.session.add(self.orm)
         try:
             db.session.commit()
@@ -584,6 +591,7 @@ class MagicCastle:
 
     def create_plan(self, github_sha=None, run_id=None):
         logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
+
         self.tfcloud_run = TerraformCloudRunORM()
 
         try:
@@ -614,10 +622,10 @@ class MagicCastle:
                     logger.debug("wait for plan")
                     time.sleep(10)
 
-            # self.status = ClusterStatusCode.PLAN_RUNNING
+            self.status = ClusterStatusCode.CREATED
         except Exception:
             db.session.rollback()
-            # self.status = ClusterStatusCode.PLAN_ERROR
+            self.status = ClusterStatusCode.PLAN_ERROR
             raise
 
     def delete(self):

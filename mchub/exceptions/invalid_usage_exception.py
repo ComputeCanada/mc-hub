@@ -43,6 +43,13 @@ class PlanNotCreatedException(InvalidUsageException):
         )
 
 
+class PlanNotReadyException(InvalidUsageException):
+    def __init__(self):
+        InvalidUsageException.__init__(
+            self, "The terraform plan for this cluster is not ready to apply."
+        )
+
+
 class InvalidPlanParameters(InvalidUsageException):
     def __init__(self):
         InvalidUsageException.__init__(self, "The plan parameters are invalid.")
