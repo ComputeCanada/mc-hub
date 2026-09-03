@@ -584,7 +584,16 @@ class MagicCastle:
 
     def create_plan(self, github_sha=None, run_id=None):
         logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
-        self.tfcloud_run = TerraformCloudRunORM()
+        # A castle has exactly one Terraform Cloud run record. Reuse it when
+        # planning again instead of replacing it with another row carrying the
+        # same foreign key.
+        if self.tfcloud_run is None:
+            self.tfcloud_run = TerraformCloudRunORM()
+        else:
+            self.tfcloud_run.run_id = None
+            self.tfcloud_run.plan = None
+            self.tfcloud_run.apply_log_url = None
+            self.tfcloud_run.tf_state = None
 
         try:
             if github_sha is None and run_id is None:
