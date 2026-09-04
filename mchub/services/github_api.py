@@ -12,6 +12,14 @@ import time
 from contextlib import contextmanager
 import random
 
+from ..models.version_constraint import (
+    matches_terraform_version_constraint,
+    parse_version,
+)
+
+
+MAGIC_CASTLE_REPOSITORY = "ComputeCanada/magic_castle"
+
 
 @contextmanager
 def retry(max_retry=5, sleep_s=5):
@@ -55,6 +63,7 @@ class GithubStorage:
 
         auth = Auth.Token(config["github_token"])
         self.github = Github(auth=auth)
+        self._magic_castle_versions_cache = {}
 
     def _get_repo_name(self, hostname):
         import hashlib
@@ -89,6 +98,27 @@ class GithubStorage:
                     f"Github template repo '{template_name}' not found",
                 )
             raise
+
+    def get_magic_castle_versions(self):
+        version_range = get_config()["magic_castle_version_range"]
+        cached_versions = self._magic_castle_versions_cache.get(version_range)
+        if cached_versions is not None:
+            return cached_versions
+
+        repository = self.github.get_repo(MAGIC_CASTLE_REPOSITORY)
+        versions = []
+        for tag in repository.get_tags():
+            try:
+                parsed_version = parse_version(tag.name)
+            except ValueError:
+                continue
+            if matches_terraform_version_constraint(tag.name, version_range):
+                versions.append((parsed_version, tag.name))
+
+        versions.sort(key=lambda version: version[0], reverse=True)
+        matching_versions = [tag_name for _, tag_name in versions]
+        self._magic_castle_versions_cache[version_range] = matching_versions
+        return matching_versions
 
     def create_repo(self, hostname, template_name):
         self.template_repo = self._get_template_repo(template_name)

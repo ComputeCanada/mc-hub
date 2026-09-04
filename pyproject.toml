@@ -19,6 +19,7 @@ dependencies = [
     "humanize>=4.16.0,<5",
     "marshmallow>=4.3.1,<5",
     "openstacksdk>=4.20.0,<5",
+    "packaging>=26.0,<27",
     "jsonpath-ng>=1.8.0,<2",
     "Flask-Cors>=6.0.5,<7",
     "cachetools>=7.1.8,<8",

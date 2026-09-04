@@ -486,9 +486,22 @@ class MagicCastle:
             var_tf["hieradata"] = f"{existing}\n{proxy_hieradata}" if existing else proxy_hieradata
         return var_tf
 
+    @staticmethod
+    def validate_creation_version(data):
+        if data.get("version") not in get_github_storage().get_magic_castle_versions():
+            raise InvalidUsageException("Invalid Magic Castle version")
+
+    def validate_version_unchanged(self, data):
+        existing_version = self.config.get("version")
+        if data.get("version", existing_version) != existing_version:
+            raise InvalidUsageException(
+                "The Magic Castle version cannot be changed after plan creation"
+            )
+
     def plan_creation(self, data, created_by_user_id=None):
         logger.debug(f"Call <{type(self).__name__}>:plan_creation")
 
+        self.validate_creation_version(data)
         self.set_configuration(data)
         self.orm.created_by_user_id = created_by_user_id
         self.orm.status = ClusterStatusCode.PLAN_RUNNING
@@ -557,6 +570,13 @@ class MagicCastle:
             raise ClusterNotFoundException
         if self.is_busy:
             raise BusyClusterException
+
+        self.validate_version_unchanged(data)
+        existing_version = self.config.get("version")
+        if existing_version is None:
+            data.pop("version", None)
+        else:
+            data["version"] = existing_version
 
         config_changed = self.set_configuration(data)
 

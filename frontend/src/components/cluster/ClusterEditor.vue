@@ -43,6 +43,19 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-item>
+          <v-select
+            v-if="!existingCluster"
+            v-model="localSpecs.version"
+            :items="getPossibleValues('version')"
+            label="Version"
+            :rules="[versionRule]"
+          />
+          <v-list-item-content v-else>
+            <v-list-item-subtitle>Version</v-list-item-subtitle>
+            <v-list-item-title>{{ localSpecs.version }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item>
           <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
@@ -384,6 +397,16 @@ export default {
         }
       }
 
+      // Magic Castle version
+      if (this.localSpecs.version === null) {
+        try {
+          this.localSpecs.version = possibleResources.version[0];
+          this.initialSpecs.version = possibleResources.version[0];
+        } catch (err) {
+          console.log("No Magic Castle version available");
+        }
+      }
+
       // Instance type
       for (let key in this.localSpecs.instances) {
         if (this.localSpecs.instances[key].type === null) {
@@ -466,6 +489,7 @@ export default {
         "cluster_name",
         "hieradata_entries",
         "image",
+        "version",
         "public_keys",
         "guest_passwd",
         "instances",
@@ -495,6 +519,12 @@ export default {
       return (
         (this.possibleResources && this.possibleResources.domain.includes(this.localSpecs.domain)) ||
         "Invalid domain provided"
+      );
+    },
+    versionRule() {
+      return (
+        (this.possibleResources && this.possibleResources.version.includes(this.localSpecs.version)) ||
+        "Invalid Magic Castle version provided"
       );
     },
     volumeCountRule() {

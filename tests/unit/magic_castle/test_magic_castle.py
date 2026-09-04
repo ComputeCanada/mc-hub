@@ -23,8 +23,10 @@ from ...data import CLUSTERS_CONFIG, VALID_CLUSTER_CONFIGURATION
 def test_create_magic_castle_plan_valid(app, mocker):
     from mchub.models.magic_castle.magic_castle import MagicCastle
     from mchub.services.terraform_cloud_api import get_terraform_cloud
+    from mchub.services.github_api import get_github_storage
 
     create_workspace = mocker.spy(get_terraform_cloud(), "create_workspace")
+    write_variables = mocker.spy(get_github_storage(), "write")
 
     cluster = MagicCastle()
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
@@ -34,6 +36,39 @@ def test_create_magic_castle_plan_valid(app, mocker):
         "MOCK_ORG/MOCK_REPO",
         "tfcloud_id",
     )
+    assert write_variables.call_args.args[0]["version"] == "14.1.2"
+
+
+def test_create_magic_castle_rejects_unvetted_version(app):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+
+    configuration = deepcopy(VALID_CLUSTER_CONFIGURATION)
+    configuration["version"] = "unvetted"
+
+    with pytest.raises(InvalidUsageException, match="Invalid Magic Castle version"):
+        MagicCastle().plan_creation(configuration)
+
+
+def test_magic_castle_version_cannot_be_modified(app):
+    from mchub.database import db
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.magic_castle_configuration import (
+        MagicCastleConfiguration,
+    )
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
+    )
+    configuration = dict(orm.config)
+    configuration["version"] = "14.1.2"
+    orm.config = MagicCastleConfiguration("openstack", configuration)
+
+    with pytest.raises(
+        InvalidUsageException, match="cannot be changed after plan creation"
+    ):
+        MagicCastle(orm).plan_modification({"version": "14.0.0"})
 
 
 def test_planned_status_waits_for_local_plan(app):

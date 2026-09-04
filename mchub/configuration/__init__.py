@@ -9,9 +9,17 @@ from marshmallow import Schema, fields, ValidationError, post_load
 
 from .env import CONFIGURATION_FILE_PATH
 from ..models.auth_type import AuthType
+from ..models.version_constraint import parse_terraform_version_constraint
 
 CONFIGURATION_FILENAME = "configuration.json"
 DATABASE_FILENAME = "database.db"
+
+
+def validate_magic_castle_version_range(value):
+    try:
+        parse_terraform_version_constraint(value)
+    except ValueError as error:
+        raise ValidationError(str(error)) from error
 
 
 class ConfigurationSchema(Schema):
@@ -26,6 +34,10 @@ class ConfigurationSchema(Schema):
     github_token = fields.Str()
     github_organization = fields.Str()
     github_default_template = fields.Str()
+    magic_castle_version_range = fields.Str(
+        required=True,
+        validate=validate_magic_castle_version_range,
+    )
     tfcloud_api_token = fields.Str()
     tfcloud_organization = fields.Str()
     tfcloud_oauth_vcs_token_id = fields.Str()

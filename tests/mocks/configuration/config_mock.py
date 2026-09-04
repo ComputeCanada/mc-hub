@@ -47,6 +47,7 @@ BASE_CONFIGURATION = {
     },
     "github_token": "EXAMPLE_TOKEN",
     "github_organization": "github_org",
+    "magic_castle_version_range": ">= 14.0.0, < 15.0.0",
     "tfcloud_api_token": "EXAMPLE_TOKEN",
     "tfcloud_organization": "tfcloud_org",
     "tfcloud_oauth_vcs_token_id": "tfcloud_oauth",

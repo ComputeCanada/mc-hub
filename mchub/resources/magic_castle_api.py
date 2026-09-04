@@ -145,6 +145,7 @@ class MagicCastleAPI(ApiView):
             project = db.session.get(Project, cloud["id"])
             if project and project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
+            MagicCastle.validate_creation_version(json_data)
 
             user_id = user.orm.id
             self._run_in_background(app, MagicCastle().plan_creation, json_data, user_id)
@@ -161,6 +162,7 @@ class MagicCastleAPI(ApiView):
         if not json_data:
             raise InvalidUsageException("No json data was provided")
 
+        MagicCastle(orm).validate_version_unchanged(json_data)
         app = current_app._get_current_object()
         self._claim_background_task(orm)
 
