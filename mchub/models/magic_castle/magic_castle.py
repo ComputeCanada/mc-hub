@@ -361,7 +361,7 @@ class MagicCastle:
             elif MAX_PROVISIONING_TIME < (now - self.orm.created).total_seconds():
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
         elif self.orm.status == ClusterStatusCode.DESTROY_SUCCESS:
-            self.delete()
+            self.delete(archive_repo=True)
             return ClusterStatusCode.DESTROY_SUCCESS
 
         db.session.commit()
@@ -579,7 +579,7 @@ class MagicCastle:
             raise BusyClusterException
 
         if self.orm.tfcloud_workspace is None:
-            self.delete()
+            self.delete(archive_repo=True)
         else:
             tf = get_terraform_cloud()
             run_id = tf.destroy_plan(self.orm.tfcloud_workspace)
@@ -628,10 +628,12 @@ class MagicCastle:
             self.status = ClusterStatusCode.PLAN_ERROR
             raise
 
-    def delete(self):
+    def delete(self, archive_repo=False):
         if self.tfcloud_workspace:
             tf = get_terraform_cloud()
             tf.add_workspace_tag(self.tfcloud_workspace, "deleted")
+        if archive_repo:
+            get_github_storage().archive_repo(self.hostname)
         db.session.delete(self.orm)
         db.session.commit()
 

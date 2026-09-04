@@ -151,6 +151,12 @@ class GithubStorage:
         repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
         return sha
 
+    def archive_repo(self, hostname):
+        repo_name = self._get_repo_name(hostname)
+        org = self.github.get_organization(self.organization)
+        repo = org.get_repo(repo_name)
+        repo.edit(archived=True)
+
 
 _github_storage_instance = None
 
