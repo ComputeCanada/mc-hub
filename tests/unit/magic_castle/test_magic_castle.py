@@ -117,7 +117,7 @@ def test_get_status_valid(app):
     assert valid1.orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
-def test_destroyed_cluster_archives_github_repo(app, mocker):
+def test_destroyed_cluster_state_archives_github_repo(app, mocker):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
@@ -130,7 +130,10 @@ def test_destroyed_cluster_archives_github_repo(app, mocker):
     archive_repo = mocker.spy(get_github_storage(), "archive_repo")
     cluster.orm.status = ClusterStatusCode.DESTROY_SUCCESS
 
-    assert cluster.status == ClusterStatusCode.DESTROY_SUCCESS
+    state = cluster.state
+
+    assert state["status"] == ClusterStatusCode.DESTROY_SUCCESS
+    assert state["cloud"] == {"name": "project-alice", "id": 1}
     archive_repo.assert_called_once_with("valid1.magic-castle.cloud")
 
 

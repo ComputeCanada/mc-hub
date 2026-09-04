@@ -414,6 +414,10 @@ class MagicCastle:
     @property
     def state(self):
         config = self.applied_config if self.applied_config else self.config
+        # Reading the status of a successfully destroyed cluster deletes its ORM
+        # instance. Preserve project metadata before that commit detaches the
+        # instance, so the final DESTROY_SUCCESS state can still be serialized.
+        cloud = {"name": self.project.name, "id": self.project.id}
         return {
             **config,
             "hostname": self.hostname,
@@ -421,7 +425,7 @@ class MagicCastle:
             "freeipa_passwd": self.freeipa_passwd,
             "age": self.age,
             "expiration_date": self.expiration_date,
-            "cloud": {"name": self.project.name, "id": self.project.id},
+            "cloud": cloud,
             "hieradata_entries": _hieradata_to_entries(config.get("hieradata", "")),
         }
 
