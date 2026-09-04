@@ -193,16 +193,16 @@ export default {
 
       if (!this.busy) {
         this.stopStatusPolling();
+        if ([ClusterStatusCode.DESTROY_SUCCESS, ClusterStatusCode.NOT_FOUND].includes(status)) {
+          this.goHome();
+          return;
+        }
         if (statusAlreadyInitialized && !planWasRunning) {
           // We avoid displaying any status dialog after plan generation,
           // because the new status may be the same as before the plan creation.
           this.showStatusDialog();
         }
-        if (status == ClusterStatusCode.NOT_FOUND) {
-          this.goHome();
-        } else {
-          await this.loadCluster();
-        }
+        await this.loadCluster();
       }
     },
     startStatusPolling() {
