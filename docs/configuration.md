@@ -44,6 +44,7 @@ An example `configuration.json` is shown below.
   "github_token": "EXAMPLE_GITHUB_TOKEN",
   "github_organization": "EXAMPLE_GITHUB_ORGANIZATION",
   "github_default_template": "owner/repo-template",
+  "magic_castle_version_range": ">= 14.0.0, < 15.0.0",
   "tfcloud_api_token": "EXAMPLE_TF_TOKEN",
   "tfcloud_organization": "EXAMPLE_TFCLOUD_ORGANIZATION",
   "tfcloud_oauth_vcs_token_id": "VCS_OAUTH_ID"
@@ -157,6 +158,12 @@ Two formats are supported:
 
 - **Repository name only** (e.g. `"my-template"`): the template is looked up within `github_organization`. This supports both public and private repositories, as long as `github_token` has access to the organization.
 - **Full `owner/repo` reference** (e.g. `"owner/repo-template"`): the template is fetched globally. This is useful for public templates hosted outside of `github_organization`. Private repositories outside the organization are also supported if `github_token` has read access to them.
+
+### `magic_castle_version_range`
+
+A Terraform-style version constraint describing the Magic Castle versions vetted by the MC Hub operator. MC Hub fetches tags from the `ComputeCanada/magic_castle` GitHub repository and presents matching versions in newest-first order. The newest matching version is selected by default. The selected value is written as `version` in the cluster's `terraform.tfvars.json` and cannot be changed after the initial plan is created.
+
+Multiple constraints separated by commas and the `=`, `!=`, `>`, `>=`, `<`, `<=`, and `~>` operators are supported. For example, `">= 14.0.0, < 15.0.0"` accepts version 14 releases, while `"~> 14.1.0"` accepts patch releases from 14.1.
 
 ### `tfcloud_api_token`
 

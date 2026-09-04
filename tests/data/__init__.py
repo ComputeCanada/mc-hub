@@ -5,6 +5,7 @@ DEFAULT_TEMPLATE = {
     "cluster_name": "",
     "domain": None,
     "image": None,
+    "version": None,
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": None, "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -585,4 +586,5 @@ VALID_CLUSTER_CONFIGURATION = {
     "public_keys": [""],
     "hieradata": "",
     "image": "Rocky-8.7-x64-2023-02",
+    "version": "14.1.2",
 }

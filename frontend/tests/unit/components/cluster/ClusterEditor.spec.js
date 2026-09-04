@@ -24,6 +24,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
   cluster_name: "",
   domain: "magic-castle.cloud",
   image: "Rocky-8.7-x64-2023-02",
+  version: "14.1.2",
   nb_users: 10,
   instances: {
     mgmt: {
@@ -55,6 +56,7 @@ const DEFAULT_MAGIC_CASTLE = Object.freeze({
 
 const DEFAULT_POSSIBLE_RESOURCES = Object.freeze({
   image: ["centos7", "centos7-updated", "Rocky-8.7-x64-2023-02", "CentOS-8-x64-2019-11", "CentOS-7-x64-2019-01"],
+  version: ["14.1.2", "14.0.0"],
   tag_types: {"mgmt": ["p4-6gb", "c2-7.5gb-31"], "login": ["p2-3gb", "p4-6gb"], "node": ["p2-3gb", "p4-6gb"]},
   "types": ["p1-1.5gb", "p2-3gb", "p4-6gb"],
   volumes: {},
@@ -136,6 +138,26 @@ describe("ClusterEditor", () => {
   it("magicCastleGuestPasswordExisting", async () => {
     const clusterEditorWrapperExisting = await getDefaultClusterEditorWrapper(true);
     expect(clusterEditorWrapperExisting.vm.specs.guest_passwd.length).toBe(0);
+  });
+
+  it("defaults to the first vetted Magic Castle version", async () => {
+    const specs = cloneDeep(DEFAULT_MAGIC_CASTLE);
+    specs.version = null;
+    const wrapper = mount(ClusterEditor, {
+      localVue,
+      router,
+      vuetify,
+      propsData: {
+        specs,
+        existingCluster: false,
+        stateful: true,
+      }
+    });
+
+    await wrapper.vm.promise;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.specs.version).toBe(DEFAULT_POSSIBLE_RESOURCES.version[0]);
   });
 
   it("ramGbUsed", async () => {

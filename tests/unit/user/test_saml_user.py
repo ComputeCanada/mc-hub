@@ -94,6 +94,7 @@ def test_create_empty_magic_castle(alice):
             "cluster_name": "alice123",
             "domain": "mc.ca",
             "image": "Rocky-8.7-x64-2023-02",
+            "version": "14.1.2",
             "nb_users": 10,
             "instances": {
                 "mgmt": {

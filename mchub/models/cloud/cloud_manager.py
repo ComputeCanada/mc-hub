@@ -1,5 +1,6 @@
 from ..cloud.openstack_manager import OpenStackManager
 from ..cloud.dns_manager import DnsManager
+from ...services.github_api import get_github_storage
 
 MANAGER_CLASSES = {
     "openstack": OpenStackManager,
@@ -23,4 +24,7 @@ class CloudManager:
         available_resources["possible_resources"][
             "domain"
         ] = DnsManager.get_available_domains()
+        available_resources["possible_resources"][
+            "version"
+        ] = get_github_storage().get_magic_castle_versions()
         return available_resources
