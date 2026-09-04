@@ -20,40 +20,44 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-item v-if="!existingCluster">
-          <v-text-field
-            v-model="localSpecs.cluster_name"
-            label="Cluster name"
-            :rules="[clusterNameRegexRule]"
-            validate-on-blur
-          />
-        </v-list-item>
-        <v-list-item v-if="!existingCluster">
-          <v-select
-            v-model="localSpecs.domain"
-            :items="getPossibleValues('domain')"
-            label="Domain"
-            :rules="[domainRule]"
-          />
-        </v-list-item>
-        <v-list-item>
-          <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
-          <v-list-item-content v-else>
-            <v-list-item-subtitle>Image</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.image }}</v-list-item-title>
-          </v-list-item-content>
+          <v-col cols="6" class="py-0">
+            <v-text-field
+              v-model="localSpecs.cluster_name"
+              label="Cluster name"
+              :rules="[clusterNameRegexRule]"
+              validate-on-blur
+            />
+          </v-col>
+          <v-col cols="6" class="py-0">
+            <v-select
+              v-model="localSpecs.domain"
+              :items="getPossibleValues('domain')"
+              label="Domain"
+              :rules="[domainRule]"
+            />
+          </v-col>
         </v-list-item>
         <v-list-item>
-          <v-select
-            v-if="!existingCluster"
-            v-model="localSpecs.version"
-            :items="getPossibleValues('version')"
-            label="Version"
-            :rules="[versionRule]"
-          />
-          <v-list-item-content v-else>
-            <v-list-item-subtitle>Version</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.version }}</v-list-item-title>
-          </v-list-item-content>
+          <v-col cols="6" class="py-0">
+            <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
+            <v-list-item-content v-else>
+              <v-list-item-subtitle>Image</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.image }}</v-list-item-title>
+            </v-list-item-content>
+          </v-col>
+          <v-col cols="6" class="py-0">
+            <v-select
+              v-if="!existingCluster"
+              v-model="localSpecs.version"
+              :items="getPossibleValues('version')"
+              label="Version"
+              :rules="[versionRule]"
+            />
+            <v-list-item-content v-else>
+              <v-list-item-subtitle>Version</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.version }}</v-list-item-title>
+            </v-list-item-content>
+          </v-col>
         </v-list-item>
         <v-list-item>
           <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
