@@ -20,11 +20,20 @@ from ...mocks.github_api_mock import GithubStorageMock
 from ...data import CLUSTERS_CONFIG, VALID_CLUSTER_CONFIGURATION
 
 
-def test_create_magic_castle_plan_valid(app):
+def test_create_magic_castle_plan_valid(app, mocker):
     from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    create_workspace = mocker.spy(get_terraform_cloud(), "create_workspace")
 
     cluster = MagicCastle()
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+
+    create_workspace.assert_called_once_with(
+        VALID_CLUSTER_CONFIGURATION["cluster_name"],
+        "MOCK_ORG/MOCK_REPO",
+        "tfcloud_id",
+    )
 
 
 def test_planned_status_waits_for_local_plan(app):
