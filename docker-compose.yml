@@ -15,9 +15,6 @@ services:
         source: ./run/configuration.json
         target: /home/mcu/configuration.json
         read_only: true
-      - type: bind
-        source: ./run/acme_key.pem
-        target: /home/mcu/credentials/acme_key.pem
       - type: volume
         source: database
         target: /home/mcu/database
@@ -25,8 +22,6 @@ services:
         source: terraform-plugin-cache
         target: /home/mcu/.terraform.d/plugin-cache
     user: mcu
-    environment:
-      MAGIC_CASTLE_ACME_KEY_PEM: /home/mcu/credentials/acme_key.pem
 
   cleanup:
     build:
