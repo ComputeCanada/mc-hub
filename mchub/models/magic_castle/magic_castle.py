@@ -498,7 +498,7 @@ class MagicCastle:
             self.hostname, self.project.github_template
         )
 
-        workspace_name = github_repo_fullname.split("/")[-1]
+        workspace_name = self.config.cluster_name
 
         tf = get_terraform_cloud()
         workspace_id = tf.create_workspace(
