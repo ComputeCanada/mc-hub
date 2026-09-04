@@ -16,6 +16,7 @@ const ClusterFormattedStatus = Object.freeze({
   build_error: { text: "Build error", color: "red" },
   destroy_running: { text: "Destroy running", color: "orange" },
   destroy_error: { text: "Destroy error", color: "red" },
+  destroy_success: { text: "Destroyed", color: "green" },
   not_found: { text: "Not found", color: "purple" },
 });
 
