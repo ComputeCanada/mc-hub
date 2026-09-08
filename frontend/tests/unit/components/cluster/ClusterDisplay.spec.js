@@ -5,9 +5,113 @@ import { shallowMount } from "@vue/test-utils";
 
 jest.mock("@/repositories/MagicCastleRepository", () => ({
   getStatus: jest.fn(),
+  apply: jest.fn(),
+  getState: jest.fn(),
 }));
 
 describe("ClusterDisplay", () => {
+  const mountDisplay = () =>
+    shallowMount(
+      { ...ClusterDisplay, created() {} },
+      {
+        propsData: { hostname: "test.example.com" },
+        data: () => ({
+          status: ClusterStatusCode.CREATED,
+          magicCastle: {},
+          resourcesChanges: [{ address: "test", change: { actions: ["create"], progress: "queued" } }],
+        }),
+        stubs: [
+          "v-container",
+          "v-card",
+          "v-card-title",
+          "v-card-text",
+          "v-list",
+          "v-list-item",
+          "v-list-item-content",
+          "v-list-item-subtitle",
+          "v-list-item-title",
+          "v-divider",
+        ],
+      }
+    );
+
+  it("keeps the accepted plan visible and polls through delayed apply statuses", async () => {
+    jest.useFakeTimers();
+    let acceptApply;
+    MagicCastleRepository.apply.mockReturnValue(
+      new Promise((resolve) => {
+        acceptApply = resolve;
+      })
+    );
+    MagicCastleRepository.getStatus.mockResolvedValue({ data: { status: ClusterStatusCode.PLAN_RUNNING } });
+    MagicCastleRepository.getState.mockResolvedValue({ data: {} });
+    const wrapper = mountDisplay();
+    const applying = wrapper.vm.applyCluster();
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findComponent({ name: "ClusterEditor" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "ClusterResources" }).props("showProgress")).toBe(true);
+    acceptApply({});
+    await applying;
+
+    for (const status of [ClusterStatusCode.PLAN_RUNNING, ClusterStatusCode.CREATED, ClusterStatusCode.BUILD_RUNNING]) {
+      MagicCastleRepository.getStatus.mockResolvedValue({ data: { status } });
+      await wrapper.vm.fetchStatus();
+      await wrapper.vm.$nextTick();
+      expect(wrapper.vm.statusPoller).not.toBeNull();
+      expect(wrapper.findComponent({ name: "ClusterEditor" }).exists()).toBe(false);
+      expect(wrapper.vm.resourcesChanges).toHaveLength(1);
+    }
+
+    MagicCastleRepository.getStatus.mockResolvedValue({ data: { status: ClusterStatusCode.PROVISIONING_RUNNING } });
+    await wrapper.vm.fetchStatus();
+    expect(wrapper.vm.applyRequested).toBe(false);
+    expect(wrapper.vm.statusPoller).toBeNull();
+    expect(wrapper.vm.provisioningRunningDialog).toBe(true);
+    wrapper.destroy();
+    jest.useRealTimers();
+  });
+
+  it("ignores a status response that started before plan acceptance", async () => {
+    let resolveStatus;
+    MagicCastleRepository.getStatus.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      })
+    );
+    const wrapper = mountDisplay();
+    const polling = wrapper.vm.fetchStatus();
+    wrapper.vm.applyRequested = true;
+    resolveStatus({ data: { status: ClusterStatusCode.CREATED, progress: [] } });
+    await polling;
+    expect(wrapper.vm.applyRequested).toBe(true);
+    expect(wrapper.vm.resourcesChanges).toHaveLength(1);
+    expect(wrapper.vm.statusPromise).toBeNull();
+    wrapper.destroy();
+  });
+
+  it("shows completion when apply finishes between polls", async () => {
+    MagicCastleRepository.getStatus.mockResolvedValue({
+      data: { status: ClusterStatusCode.PROVISIONING_RUNNING },
+    });
+    MagicCastleRepository.getState.mockResolvedValue({ data: {} });
+    const wrapper = mountDisplay();
+    await wrapper.setData({ applyRequested: true, status: ClusterStatusCode.PLAN_RUNNING });
+    await wrapper.vm.fetchStatus();
+    expect(wrapper.vm.applyRequested).toBe(false);
+    expect(wrapper.vm.provisioningRunningDialog).toBe(true);
+    wrapper.destroy();
+  });
+
+  it("returns to the editor with an error when apply is rejected", async () => {
+    MagicCastleRepository.apply.mockRejectedValue({ response: { data: { message: "Apply failed" } } });
+    const wrapper = mountDisplay();
+    await wrapper.vm.applyCluster();
+    expect(wrapper.vm.applyRequested).toBe(false);
+    expect(wrapper.vm.errorMessage).toBe("Apply failed");
+    expect(wrapper.findComponent({ name: "ClusterEditor" }).exists()).toBe(true);
+    wrapper.destroy();
+  });
+
   it("renders completed, active, and pending setup steps", () => {
     const wrapper = shallowMount(
       { ...ClusterDisplay, created() {} },

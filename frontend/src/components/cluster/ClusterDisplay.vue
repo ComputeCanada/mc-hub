@@ -160,6 +160,7 @@ export default {
       magicCastle: null,
       loading: false,
       statusPromise: null,
+      applyRequested: false,
       stateful: false,
     };
   },
@@ -190,14 +191,18 @@ export default {
       return this.creationSteps.findIndex((step) => step.id === this.creationStep);
     },
     busy() {
-      return [
-        ClusterStatusCode.DESTROY_RUNNING,
-        ClusterStatusCode.BUILD_RUNNING,
-        ClusterStatusCode.PLAN_RUNNING,
-      ].includes(this.status);
+      return (
+        this.applyRequested ||
+        [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.PLAN_RUNNING].includes(
+          this.status
+        )
+      );
     },
     applyRunning() {
-      return [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.status);
+      return (
+        this.applyRequested ||
+        [ClusterStatusCode.DESTROY_RUNNING, ClusterStatusCode.BUILD_RUNNING].includes(this.status)
+      );
     },
     existingCluster() {
       return this.hostname !== null && this.hostname !== undefined;
@@ -217,14 +222,36 @@ export default {
       }
       const statusAlreadyInitialized = this.status !== null;
       const planWasRunning = this.status === ClusterStatusCode.PLAN_RUNNING;
+      const applyWasRequested = this.applyRequested;
 
       this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
-      const { status, health, stateful, progress } = (await this.statusPromise).data;
-      this.statusPromise = null;
+      let response;
+      try {
+        response = await this.statusPromise;
+      } finally {
+        this.statusPromise = null;
+      }
+      // A poll started before confirmation must not overwrite the accepted plan.
+      if (!applyWasRequested && this.applyRequested) {
+        return;
+      }
+      const { status, health, stateful, progress } = response.data;
+      if (
+        ![
+          ClusterStatusCode.CREATED,
+          ClusterStatusCode.PLAN_RUNNING,
+          ClusterStatusCode.BUILD_RUNNING,
+          ClusterStatusCode.DESTROY_RUNNING,
+        ].includes(status)
+      ) {
+        this.applyRequested = false;
+      }
       this.status = status;
       this.health = health;
       this.stateful = stateful;
-      this.resourcesChanges = progress || [];
+      if (!this.applyRequested || progress?.length) {
+        this.resourcesChanges = progress || [];
+      }
 
       if (!this.busy) {
         this.stopStatusPolling();
@@ -232,7 +259,7 @@ export default {
           this.goHome();
           return;
         }
-        if (statusAlreadyInitialized && !planWasRunning) {
+        if (applyWasRequested || (statusAlreadyInitialized && !planWasRunning)) {
           // We avoid displaying any status dialog after plan generation,
           // because the new status may be the same as before the plan creation.
           this.showStatusDialog();
@@ -241,11 +268,13 @@ export default {
       }
     },
     startStatusPolling() {
+      this.stopStatusPolling();
       this.statusPoller = setInterval(this.fetchStatus, POLL_STATUS_INTERVAL);
       this.fetchStatus();
     },
     stopStatusPolling() {
       clearInterval(this.statusPoller);
+      this.statusPoller = null;
     },
     showStatusDialog() {
       switch (this.status) {
@@ -334,10 +363,12 @@ export default {
       }
     },
     async applyCluster() {
+      this.applyRequested = true;
       try {
         await MagicCastleRepository.apply(this.hostname);
         this.startStatusPolling();
       } catch (e) {
+        this.applyRequested = false;
         this.showError(e.response.data.message);
       }
     },
@@ -438,6 +469,7 @@ export default {
       return new Promise((resolve) => setTimeout(resolve, ms));
     },
     unloadCluster() {
+      this.applyRequested = false;
       this.magicCastle = null;
       this.status = null;
     },
