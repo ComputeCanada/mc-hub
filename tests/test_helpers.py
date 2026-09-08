@@ -32,7 +32,7 @@ def teardown_mock_clusters(cluster_names):
 
 
 @pytest.fixture
-def app(config_mock, generate_test_clusters):
+def app(config_mock, generate_test_clusters, mocker):
     from mchub import create_app
     from mchub.database import db
     from mchub.models.cloud.project import Project
@@ -41,7 +41,18 @@ def app(config_mock, generate_test_clusters):
     )
     from mchub.models.terraform.terraform_state import TerraformState
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.models.puppet.provisioning_manager import ProvisioningManager
     from mchub.models.user import UserORM
+
+    mocker.patch.object(
+        ProvisioningManager,
+        "check_services",
+        return_value={
+            "jupyterhub": "healthy",
+            "freeipa": "healthy",
+            "mokey": "healthy",
+        },
+    )
 
     app = create_app(db_path="sqlite:///:memory:")
     with app.app_context():

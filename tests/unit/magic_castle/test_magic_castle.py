@@ -152,6 +152,40 @@ def test_get_status_valid(app):
     assert valid1.orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
 
 
+def test_successful_provisioning_is_not_reclassified_when_a_service_stops(
+    app, mocker
+):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
+    from mchub.models.puppet.provisioning_manager import ProvisioningManager
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
+    )
+    orm.tfcloud_run.run_id = "completed-run"
+    mocker.patch(
+        "mchub.models.magic_castle.magic_castle.get_tf_status_cache",
+        return_value=(TFCloudStatusCode.APPLIED, False),
+    )
+    mocker.patch.object(
+        ProvisioningManager,
+        "check_services",
+        return_value={
+            "jupyterhub": "unavailable",
+            "freeipa": "healthy",
+            "mokey": "healthy",
+        },
+    )
+
+    cluster = MagicCastle(orm=orm)
+
+    assert cluster.status == ClusterStatusCode.PROVISIONING_SUCCESS
+    assert cluster.health == "degraded"
+    assert cluster.service_statuses["jupyterhub"] == "unavailable"
+
+
 def test_destroyed_cluster_state_archives_github_repo(app, mocker):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
