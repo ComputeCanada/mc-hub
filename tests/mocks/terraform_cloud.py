@@ -4,6 +4,9 @@ from mchub.services.terraform_cloud_api import TerraformCloudVariable
 
 
 class TerraformCloudMock:
+    def workspace_has_state(self, workspace_id):
+        return True
+
     def destroy_plan(self, workspace_id):
         return "MOCK_RUN_ID"
 

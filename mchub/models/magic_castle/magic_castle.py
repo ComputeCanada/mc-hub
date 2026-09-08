@@ -602,6 +602,16 @@ class MagicCastle:
             self.delete(archive_repo=True)
         else:
             tf = get_terraform_cloud()
+            # A workspace whose initial plan failed has no state and therefore
+            # has no managed resources to destroy. A destroy run would only
+            # evaluate the same broken configuration and fail again.
+            if not tf.workspace_has_state(self.orm.tfcloud_workspace):
+                logger.info(
+                    f"{self.hostname}: No Terraform state found; skipping destroy plan"
+                )
+                self.delete(archive_repo=True)
+                return
+
             run_id = tf.destroy_plan(self.orm.tfcloud_workspace)
             logger.info(
                 f"{self.hostname}: Apply destroy on workspace_id={self.orm.tfcloud_workspace} with run_id={run_id}"
