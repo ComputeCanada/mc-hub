@@ -20,6 +20,8 @@ class ClusterStatusCode(str, Enum):
     DESTROY_ERROR = "destroy_error"
     DESTROY_SUCCESS = "destroy_success"
 
+    NOT_DEPLOYED = "not_deployed"
+
     NOT_FOUND = "not_found"
 
     @staticmethod

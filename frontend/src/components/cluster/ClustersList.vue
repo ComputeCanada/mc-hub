@@ -90,7 +90,9 @@
                 </v-btn>
                 <v-spacer />
                 <v-btn
-                  v-if="['build_running', 'destroy_running'].includes(item.status)"
+                  v-if="
+                    ['build_running', 'destroy_running', 'plan_running', 'provisioning_running'].includes(item.status)
+                  "
                   color="secondary"
                   text
                   :to="`/clusters/${item.hostname}`"
@@ -99,13 +101,22 @@
                   Check progress
                 </v-btn>
                 <div v-else>
+                  <v-btn v-if="item.status === 'not_deployed'" color="primary" text :to="`/clusters/${item.hostname}`"
+                    >Rebuild</v-btn
+                  >
                   <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
                     <v-icon class="mr-2">mdi-pencil</v-icon>
                     Edit
                   </v-btn>
                   <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
                     <v-icon class="mr-2">mdi-delete</v-icon>
-                    Delete
+                    {{
+                      item.status === "not_deployed"
+                        ? "Destroy cluster"
+                        : item.status === "destroy_error"
+                        ? "Retry teardown"
+                        : "Tear down"
+                    }}
                   </v-btn>
                 </div>
               </v-row>

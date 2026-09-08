@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from os import environ
 
-from requests import get, delete, post
+from requests import get, post
 from requests.exceptions import RequestException
 from requests.compat import urljoin
 
@@ -31,8 +31,8 @@ def wait_for_destroy_plan(host_api, headers):
 
         if status == ClusterStatusCode.CREATED:
             return True
-        if status == ClusterStatusCode.NOT_FOUND:
-            # Clusters without a Terraform workspace are deleted immediately.
+        if status in (ClusterStatusCode.NOT_FOUND, ClusterStatusCode.NOT_DEPLOYED):
+            # Empty clusters finish teardown without an apply.
             return False
         if status in (
             ClusterStatusCode.PLAN_ERROR,
@@ -67,6 +67,8 @@ def main(host="127.0.0.1", port=5000, interval=3600):
             logging.error(e)
 
         for cluster in clusters:
+            if cluster.get("status") in (ClusterStatusCode.NOT_DEPLOYED, ClusterStatusCode.PLAN_RUNNING, ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.DESTROY_RUNNING):
+                continue
             if cluster["expiration_date"] is None:
                 continue
             exp_date = datetime.strptime(
@@ -76,15 +78,15 @@ def main(host="127.0.0.1", port=5000, interval=3600):
                 hostname = cluster["hostname"]
                 host_api = urljoin(f"{mc_api}/", hostname)
                 apply_api = urljoin(f"{host_api}/", "apply")
-                logging.info(f"Cluster {hostname} is expired - deleting")
+                logging.info(f"Cluster {hostname} is expired - tearing down")
                 try:
-                    delete_response = delete(host_api, headers=headers)
+                    delete_response = post(f"{host_api}/teardown", headers=headers)
                     delete_response.raise_for_status()
                     if not wait_for_destroy_plan(host_api, headers):
                         continue
                 except (RequestException, RuntimeError, TimeoutError) as e:
                     logging.error(
-                        f"Error while planning {cluster['hostname']} deletion - {e}"
+                        f"Error while planning {cluster['hostname']} teardown - {e}"
                     )
                     continue
 
@@ -93,7 +95,7 @@ def main(host="127.0.0.1", port=5000, interval=3600):
                     apply_response.raise_for_status()
                 except RequestException as e:
                     logging.error(
-                        f"Error while deleting {cluster['hostname']} deletion - {e}"
+                        f"Error while tearing down {cluster['hostname']} - {e}"
                     )
             else:
                 continue

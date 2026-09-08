@@ -6,7 +6,7 @@
         <v-list-item>
           <v-col cols="6" class="py-0">
             <v-select
-              v-if="!stateful"
+              v-if="!stateful && !specs.undeployed"
               v-model="localSpecs.cloud.id"
               item-value="id"
               item-text="name"
@@ -25,6 +25,7 @@
                 <v-text-field
                   v-model="localSpecs.expiration_date"
                   label="Expiration date"
+                  clearable
                   prepend-icon="mdi-calendar"
                   readonly
                   v-bind="attrs"
@@ -304,7 +305,22 @@
       <!-- Apply and cancel -->
       <div class="text-center">
         <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
-        <v-btn @click="apply" color="primary" class="ma-2" :disabled="!applyButtonEnabled" large>Apply</v-btn>
+        <v-btn @click="apply" color="primary" class="ma-2" :disabled="!applyButtonEnabled" large>{{
+          specs.undeployed ? "Save configuration" : "Apply"
+        }}</v-btn>
+        <v-btn
+          v-if="specs.undeployed"
+          color="primary"
+          class="ma-2"
+          :disabled="loading || dirtyForm || !validForm"
+          large
+          @click="$emit('rebuild')"
+          >{{ status === "created" ? "Review build plan" : "Rebuild" }}</v-btn
+        >
+        <p v-if="specs.undeployed">
+          Save any configuration changes before rebuilding. Choose a future expiration date or no expiration. Rebuilding
+          creates new resources; deleted data is not restored and connection details may change.
+        </p>
         <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
       </div>
     </v-form>
@@ -377,6 +393,9 @@ export default {
     };
   },
   watch: {
+    specs(value) {
+      this.initialSpecs = cloneDeep(value);
+    },
     promise() {
       this.$emit("loading", this.loading);
     },
@@ -512,7 +531,8 @@ export default {
             ClusterStatusCode.BUILD_ERROR,
             ClusterStatusCode.PROVISIONING_ERROR,
             ClusterStatusCode.DESTROY_ERROR,
-          ].includes(this.status)
+          ].includes(this.status) &&
+          !this.specs.undeployed
         ) {
           return true;
         }

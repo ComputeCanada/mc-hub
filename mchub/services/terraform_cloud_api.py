@@ -80,6 +80,37 @@ class TerraformCloud:
             )
         return run_id
 
+    def lock_workspace(self, workspace_id):
+        response = self._request("POST", f"{self.BASE_URL}/workspaces/{workspace_id}/actions/lock")
+        if response.status_code != 200:
+            raise TerraformCloudException("Could not lock workspace for destruction; finish active runs first")
+
+    def unlock_workspace(self, workspace_id):
+        response = self._request("POST", f"{self.BASE_URL}/workspaces/{workspace_id}/actions/unlock")
+        if response.status_code != 200:
+            raise TerraformCloudException("Could not unlock workspace after failed destruction")
+
+    def verify_workspace_empty(self, workspace_id):
+        """Fail closed if remote runs or managed resource instances remain."""
+        from ..exceptions.invalid_usage_exception import InvalidUsageException
+
+        url = f"{self.BASE_URL}/workspaces/{workspace_id}/runs"
+        terminal = {"applied", "planned_and_finished", "discarded", "errored", "canceled", "force_canceled"}
+        while url:
+            response = self._request("GET", url)
+            if response.status_code != 200:
+                raise TerraformCloudException("Could not inspect workspace runs")
+            payload = response.json()
+            if any(run["attributes"]["status"] not in terminal for run in payload["data"]):
+                raise InvalidUsageException("Finish or discard pending Terraform runs before destroying the cluster")
+            url = payload.get("links", {}).get("next")
+        if self.workspace_has_state(workspace_id):
+            state = self.get_tf_state(workspace_id)
+            if state is None or "resources" not in state:
+                raise InvalidUsageException("Could not verify that the workspace is empty")
+            if any(resource.get("mode") != "data" and resource.get("instances") for resource in state["resources"]):
+                raise InvalidUsageException("Tear down all resources before destroying the cluster")
+
     def workspace_has_state(self, workspace_id) -> bool:
         """Return whether a workspace has a current Terraform state version."""
         url = f"{self.BASE_URL}/workspaces/{workspace_id}"

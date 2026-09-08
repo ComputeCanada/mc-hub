@@ -182,6 +182,8 @@ class MagicCastleORM(db.Model):
 
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
     creation_step = db.Column(db.String(32))
+    deployment_started_at = db.Column(db.DateTime())
+    undeployed = db.Column(db.Boolean(), nullable=False, default=False, server_default="0")
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
     config = db.Column(db.PickleType())
@@ -311,6 +313,8 @@ class MagicCastle:
         otherwise get status from db.
         This update the status, plan, apply log and tf_state
         """
+        if self.orm.status == ClusterStatusCode.NOT_DEPLOYED:
+            return
         if self.tfcloud_run.run_id:
             # Update status from Terraform Cloud
             try:
@@ -337,6 +341,9 @@ class MagicCastle:
                     status == ClusterStatusCode.PROVISIONING_RUNNING
                     and provisioning_is_complete
                 ):
+                    if status == ClusterStatusCode.DESTROY_SUCCESS:
+                        self.complete_teardown()
+                        return
                     self.status = status
 
             # Fetch the apply_log
@@ -367,11 +374,10 @@ class MagicCastle:
             now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             if self.services_are_online:
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
-            elif MAX_PROVISIONING_TIME < (now - self.orm.created).total_seconds():
+            elif MAX_PROVISIONING_TIME < (now - (self.orm.deployment_started_at or self.orm.created)).total_seconds():
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
         elif self.orm.status == ClusterStatusCode.DESTROY_SUCCESS:
-            self.delete(archive_repo=True)
-            return ClusterStatusCode.DESTROY_SUCCESS
+            self.complete_teardown()
 
         db.session.commit()
         return self.orm.status
@@ -441,14 +447,12 @@ class MagicCastle:
 
     @property
     def state(self):
-        config = self.applied_config if self.applied_config else self.config
-        # Reading the status of a successfully destroyed cluster deletes its ORM
-        # instance. Preserve project metadata before that commit detaches the
-        # instance, so the final DESTROY_SUCCESS state can still be serialized.
-        cloud = {"name": self.project.name, "id": self.project.id}
         status = self.status
+        config = self.config if self.orm.undeployed else (self.applied_config or self.config)
+        cloud = {"name": self.project.name, "id": self.project.id}
         return {
             **config,
+            "undeployed": self.orm.undeployed,
             "hostname": self.hostname,
             "status": status,
             "health": self.health,
@@ -613,10 +617,23 @@ class MagicCastle:
         if self.is_busy:
             raise BusyClusterException
 
+        if self.orm.undeployed and (
+            data.get("cluster_name", self.config.cluster_name) != self.config.cluster_name
+            or data.get("domain", self.config.domain) != self.config.domain
+            or data.get("cloud", {}).get("id", self.orm.project.id) != self.orm.project.id
+        ):
+            raise InvalidUsageException("Keep the existing hostname and cloud project when rebuilding a cluster")
         self.validate_version_unchanged(data)
         data["mc_version"] = self.config["mc_version"]
 
         config_changed = self.set_configuration(data)
+        if self.orm.undeployed:
+            # A saved configuration must never reuse a previously generated plan,
+            # including when the next rebuild fails before creating its run.
+            self.tfcloud_run = TerraformCloudRunORM()
+            self.status = ClusterStatusCode.NOT_DEPLOYED
+            db.session.commit()
+            return
 
         # Check if main_file has changed before writing
         # and planning a change, some modifications may
@@ -641,7 +658,9 @@ class MagicCastle:
             raise BusyClusterException
 
         if self.orm.tfcloud_workspace is None:
-            self.delete(archive_repo=True)
+            if self.tf_state is not None:
+                raise InvalidUsageException("Cannot tear down resources without the Terraform workspace")
+            self.complete_teardown()
         else:
             tf = get_terraform_cloud()
             # A workspace whose initial plan failed has no state and therefore
@@ -651,7 +670,7 @@ class MagicCastle:
                 logger.info(
                     f"{self.hostname}: No Terraform state found; skipping destroy plan"
                 )
-                self.delete(archive_repo=True)
+                self.complete_teardown()
                 return
 
             run_id = tf.destroy_plan(self.orm.tfcloud_workspace)
@@ -700,6 +719,45 @@ class MagicCastle:
             self.status = ClusterStatusCode.PLAN_ERROR
             raise
 
+    def complete_teardown(self):
+        """Retain the definition and integrations after resources are removed."""
+        self.orm.undeployed = True
+        self.orm.applied_config = None
+        self.orm.deployment_started_at = None
+        self.orm.creation_step = None
+        self.tfcloud_run = TerraformCloudRunORM()
+        self.status = ClusterStatusCode.NOT_DEPLOYED
+        db.session.commit()
+
+    def validate_rebuild(self):
+        if not self.orm.undeployed or not self.tfcloud_workspace:
+            raise InvalidUsageException("Only an undeployed cluster with a workspace can be rebuilt")
+        if self.expiration_date and datetime.date.fromisoformat(self.expiration_date) <= datetime.date.today():
+            raise InvalidUsageException("Choose a future expiration date or no expiration before rebuilding")
+
+    def plan_rebuild(self):
+        self.validate_rebuild()
+        # Writing the saved variables creates a fresh commit/run even when unchanged.
+        sha = get_github_storage().write(self._get_var_tf(), self.hostname)
+        self.create_plan(github_sha=sha)
+
+    def destroy_empty_cluster(self):
+        if self.is_busy:
+            raise BusyClusterException
+        tf = get_terraform_cloud()
+        if self.tfcloud_workspace:
+            tf.lock_workspace(self.tfcloud_workspace)
+            try:
+                tf.verify_workspace_empty(self.tfcloud_workspace)
+                self.delete(archive_repo=True)
+            except Exception:
+                tf.unlock_workspace(self.tfcloud_workspace)
+                raise
+        else:
+            if self.tf_state is not None:
+                raise InvalidUsageException("Cannot verify resources without the Terraform workspace")
+            self.delete(archive_repo=True)
+
     def delete(self, archive_repo=False):
         if self.tfcloud_workspace:
             tf = get_terraform_cloud()
@@ -718,4 +776,12 @@ class MagicCastle:
             raise RunIDNotSet
 
         tf = get_terraform_cloud()
+        _, is_destroy = tf.get_run_status(self.tfcloud_run.run_id)
+        if not is_destroy and self.orm.undeployed:
+            self.validate_rebuild()
+        if not is_destroy:
+            self.orm.undeployed = False
+            self.orm.deployment_started_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            # Persist deployment intent before the remote apply can allocate resources.
+            db.session.commit()
         tf.apply_run(self.tfcloud_run.run_id)

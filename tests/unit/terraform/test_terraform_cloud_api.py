@@ -455,3 +455,32 @@ def test_force_execute_failure(tf_cloud_client, mock_request):
         tf_cloud_client.force_execute("run-fail-force")
 
     assert "Invalid Error for force_execute" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("state, allowed", [
+    ({"resources": []}, True),
+    ({"resources": [{"mode": "data", "instances": [{}]}]}, True),
+    ({"resources": [{"mode": "managed", "instances": [{}]}]}, False),
+    (None, False),
+    ({}, False),
+])
+def test_verify_empty_workspace_checks_managed_instances(tf_cloud_client, mock_request, mocker, state, allowed):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    mock_request.return_value = mock_response(200, {"data": [], "links": {"next": None}})
+    mocker.patch.object(tf_cloud_client, "workspace_has_state", return_value=True)
+    mocker.patch.object(tf_cloud_client, "get_tf_state", return_value=state)
+    if allowed:
+        tf_cloud_client.verify_workspace_empty("ws-existing")
+    else:
+        with pytest.raises(InvalidUsageException):
+            tf_cloud_client.verify_workspace_empty("ws-existing")
+
+
+def test_verify_empty_workspace_rejects_queued_runs_on_later_pages(tf_cloud_client, mock_request):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"attributes": {"status": "applied"}}], "links": {"next": "next-page"}}),
+        mock_response(200, {"data": [{"attributes": {"status": "pending"}}]}),
+    ]
+    with pytest.raises(InvalidUsageException, match="pending Terraform runs"):
+        tf_cloud_client.verify_workspace_empty("ws-existing")

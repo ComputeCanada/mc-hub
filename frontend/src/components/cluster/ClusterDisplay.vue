@@ -19,12 +19,13 @@
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
           <cluster-editor
-            v-if="magicCastle && !applyRunning && !clusterDestructionDialog"
+            v-if="magicCastle && !busy && !clusterDestructionDialog"
             :existing-cluster="existingCluster"
             :specs="magicCastle"
             :status="status"
             :stateful="stateful"
             v-on="{ apply: existingCluster ? planModification : planCreation }"
+            @rebuild="rebuildCluster"
             @loading="loading = $event"
           />
           <template v-else-if="resourcesChanges.length > 0 && applyRunning">
@@ -36,7 +37,7 @@
     <message-dialog v-model="successDialog" type="success">
       Your cluster was provisioned successfully.
       <br />
-      <br />Don't forget to destroy it when you are done!
+      <br />Don't forget to tear it down when you are done!
     </message-dialog>
     <message-dialog v-model="provisioningRunningDialog" type="success" :callback="goHome">
       The cloud resources have been allocated. Provisioning has started.
@@ -82,15 +83,26 @@
       />
     </confirm-dialog>
     <confirm-dialog
+      title="Destroy cluster"
+      v-model="permanentDestructionDialog"
+      alert
+      encourage-cancel
+      @confirm="forceDestruction"
+      @cancel="goToClustersList"
+    >
+      Remove this cluster from the UI, archive its GitHub repository, and mark its Terraform workspace as deleted?
+    </confirm-dialog>
+    <confirm-dialog
       alert
       encourage-cancel
       :max-width="650"
-      title="Destruction confirmation"
+      title="Teardown confirmation"
       v-model="clusterDestructionDialog"
       @confirm="applyCluster"
       @cancel="goToClustersList"
     >
-      Are you sure you want to permanently destroy your cluster and all its data?
+      Delete this cluster’s deployed resources and their data? Keep its configuration, GitHub repository, and Terraform
+      workspace so you can rebuild it later. Rebuilding does not restore deleted data.
       <cluster-resources
         :resources-changes="resourcesChanges"
         style="max-height: calc(80vh - 200px)"
@@ -142,6 +154,7 @@ export default {
       provisioningRunningDialog: false,
       errorDialog: false,
       clusterDestructionDialog: false,
+      permanentDestructionDialog: false,
       clusterPlanRunningDialog: false,
       creationStep: null,
       clusterPlanMessage: "Generating resource plan... please wait.",
@@ -169,13 +182,11 @@ export default {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
-        const { stateful } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        if (stateful) {
-          await this.planDestruction();
+        const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
+        if (status === ClusterStatusCode.NOT_DEPLOYED) {
+          this.permanentDestructionDialog = true;
         } else {
-          // If the cluster does not have a state (no terraform.tfstate), it can be deleted
-          // without consent.
-          await this.forceDestruction();
+          await this.planDestruction();
         }
       }
       this.startStatusPolling();
@@ -294,7 +305,7 @@ export default {
           break;
         case ClusterStatusCode.DESTROY_ERROR:
           this.errorDialog = true;
-          this.showError("An error occurred while destroying the cluster.");
+          this.showError("An error occurred while tearing down resources.");
       }
     },
     showError(message) {
@@ -347,17 +358,36 @@ export default {
       }
     },
     async planModification() {
+      if (this.magicCastle.undeployed) {
+        try {
+          await MagicCastleRepository.update(this.hostname, this.magicCastle);
+          this.$disableUnloadConfirmation();
+          this.startStatusPolling();
+        } catch (e) {
+          this.showError(e.response?.data?.message || e.message);
+        }
+        return;
+      }
       let planCreator = async () => MagicCastleRepository.update(this.hostname, this.magicCastle);
       await this.showPlanConfirmationDialog({ planCreator });
     },
+    async rebuildCluster() {
+      if (this.status === ClusterStatusCode.CREATED) {
+        await this.showPlanConfirmationDialog();
+        return;
+      }
+      const planCreator = async () => MagicCastleRepository.rebuild(this.hostname);
+      await this.showPlanConfirmationDialog({ planCreator });
+    },
     async planDestruction() {
-      let planCreator = async () => MagicCastleRepository.delete(this.hostname);
+      let planCreator = async () => MagicCastleRepository.teardown(this.hostname);
       await this.showPlanConfirmationDialog({ planCreator, destroy: true });
     },
     async forceDestruction() {
       try {
         this.unloadCluster();
         await MagicCastleRepository.delete(this.hostname);
+        this.goHome();
       } catch (e) {
         this.showError(e.response.data.message);
       }
@@ -403,9 +433,14 @@ export default {
 
         // Fetch plan
         const { status, message, progress } = await this.waitForPlanCompletion(hostname);
-        if (status === ClusterStatusCode.PLAN_ERROR) {
+        if ([ClusterStatusCode.PLAN_ERROR, ClusterStatusCode.DESTROY_ERROR].includes(status)) {
           this.showError(message || "An error occurred while generating the plan.");
           this.clusterPlanRunningDialog = false;
+          return;
+        }
+        if (status === ClusterStatusCode.NOT_DEPLOYED) {
+          this.clusterPlanRunningDialog = false;
+          this.goHome();
           return;
         }
         this.resourcesChanges =
@@ -456,7 +491,14 @@ export default {
           status === ClusterStatusCode.NOT_FOUND
             ? "Waiting for cluster setup to start..."
             : "Generating resource plan... please wait.";
-        if (status === ClusterStatusCode.CREATED || status === ClusterStatusCode.PLAN_ERROR) {
+        if (
+          [
+            ClusterStatusCode.CREATED,
+            ClusterStatusCode.PLAN_ERROR,
+            ClusterStatusCode.DESTROY_ERROR,
+            ClusterStatusCode.NOT_DEPLOYED,
+          ].includes(status)
+        ) {
           return { status, message, progress };
         }
         if (Date.now() - start > MAX_PLAN_WAIT_MS) {

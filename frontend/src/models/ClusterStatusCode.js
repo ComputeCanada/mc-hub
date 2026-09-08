@@ -10,5 +10,6 @@ export default Object.freeze({
   DESTROY_RUNNING: "destroy_running",
   DESTROY_ERROR: "destroy_error",
   DESTROY_SUCCESS: "destroy_success",
+  NOT_DEPLOYED: "not_deployed",
   NOT_FOUND: "not_found",
 });

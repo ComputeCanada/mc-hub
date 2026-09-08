@@ -63,6 +63,11 @@ class MagicCastleAPI(ApiView):
                     target(*args)
                 except Exception:
                     db.session.rollback()
+                    if hostname is not None:
+                        failed = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
+                        if failed is not None:
+                            failed.status = ClusterStatusCode.PLAN_ERROR
+                            db.session.commit()
                     app.logger.exception(
                         "Background task error: task=%s hostname=%s thread_name=%s",
                         task_name,
@@ -103,8 +108,25 @@ class MagicCastleAPI(ApiView):
         else:
             return [mc.state for mc in user.magic_castles]
 
-    def post(self, user: User, hostname, apply=False):
+    def post(self, user: User, hostname, apply=False, action=None):
         app = current_app._get_current_object()
+        if action:
+            orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
+            if not (orm and orm.project in user.projects and user.can_access_cluster(orm)):
+                raise ClusterNotFoundException
+            if action == "rebuild":
+                MagicCastle(orm).validate_rebuild()
+            self._claim_background_task(orm)
+
+            def lifecycle_cluster(hostname):
+                cluster = MagicCastle(db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname)))
+                if action == "teardown":
+                    cluster.plan_destruction()
+                else:
+                    cluster.plan_rebuild()
+
+            self._run_in_background(app, lifecycle_cluster, hostname, hostname=hostname)
+            return {}, 202
         if apply:
             orm = db.session.execute(
                 db.select(MagicCastleORM).filter_by(hostname=hostname)
@@ -186,19 +208,13 @@ class MagicCastleAPI(ApiView):
         if not (orm and orm.project in user.projects and user.can_access_cluster(orm)):
             raise ClusterNotFoundException
 
-        app = current_app._get_current_object()
-
-        def destroy_cluster(hostname):
-            orm = db.session.execute(
-                db.select(MagicCastleORM).filter_by(hostname=hostname)
-            ).scalar_one_or_none()
-            if orm is None:
-                raise ClusterNotFoundException
-            MagicCastle(orm).plan_destruction()
-
-        # Make the planning transition visible before returning 202. Callers that
-        # wait for CREATED can then be sure they are observing the destroy plan,
-        # rather than a previously-created plan.
+        previous_status = orm.status
         self._claim_background_task(orm)
-        self._run_in_background(app, destroy_cluster, hostname, hostname=hostname)
-        return {}, 202
+        try:
+            MagicCastle(orm).destroy_empty_cluster()
+        except Exception:
+            db.session.rollback()
+            orm.status = previous_status
+            db.session.commit()
+            raise
+        return {}, 204

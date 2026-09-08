@@ -52,7 +52,7 @@ def test_get_all_magic_castle_names(client):
     assert res.status_code == 200
     for result in res.get_json():
         cluster_name = result["hostname"]
-        assert result == CLUSTERS[cluster_name]
+        assert result == {**CLUSTERS[cluster_name], "undeployed": False}
 
 
 # GET /api/magic-castles/<hostname>
@@ -61,7 +61,7 @@ def test_get_all_magic_castle_names(client):
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}")
     state = res.get_json()
-    assert state == EXISTING_CLUSTER_STATE
+    assert state == {**EXISTING_CLUSTER_STATE, "undeployed": False}
     assert res.status_code == 200
 
 
@@ -187,7 +187,7 @@ def test_apply_claim_prevents_second_worker(client, mocker):
     background_task.assert_called_once()
 
 
-def test_delete_marks_cluster_busy_before_starting_worker(client, mocker):
+def test_teardown_marks_cluster_busy_before_starting_worker(client, mocker):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
@@ -195,7 +195,7 @@ def test_delete_marks_cluster_busy_before_starting_worker(client, mocker):
 
     background_task = mocker.patch.object(MagicCastleAPI, "_run_in_background")
 
-    res = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
+    res = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/teardown")
 
     assert res.status_code == 202
     orm = db.session.scalar(
@@ -328,3 +328,27 @@ def test_modify_invalid_status(client):
     # )
     # assert res.get_json() == {"message": "This cluster is busy."}
     # assert res.status_code != 200
+
+
+def test_delete_requires_verified_empty_workspace_and_restores_status_on_rejection(client, mocker):
+    mocker.patch("mchub.models.magic_castle.magic_castle.get_github_storage")
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    previous_status = orm.status
+    orm.tfcloud_workspace = "ws-retained"
+    db.session.commit()
+    tf = get_terraform_cloud()
+    mocker.patch.object(tf, "lock_workspace", create=True)
+    mocker.patch.object(tf, "unlock_workspace", create=True)
+    verify = mocker.patch.object(tf, "verify_workspace_empty", create=True, side_effect=InvalidUsageException("resources remain"))
+    response = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
+    assert response.status_code == 400
+    assert orm.status == previous_status
+    verify.side_effect = None
+    response = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
+    assert response.status_code == 204
+    assert db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)) is None
