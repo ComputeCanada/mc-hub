@@ -59,6 +59,33 @@ This will spawn a node server (most likely on `http://localhost:8080`) which wil
 
 > To make the npm development server run faster, install and run npm on the host machine.
 
+## Serving the production frontend with Apache
+
+The production container exposes only the Flask API on `127.0.0.1:5050`. Build the
+Vue application and install its static files in Apache's document root:
+
+```shell script
+cd frontend
+npm ci
+npm run build
+sudo mkdir -p /var/www/mc-hub
+sudo cp -a dist/. /var/www/mc-hub/
+```
+
+Copy [`apache/mc-hub.conf`](../apache/mc-hub.conf) into Apache's virtual-host
+configuration, replace `mc-hub.example.com` with the deployment's hostname, and
+enable the required modules and site. On Debian or Ubuntu:
+
+```shell script
+sudo a2enmod headers proxy proxy_http rewrite
+sudo a2ensite mc-hub
+sudo apache2ctl configtest
+sudo systemctl reload apache2
+```
+
+Apache serves the static application, sends `/api/` requests to Flask, and falls
+back to `index.html` for Vue Router history-mode URLs.
+
 ## Accessing clusters manually with Terraform
 
 If there was a problem when modifying a cluster using the UI or you want to access the terraform logs, this section if for you.
@@ -97,4 +124,3 @@ Open the terminal on your host machine and access the `clusters_backup` director
    ```
    terraform show
    ```
-

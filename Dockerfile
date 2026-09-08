@@ -1,12 +1,3 @@
-## FRONTEND BUILD STAGE
-
-FROM node:24 as frontend-build-stage
-
-WORKDIR /frontend
-ADD frontend .
-ENV UV_USE_IO_URING 0
-RUN npm install && npm run build
-
 # BACKEND BUILD STAGE
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS backend-build-stage
 ENV UV_COMPILE_BYTECODE=1 \
@@ -43,15 +34,11 @@ CMD python -m mchub.services.cull_expired_cluster
 ## PRODUCTION IMAGE
 FROM base-server as production-server
 
-USER root
-COPY --from=frontend-build-stage /frontend/dist /code/frontend
-
 USER mcu
 WORKDIR /home/mcu
 
 RUN mkdir -p /home/mcu/clusters /home/mcu/database /home/mcu/credentials
 
-ENV MCH_DIST_PATH=/code/frontend
 ENV FLASK_APP="mchub:create_app"
 
 CMD flask db upgrade && \

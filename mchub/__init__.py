@@ -1,14 +1,14 @@
 from os import path as os_path
 import logging
 
-from flask import Flask, send_file, send_from_directory
+from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 
 
 def create_app(db_path=None):
     from .configuration import get_config, DATABASE_FILENAME
-    from .configuration.env import DIST_PATH, DATABASE_PATH
+    from .configuration.env import DATABASE_PATH
     from .database import db
     from .resources.magic_castle_api import MagicCastleAPI
     from .resources.progress_api import ProgressAPI
@@ -106,25 +106,5 @@ def create_app(db_path=None):
         view_func=project_view,
         methods=["GET", "PATCH", "DELETE"],
     )
-
-    @app.route("/css/<path:path>")
-    def send_css_file(path):
-        return send_from_directory(os_path.join(DIST_PATH, "css"), path)
-
-    @app.route("/js/<path:path>")
-    def send_js_file(path):
-        return send_from_directory(os_path.join(DIST_PATH, "js"), path)
-
-    @app.route("/", defaults={"path": ""})
-    @app.route("/<path:path>")
-    def catch_all(path):
-        # Single page application
-        response = send_file(os_path.join(DIST_PATH, "index.html"))
-
-        # Avoid caching SPA to avoid showing the page when the user is logged out
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-        return response
 
     return app
