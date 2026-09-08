@@ -113,7 +113,8 @@ export default {
       }
 
       descriptionElements.push(`${typeObj.vcpus} vCPU`);
-      descriptionElements.push(`${typeObj.ram / 1024} GB RAM`);
+      const ramGb = Number((typeObj.ram / 1024).toFixed(2));
+      descriptionElements.push(`${ramGb} GB RAM`);
 
       const diskMatch = typeObj.name.match(DISK_REGEX);
       if (diskMatch) {

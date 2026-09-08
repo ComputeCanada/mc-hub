@@ -55,6 +55,7 @@ describe("TypeSelect", () => {
         expect(wrapper.vm.getTypeDescription({name: "c1-0.5gb", vcpus: 1, ram: 512})).toBe("1 vCPU, 0.5 GB RAM");
         expect(wrapper.vm.getTypeDescription({name: "c16-1gb", vcpus: 16, ram: 1024})).toBe("16 vCPU, 1 GB RAM");
         expect(wrapper.vm.getTypeDescription({name: "c128-100gb", vcpus: 128, ram: 102400})).toBe("128 vCPU, 100 GB RAM");
+        expect(wrapper.vm.getTypeDescription({name: "c1-1.2gb", vcpus: 1, ram: 1234})).toBe("1 vCPU, 1.21 GB RAM");
         expect(wrapper.vm.getTypeDescription({name: "c128-100.25gb-1", vcpus: 128, ram: 102656})).toBe("128 vCPU, 100.25 GB RAM, 1 GB ephemeral storage");
         expect(wrapper.vm.getTypeDescription({name: "c128-100.25gb-10.5", vcpus: 128, ram: 102656})).toBe("128 vCPU, 100.25 GB RAM, 10.5 GB ephemeral storage");
         expect(wrapper.vm.getTypeDescription({name: "c62-256gb-10-numa", vcpus: 62, ram: 262144})).toBe("62 vCPU, 256 GB RAM, 10 GB ephemeral storage");
