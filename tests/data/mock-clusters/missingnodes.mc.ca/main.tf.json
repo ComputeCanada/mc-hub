@@ -11,6 +11,7 @@
             "cluster_name": "missingnodes",
             "domain": "mc.ca",
             "image": "Rocky-8.7-x64-2023-02",
+            "mc_version": "14.1.2",
             "nb_users": 10,
             "instances": {
                 "mgmt": {

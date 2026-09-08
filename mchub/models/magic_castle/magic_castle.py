@@ -488,12 +488,12 @@ class MagicCastle:
 
     @staticmethod
     def validate_creation_version(data):
-        if data.get("version") not in get_github_storage().get_magic_castle_versions():
+        if data.get("mc_version") not in get_github_storage().get_magic_castle_versions():
             raise InvalidUsageException("Invalid Magic Castle version")
 
     def validate_version_unchanged(self, data):
-        existing_version = self.config.get("version")
-        if data.get("version", existing_version) != existing_version:
+        existing_version = self.config.get("mc_version")
+        if data.get("mc_version", existing_version) != existing_version:
             raise InvalidUsageException(
                 "The Magic Castle version cannot be changed after plan creation"
             )
@@ -572,11 +572,7 @@ class MagicCastle:
             raise BusyClusterException
 
         self.validate_version_unchanged(data)
-        existing_version = self.config.get("version")
-        if existing_version is None:
-            data.pop("version", None)
-        else:
-            data["version"] = existing_version
+        data["mc_version"] = self.config["mc_version"]
 
         config_changed = self.set_configuration(data)
 

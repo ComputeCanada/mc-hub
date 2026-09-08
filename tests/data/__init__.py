@@ -5,7 +5,7 @@ DEFAULT_TEMPLATE = {
     "cluster_name": "",
     "domain": None,
     "image": None,
-    "version": None,
+    "mc_version": None,
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": None, "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -29,6 +29,7 @@ NON_EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "nonexisting",
     "domain": "magic-castle.cloud",
     "image": "Rocky-8.7-x64-2023-02",
+    "mc_version": "14.1.2",
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -51,6 +52,7 @@ EXISTING_CLUSTER_CONFIGURATION = {
     "cluster_name": "valid1",
     "domain": "magic-castle.cloud",
     "image": "Rocky-8.7-x64-2023-02",
+    "mc_version": "14.1.2",
     "nb_users": 10,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1, "tags": ["mgmt", "nfs", "puppet"]},
@@ -116,6 +118,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "buildplanning",
         "domain": "magic-castle.cloud",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -145,6 +148,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "created",
         "domain": "magic-castle.cloud",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -174,6 +178,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "valid1",
         "domain": "magic-castle.cloud",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 10,
         "instances": {
             "mgmt": {
@@ -203,6 +208,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "empty-state",
         "domain": "magic-castle.cloud",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 34,
         "instances": {
             "mgmt": {
@@ -232,6 +238,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "missingfloatingips",
         "domain": "mc.ca",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 17,
         "instances": {
             "mgmt": {
@@ -261,6 +268,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "missingnodes",
         "domain": "mc.ca",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 10,
         "instances": {
             "mgmt": {
@@ -290,6 +298,7 @@ CLUSTERS_CONFIG = {
         "cluster_name": "noowner",
         "domain": "magic-castle.cloud",
         "image": "Rocky-8.7-x64-2023-02",
+        "mc_version": "14.1.2",
         "nb_users": 10,
         "instances": {
             "mgmt": {
@@ -546,6 +555,7 @@ CONFIG_DICT = {
     "cluster_name": "foo-123",
     "domain": "magic-castle.cloud",
     "image": "Rocky-8.7-x64-2023-02",
+    "mc_version": "14.1.2",
     "nb_users": 17,
     "instances": {
         "mgmt": {"type": "p4-6gb", "count": 1},
@@ -586,5 +596,5 @@ VALID_CLUSTER_CONFIGURATION = {
     "public_keys": [""],
     "hieradata": "",
     "image": "Rocky-8.7-x64-2023-02",
-    "version": "14.1.2",
+    "mc_version": "14.1.2",
 }

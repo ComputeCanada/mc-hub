@@ -36,7 +36,7 @@ def test_create_magic_castle_plan_valid(app, mocker):
         "MOCK_ORG/MOCK_REPO",
         "tfcloud_id",
     )
-    assert write_variables.call_args.args[0]["version"] == "14.1.2"
+    assert write_variables.call_args.args[0]["mc_version"] == "14.1.2"
 
 
 def test_create_magic_castle_rejects_unvetted_version(app):
@@ -44,7 +44,7 @@ def test_create_magic_castle_rejects_unvetted_version(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
 
     configuration = deepcopy(VALID_CLUSTER_CONFIGURATION)
-    configuration["version"] = "unvetted"
+    configuration["mc_version"] = "unvetted"
 
     with pytest.raises(InvalidUsageException, match="Invalid Magic Castle version"):
         MagicCastle().plan_creation(configuration)
@@ -62,13 +62,13 @@ def test_magic_castle_version_cannot_be_modified(app):
         db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
     )
     configuration = dict(orm.config)
-    configuration["version"] = "14.1.2"
+    configuration["mc_version"] = "14.1.2"
     orm.config = MagicCastleConfiguration("openstack", configuration)
 
     with pytest.raises(
         InvalidUsageException, match="cannot be changed after plan creation"
     ):
-        MagicCastle(orm).plan_modification({"version": "14.0.0"})
+        MagicCastle(orm).plan_modification({"mc_version": "14.0.0"})
 
 
 def test_planned_status_waits_for_local_plan(app):

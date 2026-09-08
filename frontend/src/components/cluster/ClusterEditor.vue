@@ -68,14 +68,14 @@
           <v-col cols="6" class="py-0">
             <v-select
               v-if="!existingCluster"
-              v-model="localSpecs.version"
-              :items="getPossibleValues('version')"
-              label="Version"
+              v-model="localSpecs.mc_version"
+              :items="getPossibleValues('mc_version')"
+              label="Magic Castle Version"
               :rules="[versionRule]"
             />
             <v-list-item-content v-else>
-              <v-list-item-subtitle>Version</v-list-item-subtitle>
-              <v-list-item-title>{{ localSpecs.version }}</v-list-item-title>
+              <v-list-item-subtitle>Magic Castle Version</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.mc_version }}</v-list-item-title>
             </v-list-item-content>
           </v-col>
         </v-list-item>
@@ -403,10 +403,10 @@ export default {
       }
 
       // Magic Castle version
-      if (this.localSpecs.version === null) {
+      if (this.localSpecs.mc_version === null) {
         try {
-          this.localSpecs.version = possibleResources.version[0];
-          this.initialSpecs.version = possibleResources.version[0];
+          this.localSpecs.mc_version = possibleResources.mc_version[0];
+          this.initialSpecs.mc_version = possibleResources.mc_version[0];
         } catch (err) {
           console.log("No Magic Castle version available");
         }
@@ -494,7 +494,7 @@ export default {
         "cluster_name",
         "hieradata_entries",
         "image",
-        "version",
+        "mc_version",
         "public_keys",
         "guest_passwd",
         "instances",
@@ -528,7 +528,7 @@ export default {
     },
     versionRule() {
       return (
-        (this.possibleResources && this.possibleResources.version.includes(this.localSpecs.version)) ||
+        (this.possibleResources && this.possibleResources.mc_version.includes(this.localSpecs.mc_version)) ||
         "Invalid Magic Castle version provided"
       );
     },

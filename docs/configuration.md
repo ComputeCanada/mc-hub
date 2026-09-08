@@ -161,7 +161,7 @@ Two formats are supported:
 
 ### `magic_castle_version_range`
 
-A Terraform-style version constraint describing the Magic Castle versions vetted by the MC Hub operator. MC Hub fetches tags from the `ComputeCanada/magic_castle` GitHub repository and presents matching versions in newest-first order. The newest matching version is selected by default. The selected value is written as `version` in the cluster's `terraform.tfvars.json` and cannot be changed after the initial plan is created.
+A Terraform-style version constraint describing the Magic Castle versions vetted by the MC Hub operator. MC Hub fetches tags from the `ComputeCanada/magic_castle` GitHub repository and presents matching versions in newest-first order. The newest matching version is selected by default. The selected value is written as `mc_version` in the cluster's `terraform.tfvars.json` and cannot be changed after the initial plan is created.
 
 Multiple constraints separated by commas and the `=`, `!=`, `>`, `>=`, `<`, `<=`, and `~>` operators are supported. For example, `">= 14.0.0, < 15.0.0"` accepts version 14 releases, while `"~> 14.1.0"` accepts patch releases from 14.1.
 

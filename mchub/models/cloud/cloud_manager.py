@@ -25,6 +25,6 @@ class CloudManager:
             "domain"
         ] = DnsManager.get_available_domains()
         available_resources["possible_resources"][
-            "version"
+            "mc_version"
         ] = get_github_storage().get_magic_castle_versions()
         return available_resources

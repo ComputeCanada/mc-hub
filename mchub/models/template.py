@@ -3,7 +3,7 @@ DEFAULT = {
     "cluster_name": "",
     "domain": None,
     "image": None,
-    "version": None,
+    "mc_version": None,
     "nb_users": 10,
     "instances": {
         "mgmt": {
