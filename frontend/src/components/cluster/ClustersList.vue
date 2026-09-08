@@ -82,28 +82,24 @@
               <v-divider class="mt-4" />
               <v-row class="pa-2">
                 <v-btn
+                  v-for="(service, serviceName) in item.services"
+                  :key="serviceName"
                   color="primary"
                   :disabled="item.status !== 'provisioning_success'"
                   text
-                  :href="`https://jupyter.${item.hostname}`"
+                  :href="service.url"
                   target="_blank"
-                  >JupyterHub
-                </v-btn>
-                <v-btn
-                  color="primary"
-                  :disabled="item.status !== 'provisioning_success'"
-                  text
-                  :href="`https://ipa.${item.hostname}`"
-                  target="_blank"
-                  >FreeIPA
-                </v-btn>
-                <v-btn
-                  color="primary"
-                  :disabled="item.status !== 'provisioning_success'"
-                  text
-                  :href="`https://mokey.${item.hostname}`"
-                  target="_blank"
-                  >Mokey
+                >
+                  <v-icon
+                    x-small
+                    class="mr-2"
+                    :color="serviceStatusColor(service)"
+                    :aria-label="serviceStatusLabel(service)"
+                    :title="serviceStatusLabel(service)"
+                    role="img"
+                    >mdi-circle</v-icon
+                  >
+                  {{ service.label }}
                 </v-btn>
                 <v-spacer />
                 <v-btn
@@ -193,6 +189,13 @@ export default {
     },
   },
   methods: {
+    serviceStatusColor(service) {
+      return service.status === "healthy" ? "green" : "red";
+    },
+    serviceStatusLabel(service) {
+      const availability = service.status === "healthy" ? "available" : "unhealthy";
+      return `${service.label} is ${availability}`;
+    },
     startStatusPolling() {
       const fetchStatus = () => {
         this.loadMagicCastlesStatus();

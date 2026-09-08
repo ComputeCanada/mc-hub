@@ -173,9 +173,21 @@ def test_successful_provisioning_is_not_reclassified_when_a_service_stops(
         ProvisioningManager,
         "check_services",
         return_value={
-            "jupyterhub": "unavailable",
-            "freeipa": "healthy",
-            "mokey": "healthy",
+            "jupyterhub": {
+                "label": "JupyterHub",
+                "url": "https://jupyter.valid1.magic-castle.cloud",
+                "status": "unavailable",
+            },
+            "freeipa": {
+                "label": "FreeIPA",
+                "url": "https://ipa.valid1.magic-castle.cloud",
+                "status": "healthy",
+            },
+            "mokey": {
+                "label": "Mokey",
+                "url": "https://mokey.valid1.magic-castle.cloud",
+                "status": "healthy",
+            },
         },
     )
 
@@ -183,7 +195,7 @@ def test_successful_provisioning_is_not_reclassified_when_a_service_stops(
 
     assert cluster.status == ClusterStatusCode.PROVISIONING_SUCCESS
     assert cluster.health == "degraded"
-    assert cluster.service_statuses["jupyterhub"] == "unavailable"
+    assert cluster.service_statuses["jupyterhub"]["status"] == "unavailable"
 
 
 def test_destroyed_cluster_state_archives_github_repo(app, mocker):

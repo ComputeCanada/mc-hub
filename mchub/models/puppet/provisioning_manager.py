@@ -16,33 +16,53 @@ class ProvisioningManager:
     """
 
     SERVICES = {
-        "jupyterhub": ("jupyter", 405),
-        "freeipa": ("ipa", 301),
-        "mokey": ("mokey", 405),
+        "jupyterhub": {
+            "label": "JupyterHub",
+            "subdomain": "jupyter",
+            "expected_status": 405,
+        },
+        "freeipa": {
+            "label": "FreeIPA",
+            "subdomain": "ipa",
+            "expected_status": 301,
+        },
+        "mokey": {
+            "label": "Mokey",
+            "subdomain": "mokey",
+            "expected_status": 405,
+        },
     }
 
     @classmethod
     def check_services(cls, hostname):
         statuses = {}
-        for service, (subdomain, expected_status) in cls.SERVICES.items():
+        for service, config in cls.SERVICES.items():
+            url = f"https://{config['subdomain']}.{hostname}"
             try:
-                response = requests.head(
-                    f"https://{subdomain}.{hostname}", timeout=0.1, verify=True
-                )
-                statuses[service] = (
+                response = requests.head(url, timeout=0.1, verify=True)
+                status = (
                     "healthy"
-                    if response.status_code == expected_status
+                    if response.status_code == config["expected_status"]
                     else "unavailable"
                 )
             except RequestException:
-                statuses[service] = "unavailable"
+                status = "unavailable"
+            statuses[service] = {
+                "label": config["label"],
+                "url": url,
+                "status": status,
+            }
         return statuses
+
+    @staticmethod
+    def service_is_healthy(service):
+        return service["status"] == "healthy"
 
     @classmethod
     def check_online(cls, hostname):
         return all(
-            status == "healthy"
-            for status in cls.check_services(hostname).values()
+            cls.service_is_healthy(service)
+            for service in cls.check_services(hostname).values()
         )
 
     @staticmethod
@@ -51,7 +71,8 @@ class ProvisioningManager:
             return "unknown"
 
         healthy_services = sum(
-            status == "healthy" for status in service_statuses.values()
+            ProvisioningManager.service_is_healthy(service)
+            for service in service_statuses.values()
         )
         if healthy_services == len(service_statuses):
             return "healthy"
