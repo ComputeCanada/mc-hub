@@ -20,7 +20,7 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.status`]="{ item }">
-          <status-chip :status="item.status" />
+          <status-chip :status="item.status" :health="item.health" />
         </template>
         <template #expanded-item="{ headers, item }">
           <td :colspan="headers.length" :key="item.hostname">

@@ -15,13 +15,26 @@ class ProgressAPI(ApiView):
         else:
             return {"status": ClusterStatusCode.NOT_FOUND}
         status = magic_castle.status
+        health = magic_castle.health
+        services = (
+            magic_castle.service_statuses
+            if status == ClusterStatusCode.PROVISIONING_SUCCESS
+            else {}
+        )
         progress = magic_castle.get_progress()
         stateful = magic_castle.tf_state is not None
         if progress is None:
-            return {"status": status, "stateful": stateful}
+            return {
+                "status": status,
+                "health": health,
+                "services": services,
+                "stateful": stateful,
+            }
         else:
             return {
                 "status": status,
+                "health": health,
+                "services": services,
                 "stateful": stateful,
                 "progress": progress,
             }

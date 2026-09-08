@@ -1,6 +1,6 @@
 import requests
 
-from requests.exceptions import ConnectionError, ReadTimeout
+from requests.exceptions import RequestException
 
 MAX_PROVISIONING_TIME = 3600
 
@@ -15,22 +15,46 @@ class ProvisioningManager:
     likely online.
     """
 
+    SERVICES = {
+        "jupyterhub": ("jupyter", 405),
+        "freeipa": ("ipa", 301),
+        "mokey": ("mokey", 405),
+    }
+
     @classmethod
-    def check_online(self, hostname):
-        try:
-            return (
-                requests.head(
-                    f"https://jupyter.{hostname}", timeout=0.1, verify=True
-                ).status_code
-                == 405
-                and requests.head(
-                    f"https://ipa.{hostname}", timeout=0.1, verify=True
-                ).status_code
-                == 301
-                and requests.head(
-                    f"https://mokey.{hostname}", timeout=0.1, verify=True
-                ).status_code
-                == 405
-            )
-        except (ConnectionError, ReadTimeout):
-            return False
+    def check_services(cls, hostname):
+        statuses = {}
+        for service, (subdomain, expected_status) in cls.SERVICES.items():
+            try:
+                response = requests.head(
+                    f"https://{subdomain}.{hostname}", timeout=0.1, verify=True
+                )
+                statuses[service] = (
+                    "healthy"
+                    if response.status_code == expected_status
+                    else "unavailable"
+                )
+            except RequestException:
+                statuses[service] = "unavailable"
+        return statuses
+
+    @classmethod
+    def check_online(cls, hostname):
+        return all(
+            status == "healthy"
+            for status in cls.check_services(hostname).values()
+        )
+
+    @staticmethod
+    def get_health(service_statuses):
+        if not service_statuses:
+            return "unknown"
+
+        healthy_services = sum(
+            status == "healthy" for status in service_statuses.values()
+        )
+        if healthy_services == len(service_statuses):
+            return "healthy"
+        if healthy_services == 0:
+            return "unavailable"
+        return "degraded"

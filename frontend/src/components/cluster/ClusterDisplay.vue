@@ -14,7 +14,7 @@
                 <v-list-item-subtitle>Hostname</v-list-item-subtitle>
                 <v-list-item-title>{{ hostname }}</v-list-item-title>
               </v-list-item-content>
-              <status-chip :status="status" />
+              <status-chip :status="status" :health="health" />
             </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
@@ -125,6 +125,7 @@ export default {
       errorMessage: "",
       statusPoller: null,
       status: null,
+      health: null,
       resourcesChanges: [],
       magicCastle: null,
       loading: false,
@@ -185,9 +186,10 @@ export default {
       const planWasRunning = this.status === ClusterStatusCode.PLAN_RUNNING;
 
       this.statusPromise = MagicCastleRepository.getStatus(this.hostname);
-      const { status, stateful, progress } = (await this.statusPromise).data;
+      const { status, health, stateful, progress } = (await this.statusPromise).data;
       this.statusPromise = null;
       this.status = status;
+      this.health = health;
       this.stateful = stateful;
       this.resourcesChanges = progress || [];
 

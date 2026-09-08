@@ -212,9 +212,10 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    __slots__ = ["orm"]
+    __slots__ = ["orm", "_service_statuses"]
 
     def __init__(self, orm=None):
+        self._service_statuses = None
         if orm:
             self.orm = orm
         else:
@@ -328,7 +329,14 @@ class MagicCastle:
                 # actually been persisted locally.
                 if status == ClusterStatusCode.CREATED and self.plan is None:
                     status = ClusterStatusCode.PLAN_RUNNING
-                self.status = status
+                provisioning_is_complete = (
+                    self.orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
+                )
+                if not (
+                    status == ClusterStatusCode.PROVISIONING_RUNNING
+                    and provisioning_is_complete
+                ):
+                    self.status = status
 
             # Fetch the apply_log
             if self.plan and not self.apply_url:
@@ -356,7 +364,7 @@ class MagicCastle:
 
         if self.orm.status == ClusterStatusCode.PROVISIONING_RUNNING:
             now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-            if ProvisioningManager.check_online(self.hostname):
+            if self.services_are_online:
                 self.status = ClusterStatusCode.PROVISIONING_SUCCESS
             elif MAX_PROVISIONING_TIME < (now - self.orm.created).total_seconds():
                 self.status = ClusterStatusCode.PROVISIONING_ERROR
@@ -366,6 +374,24 @@ class MagicCastle:
 
         db.session.commit()
         return self.orm.status
+
+    @property
+    def service_statuses(self):
+        if self._service_statuses is None:
+            self._service_statuses = ProvisioningManager.check_services(self.hostname)
+        return self._service_statuses
+
+    @property
+    def services_are_online(self):
+        return all(
+            status == "healthy" for status in self.service_statuses.values()
+        )
+
+    @property
+    def health(self):
+        if self.orm.status != ClusterStatusCode.PROVISIONING_SUCCESS:
+            return "unknown"
+        return ProvisioningManager.get_health(self.service_statuses)
 
     @status.setter
     def status(self, status: ClusterStatusCode):
@@ -418,10 +444,17 @@ class MagicCastle:
         # instance. Preserve project metadata before that commit detaches the
         # instance, so the final DESTROY_SUCCESS state can still be serialized.
         cloud = {"name": self.project.name, "id": self.project.id}
+        status = self.status
         return {
             **config,
             "hostname": self.hostname,
-            "status": self.status,
+            "status": status,
+            "health": self.health,
+            "services": (
+                self.service_statuses
+                if status == ClusterStatusCode.PROVISIONING_SUCCESS
+                else {}
+            ),
             "freeipa_passwd": self.freeipa_passwd,
             "age": self.age,
             "expiration_date": self.expiration_date,

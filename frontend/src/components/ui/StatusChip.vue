@@ -18,6 +18,7 @@ const ClusterFormattedStatus = Object.freeze({
   destroy_error: { text: "Destroy error", color: "red" },
   destroy_success: { text: "Destroyed", color: "green" },
   not_found: { text: "Not found", color: "purple" },
+  degraded: { text: "Degraded", color: "amber darken-2" },
 });
 
 export default {
@@ -27,11 +28,17 @@ export default {
       required: true,
       validator: (value) => value === null || typeof value === "string",
     },
+    health: {
+      type: String,
+      default: null,
+    },
   },
   computed: {
     formattedStatus() {
       if (this.status === null) {
         return "";
+      } else if (this.status === "provisioning_success" && ["degraded", "unavailable"].includes(this.health)) {
+        return ClusterFormattedStatus.degraded;
       } else {
         return ClusterFormattedStatus[this.status];
       }
