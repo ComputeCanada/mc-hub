@@ -44,14 +44,27 @@ def app(config_mock, generate_test_clusters, mocker):
     from mchub.models.puppet.provisioning_manager import ProvisioningManager
     from mchub.models.user import UserORM
 
+    def healthy_services(hostname):
+        return {
+            "jupyterhub": {
+                "label": "JupyterHub",
+                "url": f"https://jupyter.{hostname}",
+                "status": "healthy",
+            },
+            "freeipa": {
+                "label": "FreeIPA",
+                "url": f"https://ipa.{hostname}",
+                "status": "healthy",
+            },
+            "mokey": {
+                "label": "Mokey",
+                "url": f"https://mokey.{hostname}",
+                "status": "healthy",
+            },
+        }
+
     mocker.patch.object(
-        ProvisioningManager,
-        "check_services",
-        return_value={
-            "jupyterhub": "healthy",
-            "freeipa": "healthy",
-            "mokey": "healthy",
-        },
+        ProvisioningManager, "check_services", side_effect=healthy_services
     )
 
     app = create_app(db_path="sqlite:///:memory:")

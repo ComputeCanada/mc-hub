@@ -384,7 +384,8 @@ class MagicCastle:
     @property
     def services_are_online(self):
         return all(
-            status == "healthy" for status in self.service_statuses.values()
+            ProvisioningManager.service_is_healthy(service)
+            for service in self.service_statuses.values()
         )
 
     @property

@@ -82,9 +82,21 @@ EXISTING_CLUSTER_STATE = {
     "status": "provisioning_success",
     "health": "healthy",
     "services": {
-        "jupyterhub": "healthy",
-        "freeipa": "healthy",
-        "mokey": "healthy",
+        "jupyterhub": {
+            "label": "JupyterHub",
+            "url": "https://jupyter.valid1.magic-castle.cloud",
+            "status": "healthy",
+        },
+        "freeipa": {
+            "label": "FreeIPA",
+            "url": "https://ipa.valid1.magic-castle.cloud",
+            "status": "healthy",
+        },
+        "mokey": {
+            "label": "Mokey",
+            "url": "https://mokey.valid1.magic-castle.cloud",
+            "status": "healthy",
+        },
     },
     "hostname": "valid1.magic-castle.cloud",
     "freeipa_passwd": "FAKE",
@@ -365,9 +377,21 @@ CLUSTERS = {
         "status": "provisioning_success",
         "health": "healthy",
         "services": {
-            "jupyterhub": "healthy",
-            "freeipa": "healthy",
-            "mokey": "healthy",
+            "jupyterhub": {
+                "label": "JupyterHub",
+                "url": "https://jupyter.valid1.magic-castle.cloud",
+                "status": "healthy",
+            },
+            "freeipa": {
+                "label": "FreeIPA",
+                "url": "https://ipa.valid1.magic-castle.cloud",
+                "status": "healthy",
+            },
+            "mokey": {
+                "label": "Mokey",
+                "url": "https://mokey.valid1.magic-castle.cloud",
+                "status": "healthy",
+            },
         },
         "freeipa_passwd": "FAKE",
         "age": "a moment",
@@ -417,9 +441,21 @@ CLUSTERS = {
         "status": "provisioning_success",
         "health": "healthy",
         "services": {
-            "jupyterhub": "healthy",
-            "freeipa": "healthy",
-            "mokey": "healthy",
+            "jupyterhub": {
+                "label": "JupyterHub",
+                "url": "https://jupyter.noowner.magic-castle.cloud",
+                "status": "healthy",
+            },
+            "freeipa": {
+                "label": "FreeIPA",
+                "url": "https://ipa.noowner.magic-castle.cloud",
+                "status": "healthy",
+            },
+            "mokey": {
+                "label": "Mokey",
+                "url": "https://mokey.noowner.magic-castle.cloud",
+                "status": "healthy",
+            },
         },
         "freeipa_passwd": "FAKE",
         "age": "a moment",
