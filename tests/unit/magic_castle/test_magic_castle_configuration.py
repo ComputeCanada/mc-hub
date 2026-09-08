@@ -71,25 +71,27 @@ def test_properties():
     assert config.domain == "magic-castle.cloud"
 
 
-def test_version_is_written_to_terraform_variables():
+def test_mc_version_is_written_to_terraform_variables():
     from mchub.models.magic_castle.magic_castle_configuration import (
         MagicCastleConfiguration,
     )
 
     config = deepcopy(CONFIG_DICT)
-    config["version"] = "14.1.2"
+    config["mc_version"] = "14.1.2"
 
-    assert (
-        MagicCastleConfiguration("openstack", config).get_var_tf()["version"]
-        == "14.1.2"
-    )
+    var_tf = MagicCastleConfiguration("openstack", config).get_var_tf()
+
+    assert var_tf["mc_version"] == "14.1.2"
+    assert "version" not in var_tf
 
 
-def test_legacy_configuration_does_not_write_empty_version():
+def test_version_is_not_accepted_as_mc_version():
     from mchub.models.magic_castle.magic_castle_configuration import (
         MagicCastleConfiguration,
     )
 
-    assert "version" not in MagicCastleConfiguration(
-        "openstack", deepcopy(CONFIG_DICT)
-    ).get_var_tf()
+    config = deepcopy(CONFIG_DICT)
+    config["version"] = config.pop("mc_version")
+
+    with pytest.raises(ValidationError, match="mc_version"):
+        MagicCastleConfiguration("openstack", config)

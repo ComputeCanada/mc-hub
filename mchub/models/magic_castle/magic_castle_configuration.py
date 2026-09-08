@@ -48,9 +48,7 @@ class Schema(marshmallow.Schema):
     cluster_name = fields.Str(required=True, validate=validate_cluster_name)
     domain = fields.Str(required=True, validate=validate_domain)
     image = fields.Str(required=True)
-    # Optional for compatibility with clusters created before version selection
-    # was introduced. New cluster plans require a vetted version.
-    version = fields.Str()
+    mc_version = fields.Str(required=True)
     nb_users = fields.Int(required=True)
     instances = fields.Dict(
         keys=fields.Str(),
@@ -124,7 +122,6 @@ class MagicCastleConfiguration(Mapping):
             "hieradata": self["hieradata"],
         }
 
-        if "version" in self:
-            var_tf_data["version"] = self["version"]
+        var_tf_data["mc_version"] = self["mc_version"]
 
         return var_tf_data
