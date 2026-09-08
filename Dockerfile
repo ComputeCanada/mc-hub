@@ -1,6 +1,6 @@
 ## FRONTEND BUILD STAGE
 
-FROM node:18-bullseye as frontend-build-stage
+FROM node:24 as frontend-build-stage
 
 WORKDIR /frontend
 ADD frontend .
@@ -8,7 +8,7 @@ ENV UV_USE_IO_URING 0
 RUN npm install && npm run build
 
 # BACKEND BUILD STAGE
-FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim AS backend-build-stage
+FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS backend-build-stage
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=0
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-dev
 
-FROM python:3.13-slim-trixie as base-server
+FROM python:3.14-slim as base-server
 
 COPY --from=backend-build-stage /code /code
 
