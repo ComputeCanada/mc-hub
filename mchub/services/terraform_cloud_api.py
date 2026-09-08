@@ -80,6 +80,28 @@ class TerraformCloud:
             )
         return run_id
 
+    def workspace_has_state(self, workspace_id) -> bool:
+        """Return whether a workspace has a current Terraform state version."""
+        url = f"{self.BASE_URL}/workspaces/{workspace_id}"
+        response = self._request("GET", url)
+        if response.status_code != 200:
+            raise TerraformCloudException(
+                "Could not inspect workspace state",
+                additional_details=f"{workspace_id=}, error: {response.text}",
+            )
+
+        try:
+            current_state = response.json()["data"]["relationships"][
+                "current-state-version"
+            ]["data"]
+        except (KeyError, TypeError):
+            raise TerraformCloudException(
+                "Could not inspect workspace state",
+                additional_details=f"{workspace_id=}, error: {response.text}",
+            )
+
+        return current_state is not None
+
     def get_agent_pool_id(self, agent_pool_name: str) -> str:
         url = f"{self.BASE_URL}/organizations/{self.organisation_name}/agent-pools"
         response = self._request("GET", url, params={"filter[name]": agent_pool_name})

@@ -105,6 +105,39 @@ def test_destroy_plan_failure(tf_cloud_client, mock_request):
     assert "Could not destroy workspace" in str(excinfo.value)
 
 
+@pytest.mark.parametrize(
+    ("current_state", "expected"),
+    [
+        ({"id": "sv-current", "type": "state-versions"}, True),
+        (None, False),
+    ],
+)
+def test_workspace_has_state(tf_cloud_client, mock_request, current_state, expected):
+    mock_request.return_value = mock_response(
+        200,
+        json_data={
+            "data": {
+                "relationships": {
+                    "current-state-version": {"data": current_state}
+                }
+            }
+        },
+    )
+
+    assert tf_cloud_client.workspace_has_state("ws-123") is expected
+
+    mock_request.assert_called_once_with(
+        "GET", f"{tf_cloud_client.BASE_URL}/workspaces/ws-123"
+    )
+
+
+def test_workspace_has_state_api_failure(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(403, text="Forbidden")
+
+    with pytest.raises(TerraformCloudException, match="Could not inspect workspace state"):
+        tf_cloud_client.workspace_has_state("ws-forbidden")
+
+
 def test_create_project_success(tf_cloud_client, mock_request):
     """Tests successful project creation."""
     mock_request.return_value = mock_response(

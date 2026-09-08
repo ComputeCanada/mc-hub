@@ -172,6 +172,55 @@ def test_destroyed_cluster_state_archives_github_repo(app, mocker):
     archive_repo.assert_called_once_with("valid1.magic-castle.cloud")
 
 
+def test_destroy_cluster_without_terraform_state_skips_destroy_plan(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.github_api import get_github_storage
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    hostname = "created.magic-castle.cloud"
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
+    orm.tfcloud_workspace = "ws-without-state"
+    db.session.commit()
+
+    terraform = get_terraform_cloud()
+    has_state = mocker.patch.object(terraform, "workspace_has_state", return_value=False)
+    destroy_plan = mocker.spy(terraform, "destroy_plan")
+    add_tag = mocker.spy(terraform, "add_workspace_tag")
+    archive_repo = mocker.spy(get_github_storage(), "archive_repo")
+
+    MagicCastle(orm).plan_destruction()
+
+    has_state.assert_called_once_with("ws-without-state")
+    destroy_plan.assert_not_called()
+    add_tag.assert_called_once_with("ws-without-state", "deleted")
+    archive_repo.assert_called_once_with(hostname)
+    assert db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname=hostname)
+    ) is None
+
+
+def test_destroy_cluster_with_terraform_state_creates_destroy_plan(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
+    )
+    orm.tfcloud_workspace = "ws-with-state"
+    db.session.commit()
+
+    terraform = get_terraform_cloud()
+    has_state = mocker.patch.object(terraform, "workspace_has_state", return_value=True)
+    destroy_plan = mocker.spy(terraform, "destroy_plan")
+
+    MagicCastle(orm).plan_destruction()
+
+    has_state.assert_called_once_with("ws-with-state")
+    destroy_plan.assert_called_once_with("ws-with-state")
+
+
 def test_get_status_errors(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
