@@ -19,17 +19,22 @@ class ProvisioningManager:
         "jupyterhub": {
             "label": "JupyterHub",
             "subdomain": "jupyter",
-            "expected_status": 405,
+            "expected_status": 200,
         },
         "freeipa": {
             "label": "FreeIPA",
             "subdomain": "ipa",
-            "expected_status": 301,
+            "expected_status": 200,
+        },
+        "metrix": {
+            "label": "Metrix",
+            "subdomain": "metrix",
+            "expected_status": 200,
         },
         "mokey": {
             "label": "Mokey",
             "subdomain": "mokey",
-            "expected_status": 405,
+            "expected_status": 200,
         },
     }
 
@@ -39,7 +44,7 @@ class ProvisioningManager:
         for service, config in cls.SERVICES.items():
             url = f"https://{config['subdomain']}.{hostname}"
             try:
-                response = requests.head(url, timeout=0.1, verify=True)
+                response = requests.get(url, timeout=0.1, verify=True)
                 status = (
                     "healthy"
                     if response.status_code == config["expected_status"]
