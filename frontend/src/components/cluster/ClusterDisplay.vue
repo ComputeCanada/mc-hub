@@ -42,8 +42,30 @@
       The cloud resources have been allocated. Provisioning has started.
     </message-dialog>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
-    <message-dialog v-model="clusterPlanRunningDialog" type="loading" no-close persistent
-      >Generating resource plan... please wait.
+    <message-dialog v-model="clusterPlanRunningDialog" type="loading" no-close persistent>
+      <div v-if="creationStepIndex >= 0" aria-live="polite">
+        <div v-for="(step, index) in creationSteps" :key="step.id" class="d-flex align-center my-3">
+          <v-progress-circular
+            v-if="index === creationStepIndex"
+            indeterminate
+            color="primary"
+            :size="20"
+            :width="2"
+            class="mr-3 flex-shrink-0"
+          />
+          <v-icon v-else :color="index < creationStepIndex ? 'success' : 'grey'" size="20" class="mr-3">
+            {{ index < creationStepIndex ? "mdi-check-circle" : "mdi-circle-outline" }}
+          </v-icon>
+          <span>
+            {{ step.label }}
+            <span class="text-caption"
+              >—
+              {{ index < creationStepIndex ? "Done" : index === creationStepIndex ? "In progress" : "Pending" }}</span
+            >
+          </span>
+        </div>
+      </div>
+      <span v-else>{{ clusterPlanMessage }}</span>
     </message-dialog>
     <confirm-dialog
       encourage-confirm
@@ -121,6 +143,14 @@ export default {
       errorDialog: false,
       clusterDestructionDialog: false,
       clusterPlanRunningDialog: false,
+      creationStep: null,
+      clusterPlanMessage: "Generating resource plan... please wait.",
+      creationSteps: [
+        { id: "github_repository", label: "Create GitHub repository" },
+        { id: "terraform_workspace", label: "Create Terraform workspace" },
+        { id: "variable_file", label: "Add variable file" },
+        { id: "resource_plan", label: "Generate resource plan" },
+      ],
       clusterModificationDialog: false,
       errorMessage: "",
       statusPoller: null,
@@ -156,6 +186,9 @@ export default {
     this.stopStatusPolling();
   },
   computed: {
+    creationStepIndex() {
+      return this.creationSteps.findIndex((step) => step.id === this.creationStep);
+    },
     busy() {
       return [
         ClusterStatusCode.DESTROY_RUNNING,
@@ -250,6 +283,8 @@ export default {
     async planCreation() {
       let isCommited = false;
       let showPlan = "0";
+      this.creationStep = null;
+      this.clusterPlanMessage = "Starting cluster setup...";
       this.clusterPlanRunningDialog = true;
       const createPromise = MagicCastleRepository.create(this.magicCastle);
       createPromise.catch(() => {});
@@ -316,6 +351,7 @@ export default {
       }
     ) {
       this.resourcesChanges = [];
+      this.creationStep = null;
       const hostname = this.getClusterHostname();
       try {
         // Create plan
@@ -383,7 +419,12 @@ export default {
       }
       const start = Date.now();
       for (;;) {
-        const { status, message, progress } = (await MagicCastleRepository.getStatus(hostname)).data;
+        const { status, message, progress, creation_step } = (await MagicCastleRepository.getStatus(hostname)).data;
+        this.creationStep = creation_step || null;
+        this.clusterPlanMessage =
+          status === ClusterStatusCode.NOT_FOUND
+            ? "Waiting for cluster setup to start..."
+            : "Generating resource plan... please wait.";
         if (status === ClusterStatusCode.CREATED || status === ClusterStatusCode.PLAN_ERROR) {
           return { status, message, progress };
         }

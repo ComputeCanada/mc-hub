@@ -32,7 +32,7 @@ class MagicCastleAPI(ApiView):
             db.update(MagicCastleORM)
             .where(MagicCastleORM.id == orm.id)
             .where(MagicCastleORM.status == previous_status)
-            .values(status=ClusterStatusCode.BACKGROUND_TASK_RUNNING)
+            .values(status=ClusterStatusCode.BACKGROUND_TASK_RUNNING, creation_step=None)
             .execution_options(synchronize_session=False)
         )
         if result.rowcount != 1:

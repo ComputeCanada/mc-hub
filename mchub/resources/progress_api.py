@@ -29,6 +29,7 @@ class ProgressAPI(ApiView):
                 "health": health,
                 "services": services,
                 "stateful": stateful,
+                "creation_step": orm.creation_step,
             }
         else:
             return {
@@ -36,5 +37,6 @@ class ProgressAPI(ApiView):
                 "health": health,
                 "services": services,
                 "stateful": stateful,
+                "creation_step": orm.creation_step,
                 "progress": progress,
             }
