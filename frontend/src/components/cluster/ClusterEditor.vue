@@ -3,76 +3,81 @@
     <v-form ref="form" v-model="validForm">
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
-        <v-list-item v-if="!stateful">
-          <v-select
-            v-model="localSpecs.cloud.id"
-            item-value="id"
-            item-text="name"
-            :items="projects"
-            label="Cloud project"
-            @change="changeCloudProject"
-          />
-        </v-list-item>
-        <v-list-item v-else>
-          <v-list-item-content>
-            <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item v-if="!existingCluster">
-          <v-text-field
-            v-model="localSpecs.cluster_name"
-            label="Cluster name"
-            :rules="[clusterNameRegexRule]"
-            validate-on-blur
-          />
-        </v-list-item>
-        <v-list-item v-if="!existingCluster">
-          <v-select
-            v-model="localSpecs.domain"
-            :items="getPossibleValues('domain')"
-            label="Domain"
-            :rules="[domainRule]"
-          />
-        </v-list-item>
         <v-list-item>
-          <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
-          <v-list-item-content v-else>
-            <v-list-item-subtitle>Image</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.image }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item>
-          <v-select
-            v-if="!existingCluster"
-            v-model="localSpecs.version"
-            :items="getPossibleValues('version')"
-            label="Version"
-            :rules="[versionRule]"
-          />
-          <v-list-item-content v-else>
-            <v-list-item-subtitle>Version</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.version }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item>
-          <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
+          <v-col cols="6" class="py-0">
+            <v-select
+              v-if="!stateful"
+              v-model="localSpecs.cloud.id"
+              item-value="id"
+              item-text="name"
+              :items="projects"
+              label="Cloud project"
+              @change="changeCloudProject"
+            />
+            <v-list-item-content v-else>
+              <v-list-item-subtitle>Cloud project</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
+            </v-list-item-content>
+          </v-col>
+          <v-col cols="6" class="py-0">
+            <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
+              <template v-slot:activator="{ on, attrs }">
+                <v-text-field
+                  v-model="localSpecs.expiration_date"
+                  label="Expiration date"
+                  prepend-icon="mdi-calendar"
+                  readonly
+                  v-bind="attrs"
+                  v-on="on"
+                ></v-text-field>
+              </template>
+              <v-date-picker
                 v-model="localSpecs.expiration_date"
-                label="Expiration date"
-                prepend-icon="mdi-calendar"
-                readonly
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="localSpecs.expiration_date"
-              @input="menu2 = false"
-              :min="tomorrowDate"
-            ></v-date-picker>
-          </v-menu>
+                @input="menu2 = false"
+                :min="tomorrowDate"
+              ></v-date-picker>
+            </v-menu>
+          </v-col>
+        </v-list-item>
+        <v-list-item v-if="!existingCluster">
+          <v-col cols="6" class="py-0">
+            <v-text-field
+              v-model="localSpecs.cluster_name"
+              label="Cluster name"
+              :rules="[clusterNameRegexRule]"
+              validate-on-blur
+            />
+          </v-col>
+          <v-col cols="6" class="py-0">
+            <v-select
+              v-model="localSpecs.domain"
+              :items="getPossibleValues('domain')"
+              label="Domain"
+              :rules="[domainRule]"
+            />
+          </v-col>
+        </v-list-item>
+        <v-list-item>
+          <v-col cols="6" class="py-0">
+            <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
+            <v-list-item-content v-else>
+              <v-list-item-subtitle>Image</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.image }}</v-list-item-title>
+            </v-list-item-content>
+          </v-col>
+          <v-col cols="6" class="py-0">
+            <v-select
+              v-if="!existingCluster"
+              v-model="localSpecs.version"
+              :items="getPossibleValues('version')"
+              label="Version"
+              :rules="[versionRule]"
+            />
+            <v-list-item-content v-else>
+              <v-list-item-subtitle>Version</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.version }}</v-list-item-title>
+            </v-list-item-content>
+          </v-col>
         </v-list-item>
       </v-list>
       <v-divider />
