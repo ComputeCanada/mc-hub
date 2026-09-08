@@ -226,7 +226,6 @@ class ProjectAPI(ApiView):
             )
         if len(project.magic_castles) > 0:
             raise InvalidUsageException("Cannot remove project with running clusters")
-        user.orm.projects.remove(project)
         db.session.delete(project)
         db.session.commit()
         return {}, 200

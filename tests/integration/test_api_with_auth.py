@@ -213,6 +213,38 @@ def test_delete_invalid_status(client):
     # assert res.status_code != 200
 
 
+@pytest.mark.parametrize("is_direct_member", [False, True])
+def test_delete_project_as_admin(client, is_direct_member):
+    from mchub.database import db
+    from mchub.models.cloud.project import Project
+    from mchub.models.user import UserORM
+
+    alice = db.session.scalar(
+        db.select(UserORM).filter_by(
+            scoped_id=ALICE_HEADERS["eduPersonPrincipalName"]
+        )
+    )
+    project = Project(
+        name="project-to-delete",
+        provider="openstack",
+        env={},
+        github_template="github_template",
+        tfcloud_project_id="tfcloud_id",
+    )
+    project.admins.append(alice)
+    if is_direct_member:
+        alice.projects.append(project)
+    db.session.add(project)
+    db.session.commit()
+    project_id = project.id
+
+    res = client.delete(f"/api/projects/{project_id}", headers=ALICE_HEADERS)
+
+    assert res.status_code == 200
+    assert res.get_json() == {}
+    assert db.session.get(Project, project_id) is None
+
+
 # PUT /api/magic-castles/<hostname>
 def test_modify_invalid_status(client):
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
