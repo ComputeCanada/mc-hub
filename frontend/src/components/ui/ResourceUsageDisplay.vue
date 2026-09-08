@@ -4,7 +4,7 @@
     <v-progress-circular :color="usageColor" :value="usagePercentage" :size="60" :width="5"
       >{{ usagePercentage }} %
     </v-progress-circular>
-    <span class="grey--text mt-2">{{ used }} {{ suffix }} / {{ max }} {{ suffix }}</span>
+    <span class="grey--text mt-2">{{ formattedUsed }} {{ suffix }} / {{ formattedMax }} {{ suffix }}</span>
   </div>
 </template>
 
@@ -21,6 +21,12 @@ export default {
     },
   },
   computed: {
+    formattedUsed() {
+      return Number(this.used.toFixed(2));
+    },
+    formattedMax() {
+      return Number(this.max.toFixed(2));
+    },
     usagePercentage() {
       if (this.max === 0) {
         return 0;
