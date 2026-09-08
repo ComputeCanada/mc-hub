@@ -181,6 +181,7 @@ class MagicCastleORM(db.Model):
     )
 
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
+    creation_step = db.Column(db.String(32))
     created = db.Column(db.DateTime(), default=func.now())
     expiration_date = db.Column(db.String(32))
     config = db.Column(db.PickleType())
@@ -539,6 +540,7 @@ class MagicCastle:
         self.set_configuration(data)
         self.orm.created_by_user_id = created_by_user_id
         self.orm.status = ClusterStatusCode.PLAN_RUNNING
+        self.orm.creation_step = "github_repository"
         db.session.add(self.orm)
         try:
             db.session.commit()
@@ -551,6 +553,8 @@ class MagicCastle:
 
         workspace_name = self.config.cluster_name
 
+        self.orm.creation_step = "terraform_workspace"
+        db.session.commit()
         tf = get_terraform_cloud()
         workspace_id = tf.create_workspace(
             workspace_name, github_repo_fullname, self.orm.project.tfcloud_project_id
@@ -581,6 +585,8 @@ class MagicCastle:
         )
 
         # Write the main terraform file to storage backend
+        self.orm.creation_step = "variable_file"
+        db.session.commit()
         try:
             var_tf = self._get_var_tf()
             github_commit = get_github_storage().write(var_tf, self.hostname)
@@ -594,6 +600,8 @@ class MagicCastle:
             f"{self.hostname}: New commit <{github_commit}> on repo <{github_repo_fullname}>"
         )
 
+        self.orm.creation_step = "resource_plan"
+        db.session.commit()
         self.create_plan(github_sha=github_commit)
         db.session.commit()
 

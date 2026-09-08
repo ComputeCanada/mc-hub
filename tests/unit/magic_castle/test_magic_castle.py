@@ -50,6 +50,60 @@ def test_create_magic_castle_rejects_unvetted_version(app):
         MagicCastle().plan_creation(configuration)
 
 
+def test_creation_steps_are_committed_before_external_operations(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.github_api import get_github_storage
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    cluster = MagicCastle()
+    observed_steps = []
+
+    def observe(service, method):
+        original = getattr(service, method)
+
+        def call(*args, **kwargs):
+            # A separate connection models a concurrent status request.
+            with db.engine.connect() as connection:
+                step = connection.scalar(
+                    db.select(MagicCastleORM.creation_step).where(
+                        MagicCastleORM.hostname == cluster.hostname
+                    )
+                )
+            observed_steps.append(step)
+            return original(*args, **kwargs)
+
+        mocker.patch.object(service, method, autospec=True, side_effect=call)
+
+    observe(get_github_storage(), "create_repo")
+    observe(get_terraform_cloud(), "create_workspace")
+    observe(get_github_storage(), "write")
+    observe(MagicCastle, "create_plan")
+
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+
+    assert observed_steps == [
+        "github_repository", "terraform_workspace", "variable_file", "resource_plan"
+    ]
+
+
+def test_progress_api_reports_creation_step(app):
+    from types import SimpleNamespace
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.progress_api import ProgressAPI
+
+    orm = db.session.scalar(
+        db.select(MagicCastleORM).filter_by(hostname="buildplanning.magic-castle.cloud")
+    )
+    orm.creation_step = "terraform_workspace"
+    db.session.commit()
+
+    result = ProgressAPI().get(SimpleNamespace(projects=[orm.project]), orm.hostname)
+
+    assert result["creation_step"] == "terraform_workspace"
+
+
 def test_magic_castle_version_cannot_be_modified(app):
     from mchub.database import db
     from mchub.exceptions.invalid_usage_exception import InvalidUsageException
