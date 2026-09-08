@@ -36,6 +36,10 @@
                 >
               </v-row>
               <v-row>
+                <v-col>Expiration date</v-col>
+                <v-col>{{ item.expiration_date || "Not set" }}</v-col>
+              </v-row>
+              <v-row>
                 <v-col>Sudoer username</v-col>
                 <v-col>
                   <copy-button :color="expandedContentColor" text="centos" />
