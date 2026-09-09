@@ -101,9 +101,6 @@
                   Check progress
                 </v-btn>
                 <div v-else>
-                  <v-btn v-if="item.status === 'not_deployed'" color="primary" text :to="`/clusters/${item.hostname}`"
-                    >Rebuild</v-btn
-                  >
                   <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
                     <v-icon class="mr-2">mdi-pencil</v-icon>
                     Edit
