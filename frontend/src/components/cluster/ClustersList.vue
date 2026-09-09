@@ -109,7 +109,7 @@
                     <v-icon class="mr-2">mdi-delete</v-icon>
                     {{
                       canDestroyCluster(item)
-                        ? "Destroy cluster"
+                        ? "Delete"
                         : item.status === "destroy_error"
                         ? "Retry teardown"
                         : "Tear down"

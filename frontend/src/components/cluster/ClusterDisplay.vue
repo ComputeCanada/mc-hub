@@ -83,7 +83,7 @@
       />
     </confirm-dialog>
     <confirm-dialog
-      title="Destroy cluster"
+      title="Delete"
       v-model="permanentDestructionDialog"
       alert
       encourage-cancel
