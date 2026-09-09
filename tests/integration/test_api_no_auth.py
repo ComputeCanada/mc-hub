@@ -372,7 +372,8 @@ def test_declining_teardown_restores_deployment_only_after_discard(client, mocke
     assert cluster.tf_state is None
     tf = get_terraform_cloud()
     mocker.patch.object(tf, "get_run_status", return_value=(TFCloudStatusCode.PLANNED, True))
-    state = json.loads(Path("tests/data/mock-clusters/valid1.magic-castle.cloud/terraform.tfstate").read_text())
+    state_path = Path(__file__).resolve().parents[1] / "data/mock-clusters/valid1.magic-castle.cloud/terraform.tfstate"
+    state = json.loads(state_path.read_text())
     mocker.patch.object(tf, "get_tf_state", return_value=state)
     discard = mocker.patch.object(tf, "discard_run", create=True,
         side_effect=TerraformCloudException("discard rejected") if discard_fails else None)
