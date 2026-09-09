@@ -547,7 +547,7 @@ class MagicCastle:
         existing_version = self.config.get("mc_version")
         if data.get("mc_version", existing_version) != existing_version:
             raise InvalidUsageException(
-                "The Magic Castle version cannot be changed after plan creation"
+                "The Magic Castle version cannot be changed while the cluster is deployed"
             )
 
     def plan_creation(self, data, created_by_user_id=None):
@@ -637,8 +637,12 @@ class MagicCastle:
             or data.get("cloud", {}).get("id", self.orm.project.id) != self.orm.project.id
         ):
             raise InvalidUsageException("Keep the existing hostname and cloud project when rebuilding a cluster")
-        self.validate_version_unchanged(data)
-        data["mc_version"] = self.config["mc_version"]
+        data.setdefault("mc_version", self.config["mc_version"])
+        if self.orm.undeployed:
+            if data["mc_version"] != self.config["mc_version"]:
+                self.validate_creation_version(data)
+        else:
+            self.validate_version_unchanged(data)
 
         config_changed = self.set_configuration(data)
         if self.orm.undeployed:
