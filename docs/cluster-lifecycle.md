@@ -1,5 +1,7 @@
 # Cluster lifecycle
 
+Choosing **No** in teardown confirmation discards the destroy run in Terraform Cloud and restores the deployed cluster state. The rejected plan can no longer be applied from MC-Hub. The cluster returns to **Healthy**, or **Degraded** when service checks report an outage. If discarding fails, the plan is retained and the UI offers a retry.
+
 Clusters whose initial plan has never been applied use the same undeployed lifecycle as torn-down clusters. Both offer **Save configuration**, **Review build plan** when a plan is ready (otherwise **Rebuild**), and **Destroy cluster**. Saving invalidates the pending plan without starting a run; rebuild generates a fresh plan from the saved configuration. Applying a build leaves the undeployed lifecycle. Expiration skips undeployed clusters, including those with a pending plan. Existing initial plans are recognized on status refresh after verifying that their workspace has no Terraform state.
 
 Deployed clusters offer **Tear down**. Review and apply the Terraform destroy plan to remove the deployed resources and their data. The cluster remains in the list as **Not deployed**, with its saved configuration, ownership, active GitHub repository, and Terraform workspace. Expiration performs this same teardown automatically. Busy clusters are retried on a later expiration sweep; undeployed clusters are skipped.
@@ -12,6 +14,7 @@ Destroy removes only an empty cluster definition. The backend checks all pages o
 
 - `POST /api/magic-castles/<hostname>/teardown`: create a destroy plan (202), or transition directly to `not_deployed` when there is no Terraform state/workspace. Apply planned teardown using the existing `/apply` endpoint.
 - `POST /api/magic-castles/<hostname>/rebuild`: create a fresh build plan for a retained cluster (202).
+- `POST /api/magic-castles/<hostname>/discard-teardown`: discard the current destroy plan and restore the deployed state (204).
 - `PUT /api/magic-castles/<hostname>`: save configuration without a run when `undeployed` is true.
 - `DELETE /api/magic-castles/<hostname>`: remove a verified empty cluster (204). This no longer starts resource teardown.
 - Cluster responses include `undeployed`; `not_deployed` is a new durable status. Build planning can temporarily change the status while `undeployed` remains true until apply starts.

@@ -118,18 +118,21 @@ class TerraformCloud:
         # Do not discard a deployment's modification plan when resources remain.
         self.verify_workspace_resources_empty(workspace_id)
         for run_id in pending:
-            response = self._request("POST", f"{self.runs_url}/{run_id}/actions/discard")
-            if response.status_code != 202:
-                raise TerraformCloudException("Could not discard pending Terraform plan; the cluster was retained")
-            for attempt in range(20):
-                response = self._request("GET", f"{self.runs_url}/{run_id}")
-                if response.status_code != 200:
-                    raise TerraformCloudException("Could not confirm Terraform plan was discarded")
-                if response.json()["data"]["attributes"]["status"] == "discarded":
-                    break
-                if attempt == 19:
-                    raise TerraformCloudException("Terraform plan discard is still pending; retry cluster destruction")
-                time.sleep(0.5)
+            self.discard_run(run_id)
+
+    def discard_run(self, run_id):
+        response = self._request("POST", f"{self.runs_url}/{run_id}/actions/discard")
+        if response.status_code != 202:
+            raise TerraformCloudException("Could not discard pending Terraform plan; the cluster was retained")
+        for attempt in range(20):
+            response = self._request("GET", f"{self.runs_url}/{run_id}")
+            if response.status_code != 200:
+                raise TerraformCloudException("Could not confirm Terraform plan was discarded")
+            if response.json()["data"]["attributes"]["status"] == "discarded":
+                break
+            if attempt == 19:
+                raise TerraformCloudException("Terraform plan discard is still pending; retry discarding the plan")
+            time.sleep(0.5)
 
     def verify_workspace_empty(self, workspace_id):
         """Fail closed if remote runs or managed resource instances remain."""

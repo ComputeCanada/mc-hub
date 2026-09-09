@@ -114,6 +114,17 @@ class MagicCastleAPI(ApiView):
             orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
             if not (orm and orm.project in user.projects and user.can_access_cluster(orm)):
                 raise ClusterNotFoundException
+            if action == "discard-teardown":
+                previous_status = orm.status
+                self._claim_background_task(orm)
+                try:
+                    MagicCastle(orm).discard_teardown()
+                except Exception:
+                    db.session.rollback()
+                    orm.status = previous_status
+                    db.session.commit()
+                    raise
+                return {}, 204
             if action == "rebuild":
                 MagicCastle(orm).validate_rebuild()
             self._claim_background_task(orm)

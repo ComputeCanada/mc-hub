@@ -262,3 +262,45 @@ describe("retained cluster lifecycle", () => {
     expect(result.status).toBe("not_deployed");
   });
 });
+
+describe("declining teardown", () => {
+  it("waits for remote discard before returning to the list", async () => {
+    let finishDiscard;
+    MagicCastleRepository.discardTeardown = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          finishDiscard = resolve;
+        })
+    );
+    const context = {
+      hostname: "deployed.example",
+      stopStatusPolling: jest.fn(),
+      goToClustersList: jest.fn(),
+      resourcesChanges: [{ address: "node" }],
+      showError: jest.fn(),
+    };
+    const cancellation = ClusterDisplay.methods.discardTeardown.call(context);
+    expect(context.goToClustersList).not.toHaveBeenCalled();
+    finishDiscard();
+    await cancellation;
+    expect(MagicCastleRepository.discardTeardown).toHaveBeenCalledWith(context.hostname);
+    expect(context.resourcesChanges).toEqual([]);
+    expect(context.goToClustersList).toHaveBeenCalledTimes(1);
+    expect(context.loading).toBe(false);
+  });
+
+  it("keeps the plan available for retry when discard fails", async () => {
+    MagicCastleRepository.discardTeardown = jest.fn().mockRejectedValue(new Error("Discard failed"));
+    const context = {
+      stopStatusPolling: jest.fn(),
+      goToClustersList: jest.fn(),
+      resourcesChanges: [{ address: "node" }],
+      showError: jest.fn(),
+    };
+    await ClusterDisplay.methods.discardTeardown.call(context);
+    expect(context.goToClustersList).not.toHaveBeenCalled();
+    expect(context.resourcesChanges).toHaveLength(1);
+    expect(context.clusterDestructionDialog).toBe(true);
+    expect(context.showError).toHaveBeenCalledWith("Discard failed");
+  });
+});

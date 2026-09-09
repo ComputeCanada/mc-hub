@@ -21,6 +21,9 @@ export default {
   teardown(hostname) {
     return Repository.post(`${resource}/${hostname}/teardown`);
   },
+  discardTeardown(hostname) {
+    return Repository.post(`${resource}/${hostname}/discard-teardown`);
+  },
   rebuild(hostname) {
     return Repository.post(`${resource}/${hostname}/rebuild`);
   },

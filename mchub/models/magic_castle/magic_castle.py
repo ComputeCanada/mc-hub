@@ -694,6 +694,31 @@ class MagicCastle:
             self.create_plan(run_id=run_id)
             db.session.commit()
 
+    def discard_teardown(self):
+        if self.is_busy:
+            raise BusyClusterException
+        run_id = self.tfcloud_run.run_id
+        if not run_id or not self.tfcloud_workspace:
+            raise InvalidUsageException("No teardown plan to discard")
+        tf = get_terraform_cloud()
+        remote_status, is_destroy = tf.get_run_status(run_id)
+        if not is_destroy:
+            raise InvalidUsageException("Only a teardown plan can be discarded here")
+        # Recover deployment details before dropping the destroy run, whose
+        # creation replaced the locally cached deployment state.
+        state = tf.get_tf_state(self.tfcloud_workspace)
+        if state is None:
+            raise InvalidUsageException("Could not restore the deployed cluster state")
+        deployment_state = TerraformState(state)
+        if remote_status != TFCloudStatusCode.DISCARDED:
+            tf.discard_run(run_id)
+        self.tfcloud_run = TerraformCloudRunORM()
+        self.tf_state = deployment_state
+        self.orm.undeployed = False
+        self.orm.creation_step = None
+        self.status = ClusterStatusCode.PROVISIONING_SUCCESS
+        db.session.commit()
+
     def create_plan(self, github_sha=None, run_id=None):
         logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
 

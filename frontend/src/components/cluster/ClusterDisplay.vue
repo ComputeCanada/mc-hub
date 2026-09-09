@@ -98,9 +98,10 @@
       encourage-cancel
       :max-width="650"
       title="Teardown confirmation"
+      persistent
       v-model="clusterDestructionDialog"
       @confirm="applyCluster"
-      @cancel="goToClustersList"
+      @cancel="discardTeardown"
     >
       Delete this cluster’s deployed resources and their data? Keep its configuration, GitHub repository, and Terraform
       workspace so you can rebuild it later. Rebuilding does not restore deleted data.
@@ -385,6 +386,20 @@ export default {
     async planDestruction() {
       let planCreator = async () => MagicCastleRepository.teardown(this.hostname);
       await this.showPlanConfirmationDialog({ planCreator, destroy: true });
+    },
+    async discardTeardown() {
+      this.stopStatusPolling();
+      this.loading = true;
+      try {
+        await MagicCastleRepository.discardTeardown(this.hostname);
+        this.resourcesChanges = [];
+        await this.goToClustersList();
+      } catch (e) {
+        this.showError(e.response?.data?.message || e.message);
+        this.clusterDestructionDialog = true;
+      } finally {
+        this.loading = false;
+      }
     },
     async forceDestruction() {
       try {
