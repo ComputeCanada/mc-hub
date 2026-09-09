@@ -29,6 +29,7 @@ class ProgressAPI(ApiView):
                 "health": health,
                 "services": services,
                 "stateful": stateful,
+                "undeployed": magic_castle.orm.undeployed,
                 "creation_step": orm.creation_step,
             }
         else:
@@ -37,6 +38,7 @@ class ProgressAPI(ApiView):
                 "health": health,
                 "services": services,
                 "stateful": stateful,
+                "undeployed": magic_castle.orm.undeployed,
                 "creation_step": orm.creation_step,
                 "progress": progress,
             }

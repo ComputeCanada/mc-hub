@@ -5,6 +5,7 @@ from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
 
 from ..configuration import get_config
 import requests
+import time
 
 from ..exceptions.server_exception import (
     TerraformCloudException,
@@ -35,6 +36,7 @@ class TerraformCloudVariable:
 
 class TerraformCloud:
     BASE_URL = "https://app.terraform.io/api/v2"
+    TERMINAL_RUN_STATES = {"applied", "planned_and_finished", "discarded", "errored", "canceled", "force_canceled", "policy_soft_failed"}
 
     def __init__(self) -> None:
         config = get_config()
@@ -90,20 +92,56 @@ class TerraformCloud:
         if response.status_code != 200:
             raise TerraformCloudException("Could not unlock workspace after failed destruction")
 
-    def verify_workspace_empty(self, workspace_id):
-        """Fail closed if remote runs or managed resource instances remain."""
-        from ..exceptions.invalid_usage_exception import InvalidUsageException
-
+    def _workspace_runs(self, workspace_id):
         url = f"{self.BASE_URL}/workspaces/{workspace_id}/runs"
-        terminal = {"applied", "planned_and_finished", "discarded", "errored", "canceled", "force_canceled"}
         while url:
             response = self._request("GET", url)
             if response.status_code != 200:
                 raise TerraformCloudException("Could not inspect workspace runs")
             payload = response.json()
-            if any(run["attributes"]["status"] not in terminal for run in payload["data"]):
-                raise InvalidUsageException("Finish or discard pending Terraform runs before destroying the cluster")
+            yield from payload["data"]
             url = payload.get("links", {}).get("next")
+
+    def discard_workspace_plans(self, workspace_id):
+        """Discard only paused runs, including plans no longer tracked locally."""
+        from ..exceptions.invalid_usage_exception import InvalidUsageException
+
+        pending = []
+        for run in self._workspace_runs(workspace_id):
+            attributes = run["attributes"]
+            if attributes["status"] in self.TERMINAL_RUN_STATES:
+                continue
+            if attributes.get("actions", {}).get("is-discardable") is not True:
+                raise InvalidUsageException("Finish active Terraform runs before destroying the cluster")
+            pending.append(run["id"])
+
+        # Do not discard a deployment's modification plan when resources remain.
+        self.verify_workspace_resources_empty(workspace_id)
+        for run_id in pending:
+            response = self._request("POST", f"{self.runs_url}/{run_id}/actions/discard")
+            if response.status_code != 202:
+                raise TerraformCloudException("Could not discard pending Terraform plan; the cluster was retained")
+            for attempt in range(20):
+                response = self._request("GET", f"{self.runs_url}/{run_id}")
+                if response.status_code != 200:
+                    raise TerraformCloudException("Could not confirm Terraform plan was discarded")
+                if response.json()["data"]["attributes"]["status"] == "discarded":
+                    break
+                if attempt == 19:
+                    raise TerraformCloudException("Terraform plan discard is still pending; retry cluster destruction")
+                time.sleep(0.5)
+
+    def verify_workspace_empty(self, workspace_id):
+        """Fail closed if remote runs or managed resource instances remain."""
+        from ..exceptions.invalid_usage_exception import InvalidUsageException
+
+        if any(run["attributes"]["status"] not in self.TERMINAL_RUN_STATES for run in self._workspace_runs(workspace_id)):
+            raise InvalidUsageException("Finish or discard pending Terraform runs before destroying the cluster")
+        self.verify_workspace_resources_empty(workspace_id)
+
+    def verify_workspace_resources_empty(self, workspace_id):
+        from ..exceptions.invalid_usage_exception import InvalidUsageException
+
         if self.workspace_has_state(workspace_id):
             state = self.get_tf_state(workspace_id)
             if state is None or "resources" not in state:

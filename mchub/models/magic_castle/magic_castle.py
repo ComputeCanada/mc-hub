@@ -370,6 +370,19 @@ class MagicCastle:
 
         self._update_status_from_tf_cloud()
 
+        # Older initial plans predate the unified undeployed lifecycle. Verify
+        # remotely: a modification plan can also have no locally cached state.
+        if (
+            self.orm.status == ClusterStatusCode.CREATED
+            and not self.orm.undeployed
+            and self.orm.deployment_started_at is None
+            and self.applied_config is None
+            and self.tf_state is None
+            and self.tfcloud_workspace
+            and not get_terraform_cloud().workspace_has_state(self.tfcloud_workspace)
+        ):
+            self.orm.undeployed = True
+
         if self.orm.status == ClusterStatusCode.PROVISIONING_RUNNING:
             now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             if self.services_are_online:
@@ -543,6 +556,7 @@ class MagicCastle:
         self.validate_creation_version(data)
         self.set_configuration(data)
         self.orm.created_by_user_id = created_by_user_id
+        self.orm.undeployed = True
         self.orm.status = ClusterStatusCode.PLAN_RUNNING
         self.orm.creation_step = "github_repository"
         db.session.add(self.orm)
@@ -730,6 +744,8 @@ class MagicCastle:
         db.session.commit()
 
     def validate_rebuild(self):
+        # Refresh legacy initial plans before checking lifecycle eligibility.
+        self.status
         if not self.orm.undeployed or not self.tfcloud_workspace:
             raise InvalidUsageException("Only an undeployed cluster with a workspace can be rebuilt")
         if self.expiration_date and datetime.date.fromisoformat(self.expiration_date) <= datetime.date.today():
@@ -746,6 +762,7 @@ class MagicCastle:
             raise BusyClusterException
         tf = get_terraform_cloud()
         if self.tfcloud_workspace:
+            tf.discard_workspace_plans(self.tfcloud_workspace)
             tf.lock_workspace(self.tfcloud_workspace)
             try:
                 tf.verify_workspace_empty(self.tfcloud_workspace)

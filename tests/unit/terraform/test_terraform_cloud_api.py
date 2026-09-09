@@ -484,3 +484,74 @@ def test_verify_empty_workspace_rejects_queued_runs_on_later_pages(tf_cloud_clie
     ]
     with pytest.raises(InvalidUsageException, match="pending Terraform runs"):
         tf_cloud_client.verify_workspace_empty("ws-existing")
+
+
+def pending_run(run_id, status="planned", discardable=True):
+    return {"id": run_id, "attributes": {"status": status, "actions": {"is-discardable": discardable}}}
+
+
+def test_discard_plans_checks_all_pages_and_waits(tf_cloud_client, mock_request, mocker):
+    mocker.patch.object(tf_cloud_client, "workspace_has_state", return_value=False)
+    sleep = mocker.patch("mchub.services.terraform_cloud_api.time.sleep")
+    mock_request.side_effect = [
+        mock_response(200, {"data": [pending_run("new", "pending")], "links": {"next": "older"}}),
+        mock_response(200, {"data": [pending_run("old")]}),
+        mock_response(202),
+        mock_response(200, {"data": pending_run("new", "pending")}),
+        mock_response(200, {"data": pending_run("new", "discarded")}),
+        mock_response(202),
+        mock_response(200, {"data": pending_run("old", "discarded")}),
+    ]
+    tf_cloud_client.discard_workspace_plans("ws-existing")
+    assert [call.args for call in mock_request.call_args_list if call.args[0] == "POST"] == [
+        ("POST", f"{tf_cloud_client.runs_url}/new/actions/discard"),
+        ("POST", f"{tf_cloud_client.runs_url}/old/actions/discard"),
+    ]
+    sleep.assert_called_once_with(0.5)
+
+
+@pytest.mark.parametrize("status", ["planning", "applying", "apply_queued", "confirmed"])
+def test_discard_rejects_active_runs_before_mutating_any_plan(tf_cloud_client, mock_request, status):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    mock_request.side_effect = [
+        mock_response(200, {"data": [pending_run("plan")], "links": {"next": "older"}}),
+        mock_response(200, {"data": [pending_run("active", status, False)]}),
+    ]
+    with pytest.raises(InvalidUsageException, match="active Terraform runs"):
+        tf_cloud_client.discard_workspace_plans("ws-existing")
+    assert all(call.args[0] == "GET" for call in mock_request.call_args_list)
+
+
+@pytest.mark.parametrize("response_code", [403, 409, 500])
+def test_discard_failure_stops_deletion(tf_cloud_client, mock_request, mocker, response_code):
+    mocker.patch.object(tf_cloud_client, "workspace_has_state", return_value=False)
+    mock_request.side_effect = [
+        mock_response(200, {"data": [pending_run("plan")]}),
+        mock_response(response_code),
+    ]
+    with pytest.raises(TerraformCloudException, match="Could not discard"):
+        tf_cloud_client.discard_workspace_plans("ws-existing")
+
+
+def test_discard_timeout_is_bounded(tf_cloud_client, mock_request, mocker):
+    mocker.patch.object(tf_cloud_client, "workspace_has_state", return_value=False)
+    sleep = mocker.patch("mchub.services.terraform_cloud_api.time.sleep")
+    mock_request.side_effect = [
+        mock_response(200, {"data": [pending_run("plan")]}),
+        mock_response(202),
+    ] + [mock_response(200, {"data": pending_run("plan")})] * 20
+    with pytest.raises(TerraformCloudException, match="still pending"):
+        tf_cloud_client.discard_workspace_plans("ws-existing")
+    assert sleep.call_count == 19
+
+
+def test_discard_preserves_plans_when_resources_remain(tf_cloud_client, mock_request, mocker):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    mocker.patch.object(tf_cloud_client, "workspace_has_state", return_value=True)
+    mocker.patch.object(tf_cloud_client, "get_tf_state", return_value={
+        "resources": [{"mode": "managed", "instances": [{}]}]
+    })
+    mock_request.return_value = mock_response(200, {"data": [pending_run("plan")]})
+    with pytest.raises(InvalidUsageException, match="Tear down all resources"):
+        tf_cloud_client.discard_workspace_plans("ws-existing")
+    mock_request.assert_called_once_with("GET", f"{tf_cloud_client.BASE_URL}/workspaces/ws-existing/runs")

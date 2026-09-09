@@ -37,6 +37,40 @@ def test_create_magic_castle_plan_valid(app, mocker):
         "tfcloud_id",
     )
     assert write_variables.call_args.args[0]["mc_version"] == "14.1.2"
+    assert cluster.tf_state is None
+    assert cluster.state["undeployed"] is True
+
+
+@pytest.mark.parametrize("has_remote_state", [False, True])
+def test_legacy_initial_plan_uses_verified_deployment_state(app, mocker, has_remote_state):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    cluster.orm.undeployed = False
+    original_run = cluster.tfcloud_run.run_id
+    inspect_state = mocker.patch.object(
+        get_terraform_cloud(), "workspace_has_state", return_value=has_remote_state
+    )
+
+    state = cluster.state
+
+    assert state["undeployed"] is not has_remote_state
+    assert cluster.tfcloud_run.run_id == original_run
+    assert cluster.plan is not None
+    inspect_state.assert_called_once_with(cluster.tfcloud_workspace)
+
+
+def test_initial_apply_leaves_undeployed_lifecycle(app):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    cluster.apply()
+
+    assert cluster.orm.undeployed is False
+    assert cluster.orm.deployment_started_at is not None
 
 
 def test_create_magic_castle_rejects_unvetted_version(app):
@@ -468,7 +502,8 @@ def test_allocated_resources_not_found(app):
     }
 
 
-def test_undeployed_configuration_saves_without_run_and_rebuild_reuses_integrations(app, mocker):
+@pytest.mark.parametrize("initial_plan", [False, True])
+def test_undeployed_configuration_saves_without_run_and_rebuild_reuses_integrations(app, mocker, initial_plan):
     from mchub.database import db
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
@@ -478,7 +513,13 @@ def test_undeployed_configuration_saves_without_run_and_rebuild_reuses_integrati
     orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
     cluster = MagicCastle(orm)
     orm.tfcloud_workspace = "existing-workspace"
-    cluster.complete_teardown()
+    if initial_plan:
+        cluster = MagicCastle()
+        cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+        orm = cluster.orm
+        orm.tfcloud_workspace = "existing-workspace"
+    else:
+        cluster.complete_teardown()
     config = deepcopy(cluster.state)
     config["expiration_date"] = None
     config["nb_users"] += 1
@@ -489,6 +530,8 @@ def test_undeployed_configuration_saves_without_run_and_rebuild_reuses_integrati
     write.assert_not_called()
     assert cluster.status == ClusterStatusCode.NOT_DEPLOYED
     assert cluster.config["nb_users"] == config["nb_users"]
+    assert cluster.plan is None
+    assert cluster.tfcloud_run.run_id is None
 
     cluster.plan_rebuild()
     write.assert_called_once()
@@ -568,10 +611,14 @@ def test_destroy_checks_remote_resources_and_keeps_record_on_failure(app, mocker
     cluster.complete_teardown()
     orm.tfcloud_workspace = "existing-workspace"
     tf = get_terraform_cloud()
+    order = mocker.Mock()
+    discard = mocker.spy(tf, "discard_workspace_plans")
     lock = mocker.patch.object(tf, "lock_workspace", create=True)
     unlock = mocker.patch.object(tf, "unlock_workspace", create=True)
     verify = mocker.patch.object(tf, "verify_workspace_empty", create=True, side_effect=InvalidUsageException("resources remain"))
     archive = mocker.spy(get_github_storage(), "archive_repo")
+    for name, operation in [("discard", discard), ("lock", lock), ("verify", verify), ("archive", archive)]:
+        order.attach_mock(operation, name)
     with pytest.raises(InvalidUsageException):
         cluster.destroy_empty_cluster()
     assert db.session.get(MagicCastleORM, orm.id) is orm
@@ -579,7 +626,9 @@ def test_destroy_checks_remote_resources_and_keeps_record_on_failure(app, mocker
     lock.assert_called_once_with("existing-workspace")
     unlock.assert_called_once_with("existing-workspace")
     verify.side_effect = None
+    order.mock_calls = []
     cluster.destroy_empty_cluster()
+    assert [call[0] for call in order.mock_calls] == ["discard", "lock", "verify", "archive"]
     archive.assert_called_once_with("valid1.magic-castle.cloud")
     assert db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")) is None
 
@@ -606,3 +655,23 @@ def test_rebuild_apply_starts_new_provisioning_timeout(app, mocker):
     mocker.patch("mchub.models.magic_castle.magic_castle.get_tf_status_cache", return_value=(TFCloudStatusCode.APPLIED, False))
     mocker.patch.object(MagicCastle, "services_are_online", new_callable=mocker.PropertyMock, return_value=False)
     assert cluster.status == ClusterStatusCode.PROVISIONING_RUNNING
+
+
+def test_destroy_retains_initial_cluster_if_discard_fails(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    from mchub.services.github_api import get_github_storage
+    from mchub.exceptions.server_exception import TerraformCloudException
+
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    tf = get_terraform_cloud()
+    mocker.patch.object(tf, "discard_workspace_plans", side_effect=TerraformCloudException("discard failed"))
+    lock = mocker.patch.object(tf, "lock_workspace", create=True)
+    archive = mocker.spy(get_github_storage(), "archive_repo")
+    with pytest.raises(TerraformCloudException, match="discard failed"):
+        cluster.destroy_empty_cluster()
+    assert db.session.get(MagicCastleORM, cluster.orm.id) is cluster.orm
+    lock.assert_not_called()
+    archive.assert_not_called()

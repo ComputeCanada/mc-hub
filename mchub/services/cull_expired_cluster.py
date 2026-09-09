@@ -67,6 +67,8 @@ def main(host="127.0.0.1", port=5000, interval=3600):
             logging.error(e)
 
         for cluster in clusters:
+            if cluster.get("undeployed"):
+                continue
             if cluster.get("status") in (ClusterStatusCode.NOT_DEPLOYED, ClusterStatusCode.PLAN_RUNNING, ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.DESTROY_RUNNING):
                 continue
             if cluster["expiration_date"] is None:

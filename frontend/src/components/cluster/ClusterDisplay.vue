@@ -14,7 +14,7 @@
                 <v-list-item-subtitle>Hostname</v-list-item-subtitle>
                 <v-list-item-title>{{ hostname }}</v-list-item-title>
               </v-list-item-content>
-              <status-chip :status="status" :health="health" />
+              <status-chip :status="status" :health="health" :undeployed="undeployed" />
             </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
@@ -90,7 +90,8 @@
       @confirm="forceDestruction"
       @cancel="goToClustersList"
     >
-      Remove this cluster from the UI, archive its GitHub repository, and mark its Terraform workspace as deleted?
+      Discard pending plans, remove this cluster from the UI, archive its GitHub repository, and mark its Terraform
+      workspace as deleted?
     </confirm-dialog>
     <confirm-dialog
       alert
@@ -115,7 +116,7 @@
 <script>
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import TemplateRepository from "@/repositories/TemplateRepository";
-import ClusterStatusCode from "@/models/ClusterStatusCode";
+import ClusterStatusCode, { canDestroyCluster } from "@/models/ClusterStatusCode";
 import MessageDialog from "@/components/ui/MessageDialog";
 import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -175,6 +176,7 @@ export default {
       statusPromise: null,
       applyRequested: false,
       stateful: false,
+      undeployed: false,
     };
   },
   async created() {
@@ -182,8 +184,8 @@ export default {
       if (this.showPlanConfirmation) {
         await this.showPlanConfirmationDialog();
       } else if (this.destroy) {
-        const { status } = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        if (status === ClusterStatusCode.NOT_DEPLOYED) {
+        const cluster = (await MagicCastleRepository.getStatus(this.hostname)).data;
+        if (canDestroyCluster(cluster)) {
           this.permanentDestructionDialog = true;
         } else {
           await this.planDestruction();
@@ -246,7 +248,7 @@ export default {
       if (!applyWasRequested && this.applyRequested) {
         return;
       }
-      const { status, health, stateful, progress } = response.data;
+      const { status, health, stateful, progress, undeployed } = response.data;
       if (
         ![
           ClusterStatusCode.CREATED,
@@ -260,6 +262,7 @@ export default {
       this.status = status;
       this.health = health;
       this.stateful = stateful;
+      this.undeployed = undeployed === true;
       if (!this.applyRequested || progress?.length) {
         this.resourcesChanges = progress || [];
       }

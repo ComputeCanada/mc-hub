@@ -1,4 +1,4 @@
-export default Object.freeze({
+const ClusterStatusCode = Object.freeze({
   CREATED: "created",
   PLAN_RUNNING: "plan_running",
   PLAN_ERROR: "plan_error",
@@ -13,3 +13,9 @@ export default Object.freeze({
   NOT_DEPLOYED: "not_deployed",
   NOT_FOUND: "not_found",
 });
+
+export function canDestroyCluster({ status, undeployed }) {
+  return status === ClusterStatusCode.NOT_DEPLOYED || undeployed === true;
+}
+
+export default ClusterStatusCode;

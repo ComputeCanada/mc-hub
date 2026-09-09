@@ -205,6 +205,30 @@ describe("ClusterDisplay", () => {
 });
 
 describe("retained cluster lifecycle", () => {
+  it.each([
+    ["created", true, true],
+    ["created", false, false],
+    ["created", undefined, false],
+    ["not_deployed", true, true],
+    ["plan_error", true, true],
+    ["provisioning_success", false, false],
+  ])("selects destruction or teardown for %s with undeployed=%s", async (status, undeployed, destroyEmpty) => {
+    MagicCastleRepository.getStatus.mockResolvedValue({ data: { status, undeployed } });
+    const context = {
+      existingCluster: true,
+      hostname: "test.example.com",
+      destroy: true,
+      permanentDestructionDialog: false,
+      planDestruction: jest.fn(),
+      startStatusPolling: jest.fn(),
+    };
+
+    await ClusterDisplay.created.call(context);
+
+    expect(context.permanentDestructionDialog).toBe(destroyEmpty);
+    expect(context.planDestruction).toHaveBeenCalledTimes(destroyEmpty ? 0 : 1);
+  });
+
   it("requests teardown separately from permanent deletion", async () => {
     MagicCastleRepository.teardown = jest.fn().mockResolvedValue({});
     MagicCastleRepository.delete = jest.fn();
