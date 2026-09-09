@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 from flask import request
 
 from .api_view import ApiView
@@ -6,6 +8,7 @@ from ..models.user import User, UserORM
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
 from ..services.github_api import get_github_storage
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
+from ..models.cloud.aws_manager import AWSManager
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
 )
@@ -13,6 +16,27 @@ from ..exceptions.server_exception import (
     TerraformCloudException,
     GithubStorageException,
 )
+
+
+def parse_price(value, provider):
+    if value is None or value == "":
+        return None
+    try:
+        price = Decimal(str(value))
+        if (provider != Provider.AWS or not price.is_finite() or price < 0
+                or price >= Decimal("100000000") or price.as_tuple().exponent < -10):
+            raise ValueError
+        return price
+    except (InvalidOperation, ValueError):
+        raise InvalidUsageException("Maximum instance price must be a nonnegative USD/hour amount with at most 10 decimal places, for an AWS project.")
+
+
+def aws_settings(project):
+    if project.provider != Provider.AWS:
+        return {}
+    price = getattr(project, "max_instance_hourly_price", None)
+    return {"region": project.env.get("AWS_DEFAULT_REGION"),
+            "max_instance_hourly_price": str(price) if price is not None else None}
 
 
 class ProjectAPI(ApiView):
@@ -26,6 +50,7 @@ class ProjectAPI(ApiView):
                 "id": project.id,
                 "name": project.name,
                 "provider": project.provider,
+                **aws_settings(project),
                 "github_template": project.github_template,
                 "nb_clusters": len(project.magic_castles),
                 "admin": is_admin,
@@ -42,6 +67,7 @@ class ProjectAPI(ApiView):
                     "id": project.id,
                     "name": project.name,
                     "provider": project.provider,
+                    **aws_settings(project),
                     "github_template": project.github_template,
                     "nb_clusters": len(project.magic_castles),
                     "admin": user.is_project_admin(project),
@@ -64,12 +90,16 @@ class ProjectAPI(ApiView):
             github_template = data["github_template"]
         except KeyError as err:
             raise InvalidUsageException(f"Missing required field {err}")
+        max_price = parse_price(data.get("max_instance_hourly_price"), provider)
         agent_pool_name = data.get("agent_pool_name")
 
         try:
             env = ENV_VALIDATORS[provider](env)
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
+
+        if provider == Provider.AWS:
+            AWSManager(Project(provider=provider, env=env)).validate_project()
 
         if github_template:
             try:
@@ -86,7 +116,7 @@ class ProjectAPI(ApiView):
 
         terraform_vars = []
         for k, v in env.items():
-            sensitive = True if "SECRET" in k else False
+            sensitive = "SECRET" in k or "TOKEN" in k
             terraform_vars.append(
                 TerraformCloudVariable(name=k, value=v, sensitive=sensitive)
             )
@@ -104,6 +134,7 @@ class ProjectAPI(ApiView):
             env=env,
             github_template=github_template,
             tfcloud_project_id=tfcloud_project_id,
+            max_instance_hourly_price=max_price,
         )
         project.admins.append(user.orm)
         db.session.add(project)
@@ -112,6 +143,7 @@ class ProjectAPI(ApiView):
             "id": project.id,
             "name": project.name,
             "provider": project.provider,
+            **aws_settings(project),
             "github_template": project.github_template,
             "nb_clusters": len(project.magic_castles),
             "admin": True,
@@ -129,6 +161,19 @@ class ProjectAPI(ApiView):
         if not data:
             raise InvalidUsageException("No json data was provided")
 
+        max_price = parse_price(data.get("max_instance_hourly_price"), project.provider)
+
+        # Validate before changing any external project settings.
+        if "env" in data:
+            try:
+                env = ENV_VALIDATORS[project.provider]({**project.env, **data["env"]} if project.provider == Provider.AWS else data["env"])
+            except Exception:
+                raise InvalidUsageException("Missing required environment variables")
+            if project.provider == Provider.AWS:
+                if project.magic_castles and env["AWS_DEFAULT_REGION"] != project.env["AWS_DEFAULT_REGION"]:
+                    raise InvalidUsageException("A project with clusters cannot change AWS region.")
+                AWSManager(Project(provider=project.provider, env=env)).validate_project()
+
         if "github_template" in data:
             if data["github_template"]:
                 try:
@@ -144,18 +189,17 @@ class ProjectAPI(ApiView):
                 raise InvalidUsageException("Error updating agent pool")
 
         if "env" in data:
-            try:
-                env = ENV_VALIDATORS[project.provider](data["env"])
-            except Exception:
-                raise InvalidUsageException("Missing required environment variables")
             terraform_vars = [
-                TerraformCloudVariable(name=k, value=v, sensitive="SECRET" in k)
+                TerraformCloudVariable(name=k, value=v, sensitive="SECRET" in k or "TOKEN" in k)
                 for k, v in env.items()
             ]
             get_terraform_cloud().replace_project_variable_set(
                 project.tfcloud_project_id, project.name, terraform_vars
             )
             project.env = env
+
+        if "max_instance_hourly_price" in data:
+            project.max_instance_hourly_price = max_price
 
         add_members = data.get("add", [])
         del_members = data.get("del", [])
@@ -229,3 +273,19 @@ class ProjectAPI(ApiView):
         db.session.delete(project)
         db.session.commit()
         return {}, 200
+
+
+class AWSRegionsAPI(ApiView):
+    def post(self, user: User):
+        data = request.get_json() or {}
+        project = db.session.get(Project, data["project_id"]) if data.get("project_id") else None
+        if data.get("project_id"):
+            if project is None or project.provider != Provider.AWS or not user.is_project_admin(project):
+                raise InvalidUsageException("Invalid project id", status_code=403)
+        elif not getattr(user, "is_admin", False):
+            raise InvalidUsageException("Only admins can discover AWS project regions", status_code=403)
+        try:
+            env = ENV_VALIDATORS[Provider.AWS]({**(project.env if project else {}), **data.get("env", {}), "AWS_DEFAULT_REGION": "us-east-1"})
+        except Exception:
+            raise InvalidUsageException("Provide AWS access credentials to load regions.")
+        return {"regions": AWSManager(Project(provider=Provider.AWS, env=env)).regions()}

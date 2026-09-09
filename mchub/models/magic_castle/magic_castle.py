@@ -360,7 +360,7 @@ class MagicCastle:
                 tf = get_terraform_cloud()
                 tf_state = tf.get_tf_state(self.orm.tfcloud_workspace)
                 if tf_state is not None:
-                    self.tf_state = TerraformState(tf_state)
+                    self.tf_state = TerraformState(tf_state, cloud=self.project.provider)
                     logger.info(f"Update tf_state {self.tfcloud_run.run_id=}")
 
     @property
@@ -493,6 +493,9 @@ class MagicCastle:
         if self.is_busy:
             raise BusyClusterException
 
+        if self.project is not None and self.project.provider == "aws":
+            return {"resource_ids": self.aws_resource_ids}
+
         if self.tf_state is not None:
             return dict(
                 pre_allocated_instance_count=self.tf_state.instance_count,
@@ -511,6 +514,15 @@ class MagicCastle:
             )
 
     @property
+    def aws_resource_ids(self):
+        if self.orm.undeployed or not self.tfcloud_workspace:
+            return {}
+        state = get_terraform_cloud().get_tf_state(self.tfcloud_workspace)
+        if state is None:
+            raise InvalidUsageException("Unable to verify the existing AWS cluster allocation.", status_code=503)
+        return TerraformState(state, cloud="aws").resource_ids
+
+    @property
     def is_busy(self):
         return self.orm.status in [
             ClusterStatusCode.PLAN_RUNNING,
@@ -524,6 +536,8 @@ class MagicCastle:
 
     def _get_var_tf(self):
         var_tf = self.config.get_var_tf()
+        if self.project.provider == "aws":
+            var_tf["region"] = self.project.env["AWS_DEFAULT_REGION"]
         if self.cluster_token:
             mchub_url = get_config().get("mchub_url")
             tfe_token = self.cluster_token
@@ -713,7 +727,7 @@ class MagicCastle:
         state = tf.get_tf_state(self.tfcloud_workspace)
         if state is None:
             raise InvalidUsageException("Could not restore the deployed cluster state")
-        deployment_state = TerraformState(state)
+        deployment_state = TerraformState(state, cloud=self.project.provider)
         if remote_status != TFCloudStatusCode.DISCARDED:
             tf.discard_run(run_id)
         self.tfcloud_run = TerraformCloudRunORM()

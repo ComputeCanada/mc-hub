@@ -3,6 +3,9 @@ import Repository from "./Repository";
 const resource = "/projects";
 
 export default {
+  awsRegions(payload) {
+    return Repository.post(`${resource}/aws/regions`, payload);
+  },
   getAll() {
     return Repository.get(`${resource}`);
   },

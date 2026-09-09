@@ -1,7 +1,9 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
     <template v-slot:activator="{ on, attrs }">
-      <v-btn color="secondary" text v-bind="attrs" v-on="on" :disabled="!admin"> <v-icon>mdi-pencil</v-icon> edit </v-btn>
+      <v-btn color="secondary" text v-bind="attrs" v-on="on" :disabled="!admin">
+        <v-icon>mdi-pencil</v-icon> edit
+      </v-btn>
     </template>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <v-card>
@@ -15,31 +17,66 @@
               <v-text-field v-model="githubTemplate" label="Github Template" clearable />
             </v-list-item>
             <v-list-item v-if="admin">
-              <v-text-field v-model="agentPoolName" label="Agent Pool Name" hint="Leave empty to keep existing" persistent-hint clearable />
+              <v-text-field
+                v-model="agentPoolName"
+                label="Agent Pool Name"
+                hint="Leave empty to keep existing"
+                persistent-hint
+                clearable
+              />
             </v-list-item>
             <template v-if="admin && project.provider === 'openstack'">
               <v-subheader>Cloud Credentials</v-subheader>
               <v-list-item>
-                <v-text-field v-model="env.OS_AUTH_URL" label="OS_AUTH_URL" hint="Leave empty to keep existing" persistent-hint />
+                <v-text-field
+                  v-model="env.OS_AUTH_URL"
+                  label="OS_AUTH_URL"
+                  hint="Leave empty to keep existing"
+                  persistent-hint
+                />
               </v-list-item>
               <v-list-item>
-                <v-text-field v-model="env.OS_APPLICATION_CREDENTIAL_ID" label="OS_APPLICATION_CREDENTIAL_ID" hint="Leave empty to keep existing" persistent-hint />
+                <v-text-field
+                  v-model="env.OS_APPLICATION_CREDENTIAL_ID"
+                  label="OS_APPLICATION_CREDENTIAL_ID"
+                  hint="Leave empty to keep existing"
+                  persistent-hint
+                />
               </v-list-item>
               <v-list-item>
-                <v-text-field v-model="env.OS_APPLICATION_CREDENTIAL_SECRET" label="OS_APPLICATION_CREDENTIAL_SECRET" hint="Leave empty to keep existing" persistent-hint type="password" />
+                <v-text-field
+                  v-model="env.OS_APPLICATION_CREDENTIAL_SECRET"
+                  label="OS_APPLICATION_CREDENTIAL_SECRET"
+                  hint="Leave empty to keep existing"
+                  persistent-hint
+                  type="password"
+                />
               </v-list-item>
             </template>
+            <aws-credentials
+              v-if="admin && project.provider === 'aws'"
+              v-model="awsEnv"
+              :project-id="id"
+              :locked="project.nb_clusters > 0"
+            />
+            <v-text-field
+              v-if="admin && project.provider === 'aws'"
+              v-model="maxInstanceHourlyPrice"
+              label="Maximum instance price (USD/hour)"
+              type="number"
+              min="0"
+              step="any"
+              clearable
+              hint="Optional, per instance. Compute only; excludes storage and IP charges."
+              persistent-hint
+            />
             <v-subheader>Members</v-subheader>
             <v-list-item v-for="entry in entries" :key="entry.username" dense>
               <v-list-item-content>{{ entry.username }}</v-list-item-content>
               <v-list-item-action>
                 <v-tooltip bottom>
                   <template #activator="{ on, attrs }">
-                    <v-simple-checkbox
-                      v-model="entry.isAdmin"
-                      v-bind="attrs"
-                      v-on="on"
-                    />
+                    <v-simple-checkbox v-model="entry.isAdmin" v-bind="attrs" v-on="on" />
                   </template>
                   <span>Admin</span>
                 </v-tooltip>
@@ -84,10 +121,11 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
+import AwsCredentials from "@/components/ui/AWSCredentials";
 
 export default {
   name: "ProjectMembership",
-  components: { MessageDialog },
+  components: { MessageDialog, AwsCredentials },
   props: {
     id: { type: Number, required: true },
     admin: { type: Boolean, default: false },
@@ -98,6 +136,8 @@ export default {
       errorDialog: false,
       errorMessage: "",
       project: {},
+      awsEnv: {},
+      maxInstanceHourlyPrice: null,
       entries: [], // [{ username, isAdmin }]
       newMember: "",
       newMemberIsAdmin: false,
@@ -110,6 +150,8 @@ export default {
     async dialog(val) {
       if (val) {
         this.project = (await ProjectRepository.get(this.id)).data;
+        this.awsEnv = { AWS_DEFAULT_REGION: this.project.region };
+        this.maxInstanceHourlyPrice = this.project.max_instance_hourly_price ?? null;
         const adminSet = new Set(this.project.admins);
         this.entries = this.project.members.map((username) => ({
           username,
@@ -150,7 +192,17 @@ export default {
       if (this.admin && this.agentPoolName) {
         payload.agent_pool_name = this.agentPoolName;
       }
+      if (this.admin && this.project.provider === "aws") {
+        payload.max_instance_hourly_price = this.maxInstanceHourlyPrice === "" ? null : this.maxInstanceHourlyPrice;
+      }
       const envValues = Object.values(this.env);
+      if (
+        this.project.provider === "aws" &&
+        (this.awsEnv.AWS_ACCESS_KEY_ID !== undefined ||
+          (this.awsEnv.AWS_DEFAULT_REGION && this.awsEnv.AWS_DEFAULT_REGION !== this.project.region))
+      ) {
+        payload.env = this.awsEnv;
+      }
       if (envValues.some((v) => v)) {
         if (envValues.every((v) => v)) {
           payload.env = { ...this.env };

@@ -2,6 +2,8 @@
 
 MC Hub's configuration is mostly stored in a single file named `configuration.json`.
 
+For AWS project credentials, region selection, and quota feasibility, see [AWS projects](aws-projects.md).
+
 An example `configuration.json` is shown below.
 
 ```json

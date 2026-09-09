@@ -39,9 +39,36 @@ class TerraformState:
         "volume_size",
         "image",
         "freeipa_passwd",
+        "resource_ids",
     ]
 
     def __init__(self, tf_state: dict, cloud="openstack"):
+        self.resource_ids = {"instances": [], "volumes": [], "addresses": []}
+        if cloud == "aws":
+            self.instance_count = self.cores = self.ram = self.volume_count = self.volume_size = 0
+            self.image = ""
+            self.freeipa_passwd = None
+            for resource in tf_state.get("resources", []):
+                if resource.get("mode") == "data":
+                    continue
+                for instance in resource.get("instances", []):
+                    attrs = instance.get("attributes", {})
+                    kind = resource.get("type")
+                    if kind == "aws_instance":
+                        self.resource_ids["instances"].append(attrs["id"])
+                        self.image = attrs.get("ami", "")
+                        for block in attrs.get("root_block_device", []) + attrs.get("ebs_block_device", []):
+                            if block.get("volume_id"):
+                                self.resource_ids["volumes"].append(block["volume_id"])
+                    elif kind == "aws_ebs_volume":
+                        self.resource_ids["volumes"].append(attrs["id"])
+                    elif kind == "aws_eip":
+                        self.resource_ids["addresses"].append(attrs.get("allocation_id") or attrs["id"])
+                    elif resource.get("name") == "freeipa_passwd":
+                        self.freeipa_passwd = attrs.get("result")
+            self.resource_ids = {k: list(set(v)) for k, v in self.resource_ids.items()}
+            self.instance_count = len(self.resource_ids["instances"])
+            return
         parser = CLOUD_PARSER[cloud]
         self.instance_count = len(parser["instance_count"].find(tf_state))
         self.cores = sum([cores.value for cores in parser["cores"].find(tf_state)])

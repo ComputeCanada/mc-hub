@@ -31,6 +31,7 @@ class Project(db.Model):
     provider = db.Column(db.Enum(Provider), nullable=False)
     github_template = db.Column(db.String(), nullable=False)
     env = db.Column(db.PickleType())
+    max_instance_hourly_price = db.Column(db.Numeric(18, 10), nullable=True)
     tfcloud_project_id = db.Column(db.String(), nullable=False)
     admins = db.relationship(
         "UserORM",
@@ -65,6 +66,14 @@ class OpenStackEnv(marshmallow.Schema):
     )
 
 
+class AWSEnv(marshmallow.Schema):
+    AWS_ACCESS_KEY_ID = fields.String(required=True, validate=Length(min=1))
+    AWS_SECRET_ACCESS_KEY = fields.String(required=True, validate=Length(min=1))
+    AWS_SESSION_TOKEN = fields.String(load_default="")
+    AWS_DEFAULT_REGION = fields.String(required=True, validate=Length(min=1))
+
+
 ENV_VALIDATORS = {
+    Provider.AWS: partial(AWSEnv().load, unknown=EXCLUDE),
     Provider.OPENSTACK: partial(OpenStackEnv().load, unknown=EXCLUDE),
 }

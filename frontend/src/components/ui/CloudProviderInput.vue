@@ -29,9 +29,25 @@
                 ></v-text-field>
               </v-list-item>
               <v-list-item>
-                <v-text-field v-model="newProject.agent_pool_name" label="Agent Pool Name (optional)" clearable></v-text-field>
+                <v-text-field
+                  v-model="newProject.agent_pool_name"
+                  label="Agent Pool Name (optional)"
+                  clearable
+                ></v-text-field>
               </v-list-item>
             </v-list>
+            <aws-credentials v-if="newProject.provider === 'aws'" v-model="newProject.env" />
+            <v-text-field
+              v-if="newProject.provider === 'aws'"
+              v-model="newProject.max_instance_hourly_price"
+              label="Maximum instance price (USD/hour)"
+              type="number"
+              min="0"
+              step="any"
+              clearable
+              hint="Optional, per instance. Compute only; excludes storage and IP charges."
+              persistent-hint
+            />
             <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
               <v-list-item>
                 <v-text-field v-model="newProject.env[env_var]" :label="env_var"></v-text-field>
@@ -43,7 +59,15 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn color="blue darken-1" text @click="close"> Cancel </v-btn>
-        <v-btn color="blue darken-1" text @click="add"> Add </v-btn>
+        <v-btn
+          color="blue darken-1"
+          text
+          @click="add"
+          :loading="saving"
+          :disabled="saving || (newProject.provider === 'aws' && !newProject.env.AWS_DEFAULT_REGION)"
+        >
+          Add
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -52,10 +76,11 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
+import AwsCredentials from "@/components/ui/AWSCredentials";
 
 export default {
   name: "CloudProviderInput",
-  components: { MessageDialog },
+  components: { MessageDialog, AwsCredentials },
   emits: ["newProject"],
   props: {
     defaultGithubTemplate: {
@@ -66,18 +91,20 @@ export default {
   data() {
     return {
       dialog: false,
+      saving: false,
       errorDialog: false,
       errorMessage: "",
       providers: ["openstack", "aws"],
       provider_var: {
         openstack: ["OS_AUTH_URL", "OS_APPLICATION_CREDENTIAL_ID", "OS_APPLICATION_CREDENTIAL_SECRET"],
-        aws: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+        aws: [],
       },
       defaultProject: {
         name: "",
         provider: "openstack",
         github_template: "",
         agent_pool_name: "",
+        max_instance_hourly_price: null,
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -89,6 +116,7 @@ export default {
         provider: "openstack",
         github_template: "",
         agent_pool_name: "",
+        max_instance_hourly_price: null,
         env: {
           OS_AUTH_URL: "",
           OS_APPLICATION_CREDENTIAL_ID: "",
@@ -98,12 +126,17 @@ export default {
     };
   },
   watch: {
+    "newProject.provider"() {
+      this.newProject.env = {};
+      this.newProject.max_instance_hourly_price = null;
+    },
     dialog(val) {
       val || this.close();
     },
   },
   methods: {
     async add() {
+      this.saving = true;
       const payload = { ...this.newProject };
       if (!payload.agent_pool_name) {
         delete payload.agent_pool_name;
@@ -117,15 +150,17 @@ export default {
         this.errorMessage = e.response?.data?.message ?? "An error occurred while creating the project.";
         this.errorDialog = true;
         return;
+      } finally {
+        this.saving = false;
       }
       this.$emit("newProject");
-      this.newProject = Object.assign({}, this.defaultProject);
+      this.newProject = JSON.parse(JSON.stringify(this.defaultProject));
       this.close();
     },
     close() {
       this.dialog = false;
       this.$nextTick(() => {
-        this.newProject = Object.assign({}, this.defaultProject);
+        this.newProject = JSON.parse(JSON.stringify(this.defaultProject));
       });
     },
   },

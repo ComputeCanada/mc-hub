@@ -1,5 +1,13 @@
 <template>
-  <v-select :items="items" v-model="selected" label="type" :rules="rules">
+  <v-select
+    :items="items"
+    v-model="selected"
+    :label="types.some((type) => type.quota_pool) ? 'Instance type' : 'type'"
+    :rules="rules"
+    :loading="loading"
+    :disabled="loading"
+    :no-data-text="loading ? 'Loading instance types…' : 'No instance types available for this definition'"
+  >
     <template #item="{ item }">
       <v-list-item-content v-if="typeof item !== 'undefined'">
         <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -33,6 +41,7 @@ const TYPE_CATEGORIES = [
 export default {
   name: "TypeSelect",
   props: {
+    loading: { type: Boolean, default: false },
     value: {
       type: String,
     },
@@ -60,6 +69,20 @@ export default {
   },
   computed: {
     items() {
+      if (this.types.some((type) => type.quota_pool)) {
+        return [...this.types]
+          .sort(
+            (a, b) =>
+              (a.hourly_price_usd == null ? Infinity : Number(a.hourly_price_usd)) -
+              (b.hourly_price_usd == null ? Infinity : Number(b.hourly_price_usd))
+          )
+          .map((type) => ({
+            text: type.name,
+            value: type.name,
+            disabled: !!type.unavailable,
+            description: this.getTypeDescription(type),
+          }));
+      }
       let items = [];
       TYPE_CATEGORIES.forEach(({ prefix, name }) => {
         const types = this.types.filter((type) => type.name.startsWith(prefix));
@@ -101,6 +124,28 @@ export default {
   },
   methods: {
     getTypeDescription(typeObj) {
+      if (typeObj.quota_pool) {
+        const details = [`${typeObj.vcpus} vCPU`, `${typeObj.ram / 1024} GiB RAM`];
+        for (const gpu of typeObj.gpus || []) {
+          const partition = gpu.partition_size;
+          const fractional = partition > 0 && partition < 1;
+          const denominator = fractional ? Math.round(1 / partition) : 1;
+          const share = fractional
+            ? (Math.abs(1 / denominator - partition) < 1e-9 ? `1/${denominator}` : String(partition)) + " of "
+            : "";
+          const count = gpu.count > 0 ? `${gpu.count} × ` : "";
+          const memory =
+            gpu.memory_mib == null ? "" : ` (${gpu.memory_mib / 1024} GiB VRAM${gpu.count > 0 ? " each" : ""})`;
+          details.push(`${count}${share}${gpu.manufacturer} ${gpu.name}${fractional ? " GPU" : ""}${memory}`);
+        }
+        details.push(
+          typeObj.hourly_price_usd == null
+            ? "Price unavailable"
+            : `$${Number(typeObj.hourly_price_usd).toLocaleString("en-US", { maximumFractionDigits: 10 })}/hour`
+        );
+        if (typeObj.unavailable) details.push("Unavailable for this definition — select a replacement");
+        return details.join(" · ");
+      }
       let descriptionElements = [];
 
       const gpuMatch = typeObj.name.match(GPU_REGEX);

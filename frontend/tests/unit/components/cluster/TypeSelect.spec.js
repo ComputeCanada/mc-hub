@@ -13,57 +13,116 @@ localVue.use(Vuetify);
 localVue.use(UnloadConfirmation, { router });
 
 describe("TypeSelect", () => {
-    it("includes high availability types", () => {
-        const wrapper = shallowMount(TypeSelect, {
-            localVue,
-            router,
-            vuetify,
-            propsData: {
-                value: "",
-                types: [
-                    {name: "ha1-2gb", vcpus: 1, ram: 2048},
-                    {name: "ha1-1.25gb", vcpus: 1, ram: 1280},
-                    {name: "ha2-2.5gb", vcpus: 2, ram: 2560},
-                    {name: "x4-8gb", vcpus: 4, ram: 8192}
-                ]
-            }
-        })
-
-        expect(wrapper.vm.items).toEqual([
-            {header: "High availability types"},
-            {text: "ha1-2gb", description: "1 vCPU, 2 GB RAM"},
-            {text: "ha1-1.25gb", description: "1 vCPU, 1.25 GB RAM"},
-            {text: "ha2-2.5gb", description: "2 vCPU, 2.5 GB RAM"},
-            {divider: true},
-            {header: "Other types"},
-            {text: "x4-8gb", description: "4 vCPU, 8 GB RAM"}
-        ]);
+  it("includes high availability types", () => {
+    const wrapper = shallowMount(TypeSelect, {
+      localVue,
+      router,
+      vuetify,
+      propsData: {
+        value: "",
+        types: [
+          { name: "ha1-2gb", vcpus: 1, ram: 2048 },
+          { name: "ha1-1.25gb", vcpus: 1, ram: 1280 },
+          { name: "ha2-2.5gb", vcpus: 2, ram: 2560 },
+          { name: "x4-8gb", vcpus: 4, ram: 8192 },
+        ],
+      },
     });
 
-    it("getTypeDescription", () => {
-        const wrapper = shallowMount(TypeSelect, {
-            localVue,
-            router,
-            vuetify,
-            propsData: {
-                value: "",
-                types: []
-            }
-        })
-        // Regular types
-        expect(wrapper.vm.getTypeDescription({name: "p1-0.5gb", vcpus: 1, ram: 512})).toBe("1 vCPU, 0.5 GB RAM");
-        expect(wrapper.vm.getTypeDescription({name: "c1-0.5gb", vcpus: 1, ram: 512})).toBe("1 vCPU, 0.5 GB RAM");
-        expect(wrapper.vm.getTypeDescription({name: "c16-1gb", vcpus: 16, ram: 1024})).toBe("16 vCPU, 1 GB RAM");
-        expect(wrapper.vm.getTypeDescription({name: "c128-100gb", vcpus: 128, ram: 102400})).toBe("128 vCPU, 100 GB RAM");
-        expect(wrapper.vm.getTypeDescription({name: "c1-1.2gb", vcpus: 1, ram: 1234})).toBe("1 vCPU, 1.21 GB RAM");
-        expect(wrapper.vm.getTypeDescription({name: "c128-100.25gb-1", vcpus: 128, ram: 102656})).toBe("128 vCPU, 100.25 GB RAM, 1 GB ephemeral storage");
-        expect(wrapper.vm.getTypeDescription({name: "c128-100.25gb-10.5", vcpus: 128, ram: 102656})).toBe("128 vCPU, 100.25 GB RAM, 10.5 GB ephemeral storage");
-        expect(wrapper.vm.getTypeDescription({name: "c62-256gb-10-numa", vcpus: 62, ram: 262144})).toBe("62 vCPU, 256 GB RAM, 10 GB ephemeral storage");
+    expect(wrapper.vm.items).toEqual([
+      { header: "High availability types" },
+      { text: "ha1-2gb", description: "1 vCPU, 2 GB RAM" },
+      { text: "ha1-1.25gb", description: "1 vCPU, 1.25 GB RAM" },
+      { text: "ha2-2.5gb", description: "2 vCPU, 2.5 GB RAM" },
+      { divider: true },
+      { header: "Other types" },
+      { text: "x4-8gb", description: "4 vCPU, 8 GB RAM" },
+    ]);
+  });
 
-        // GPU types
-        expect(wrapper.vm.getTypeDescription({name: "g1-18gb-c4-22gb", vcpus: 4, ram: 22528})).toBe("1 vGPU (18 GB), 4 vCPU, 22 GB RAM");
-        expect(wrapper.vm.getTypeDescription({name: "g1-c14-56gb-500", vcpus: 14, ram: 57344})).toBe("1 vGPU, 14 vCPU, 56 GB RAM, 500 GB ephemeral storage");
-        expect(wrapper.vm.getTypeDescription({name: "g2-c24-112gb-500", vcpus: 24, ram: 114688})).toBe("2 vGPU, 24 vCPU, 112 GB RAM, 500 GB ephemeral storage");
-        expect(wrapper.vm.getTypeDescription({name: "g16-p24-112gb-2010.9", vcpus: 24, ram: 114688})).toBe("16 vGPU, 24 vCPU, 112 GB RAM, 2010.9 GB ephemeral storage");
+  it("getTypeDescription", () => {
+    const wrapper = shallowMount(TypeSelect, {
+      localVue,
+      router,
+      vuetify,
+      propsData: {
+        value: "",
+        types: [],
+      },
     });
+    // Regular types
+    expect(wrapper.vm.getTypeDescription({ name: "p1-0.5gb", vcpus: 1, ram: 512 })).toBe("1 vCPU, 0.5 GB RAM");
+    expect(wrapper.vm.getTypeDescription({ name: "c1-0.5gb", vcpus: 1, ram: 512 })).toBe("1 vCPU, 0.5 GB RAM");
+    expect(wrapper.vm.getTypeDescription({ name: "c16-1gb", vcpus: 16, ram: 1024 })).toBe("16 vCPU, 1 GB RAM");
+    expect(wrapper.vm.getTypeDescription({ name: "c128-100gb", vcpus: 128, ram: 102400 })).toBe("128 vCPU, 100 GB RAM");
+    expect(wrapper.vm.getTypeDescription({ name: "c1-1.2gb", vcpus: 1, ram: 1234 })).toBe("1 vCPU, 1.21 GB RAM");
+    expect(wrapper.vm.getTypeDescription({ name: "c128-100.25gb-1", vcpus: 128, ram: 102656 })).toBe(
+      "128 vCPU, 100.25 GB RAM, 1 GB ephemeral storage"
+    );
+    expect(wrapper.vm.getTypeDescription({ name: "c128-100.25gb-10.5", vcpus: 128, ram: 102656 })).toBe(
+      "128 vCPU, 100.25 GB RAM, 10.5 GB ephemeral storage"
+    );
+    expect(wrapper.vm.getTypeDescription({ name: "c62-256gb-10-numa", vcpus: 62, ram: 262144 })).toBe(
+      "62 vCPU, 256 GB RAM, 10 GB ephemeral storage"
+    );
+
+    // GPU types
+    expect(wrapper.vm.getTypeDescription({ name: "g1-18gb-c4-22gb", vcpus: 4, ram: 22528 })).toBe(
+      "1 vGPU (18 GB), 4 vCPU, 22 GB RAM"
+    );
+    expect(wrapper.vm.getTypeDescription({ name: "g1-c14-56gb-500", vcpus: 14, ram: 57344 })).toBe(
+      "1 vGPU, 14 vCPU, 56 GB RAM, 500 GB ephemeral storage"
+    );
+    expect(wrapper.vm.getTypeDescription({ name: "g2-c24-112gb-500", vcpus: 24, ram: 114688 })).toBe(
+      "2 vGPU, 24 vCPU, 112 GB RAM, 500 GB ephemeral storage"
+    );
+    expect(wrapper.vm.getTypeDescription({ name: "g16-p24-112gb-2010.9", vcpus: 24, ram: 114688 })).toBe(
+      "16 vGPU, 24 vCPU, 112 GB RAM, 2010.9 GB ephemeral storage"
+    );
+  });
+});
+
+describe("AWS instance details", () => {
+  it("shows GPU model and per-GPU memory, prices, and unavailable selections", () => {
+    const wrapper = shallowMount(TypeSelect, {
+      localVue,
+      vuetify,
+      propsData: {
+        types: [
+          {
+            name: "g5.xlarge",
+            quota_pool: "G",
+            vcpus: 4,
+            ram: 16384,
+            hourly_price_usd: "1.006",
+            gpus: [{ count: 1, manufacturer: "NVIDIA", name: "A10G", memory_mib: 24576 }],
+            unavailable: true,
+          },
+          { name: "m6i.large", quota_pool: "Standard", vcpus: 2, ram: 8192, hourly_price_usd: "0.10", gpus: [] },
+          { name: "unknown", quota_pool: "Standard", vcpus: 2, ram: 8192, hourly_price_usd: null },
+        ],
+      },
+    });
+    expect(wrapper.vm.items.map((item) => item.value)).toEqual(["m6i.large", "g5.xlarge", "unknown"]);
+    expect(wrapper.vm.items[0].description).toBe("2 vCPU · 8 GiB RAM · $0.1/hour");
+    expect(wrapper.vm.items[1].description).toContain("1 × NVIDIA A10G (24 GiB VRAM each)");
+    expect(wrapper.vm.items[1].description).toContain("$1.006/hour");
+    expect(wrapper.vm.items[1].disabled).toBe(true);
+    expect(wrapper.vm.items[2].description).toContain("Price unavailable");
+  });
+});
+
+it("shows fractional AWS GPUs without reporting zero GPUs", () => {
+  const wrapper = shallowMount(TypeSelect, { localVue, vuetify, propsData: { types: [] } });
+  const type = {
+    name: "g6f.xlarge",
+    quota_pool: "G",
+    vcpus: 4,
+    ram: 16384,
+    gpus: [{ count: 1, partition_size: 0.125, manufacturer: "NVIDIA", name: "L4", memory_mib: 2856 }],
+  };
+  expect(wrapper.vm.getTypeDescription(type)).toContain("1 × 1/8 of NVIDIA L4 GPU");
+  type.gpus[0].count = 0;
+  expect(wrapper.vm.getTypeDescription(type)).toContain("1/8 of NVIDIA L4 GPU");
+  expect(wrapper.vm.getTypeDescription(type)).not.toContain("0 ×");
 });
