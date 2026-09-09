@@ -25,6 +25,10 @@ const ClusterFormattedStatus = Object.freeze({
 export default {
   name: "StatusChip",
   props: {
+    undeployed: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       required: true,
       validator: (value) => value === null || typeof value === "string",
@@ -38,6 +42,8 @@ export default {
     formattedStatus() {
       if (this.status === null) {
         return "";
+      } else if (this.status === "created" && this.undeployed) {
+        return ClusterFormattedStatus.not_deployed;
       } else if (this.status === "provisioning_success" && ["degraded", "unavailable"].includes(this.health)) {
         return ClusterFormattedStatus.degraded;
       } else {

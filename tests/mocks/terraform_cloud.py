@@ -4,6 +4,9 @@ from mchub.services.terraform_cloud_api import TerraformCloudVariable
 
 
 class TerraformCloudMock:
+    def discard_workspace_plans(self, workspace_id):
+        pass
+
     def workspace_has_state(self, workspace_id):
         return True
 

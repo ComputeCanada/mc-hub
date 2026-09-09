@@ -20,7 +20,7 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.status`]="{ item }">
-          <status-chip :status="item.status" :health="item.health" />
+          <status-chip :status="item.status" :health="item.health" :undeployed="item.undeployed" />
         </template>
         <template #expanded-item="{ headers, item }">
           <td :colspan="headers.length" :key="item.hostname">
@@ -108,7 +108,7 @@
                   <v-btn color="secondary" text @click="destroyCluster(item.hostname)">
                     <v-icon class="mr-2">mdi-delete</v-icon>
                     {{
-                      item.status === "not_deployed"
+                      canDestroyCluster(item)
                         ? "Destroy cluster"
                         : item.status === "destroy_error"
                         ? "Retry teardown"
@@ -130,6 +130,7 @@ import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import StatusChip from "@/components/ui/StatusChip";
 import PasswordDisplay from "@/components/ui/PasswordDisplay.vue";
 import CopyButton from "@/components/ui/CopyButton";
+import { canDestroyCluster } from "@/models/ClusterStatusCode";
 
 const POLL_STATUS_INTERVAL = 5000;
 
@@ -184,6 +185,7 @@ export default {
     },
   },
   methods: {
+    canDestroyCluster,
     serviceStatusColor(service) {
       return service.status === "healthy" ? "green" : "red";
     },
