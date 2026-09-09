@@ -181,10 +181,15 @@ class GithubStorage:
         repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
         return sha
 
-    def archive_repo(self, hostname):
+    def archive_repo(self, hostname, *, missing_ok=False):
         repo_name = self._get_repo_name(hostname)
         org = self.github.get_organization(self.organization)
-        repo = org.get_repo(repo_name)
+        try:
+            repo = org.get_repo(repo_name)
+        except GithubException as error:
+            if missing_ok and error.status == 404:
+                return
+            raise
         repo.edit(archived=True)
 
 

@@ -823,7 +823,12 @@ class MagicCastle:
             tf = get_terraform_cloud()
             tf.add_workspace_tag(self.tfcloud_workspace, "deleted")
         if archive_repo:
-            get_github_storage().archive_repo(self.hostname)
+            storage = get_github_storage()
+            if self.orm.undeployed and not self.tfcloud_workspace:
+                # Creation may have failed before the repository existed.
+                storage.archive_repo(self.hostname, missing_ok=True)
+            else:
+                storage.archive_repo(self.hostname)
         db.session.delete(self.orm)
         db.session.commit()
 

@@ -691,3 +691,33 @@ def test_destroy_retains_initial_cluster_if_discard_fails(app, mocker):
     assert db.session.get(MagicCastleORM, cluster.orm.id) is cluster.orm
     lock.assert_not_called()
     archive.assert_not_called()
+
+
+def test_cluster_can_be_deleted_after_missing_github_template(app, mocker):
+    from github import GithubException
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.services.github_api import GithubStorage, get_github_storage
+
+    storage = get_github_storage()
+    mocker.patch.object(storage, "create_repo", side_effect=GithubException(404, "Template not found"))
+    cluster = MagicCastle()
+    with pytest.raises(GithubException):
+        cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    assert cluster.orm.undeployed
+    assert not cluster.tfcloud_workspace
+    assert cluster.orm.creation_step == "github_repository"
+    # The background worker records the failed creation status.
+    cluster.status = ClusterStatusCode.PLAN_ERROR
+    cluster_id = cluster.orm.id
+    real_storage = GithubStorage.__new__(GithubStorage)
+    real_storage.organization = "test-org"
+    real_storage.github = mocker.Mock()
+    real_storage.github.get_organization.return_value.get_repo.side_effect = GithubException(404, "Not found")
+    mocker.patch("mchub.models.magic_castle.magic_castle.get_github_storage", return_value=real_storage)
+    from types import SimpleNamespace
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+    user = SimpleNamespace(projects=[cluster.project], can_access_cluster=lambda orm: True)
+    assert MagicCastleAPI().delete(user, cluster.hostname) == ({}, 204)
+    assert db.session.get(MagicCastleORM, cluster_id) is None
