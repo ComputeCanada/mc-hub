@@ -352,3 +352,61 @@ def test_delete_requires_verified_empty_workspace_and_restores_status_on_rejecti
     response = client.delete(f"/api/magic-castles/{EXISTING_HOSTNAME}")
     assert response.status_code == 204
     assert db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME)) is None
+
+
+@pytest.mark.parametrize("discard_fails", [False, True])
+def test_declining_teardown_restores_deployment_only_after_discard(client, mocker, discard_fails):
+    import json
+    from pathlib import Path
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    from mchub.exceptions.server_exception import TerraformCloudException
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    cluster = MagicCastle(orm)
+    orm.tfcloud_workspace = "existing-workspace"
+    cluster.create_plan(run_id="destroy-run")
+    assert cluster.tf_state is None
+    tf = get_terraform_cloud()
+    mocker.patch.object(tf, "get_run_status", return_value=(TFCloudStatusCode.PLANNED, True))
+    state = json.loads(Path("tests/data/mock-clusters/valid1.magic-castle.cloud/terraform.tfstate").read_text())
+    mocker.patch.object(tf, "get_tf_state", return_value=state)
+    discard = mocker.patch.object(tf, "discard_run", create=True,
+        side_effect=TerraformCloudException("discard rejected") if discard_fails else None)
+
+    response = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/discard-teardown")
+
+    discard.assert_called_once_with("destroy-run")
+    if discard_fails:
+        assert response.status_code >= 400
+        assert orm.status == ClusterStatusCode.CREATED
+        assert cluster.tfcloud_run.run_id == "destroy-run"
+        assert cluster.plan is not None
+    else:
+        assert response.status_code == 204
+        assert cluster.status == ClusterStatusCode.PROVISIONING_SUCCESS
+        assert cluster.tf_state is not None
+        assert cluster.plan is None
+        assert cluster.tfcloud_run.run_id is None
+        assert not orm.undeployed
+        response = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/apply")
+        assert response.status_code >= 400
+        assert cluster.status == ClusterStatusCode.PROVISIONING_SUCCESS
+
+
+def test_discard_teardown_rejects_a_build_plan(client, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    cluster = MagicCastle(orm)
+    orm.tfcloud_workspace = "existing-workspace"
+    cluster.create_plan(run_id="build-run")
+    discard = mocker.patch.object(get_terraform_cloud(), "discard_run", create=True)
+    response = client.post(f"/api/magic-castles/{EXISTING_HOSTNAME}/discard-teardown")
+    assert response.status_code >= 400
+    discard.assert_not_called()
+    assert cluster.tfcloud_run.run_id == "build-run"
