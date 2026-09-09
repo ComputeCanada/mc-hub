@@ -138,7 +138,7 @@ def test_progress_api_reports_creation_step(app):
     assert result["creation_step"] == "terraform_workspace"
 
 
-def test_magic_castle_version_cannot_be_modified(app):
+def test_deployed_magic_castle_version_cannot_be_modified(app):
     from mchub.database import db
     from mchub.exceptions.invalid_usage_exception import InvalidUsageException
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
@@ -147,16 +147,31 @@ def test_magic_castle_version_cannot_be_modified(app):
     )
 
     orm = db.session.scalar(
-        db.select(MagicCastleORM).filter_by(hostname="created.magic-castle.cloud")
+        db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")
     )
     configuration = dict(orm.config)
     configuration["mc_version"] = "14.1.2"
     orm.config = MagicCastleConfiguration("openstack", configuration)
 
     with pytest.raises(
-        InvalidUsageException, match="cannot be changed after plan creation"
+        InvalidUsageException, match="cannot be changed while the cluster is deployed"
     ):
         MagicCastle(orm).plan_modification({"mc_version": "14.0.0"})
+
+
+def test_undeployed_magic_castle_rejects_unvetted_version(app):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    original_run_id = cluster.tfcloud_run.run_id
+
+    with pytest.raises(InvalidUsageException, match="Invalid Magic Castle version"):
+        cluster.plan_modification({"mc_version": "unvetted"})
+
+    assert cluster.config["mc_version"] == "14.1.2"
+    assert cluster.tfcloud_run.run_id == original_run_id
 
 
 def test_planned_status_waits_for_local_plan(app):
@@ -522,19 +537,20 @@ def test_undeployed_configuration_saves_without_run_and_rebuild_reuses_integrati
         cluster.complete_teardown()
     config = deepcopy(cluster.state)
     config["expiration_date"] = None
-    config["nb_users"] += 1
+    config["mc_version"] = "14.0.0"
     write = mocker.spy(get_github_storage(), "write")
     create_repo = mocker.spy(get_github_storage(), "create_repo")
     create_workspace = mocker.spy(get_terraform_cloud(), "create_workspace")
     cluster.plan_modification(config)
     write.assert_not_called()
     assert cluster.status == ClusterStatusCode.NOT_DEPLOYED
-    assert cluster.config["nb_users"] == config["nb_users"]
+    assert cluster.config["mc_version"] == "14.0.0"
     assert cluster.plan is None
     assert cluster.tfcloud_run.run_id is None
 
     cluster.plan_rebuild()
     write.assert_called_once()
+    assert write.call_args.args[0]["mc_version"] == "14.0.0"
     create_repo.assert_not_called()
     create_workspace.assert_not_called()
     assert orm.tfcloud_workspace == "existing-workspace"

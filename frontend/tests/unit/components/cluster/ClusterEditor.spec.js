@@ -160,6 +160,32 @@ describe("ClusterEditor", () => {
     expect(wrapper.vm.specs.mc_version).toBe(DEFAULT_POSSIBLE_RESOURCES.mc_version[0]);
   });
 
+  it("allows changing the version of an undeployed cluster", async () => {
+    const wrapper = await getDefaultClusterEditorWrapper();
+    await wrapper.setProps({
+      specs: { ...cloneDeep(DEFAULT_MAGIC_CASTLE), undeployed: true },
+      stateful: false,
+    });
+
+    const versionSelect = wrapper.findAllComponents({ name: "v-select" })
+      .wrappers.find((select) => select.props("label") === "Magic Castle Version");
+    expect(versionSelect).toBeDefined();
+    versionSelect.vm.$emit("input", "14.0.0");
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.specs.mc_version).toBe("14.0.0");
+    expect(wrapper.vm.dirtyForm).toBe(true);
+  });
+
+  it("keeps the version read-only for a deployed cluster", async () => {
+    const wrapper = await getDefaultClusterEditorWrapper();
+
+    const versionSelect = wrapper.findAllComponents({ name: "v-select" })
+      .wrappers.find((select) => select.props("label") === "Magic Castle Version");
+    expect(versionSelect).toBeUndefined();
+    expect(wrapper.text()).toContain(DEFAULT_MAGIC_CASTLE.mc_version);
+  });
+
   it("ramGbUsed", async () => {
     const clusterEditorWrapper = await getDefaultClusterEditorWrapper();
 

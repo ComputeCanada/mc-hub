@@ -68,7 +68,7 @@
           </v-col>
           <v-col cols="6" class="py-0">
             <v-select
-              v-if="!existingCluster"
+              v-if="!existingCluster || specs.undeployed"
               v-model="localSpecs.mc_version"
               :items="getPossibleValues('mc_version')"
               label="Magic Castle Version"
