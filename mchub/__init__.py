@@ -58,6 +58,14 @@ def create_app(db_path=None):
         methods=["POST"],
     )
 
+    for action in ("teardown", "rebuild"):
+        app.add_url_rule(
+            f"/api/magic-castles/<string:hostname>/{action}",
+            view_func=magic_castle_view,
+            defaults={"action": action},
+            methods=["POST"],
+        )
+
     progress_view = ProgressAPI.as_view("progress")
     app.add_url_rule(
         "/api/magic-castles/<string:hostname>/status",

@@ -203,3 +203,38 @@ describe("ClusterDisplay", () => {
     expect(context.loadCluster).not.toHaveBeenCalled();
   });
 });
+
+describe("retained cluster lifecycle", () => {
+  it("requests teardown separately from permanent deletion", async () => {
+    MagicCastleRepository.teardown = jest.fn().mockResolvedValue({});
+    MagicCastleRepository.delete = jest.fn();
+    const showPlanConfirmationDialog = jest.fn(async ({ planCreator, destroy }) => {
+      expect(destroy).toBe(true);
+      await planCreator();
+    });
+    await ClusterDisplay.methods.planDestruction.call({ hostname: "retained.example", showPlanConfirmationDialog });
+    expect(MagicCastleRepository.teardown).toHaveBeenCalledWith("retained.example");
+    expect(MagicCastleRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it("saves undeployed configuration without applying a plan", async () => {
+    MagicCastleRepository.update = jest.fn().mockResolvedValue({});
+    const context = {
+      hostname: "retained.example",
+      magicCastle: { undeployed: true },
+      $disableUnloadConfirmation: jest.fn(),
+      startStatusPolling: jest.fn(),
+      showPlanConfirmationDialog: jest.fn(),
+    };
+    await ClusterDisplay.methods.planModification.call(context);
+    expect(MagicCastleRepository.update).toHaveBeenCalledWith(context.hostname, context.magicCastle);
+    expect(context.showPlanConfirmationDialog).not.toHaveBeenCalled();
+    expect(context.startStatusPolling).toHaveBeenCalled();
+  });
+
+  it("finishes polling when teardown has no resources", async () => {
+    MagicCastleRepository.getStatus.mockResolvedValue({ data: { status: "not_deployed" } });
+    const result = await ClusterDisplay.methods.waitForPlanCompletion.call({}, "empty.example");
+    expect(result.status).toBe("not_deployed");
+  });
+});

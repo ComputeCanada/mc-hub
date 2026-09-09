@@ -18,6 +18,12 @@ export default {
   update(hostname, payload) {
     return Repository.put(`${resource}/${hostname}`, payload);
   },
+  teardown(hostname) {
+    return Repository.post(`${resource}/${hostname}/teardown`);
+  },
+  rebuild(hostname) {
+    return Repository.post(`${resource}/${hostname}/rebuild`);
+  },
   delete(hostname) {
     return Repository.delete(`${resource}/${hostname}`);
   },

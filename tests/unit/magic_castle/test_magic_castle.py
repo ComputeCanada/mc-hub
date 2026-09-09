@@ -252,7 +252,7 @@ def test_successful_provisioning_is_not_reclassified_when_a_service_stops(
     assert cluster.service_statuses["jupyterhub"]["status"] == "unavailable"
 
 
-def test_destroyed_cluster_state_archives_github_repo(app, mocker):
+def test_teardown_retains_cluster_and_integrations(app, mocker):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
@@ -267,9 +267,14 @@ def test_destroyed_cluster_state_archives_github_repo(app, mocker):
 
     state = cluster.state
 
-    assert state["status"] == ClusterStatusCode.DESTROY_SUCCESS
+    assert state["status"] == ClusterStatusCode.NOT_DEPLOYED
+    assert cluster.status == ClusterStatusCode.NOT_DEPLOYED
+    assert cluster.tf_state is None
+    assert cluster.freeipa_passwd is None
+    assert state["undeployed"] is True
+    assert db.session.get(MagicCastleORM, orm.id) is orm
     assert state["cloud"] == {"name": "project-alice", "id": 1}
-    archive_repo.assert_called_once_with("valid1.magic-castle.cloud")
+    archive_repo.assert_not_called()
 
 
 def test_destroy_cluster_without_terraform_state_skips_destroy_plan(app, mocker):
@@ -293,11 +298,12 @@ def test_destroy_cluster_without_terraform_state_skips_destroy_plan(app, mocker)
 
     has_state.assert_called_once_with("ws-without-state")
     destroy_plan.assert_not_called()
-    add_tag.assert_called_once_with("ws-without-state", "deleted")
-    archive_repo.assert_called_once_with(hostname)
+    add_tag.assert_not_called()
+    archive_repo.assert_not_called()
     assert db.session.scalar(
         db.select(MagicCastleORM).filter_by(hostname=hostname)
-    ) is None
+    ) is orm
+    assert orm.undeployed
 
 
 def test_destroy_cluster_with_terraform_state_creates_destroy_plan(app, mocker):
@@ -460,3 +466,143 @@ def test_allocated_resources_not_found(app):
         "pre_allocated_volume_count": 0,
         "pre_allocated_volume_size": 0,
     }
+
+
+def test_undeployed_configuration_saves_without_run_and_rebuild_reuses_integrations(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.services.github_api import get_github_storage
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    cluster = MagicCastle(orm)
+    orm.tfcloud_workspace = "existing-workspace"
+    cluster.complete_teardown()
+    config = deepcopy(cluster.state)
+    config["expiration_date"] = None
+    config["nb_users"] += 1
+    write = mocker.spy(get_github_storage(), "write")
+    create_repo = mocker.spy(get_github_storage(), "create_repo")
+    create_workspace = mocker.spy(get_terraform_cloud(), "create_workspace")
+    cluster.plan_modification(config)
+    write.assert_not_called()
+    assert cluster.status == ClusterStatusCode.NOT_DEPLOYED
+    assert cluster.config["nb_users"] == config["nb_users"]
+
+    cluster.plan_rebuild()
+    write.assert_called_once()
+    create_repo.assert_not_called()
+    create_workspace.assert_not_called()
+    assert orm.tfcloud_workspace == "existing-workspace"
+    assert cluster.status == ClusterStatusCode.CREATED
+
+
+def test_failed_rebuild_after_save_cannot_restore_previous_plan(app, mocker):
+    from mchub.database import db
+    from mchub.exceptions.invalid_usage_exception import PlanNotCreatedException
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
+    from mchub.services.github_api import get_github_storage
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    cluster = MagicCastle(orm)
+    cluster.complete_teardown()
+    orm.tfcloud_workspace = "existing-workspace"
+    orm.expiration_date = None
+    cluster.plan_rebuild()
+    assert cluster.plan is not None
+
+    config = deepcopy(cluster.state)
+    config["nb_users"] += 1
+    cluster.plan_modification(config)
+
+    # Match the background worker's claim and error handling when GitHub fails
+    # before create_plan can replace the previous run.
+    orm.status = ClusterStatusCode.BACKGROUND_TASK_RUNNING
+    db.session.commit()
+    mocker.patch.object(get_github_storage(), "write", side_effect=RuntimeError("GitHub unavailable"))
+    with pytest.raises(RuntimeError, match="GitHub unavailable"):
+        cluster.plan_rebuild()
+    db.session.rollback()
+    orm.status = ClusterStatusCode.PLAN_ERROR
+    db.session.commit()
+
+    remote_status = mocker.patch(
+        "mchub.models.magic_castle.magic_castle.get_tf_status_cache",
+        return_value=(TFCloudStatusCode.PLANNED, False),
+    )
+    assert cluster.status == ClusterStatusCode.PLAN_ERROR
+    remote_status.assert_not_called()
+    assert cluster.tfcloud_run.run_id is None
+    assert cluster.plan is None
+    assert cluster.config["nb_users"] == config["nb_users"]
+    with pytest.raises(PlanNotCreatedException):
+        cluster.apply()
+
+
+def test_rebuild_rejects_past_expiration(app):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    cluster = MagicCastle(orm)
+    cluster.complete_teardown()
+    orm.tfcloud_workspace = "existing-workspace"
+    orm.expiration_date = "2020-01-01"
+    with pytest.raises(InvalidUsageException, match="future expiration"):
+        cluster.plan_rebuild()
+
+
+def test_destroy_checks_remote_resources_and_keeps_record_on_failure(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    from mchub.services.github_api import get_github_storage
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    cluster = MagicCastle(orm)
+    cluster.complete_teardown()
+    orm.tfcloud_workspace = "existing-workspace"
+    tf = get_terraform_cloud()
+    lock = mocker.patch.object(tf, "lock_workspace", create=True)
+    unlock = mocker.patch.object(tf, "unlock_workspace", create=True)
+    verify = mocker.patch.object(tf, "verify_workspace_empty", create=True, side_effect=InvalidUsageException("resources remain"))
+    archive = mocker.spy(get_github_storage(), "archive_repo")
+    with pytest.raises(InvalidUsageException):
+        cluster.destroy_empty_cluster()
+    assert db.session.get(MagicCastleORM, orm.id) is orm
+    archive.assert_not_called()
+    lock.assert_called_once_with("existing-workspace")
+    unlock.assert_called_once_with("existing-workspace")
+    verify.side_effect = None
+    cluster.destroy_empty_cluster()
+    archive.assert_called_once_with("valid1.magic-castle.cloud")
+    assert db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud")) is None
+
+
+def test_rebuild_apply_starts_new_provisioning_timeout(app, mocker):
+    import datetime
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    cluster = MagicCastle(orm)
+    original_created = orm.created
+    cluster.complete_teardown()
+    orm.tfcloud_workspace = "existing-workspace"
+    orm.expiration_date = None
+    cluster.plan_rebuild()
+    cluster.apply()
+    assert not orm.undeployed
+    assert orm.created == original_created
+    assert (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - orm.deployment_started_at).total_seconds() < 5
+    mocker.patch("mchub.models.magic_castle.magic_castle.get_tf_status_cache", return_value=(TFCloudStatusCode.APPLIED, False))
+    mocker.patch.object(MagicCastle, "services_are_online", new_callable=mocker.PropertyMock, return_value=False)
+    assert cluster.status == ClusterStatusCode.PROVISIONING_RUNNING
