@@ -16,6 +16,10 @@ from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 BASE_CONFIGURATION = {
     "token": "abcdefghijklmnopqrstuv123q123561",
+    "openstack_clouds": [
+        {"name": "Test cloud", "auth_url": "https://cloud.example.org:5000/v3"},
+        {"name": "Local test cloud", "auth_url": "http://localhost:5000/v3"},
+    ],
     "admins": ["the-admin@computecanada.ca"],
     "cors_allowed_origins": ["https://hc-hub.example.com"],
     "domains": {

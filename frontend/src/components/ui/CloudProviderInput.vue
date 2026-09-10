@@ -17,12 +17,7 @@
             hint="Must be unique for your username"
             persistent-hint
           ></v-text-field>
-          <v-text-field
-            v-if="hubAdmin"
-            v-model="newProject.agent_pool_name"
-            label="Agent Pool Name (optional)"
-            clearable
-          ></v-text-field>
+          <open-stack-cloud v-if="newProject.provider === 'openstack'" v-model="newProject.env.OS_AUTH_URL" />
           <aws-credentials v-if="newProject.provider === 'aws'" v-model="newProject.env" />
           <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
             <v-text-field v-model="newProject.env[env_var]" :label="env_var"></v-text-field>
@@ -55,13 +50,13 @@
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
 import OpenStackSubnet from "@/components/ui/OpenStackSubnet";
+import OpenStackCloud from "@/components/ui/OpenStackCloud";
 import AwsCredentials from "@/components/ui/AWSCredentials";
 
 export default {
   name: "CloudProviderInput",
-  components: { MessageDialog, AwsCredentials, OpenStackSubnet },
+  components: { MessageDialog, AwsCredentials, OpenStackSubnet, OpenStackCloud },
   emits: ["newProject"],
-  props: { hubAdmin: { type: Boolean, default: false } },
   data() {
     return {
       dialog: false,
@@ -70,13 +65,12 @@ export default {
       errorMessage: "",
       providers: ["openstack", "aws"],
       provider_var: {
-        openstack: ["OS_AUTH_URL", "OS_APPLICATION_CREDENTIAL_ID", "OS_APPLICATION_CREDENTIAL_SECRET"],
+        openstack: ["OS_APPLICATION_CREDENTIAL_ID", "OS_APPLICATION_CREDENTIAL_SECRET"],
         aws: [],
       },
       defaultProject: {
         name: "",
         provider: "openstack",
-        agent_pool_name: "",
         max_instance_hourly_price: null,
         env: {
           OS_AUTH_URL: "",
@@ -87,7 +81,6 @@ export default {
       newProject: {
         name: "",
         provider: "openstack",
-        agent_pool_name: "",
         max_instance_hourly_price: null,
         env: {
           OS_AUTH_URL: "",
@@ -110,9 +103,7 @@ export default {
     async add() {
       this.saving = true;
       const payload = { ...this.newProject };
-      if (!this.hubAdmin || !payload.agent_pool_name) {
-        delete payload.agent_pool_name;
-      }
+      delete payload.agent_pool_name;
       try {
         await ProjectRepository.post(payload);
       } catch (e) {

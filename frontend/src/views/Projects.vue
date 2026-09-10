@@ -8,7 +8,7 @@
             <v-toolbar-title>Your Projects</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <cloud-provider-input :hub-admin="hubAdmin" @newProject="updateProjectList" />
+            <cloud-provider-input @newProject="updateProjectList" />
           </v-toolbar>
         </template>
         <template v-slot:[`item.name`]="{ item }">
@@ -25,7 +25,7 @@
               @click="setDefaultProject(item)"
               >Default</v-btn
             >
-            <project-membership :id="item.id" :admin="item.admin" :hub-admin="hubAdmin" />
+            <project-membership :id="item.id" :admin="item.admin" />
             <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
               <v-icon> mdi-delete </v-icon>
               delete
@@ -53,7 +53,6 @@ export default {
   data() {
     return {
       projects: [],
-      hubAdmin: false,
       defaultProjectId: null,
       savingDefault: null,
       error: "",
@@ -73,7 +72,6 @@ export default {
       try {
         const [projects, user] = await Promise.all([ProjectRepository.getAll(), UserRepository.getCurrent()]);
         this.projects = projects.data;
-        this.hubAdmin = user.data.is_admin === true;
         this.defaultProjectId = user.data.default_project_id;
         this.error = "";
       } catch (error) {

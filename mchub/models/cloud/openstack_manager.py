@@ -1,3 +1,5 @@
+from .project import validate_openstack_cloud
+
 import openstack
 from keystoneauth1.exceptions import ClientException
 from requests.exceptions import RequestException
@@ -78,6 +80,7 @@ class OpenStackManager:
 
     @property
     def connection(self):
+        validate_openstack_cloud(self.project.env)
         if self._con is None:
             # Convert OS_* environment variable in keyword arguments
             kargs = {key[3:].lower(): value for key, value in self.project.env.items()

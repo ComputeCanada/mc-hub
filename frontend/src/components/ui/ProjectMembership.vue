@@ -13,24 +13,10 @@
       <v-card-text>
         <v-container>
           <v-list>
-            <v-list-item v-if="admin && hubAdmin">
-              <v-text-field
-                v-model="agentPoolName"
-                label="Agent Pool Name"
-                hint="Leave empty to keep existing"
-                persistent-hint
-                clearable
-              />
-            </v-list-item>
             <template v-if="admin && project.provider === 'openstack'">
               <v-subheader>Cloud Credentials</v-subheader>
               <v-list-item>
-                <v-text-field
-                  v-model="env.OS_AUTH_URL"
-                  label="OS_AUTH_URL"
-                  hint="Leave empty to keep existing"
-                  persistent-hint
-                />
+                <open-stack-cloud v-model="env.OS_AUTH_URL" />
               </v-list-item>
               <v-list-item>
                 <v-text-field
@@ -118,15 +104,15 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
+import OpenStackCloud from "@/components/ui/OpenStackCloud";
 import AwsCredentials from "@/components/ui/AWSCredentials";
 
 export default {
   name: "ProjectMembership",
-  components: { MessageDialog, AwsCredentials },
+  components: { MessageDialog, AwsCredentials, OpenStackCloud },
   props: {
     id: { type: Number, required: true },
     admin: { type: Boolean, default: false },
-    hubAdmin: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -139,7 +125,6 @@ export default {
       entries: [], // [{ username, isAdmin }]
       newMember: "",
       newMemberIsAdmin: false,
-      agentPoolName: "",
       env: { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" },
     };
   },
@@ -182,9 +167,6 @@ export default {
         add_admins: [...newAdmins].filter((x) => !oldAdmins.has(x)),
         del_admins: [...oldAdmins].filter((x) => !newAdmins.has(x)),
       };
-      if (this.admin && this.hubAdmin && this.agentPoolName) {
-        payload.agent_pool_name = this.agentPoolName;
-      }
       if (this.admin && this.project.provider === "aws") {
         payload.max_instance_hourly_price = this.maxInstanceHourlyPrice === "" ? null : this.maxInstanceHourlyPrice;
       }
@@ -219,7 +201,6 @@ export default {
       this.entries = [];
       this.newMember = "";
       this.newMemberIsAdmin = false;
-      this.agentPoolName = "";
       this.env = { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" };
       this.dialog = false;
     },

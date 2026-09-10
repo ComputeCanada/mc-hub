@@ -9,7 +9,7 @@ from ..database import db
 from ..models.user import User, UserORM, TokenSuperUser
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
 from ..services.github_api import get_github_storage, get_provider_template
-from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
+from ..models.cloud.project import Project, Provider, ENV_VALIDATORS, validate_openstack_cloud
 from ..models.cloud.aws_manager import AWSManager
 from ..models.cloud.openstack_manager import OpenStackManager
 from ..exceptions.invalid_usage_exception import (
@@ -98,14 +98,17 @@ class ProjectAPI(ApiView):
         if db.session.scalar(db.select(Project.id).where(Project.tfcloud_project_name == tfcloud_name)) is not None:
             raise InvalidUsageException("Project name is already in use for your username. Choose another name.", status_code=409)
         max_price = parse_price(data.get("max_instance_hourly_price"), provider)
-        agent_pool_name = data.get("agent_pool_name")
-        if agent_pool_name and not user.is_admin:
-            raise InvalidUsageException("Only hub admins can select Terraform agent pools", status_code=403)
+        if "agent_pool_name" in data:
+            raise InvalidUsageException("Agent pools are configured by the operator, not per project.", status_code=403)
+        agent_pool_name = None
 
         try:
             env = ENV_VALIDATORS[provider](env)
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
+
+        if provider == Provider.OPENSTACK:
+            agent_pool_name = validate_openstack_cloud(env).get("agent_pool_name")
 
         if provider == Provider.AWS:
             AWSManager(Project(provider=provider, env=env)).validate_project()
@@ -190,6 +193,8 @@ class ProjectAPI(ApiView):
                 env = ENV_VALIDATORS[project.provider]({**project.env, **data["env"]} if project.provider == Provider.AWS else data["env"])
             except Exception:
                 raise InvalidUsageException("Missing required environment variables")
+            if project.provider == Provider.OPENSTACK:
+                validate_openstack_cloud(env)
             if project.provider == Provider.OPENSTACK and project.env.get("OS_SUBNET_ID"):
                 env["OS_SUBNET_ID"] = project.env["OS_SUBNET_ID"]
             if project.provider == Provider.AWS:
@@ -198,10 +203,12 @@ class ProjectAPI(ApiView):
                 AWSManager(Project(provider=project.provider, env=env)).validate_project()
 
         if "agent_pool_name" in data:
-            if not getattr(user, "is_admin", False):
-                raise InvalidUsageException("Only hub admins can select Terraform agent pools", status_code=403)
+            raise InvalidUsageException("Agent pools are configured by the operator, not per project.", status_code=403)
+
+        if "env" in data and project.provider == Provider.OPENSTACK:
+            agent_pool_name = validate_openstack_cloud(env).get("agent_pool_name")
             try:
-                get_terraform_cloud().update_project(project.tfcloud_project_id, data["agent_pool_name"])
+                get_terraform_cloud().update_project(project.tfcloud_project_id, agent_pool_name)
             except TerraformCloudException:
                 raise InvalidUsageException("Error updating agent pool")
 
@@ -313,4 +320,13 @@ class OpenStackSubnetsAPI(ApiView):
             env = ENV_VALIDATORS[Provider.OPENSTACK](data.get("env", {}))
         except Exception:
             raise InvalidUsageException("Provide OpenStack credentials to load subnets.")
+        validate_openstack_cloud(env)
         return {"subnets": OpenStackManager(Project(provider=Provider.OPENSTACK, env=env)).subnets()}
+
+
+class OpenStackCloudsAPI(ApiView):
+    def get(self, user: User):
+        from ..configuration import get_config
+
+        return {"clouds": [{"name": cloud["name"], "auth_url": cloud["auth_url"]}
+                           for cloud in get_config().get("openstack_clouds", [])]}

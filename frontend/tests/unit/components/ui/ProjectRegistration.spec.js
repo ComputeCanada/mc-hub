@@ -23,18 +23,18 @@ test("regular users can reach Projects from their account menu", async () => {
   expect(wrapper.text()).toContain("Projects");
 });
 
-test.each([false, true])("agent pool selection on registration requires hub admin: %s", async (hubAdmin) => {
-  const wrapper = shallowMount(CloudProviderInput, { propsData: { hubAdmin } });
-  await wrapper.setData({ newProject: { name: "personal", provider: "aws", env: {}, agent_pool_name: "private" } });
-  expect(wrapper.find('[label="Agent Pool Name (optional)"]').exists()).toBe(hubAdmin);
+test.each(["aws", "openstack"])("agent pool selection is absent on %s registration", async (provider) => {
+  const wrapper = shallowMount(CloudProviderInput);
+  await wrapper.setData({ newProject: { name: "personal", provider, env: {}, agent_pool_name: "private" } });
+  expect(wrapper.find('[label="Agent Pool Name (optional)"]').exists()).toBe(false);
   await wrapper.vm.add();
-  expect(ProjectRepository.post.mock.calls[0][0].agent_pool_name).toBe(hubAdmin ? "private" : undefined);
+  expect(ProjectRepository.post.mock.calls[0][0].agent_pool_name).toBeUndefined();
 });
 
-test.each([false, true])("agent pool editing requires hub admin: %s", async (hubAdmin) => {
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true, hubAdmin } });
-  await wrapper.setData({ project: { provider: "openstack", members: [], admins: [] }, agentPoolName: "private" });
-  expect(wrapper.find('[label="Agent Pool Name"]').exists()).toBe(hubAdmin);
+test.each(["aws", "openstack"])("agent pool editing is absent for %s", async (provider) => {
+  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  await wrapper.setData({ project: { provider, members: [], admins: [] }, agentPoolName: "private" });
+  expect(wrapper.find('[label="Agent Pool Name"]').exists()).toBe(false);
   await wrapper.vm.save();
-  expect(ProjectRepository.patch.mock.calls[0][1].agent_pool_name).toBe(hubAdmin ? "private" : undefined);
+  expect(ProjectRepository.patch.mock.calls[0][1].agent_pool_name).toBeUndefined();
 });

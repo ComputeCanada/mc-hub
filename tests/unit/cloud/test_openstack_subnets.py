@@ -13,6 +13,11 @@ ENV = {"OS_AUTH_URL": "https://cloud.example.org:5000/v3", "OS_APPLICATION_CREDE
        "OS_APPLICATION_CREDENTIAL_SECRET": "s" * 86, "OS_SUBNET_ID": "subnet-b"}
 
 
+@pytest.fixture(autouse=True)
+def approved_cloud(mocker):
+    mocker.patch("mchub.configuration._config", {"openstack_clouds": [{"name": "Test", "auth_url": ENV["OS_AUTH_URL"]}]})
+
+
 @pytest.mark.parametrize("admin", [False, True])
 def test_discovery_uses_credentials_and_returns_named_internal_ipv4_subnets(mocker, admin):
     connect = mocker.patch("mchub.models.cloud.openstack_manager.openstack.connect")
@@ -102,3 +107,20 @@ def test_project_creation_persists_selected_subnet(mocker, template_override, ad
     assert project.github_template == template
     storage.validate_template.assert_called_once_with(template)
     database.session.commit.assert_called_once()
+
+
+def test_removed_cloud_is_rejected_before_connecting(mocker):
+    mocker.patch("mchub.configuration._config", {"openstack_clouds": []})
+    connect = mocker.patch("mchub.models.cloud.openstack_manager.openstack.connect")
+    manager = OpenStackManager(Project(provider=Provider.OPENSTACK, env=ENV))
+    with pytest.raises(InvalidUsageException, match="approved by the operator"):
+        manager.connection
+    connect.assert_not_called()
+
+
+@pytest.mark.parametrize("clouds", [[{"name": "Cloud"}], [{"auth_url": "https://cloud.example.org/v3"}], [{"name": "", "auth_url": "https://cloud.example.org/v3"}], [{"name": "Cloud", "auth_url": "file:///etc/passwd"}]])
+def test_config_rejects_invalid_cloud_entries(clouds):
+    from marshmallow import ValidationError
+    from mchub.configuration import ConfigurationSchema
+    with pytest.raises(ValidationError):
+        ConfigurationSchema().load({"auth_type": ["NONE"], "cors_allowed_origins": [], "magic_castle_version_range": ">= 14.0.0, < 15.0.0", "openstack_clouds": clouds})

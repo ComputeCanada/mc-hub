@@ -58,16 +58,17 @@ def test_registration_requires_authentication(client, services, payload):
     services.create_project.assert_not_called()
 
 
-def test_only_hub_admin_can_select_agent_pool(client, services, payload):
+@pytest.mark.parametrize("scoped_id", ["alice@computecanada.ca", "the-admin@computecanada.ca"])
+def test_user_supplied_agent_pool_is_rejected(client, services, payload, scoped_id):
+    headers = {**ALICE_HEADERS, "eduPersonPrincipalName": scoped_id}
     payload["agent_pool_name"] = "private"
-    assert client.post("/api/projects", headers=ALICE_HEADERS, json=payload).status_code == 403
+    assert client.post("/api/projects", headers=headers, json=payload).status_code == 403
     services.create_project.assert_not_called()
-    headers = {**ALICE_HEADERS, "eduPersonPrincipalName": "the-admin@computecanada.ca"}
+    del payload["agent_pool_name"]
     response = client.post("/api/projects", headers=headers, json=payload)
     assert response.status_code == 200, response.json
-    services.create_project.assert_called_once_with("the-admin-personal-cloud", agent_pool_name="private")
-    assert client.patch(f"/api/projects/{response.json['id']}", headers=headers, json={"agent_pool_name": "other"}).status_code == 200
-    services.update_project.assert_called_once_with("new-tf-project", "other")
+    assert client.patch(f"/api/projects/{response.json['id']}", headers=headers, json={"agent_pool_name": "other"}).status_code == 403
+    services.update_project.assert_not_called()
 
 
 def test_service_token_cannot_register_without_user_identity(client, services, payload, mocker):
@@ -139,3 +140,65 @@ def test_existing_terraform_name_is_reserved(client, services, payload):
     response = client.post("/api/projects", headers=ALICE_HEADERS, json=payload)
     assert response.status_code == 409
     services.create_project.assert_not_called()
+
+
+def test_approved_cloud_list_requires_authentication_and_exposes_only_cloud_fields(client, mocker):
+    from mchub.configuration import get_config
+    mocker.patch.dict(get_config(), {"openstack_clouds": [{"name": "Vetted Cloud", "auth_url": "https://vetted.example.org/v3", "secret": "hidden"}]})
+    url = "/api/projects/openstack/clouds"
+    assert client.get(url).status_code != 200
+    result = client.get(url, headers=ALICE_HEADERS)
+    assert result.status_code == 200
+    assert result.json == {"clouds": [{"name": "Vetted Cloud", "auth_url": "https://vetted.example.org/v3"}]}
+
+
+@pytest.mark.parametrize("url", ["https://untrusted.example.org/v3", "https://cloud.example.org.evil.test:5000/v3", "https://cloud.example.org:5000/v3/../admin"])
+def test_openstack_url_must_be_approved_for_registration_and_discovery(client, services, mocker, url):
+    validate = mocker.patch("mchub.resources.project_api.OpenStackManager")
+    env = {"OS_AUTH_URL": url, "OS_APPLICATION_CREDENTIAL_ID": "a" * 32,
+           "OS_APPLICATION_CREDENTIAL_SECRET": "s" * 86}
+    result = client.post("/api/projects", headers=ALICE_HEADERS, json={"name": "unapproved", "provider": "openstack", "env": env})
+    assert result.status_code == 403
+    result = client.post("/api/projects/openstack/subnets", headers=ALICE_HEADERS, json={"env": env})
+    assert result.status_code == 403
+    validate.assert_not_called()
+    services.create_project.assert_not_called()
+
+
+def test_unapproved_credential_rotation_rejected_before_external_mutation(client, services):
+    project = db.session.scalar(db.select(Project).where(Project.name == "project-alice"))
+    original_env = project.env.copy()
+    env = {**original_env, "OS_AUTH_URL": "https://untrusted.example.org/v3"}
+    result = client.patch(f"/api/projects/{project.id}", headers=ALICE_HEADERS, json={"env": env})
+    assert result.status_code == 403
+    assert project.env == original_env
+    services.replace_project_variable_set.assert_not_called()
+
+
+def test_no_configured_clouds_disables_openstack_discovery(client, services, mocker):
+    from mchub.configuration import get_config
+    mocker.patch.dict(get_config(), {"openstack_clouds": []})
+    assert client.get("/api/projects/openstack/clouds", headers=ALICE_HEADERS).json == {"clouds": []}
+    env = {"OS_AUTH_URL": "https://cloud.example.org:5000/v3", "OS_APPLICATION_CREDENTIAL_ID": "a" * 32,
+           "OS_APPLICATION_CREDENTIAL_SECRET": "s" * 86}
+    assert client.post("/api/projects/openstack/subnets", headers=ALICE_HEADERS, json={"env": env}).status_code == 403
+
+
+@pytest.mark.parametrize("agent_pool", [None, "research-agents"])
+def test_agent_pool_comes_from_openstack_cloud_config(client, services, payload, mocker, agent_pool):
+    from mchub.configuration import get_config
+    clouds = [{"name": "Research", "auth_url": "https://cloud.example.org:5000/v3", "agent_pool_name": agent_pool}]
+    mocker.patch.dict(get_config(), {"openstack_clouds": clouds})
+    result = client.post("/api/projects", headers=ALICE_HEADERS, json=payload)
+    assert result.status_code == 200, result.json
+    expected = agent_pool if payload["provider"] == "openstack" else None
+    services.create_project.assert_called_once_with("alice-personal-cloud", agent_pool_name=expected)
+    assert "agent_pool_name" not in client.get("/api/projects/openstack/clouds", headers=ALICE_HEADERS).json["clouds"][0]
+    # Saving credentials applies the operator setting, including resetting to default.
+    clouds[0]["agent_pool_name"] = None if agent_pool else "replacement-agents"
+    result = client.patch(f"/api/projects/{result.json['id']}", headers=ALICE_HEADERS, json={"env": payload["env"]})
+    assert result.status_code == 200, result.json
+    if payload["provider"] == "openstack":
+        services.update_project.assert_called_once_with("new-tf-project", clouds[0]["agent_pool_name"])
+    else:
+        services.update_project.assert_not_called()

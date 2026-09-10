@@ -84,3 +84,13 @@ ENV_VALIDATORS = {
     Provider.AWS: partial(AWSEnv().load, unknown=EXCLUDE),
     Provider.OPENSTACK: partial(OpenStackEnv().load, unknown=EXCLUDE),
 }
+
+
+def validate_openstack_cloud(env):
+    from ...configuration import get_config
+    from ...exceptions.invalid_usage_exception import InvalidUsageException
+
+    for cloud in get_config().get("openstack_clouds", []):
+        if env.get("OS_AUTH_URL") == cloud["auth_url"]:
+            return cloud
+    raise InvalidUsageException("Select an OpenStack cloud approved by the operator.", status_code=403)

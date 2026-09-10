@@ -6,7 +6,7 @@ from os import path
 from typing import Optional
 
 from marshmallow import Schema, fields, ValidationError, post_load
-from marshmallow.validate import OneOf, Regexp
+from marshmallow.validate import OneOf, Regexp, URL, Length
 
 from .env import CONFIGURATION_FILE_PATH
 from ..models.auth_type import AuthType
@@ -23,11 +23,18 @@ def validate_magic_castle_version_range(value):
         raise ValidationError(str(error)) from error
 
 
+class OpenStackCloudSchema(Schema):
+    agent_pool_name = fields.Str(load_default=None, allow_none=True, validate=Length(min=1))
+    name = fields.Str(required=True, validate=Length(min=1))
+    auth_url = fields.Str(required=True, validate=URL(schemes={"https", "http"}))
+
+
 class ConfigurationSchema(Schema):
     auth_type = fields.List(fields.Str(required=True))
     admins = fields.List(fields.Str())
     token = fields.Str()
     cors_allowed_origins = fields.List(fields.Str(), required=True)
+    openstack_clouds = fields.List(fields.Nested(OpenStackCloudSchema), load_default=list)
     domains = fields.Dict()
     dns_providers = fields.Dict()
     port = fields.Integer(load_default=5000)
