@@ -51,6 +51,7 @@ def test_invalid_rotated_credentials_rejected_before_mutation(context, project, 
 
 def test_region_and_sensitive_token_are_synchronized_after_validation(context, project, mocker):
     project.name = "AWS project"
+    project.tfcloud_project_name = "alice-AWS project"
     project.tfcloud_project_id = "project-aws"
     database = mocker.patch("mchub.resources.project_api.db")
     database.session.get.return_value = project
@@ -60,6 +61,7 @@ def test_region_and_sensitive_token_are_synchronized_after_validation(context, p
     with context.test_request_context(json={"env": {"AWS_DEFAULT_REGION": "us-east-1", "AWS_SESSION_TOKEN": "token"}}):
         assert ProjectAPI().patch(user, 1) == ({}, 200)
     validate.assert_called_once()
+    assert terraform.replace_project_variable_set.call_args.args[:2] == ("project-aws", "alice-AWS project")
     variables = terraform.replace_project_variable_set.call_args.args[2]
     variables = {v.name: v for v in variables}
     assert variables["AWS_DEFAULT_REGION"].value == "us-east-1"
@@ -68,11 +70,22 @@ def test_region_and_sensitive_token_are_synchronized_after_validation(context, p
     assert project.env["AWS_DEFAULT_REGION"] == "us-east-1"
 
 
-def test_region_discovery_requires_admin(context, mocker):
+@pytest.mark.parametrize("admin", [False, True])
+def test_region_discovery_with_own_credentials(context, mocker, admin):
     manager = mocker.patch("mchub.resources.project_api.AWSManager")
+    manager.return_value.regions.return_value = ["ca-central-1"]
     with context.test_request_context(json={"env": ENV}):
+        assert AWSRegionsAPI().post(SimpleNamespace(is_admin=admin)) == {"regions": ["ca-central-1"]}
+    assert manager.call_args.args[0].env["AWS_SECRET_ACCESS_KEY"] == "secret"
+
+
+def test_region_discovery_cannot_use_another_projects_credentials(context, project, mocker):
+    database = mocker.patch("mchub.resources.project_api.db")
+    database.session.get.return_value = project
+    manager = mocker.patch("mchub.resources.project_api.AWSManager")
+    with context.test_request_context(json={"project_id": 1}):
         with pytest.raises(InvalidUsageException) as error:
-            AWSRegionsAPI().post(SimpleNamespace(is_admin=False))
+            AWSRegionsAPI().post(SimpleNamespace(is_admin=False, is_project_admin=lambda p: False))
     assert error.value.status_code == 403
     manager.assert_not_called()
 

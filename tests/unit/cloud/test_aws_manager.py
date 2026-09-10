@@ -148,12 +148,13 @@ def test_provider_errors_are_sanitized(manager):
 
 
 def test_project_rejected_before_external_creation(mocker):
+    mocker.patch("mchub.resources.project_api.db").session.scalar.return_value = None
     from mchub.resources.project_api import ProjectAPI
     validate = mocker.patch.object(AWSManager, "validate_project", side_effect=InvalidUsageException("Missing permission"))
     tf = mocker.patch("mchub.resources.project_api.get_terraform_cloud")
     with Flask(__name__).test_request_context(json={"provider": "aws", "env": ENV, "name": "aws", "github_template": ""}):
         with pytest.raises(InvalidUsageException, match="Missing permission"):
-            ProjectAPI().post(SimpleNamespace(is_admin=True))
+            ProjectAPI().post(SimpleNamespace(is_admin=True, username="admin"))
     validate.assert_called_once()
     tf.assert_not_called()
 

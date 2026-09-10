@@ -70,7 +70,11 @@ If you are using a SAML authentication mechanism, you can set `auth_type` to `"S
 
 A list of users with administrator rights. This entry is ignored when `auth_type` is set to `"NONE"`.
 
-If `auth_type` is set to `"SAML"`, the values contained in `admins` are strings reprensenting the `eduPersonPrincipalName` attribute of the user. Administrators can view, modify and delete clusters created by any other user.
+If `auth_type` is set to `"SAML"`, the values in `admins` are users' `eduPersonPrincipalName` attributes. Hub administrators can select Terraform Cloud agent pools when creating or editing projects they administer.
+
+Any authenticated user can register an OpenStack or AWS project with their own cloud credentials from **Projects** in the account menu. New Terraform Cloud projects are named `username-project_name`; MC Hub displays the entered project name. Unsupported characters in usernames (such as dots) become hyphens. The combined name must fit Terraform Cloud’s 40-character limit and be unique across cloud providers. Different usernames can reuse a display name; usernames that normalize to the same prefix share a namespace, including across identity domains. Duplicate registration returns a name-conflict error using the database only. Run database migrations when upgrading. Migration 0010 records existing Terraform names without renaming remote projects and moves the unique index to the Terraform name. The creator becomes a project administrator and can manage credentials and membership. Existing project access remains limited to its members and project administrators; being a hub administrator does not automatically grant membership.
+
+Registration creates a project and credential variable set in the operator's Terraform Cloud organization. Regular users use its default execution mode; explicit agent-pool selection requires a hub administrator. Templates come from `github_templates` in operator configuration. The service token has no user identity and cannot register a project.
 
 ### `cors_allowed_origins`
 

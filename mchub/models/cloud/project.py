@@ -26,8 +26,13 @@ project_admins = db.Table(
 
 class Project(db.Model):
     __tablename__ = "project"
+    __table_args__ = (db.Index("uq_tfcloud_project_name", "tfcloud_project_name", unique=True),)
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
+    # Legacy inserts used the display name as the Terraform Cloud name.
+    tfcloud_project_name = db.Column(
+        db.String(), nullable=False, default=lambda context: context.get_current_parameters()["name"]
+    )
     provider = db.Column(db.Enum(Provider), nullable=False)
     # Legacy column retained for database compatibility; templates come from operator configuration.
     github_template = db.Column(db.String(), nullable=False)

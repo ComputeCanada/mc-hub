@@ -1,10 +1,12 @@
+import re
 from decimal import Decimal, InvalidOperation
 
 from flask import request
+from sqlalchemy.exc import IntegrityError
 
 from .api_view import ApiView
 from ..database import db
-from ..models.user import User, UserORM
+from ..models.user import User, UserORM, TokenSuperUser
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
 from ..services.github_api import get_github_storage, get_provider_template
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
@@ -75,10 +77,8 @@ class ProjectAPI(ApiView):
             ]
 
     def post(self, user: User):
-        if not getattr(user, "is_admin", False):
-            raise InvalidUsageException(
-                "Only admins can create projects", status_code=403
-            )
+        if isinstance(user, TokenSuperUser):
+            raise InvalidUsageException("Project creation requires a user identity", status_code=403)
         data = request.get_json()
         if not data:
             raise InvalidUsageException("No json data was provided")
@@ -88,8 +88,19 @@ class ProjectAPI(ApiView):
             name = data["name"]
         except KeyError as err:
             raise InvalidUsageException(f"Missing required field {err}")
+        if not isinstance(name, str) or not name.strip():
+            raise InvalidUsageException("Project name is required")
+        # Terraform Cloud does not allow punctuation such as dots in usernames.
+        username = re.sub(r"[^A-Za-z0-9_-]", "-", user.username)
+        tfcloud_name = f"{username}-{name}"
+        if not re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9 _-]*[A-Za-z0-9_-]", tfcloud_name) or not 3 <= len(tfcloud_name) <= 40:
+            raise InvalidUsageException("Project name must use letters, numbers, spaces, hyphens or underscores, and fit within 40 characters including your username prefix.")
+        if db.session.scalar(db.select(Project.id).where(Project.tfcloud_project_name == tfcloud_name)) is not None:
+            raise InvalidUsageException("Project name is already in use for your username. Choose another name.", status_code=409)
         max_price = parse_price(data.get("max_instance_hourly_price"), provider)
         agent_pool_name = data.get("agent_pool_name")
+        if agent_pool_name and not user.is_admin:
+            raise InvalidUsageException("Only hub admins can select Terraform agent pools", status_code=403)
 
         try:
             env = ENV_VALIDATORS[provider](env)
@@ -113,7 +124,7 @@ class ProjectAPI(ApiView):
 
         try:
             tfcloud_project_id = get_terraform_cloud().create_project(
-                name, agent_pool_name=agent_pool_name
+                tfcloud_name, agent_pool_name=agent_pool_name
             )
         except TerraformCloudException:
             raise InvalidUsageException(f"Error with Terraform Cloud project creation")
@@ -125,7 +136,7 @@ class ProjectAPI(ApiView):
                 TerraformCloudVariable(name=k, value=v, sensitive=sensitive)
             )
         get_terraform_cloud().set_project_variable_set(
-            tfcloud_project_id, name, terraform_vars
+            tfcloud_project_id, tfcloud_name, terraform_vars
         )
 
         if user.orm.id is None:
@@ -134,6 +145,7 @@ class ProjectAPI(ApiView):
 
         project = Project(
             name=name,
+            tfcloud_project_name=tfcloud_name,
             provider=provider,
             env=env,
             github_template=github_template,
@@ -142,7 +154,13 @@ class ProjectAPI(ApiView):
         )
         project.admins.append(user.orm)
         db.session.add(project)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            if db.session.scalar(db.select(Project.id).where(Project.tfcloud_project_name == tfcloud_name)) is not None:
+                raise InvalidUsageException("Project name is already in use for your username. Choose another name.", status_code=409)
+            raise
         return {
             "id": project.id,
             "name": project.name,
@@ -180,6 +198,8 @@ class ProjectAPI(ApiView):
                 AWSManager(Project(provider=project.provider, env=env)).validate_project()
 
         if "agent_pool_name" in data:
+            if not getattr(user, "is_admin", False):
+                raise InvalidUsageException("Only hub admins can select Terraform agent pools", status_code=403)
             try:
                 get_terraform_cloud().update_project(project.tfcloud_project_id, data["agent_pool_name"])
             except TerraformCloudException:
@@ -191,7 +211,7 @@ class ProjectAPI(ApiView):
                 for k, v in env.items()
             ]
             get_terraform_cloud().replace_project_variable_set(
-                project.tfcloud_project_id, project.name, terraform_vars
+                project.tfcloud_project_id, project.tfcloud_project_name, terraform_vars
             )
             project.env = env
 
@@ -279,8 +299,6 @@ class AWSRegionsAPI(ApiView):
         if data.get("project_id"):
             if project is None or project.provider != Provider.AWS or not user.is_project_admin(project):
                 raise InvalidUsageException("Invalid project id", status_code=403)
-        elif not getattr(user, "is_admin", False):
-            raise InvalidUsageException("Only admins can discover AWS project regions", status_code=403)
         try:
             env = ENV_VALIDATORS[Provider.AWS]({**(project.env if project else {}), **data.get("env", {}), "AWS_DEFAULT_REGION": "us-east-1"})
         except Exception:
@@ -290,8 +308,6 @@ class AWSRegionsAPI(ApiView):
 
 class OpenStackSubnetsAPI(ApiView):
     def post(self, user: User):
-        if not getattr(user, "is_admin", False):
-            raise InvalidUsageException("Only admins can discover OpenStack project subnets", status_code=403)
         data = request.get_json() or {}
         try:
             env = ENV_VALIDATORS[Provider.OPENSTACK](data.get("env", {}))

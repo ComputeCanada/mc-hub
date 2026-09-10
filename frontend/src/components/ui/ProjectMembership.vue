@@ -13,7 +13,7 @@
       <v-card-text>
         <v-container>
           <v-list>
-            <v-list-item v-if="admin">
+            <v-list-item v-if="admin && hubAdmin">
               <v-text-field
                 v-model="agentPoolName"
                 label="Agent Pool Name"
@@ -126,6 +126,7 @@ export default {
   props: {
     id: { type: Number, required: true },
     admin: { type: Boolean, default: false },
+    hubAdmin: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -181,7 +182,7 @@ export default {
         add_admins: [...newAdmins].filter((x) => !oldAdmins.has(x)),
         del_admins: [...oldAdmins].filter((x) => !newAdmins.has(x)),
       };
-      if (this.admin && this.agentPoolName) {
+      if (this.admin && this.hubAdmin && this.agentPoolName) {
         payload.agent_pool_name = this.agentPoolName;
       }
       if (this.admin && this.project.provider === "aws") {

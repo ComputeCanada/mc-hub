@@ -13,7 +13,8 @@ ENV = {"OS_AUTH_URL": "https://cloud.example.org:5000/v3", "OS_APPLICATION_CREDE
        "OS_APPLICATION_CREDENTIAL_SECRET": "s" * 86, "OS_SUBNET_ID": "subnet-b"}
 
 
-def test_discovery_uses_credentials_and_returns_named_internal_ipv4_subnets(mocker):
+@pytest.mark.parametrize("admin", [False, True])
+def test_discovery_uses_credentials_and_returns_named_internal_ipv4_subnets(mocker, admin):
     connect = mocker.patch("mchub.models.cloud.openstack_manager.openstack.connect")
     network = connect.return_value.network
     network.networks.return_value = [
@@ -29,7 +30,7 @@ def test_discovery_uses_credentials_and_returns_named_internal_ipv4_subnets(mock
         SimpleNamespace(id="unnamed", name="", ip_version=4, network_id="internal"),
     ]
     with Flask(__name__).test_request_context(json={"env": ENV}):
-        assert OpenStackSubnetsAPI().post(SimpleNamespace(is_admin=True)) == {"subnets": [
+        assert OpenStackSubnetsAPI().post(SimpleNamespace(is_admin=admin)) == {"subnets": [
             {"id": "subnet-b", "name": "Alpha"}, {"id": "subnet-a", "name": "Beta"},
             {"id": "unnamed", "name": "Unnamed subnet"},
         ]}
@@ -39,10 +40,10 @@ def test_discovery_uses_credentials_and_returns_named_internal_ipv4_subnets(mock
                                     application_credential_secret="s" * 86, auth_type="v3applicationcredential")
 
 
-@pytest.mark.parametrize("admin,env", [(False, ENV), (True, {})])
-def test_discovery_rejects_unauthorized_or_missing_credentials(mocker, admin, env):
+@pytest.mark.parametrize("admin", [False, True])
+def test_discovery_rejects_missing_credentials(mocker, admin):
     connect = mocker.patch("mchub.models.cloud.openstack_manager.openstack.connect")
-    with Flask(__name__).test_request_context(json={"env": env}):
+    with Flask(__name__).test_request_context(json={"env": {}}):
         with pytest.raises(InvalidUsageException):
             OpenStackSubnetsAPI().post(SimpleNamespace(is_admin=admin))
     connect.assert_not_called()
@@ -56,16 +57,17 @@ def test_discovery_failure_is_safe(mocker):
 
 
 def test_invalid_subnet_rejected_before_project_creation(mocker):
+    mocker.patch("mchub.resources.project_api.db").session.scalar.return_value = None
     mocker.patch.object(OpenStackManager, "subnets", return_value=[{"id": "subnet-a", "name": "Alpha"}])
     terraform = mocker.patch("mchub.resources.project_api.get_terraform_cloud")
     with Flask(__name__).test_request_context(json={"provider": "openstack", "env": ENV, "name": "test", "github_template": ""}):
         with pytest.raises(InvalidUsageException, match="Select an available"):
-            ProjectAPI().post(SimpleNamespace(is_admin=True))
+            ProjectAPI().post(SimpleNamespace(is_admin=True, username="admin"))
     terraform.assert_not_called()
 
 
 def test_credential_rotation_preserves_subnet(mocker):
-    project = SimpleNamespace(provider=Provider.OPENSTACK, env=ENV.copy(), name="test", tfcloud_project_id="p")
+    project = SimpleNamespace(provider=Provider.OPENSTACK, env=ENV.copy(), name="test", tfcloud_project_name="admin-test", tfcloud_project_id="p")
     mocker.patch("mchub.resources.project_api.db").session.get.return_value = project
     mocker.patch("mchub.resources.project_api.get_terraform_cloud")
     credentials = {k: v for k, v in ENV.items() if k != "OS_SUBNET_ID"}
@@ -74,8 +76,9 @@ def test_credential_rotation_preserves_subnet(mocker):
     assert project.env["OS_SUBNET_ID"] == "subnet-b"
 
 
+@pytest.mark.parametrize("admin", [False, True])
 @pytest.mark.parametrize("template_override", [None, "https://github.com/user/override"])
-def test_project_creation_persists_selected_subnet(mocker, template_override):
+def test_project_creation_persists_selected_subnet(mocker, template_override, admin):
     from mchub.models.user import UserORM
 
     template = "https://github.com/operator/openstack-template"
@@ -84,9 +87,10 @@ def test_project_creation_persists_selected_subnet(mocker, template_override):
 
     mocker.patch.object(OpenStackManager, "subnets", return_value=[{"id": "subnet-b", "name": "Beta"}])
     database = mocker.patch("mchub.resources.project_api.db")
+    database.session.scalar.return_value = None
     terraform = mocker.patch("mchub.resources.project_api.get_terraform_cloud").return_value
     terraform.create_project.return_value = "tf-project"
-    user = SimpleNamespace(is_admin=True, orm=UserORM(id=1, scoped_id="admin@example.org"))
+    user = SimpleNamespace(is_admin=admin, username="admin", orm=UserORM(id=1, scoped_id="admin@example.org"))
     payload = {"provider": "openstack", "env": ENV, "name": "test"}
     if template_override is not None:
         payload["github_template"] = template_override

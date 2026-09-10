@@ -11,8 +11,14 @@
       <v-card-text>
         <v-container>
           <v-select :items="providers" v-model="newProject.provider" label="Cloud provider"></v-select>
-          <v-text-field v-model="newProject.name" label="Project name"></v-text-field>
           <v-text-field
+            v-model="newProject.name"
+            label="Project name"
+            hint="Must be unique for your username"
+            persistent-hint
+          ></v-text-field>
+          <v-text-field
+            v-if="hubAdmin"
             v-model="newProject.agent_pool_name"
             label="Agent Pool Name (optional)"
             clearable
@@ -55,6 +61,7 @@ export default {
   name: "CloudProviderInput",
   components: { MessageDialog, AwsCredentials, OpenStackSubnet },
   emits: ["newProject"],
+  props: { hubAdmin: { type: Boolean, default: false } },
   data() {
     return {
       dialog: false,
@@ -103,7 +110,7 @@ export default {
     async add() {
       this.saving = true;
       const payload = { ...this.newProject };
-      if (!payload.agent_pool_name) {
+      if (!this.hubAdmin || !payload.agent_pool_name) {
         delete payload.agent_pool_name;
       }
       try {
