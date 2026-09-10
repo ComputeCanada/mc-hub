@@ -19,6 +19,11 @@ class UserORM(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     scoped_id = db.Column(db.String(), unique=True)
+    default_project_id = db.Column(
+        db.Integer,
+        db.ForeignKey("project.id", name="fk_user_default_project", ondelete="SET NULL"),
+        nullable=True,
+    )
     projects = db.relationship(
         "Project",
         secondary=projects,
@@ -70,6 +75,7 @@ class User:
             db.select(Project)
             .join(project_admins, project_admins.c.project_id == Project.id)
             .where(project_admins.c.user_id == self.orm.id)
+            .order_by(Project.id)
         ).all()
         result = list(direct)
         for p in admin_projects:
@@ -90,6 +96,19 @@ class User:
                     if mc_orm.created_by_user_id == self.orm.id
                 ])
         return result
+
+    @property
+    def default_project_id(self):
+        """Keep a saved, accessible default whenever the user has projects."""
+        projects = self.projects
+        if any(p.id == self.orm.default_project_id for p in projects):
+            return self.orm.default_project_id
+        project_id = projects[0].id if projects else None
+        if self.orm.default_project_id != project_id:
+            self.orm.default_project_id = project_id
+            db.session.add(self.orm)
+            db.session.commit()
+        return project_id
 
 
 class LocalUser(User):

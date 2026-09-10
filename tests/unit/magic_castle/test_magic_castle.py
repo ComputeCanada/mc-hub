@@ -62,6 +62,29 @@ def test_legacy_initial_plan_uses_verified_deployment_state(app, mocker, has_rem
     inspect_state.assert_called_once_with(cluster.tfcloud_workspace)
 
 
+@pytest.mark.parametrize("zone", ["ca-central-1a", "ca-central-1b", None])
+def test_undeployed_aws_zone_survives_save_and_reload(app, zone):
+    from mchub.database import db
+    from mchub.models.cloud.project import Project, Provider
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+
+    project = db.session.get(Project, VALID_CLUSTER_CONFIGURATION["cloud"]["id"])
+    project.provider = Provider.AWS
+    cluster = MagicCastle()
+    cluster.set_configuration({**deepcopy(VALID_CLUSTER_CONFIGURATION), "availability_zone": "ca-central-1a"})
+    cluster.orm.undeployed = True
+    cluster.orm.status = ClusterStatusCode.NOT_DEPLOYED
+    db.session.add(cluster.orm)
+    db.session.commit()
+    hostname = cluster.hostname
+
+    cluster.plan_modification({**cluster.state, "availability_zone": zone})
+    db.session.remove()
+    reloaded = MagicCastle(db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname)))
+    assert reloaded.state["availability_zone"] == zone
+
+
 def test_initial_apply_leaves_undeployed_lifecycle(app):
     from mchub.models.magic_castle.magic_castle import MagicCastle
 

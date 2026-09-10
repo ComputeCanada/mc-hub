@@ -101,7 +101,7 @@ def create_app(db_path=None):
     )
 
     user_view = UserAPI.as_view("user")
-    app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
+    app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET", "PATCH"])
 
     project_view = ProjectAPI.as_view("projects")
     app.add_url_rule("/api/projects/aws/regions", view_func=AWSRegionsAPI.as_view("aws_regions"), methods=["POST"])

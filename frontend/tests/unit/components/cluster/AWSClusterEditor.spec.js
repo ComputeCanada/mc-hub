@@ -1,11 +1,17 @@
-import { shallowMount, createLocalVue } from "@vue/test-utils";
+import { mount, shallowMount, createLocalVue } from "@vue/test-utils";
 import Vuetify from "vuetify";
 import Vue from "vue";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
+import UserRepository from "@/repositories/UserRepository";
+import ProjectRepository from "@/repositories/ProjectRepository";
+
+jest.mock("@/repositories/UserRepository", () => ({ getCurrent: jest.fn() }));
+jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn() }));
 
 jest.mock("@/repositories/AvailableResourcesRepository", () => ({
   getCloud: jest.fn(),
+  getHost: jest.fn(),
   checkCloud: jest.fn(),
   checkHost: jest.fn(),
 }));
@@ -54,6 +60,37 @@ describe("AWS cluster feasibility", () => {
   });
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it("shows the saved availability zone when reopening an undeployed cluster", async () => {
+    const seed = editor();
+    const specs = { ...seed.vm.localSpecs, undeployed: true, availability_zone: "ca-central-1b" };
+    seed.destroy();
+    UserRepository.getCurrent.mockResolvedValue({ data: { public_keys: [] } });
+    ProjectRepository.getAll.mockResolvedValue({ data: [{ id: 1, name: "AWS" }] });
+    AvailableResourcesRepository.getHost.mockResolvedValue({
+      data: {
+        provider: "aws",
+        possible_resources: {
+          image: ["ami-test"],
+          domain: ["example.org"],
+          mc_version: ["14.1.2"],
+          availability_zone: ["ca-central-1a", "ca-central-1b"],
+        },
+        resource_details: { instance_types: [] },
+      },
+    });
+    const wrapper = mount(ClusterEditor, {
+      localVue,
+      vuetify: new Vuetify(),
+      propsData: { specs, existingCluster: true, stateful: false, status: "not_deployed" },
+      stubs: ["HieradataEditor", "TypeSelect", "ResourceUsageDisplay", "router-link"],
+    });
+    await new Promise(jest.requireActual("timers").setImmediate);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("ca-central-1b");
+    expect(wrapper.vm.localSpecs.availability_zone).toBe("ca-central-1b");
+    wrapper.destroy();
   });
 
   it("preserves home, project and scratch and supports adding AWS volume rows", async () => {

@@ -531,12 +531,9 @@ export default {
         const projects = values[1].data;
         this.projects = projects;
         if (!this.existingCluster) {
-          try {
-            this.localSpecs.cloud.id = this.projects[0].id;
-          } catch (err) {
-            console.log("No cloud project available");
-            this.localSpecs.cloud.id = undefined;
-          }
+          const project = this.projects.find((project) => project.id === user.default_project_id);
+          this.localSpecs.cloud.id = project?.id;
+          this.localSpecs.cloud.name = project?.name;
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
         }
         this.initialSpecs = cloneDeep(this.localSpecs);

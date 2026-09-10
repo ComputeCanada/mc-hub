@@ -1,6 +1,7 @@
 <template>
   <v-container>
-    <v-card :max-width="600" class="mx-auto">
+    <v-card :max-width="800" class="mx-auto">
+      <v-alert v-if="error" type="error">{{ error }}</v-alert>
       <v-data-table :headers="headers" :items="projects">
         <template #top>
           <v-toolbar flat>
@@ -10,13 +11,27 @@
             <cloud-provider-input @newProject="updateProjectList" :default-github-template="githubDefaultTemplate" />
           </v-toolbar>
         </template>
+        <template v-slot:[`item.name`]="{ item }">
+          {{ item.name }}
+          <v-chip v-if="item.id === defaultProjectId" small class="ml-2" color="primary">Default</v-chip>
+        </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <project-membership :id="item.id" :admin="item.admin" />
-          <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
-            <v-icon> mdi-delete </v-icon>
-            delete
-          </v-btn>
-          <div v-else>not owner</div>
+          <div class="d-flex flex-nowrap align-center justify-end text-no-wrap">
+            <v-btn
+              v-if="item.id !== defaultProjectId"
+              text
+              :disabled="savingDefault !== null"
+              :loading="savingDefault === item.id"
+              @click="setDefaultProject(item)"
+              >Default</v-btn
+            >
+            <project-membership :id="item.id" :admin="item.admin" />
+            <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
+              <v-icon> mdi-delete </v-icon>
+              delete
+            </v-btn>
+            <div v-else>not owner</div>
+          </div>
         </template>
       </v-data-table>
     </v-card>
@@ -38,23 +53,44 @@ export default {
   data() {
     return {
       projects: [],
+      defaultProjectId: null,
+      savingDefault: null,
+      error: "",
       githubDefaultTemplate: null,
       headers: [
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
         { text: "# Clusters", value: "nb_clusters" },
-        { text: "", value: "actions", sortable: false },
+        { text: "", value: "actions", sortable: false, width: "1%" },
       ],
     };
   },
   async created() {
-    this.updateProjectList();
-    const user = (await UserRepository.getCurrent()).data;
-    this.githubDefaultTemplate = user.github_default_template;
+    await this.updateProjectList();
   },
   methods: {
     async updateProjectList() {
-      this.projects = (await ProjectRepository.getAll()).data;
+      try {
+        const [projects, user] = await Promise.all([ProjectRepository.getAll(), UserRepository.getCurrent()]);
+        this.projects = projects.data;
+        this.defaultProjectId = user.data.default_project_id;
+        this.githubDefaultTemplate = user.data.github_default_template;
+        this.error = "";
+      } catch (error) {
+        this.error = error.response?.data?.message || "Unable to load projects. Please try again.";
+      }
+    },
+    async setDefaultProject(item) {
+      this.savingDefault = item.id;
+      this.error = "";
+      try {
+        const { data } = await UserRepository.setDefaultProject(item.id);
+        this.defaultProjectId = data.default_project_id;
+      } catch (error) {
+        this.error = error.response?.data?.message || "Unable to save your default project. Please try again.";
+      } finally {
+        this.savingDefault = null;
+      }
     },
     deleteItem(item) {
       ProjectRepository.delete(item.id).then(this.updateProjectList);
