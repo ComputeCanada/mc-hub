@@ -114,6 +114,114 @@ it("makes no cloud requests when the user has no projects", async () => {
   wrapper.destroy();
 });
 
+it("never shows OpenStack quotas while opening an AWS default project", async () => {
+  let resolveResources;
+  AvailableResourcesRepository.getCloud.mockReturnValue(
+    new Promise((resolve) => {
+      resolveResources = resolve;
+    })
+  );
+  const wrapper = editor();
+  const quotaIndicators = () => wrapper.findAllComponents({ name: "ResourceUsageDisplay" });
+  expect(quotaIndicators().length).toBe(0);
+  await flush();
+  expect(wrapper.vm.loading).toBe(true);
+  expect(quotaIndicators().length).toBe(0);
+  resolveResources({
+    data: {
+      provider: "aws",
+      possible_resources: { image: [], domain: ["example.org"], mc_version: [] },
+      resource_details: { instance_types: [] },
+    },
+  });
+  await flush();
+  expect(wrapper.vm.isAWS).toBe(true);
+  expect(quotaIndicators().length).toBe(0);
+  wrapper.destroy();
+});
+
+it("hides OpenStack quotas immediately when switching projects, including failed loads", async () => {
+  const quotas = Object.fromEntries(
+    ["instance_count", "ram", "vcpus", "volume_count", "volume_size", "ips"].map((key) => [key, { max: 100 }])
+  );
+  AvailableResourcesRepository.getCloud.mockResolvedValue({
+    data: {
+      provider: "openstack",
+      quotas,
+      possible_resources: { image: [], domain: ["example.org"], mc_version: [] },
+      resource_details: { instance_types: [] },
+    },
+  });
+  const wrapper = editor();
+  await flush();
+  const quotaIndicators = () => wrapper.findAllComponents({ name: "ResourceUsageDisplay" });
+  expect(quotaIndicators().length).toBe(6);
+  let rejectResources;
+  AvailableResourcesRepository.getCloud.mockReturnValue(
+    new Promise((resolve, reject) => {
+      rejectResources = reject;
+    })
+  );
+  wrapper.vm.localSpecs.cloud.id = 1;
+  wrapper.vm.changeCloudProject();
+  await flush();
+  expect(wrapper.vm.loading).toBe(true);
+  expect(quotaIndicators().length).toBe(0);
+  rejectResources(new Error("offline"));
+  await flush();
+  expect(wrapper.vm.loading).toBe(false);
+  expect(quotaIndicators().length).toBe(0);
+  AvailableResourcesRepository.getCloud.mockResolvedValue({
+    data: {
+      provider: "aws",
+      possible_resources: { image: [], domain: ["example.org"], mc_version: [] },
+      resource_details: { instance_types: [] },
+    },
+  });
+  await wrapper.vm.loadCloudResources();
+  await flush();
+  expect(wrapper.vm.isAWS).toBe(true);
+  expect(quotaIndicators().length).toBe(0);
+  wrapper.destroy();
+});
+
+it.each([false, true])("clears the AWS banner while switching to OpenStack (load fails: %s)", async (fails) => {
+  const resources = {
+    possible_resources: { image: [], domain: ["example.org"], mc_version: [] },
+    resource_details: { instance_types: [] },
+  };
+  AvailableResourcesRepository.getCloud.mockResolvedValue({ data: { ...resources, provider: "aws" } });
+  const wrapper = editor();
+  await flush();
+  expect(wrapper.text()).toContain("Checking cluster feasibility");
+
+  let resolveResources;
+  let rejectResources;
+  AvailableResourcesRepository.getCloud.mockReturnValue(
+    new Promise((resolve, reject) => {
+      resolveResources = resolve;
+      rejectResources = reject;
+    })
+  );
+  wrapper.vm.localSpecs.cloud.id = 1;
+  wrapper.vm.changeCloudProject();
+  await flush();
+  expect(wrapper.vm.loading).toBe(true);
+  expect(wrapper.vm.isAWS).toBe(false);
+  expect(wrapper.findAllComponents({ name: "v-alert" }).length).toBe(0);
+  expect(AvailableResourcesRepository.checkCloud).not.toHaveBeenCalled();
+
+  if (fails) rejectResources(new Error("offline"));
+  else resolveResources({ data: { ...resources, provider: "openstack" } });
+  await flush();
+  expect(wrapper.vm.loading).toBe(false);
+  expect(wrapper.vm.isAWS).toBe(false);
+  expect(wrapper.text()).not.toContain("cluster feasibility");
+  expect(wrapper.text()).not.toContain("Within quotas");
+  if (fails) expect(wrapper.text()).toContain("Unable to load cloud resources");
+  wrapper.destroy();
+});
+
 it("lets a project member replace the default and moves the badge after saving", async () => {
   let resolveSave;
   UserRepository.setDefaultProject.mockReturnValue(

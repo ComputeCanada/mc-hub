@@ -116,7 +116,7 @@
         </div>
         <div v-if="awsError">{{ awsError }} <v-btn text @click="checkAWS">Retry</v-btn></div>
       </v-alert>
-      <v-list v-if="!isAWS" class="pt-0">
+      <v-list v-if="showOpenStackQuotas" class="pt-0">
         <v-list-item>
           <v-col cols="12" sm="3">
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
@@ -185,7 +185,7 @@
       <v-divider />
       <!-- Volumes -->
       <template>
-        <v-list v-if="!isAWS">
+        <v-list v-if="showOpenStackQuotas">
           <v-list-item>
             <v-spacer></v-spacer>
             <v-col cols="12" sm="3">
@@ -459,6 +459,7 @@ export default {
       this.$emit("loading", this.loading);
     },
     possibleResources(possibleResources) {
+      if (possibleResources === null) return;
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
       if (this.localSpecs.domain === null) {
@@ -557,6 +558,9 @@ export default {
   computed: {
     isAWS() {
       return this.provider === "aws";
+    },
+    showOpenStackQuotas() {
+      return this.provider === "openstack" && this.quotas !== null && !this.loading;
     },
     awsStatus() {
       return this.awsChecking ? "checking" : this.awsFeasibility?.status;
@@ -1001,6 +1005,12 @@ export default {
       const requestId = ++this.resourceRequest;
       this.awsRequest++;
       clearTimeout(this.awsTimer);
+      this.provider = null;
+      this.possibleResources = null;
+      this.resourceDetails = null;
+      this.quotas = null;
+      this.awsChecking = false;
+      this.awsError = "";
       this.awsFeasibility = null;
       this.awsCheckedDefinition = null;
       this.awsChoices = {};
