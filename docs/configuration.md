@@ -186,3 +186,25 @@ The name of your [Terraform Cloud organization](https://developer.hashicorp.com/
 ### `tfcloud_oauth_vcs_token_id`
 
 The ID of the [OAuth VCS connection](https://developer.hashicorp.com/terraform/cloud-docs/vcs) between Terraform Cloud and your version control system (e.g., GitHub). This ID allows Terraform Cloud to access the Git repositories for each cluster. You can find or generate this token in the Terraform Cloud UI under “VCS Providers” when setting up a GitHub connection.
+
+### `tfcloud_autoscale_pool_variable` (optional)
+
+The Terraform variable that cluster tokens may read and update through the
+Terraform proxy. Defaults to `pool`. If the autoscaler uses `TFE_POOL_VAR`, set
+this operator configuration value to the same name and ensure the variable exists
+in the workspace. A cluster token cannot select a different variable itself.
+
+The proxy permits only the autoscaler's workspace lock read, pool-variable read
+and update, resource listing (including pagination), run creation, and run-status
+read. Workspace IDs must match the token's cluster. Variable updates are checked
+against the workspace's pool variable; run-status responses are returned only
+after checking their workspace relationship. Run creation permits only the
+workspace relationship and the autoscaler's message, targets, auto-apply flag,
+and pool override. Pool values must be JSON arrays of hostnames, not arbitrary
+HCL expressions. All other paths, methods, query parameters, and payload fields
+are denied. Upstream redirects are not followed.
+
+This supports `slurm-autoscale-tfe` 0.10.0 (reviewed commit `a92ce96`), including
+suspend/resume targets, automatic apply, and resource pagination. Cluster tokens
+retain the ability to scale their own workspace. This restriction does not impose
+scaling quotas or replace isolation of Terraform execution and cloud credentials.

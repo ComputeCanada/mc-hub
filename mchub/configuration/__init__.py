@@ -48,6 +48,7 @@ class ConfigurationSchema(Schema):
     )
     tfcloud_api_token = fields.Str()
     tfcloud_organization = fields.Str()
+    tfcloud_autoscale_pool_variable = fields.Str(load_default="pool", validate=Regexp(r"^[A-Za-z_][A-Za-z0-9_-]*$"))
     tfcloud_oauth_vcs_token_id = fields.Str()
     mchub_url = fields.Str(load_default=None)
 
