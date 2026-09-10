@@ -8,7 +8,7 @@
             <v-toolbar-title>Your Projects</v-toolbar-title>
             <v-divider vertical class="mx-4" inset />
             <v-spacer />
-            <cloud-provider-input @newProject="updateProjectList" :default-github-template="githubDefaultTemplate" />
+            <cloud-provider-input @newProject="updateProjectList" />
           </v-toolbar>
         </template>
         <template v-slot:[`item.name`]="{ item }">
@@ -56,7 +56,6 @@ export default {
       defaultProjectId: null,
       savingDefault: null,
       error: "",
-      githubDefaultTemplate: null,
       headers: [
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
@@ -74,7 +73,6 @@ export default {
         const [projects, user] = await Promise.all([ProjectRepository.getAll(), UserRepository.getCurrent()]);
         this.projects = projects.data;
         this.defaultProjectId = user.data.default_project_id;
-        this.githubDefaultTemplate = user.data.github_default_template;
         this.error = "";
       } catch (error) {
         this.error = error.response?.data?.message || "Unable to load projects. Please try again.";

@@ -74,17 +74,27 @@ def test_credential_rotation_preserves_subnet(mocker):
     assert project.env["OS_SUBNET_ID"] == "subnet-b"
 
 
-def test_project_creation_persists_selected_subnet(mocker):
+@pytest.mark.parametrize("template_override", [None, "https://github.com/user/override"])
+def test_project_creation_persists_selected_subnet(mocker, template_override):
     from mchub.models.user import UserORM
+
+    template = "https://github.com/operator/openstack-template"
+    mocker.patch("mchub.services.github_api.get_config", return_value={"github_templates": {"openstack": template}})
+    storage = mocker.patch("mchub.resources.project_api.get_github_storage").return_value
 
     mocker.patch.object(OpenStackManager, "subnets", return_value=[{"id": "subnet-b", "name": "Beta"}])
     database = mocker.patch("mchub.resources.project_api.db")
     terraform = mocker.patch("mchub.resources.project_api.get_terraform_cloud").return_value
     terraform.create_project.return_value = "tf-project"
     user = SimpleNamespace(is_admin=True, orm=UserORM(id=1, scoped_id="admin@example.org"))
-    with Flask(__name__).test_request_context(json={"provider": "openstack", "env": ENV, "name": "test", "github_template": ""}):
+    payload = {"provider": "openstack", "env": ENV, "name": "test"}
+    if template_override is not None:
+        payload["github_template"] = template_override
+    with Flask(__name__).test_request_context(json=payload):
         _, status = ProjectAPI().post(user)
     assert status == 200
     project = database.session.add.call_args.args[0]
     assert project.env["OS_SUBNET_ID"] == "subnet-b"
+    assert project.github_template == template
+    storage.validate_template.assert_called_once_with(template)
     database.session.commit.assert_called_once()

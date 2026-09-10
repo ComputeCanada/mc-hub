@@ -34,7 +34,6 @@ def test_get_current_user(client):
         "public_keys": getoutput("ssh-add -L").split("\n"),
         "usertype": "local",
         "is_admin": True,
-        "github_default_template": None,
         "default_project_id": 1,
     }
 

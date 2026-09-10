@@ -2,7 +2,6 @@ from flask import request
 
 from .api_view import ApiView
 from ..models.user import User
-from ..configuration import get_config
 from ..database import db
 from ..exceptions.invalid_usage_exception import InvalidUsageException
 
@@ -14,7 +13,6 @@ class UserAPI(ApiView):
             "usertype": user.usertype,
             "public_keys": user.public_keys,
             "is_admin": getattr(user, "is_admin", True),
-            "github_default_template": get_config().get("github_default_template"),
             "default_project_id": user.default_project_id,
         }
 

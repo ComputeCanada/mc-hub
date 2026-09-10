@@ -14,9 +14,6 @@
         <v-container>
           <v-list>
             <v-list-item v-if="admin">
-              <v-text-field v-model="githubTemplate" label="Github Template" clearable />
-            </v-list-item>
-            <v-list-item v-if="admin">
               <v-text-field
                 v-model="agentPoolName"
                 label="Agent Pool Name"
@@ -141,7 +138,6 @@ export default {
       entries: [], // [{ username, isAdmin }]
       newMember: "",
       newMemberIsAdmin: false,
-      githubTemplate: "",
       agentPoolName: "",
       env: { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" },
     };
@@ -157,7 +153,6 @@ export default {
           username,
           isAdmin: adminSet.has(username),
         }));
-        this.githubTemplate = this.project.github_template;
       } else {
         this.close();
       }
@@ -186,9 +181,6 @@ export default {
         add_admins: [...newAdmins].filter((x) => !oldAdmins.has(x)),
         del_admins: [...oldAdmins].filter((x) => !newAdmins.has(x)),
       };
-      if (this.admin && this.githubTemplate !== this.project.github_template) {
-        payload.github_template = this.githubTemplate ?? "";
-      }
       if (this.admin && this.agentPoolName) {
         payload.agent_pool_name = this.agentPoolName;
       }
@@ -226,7 +218,6 @@ export default {
       this.entries = [];
       this.newMember = "";
       this.newMemberIsAdmin = false;
-      this.githubTemplate = "";
       this.agentPoolName = "";
       this.env = { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" };
       this.dialog = false;

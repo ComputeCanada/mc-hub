@@ -29,6 +29,7 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
     provider = db.Column(db.Enum(Provider), nullable=False)
+    # Legacy column retained for database compatibility; templates come from operator configuration.
     github_template = db.Column(db.String(), nullable=False)
     env = db.Column(db.PickleType())
     max_instance_hourly_price = db.Column(db.Numeric(18, 10), nullable=True)

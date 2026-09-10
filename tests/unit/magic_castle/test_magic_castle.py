@@ -139,6 +139,9 @@ def test_creation_steps_are_committed_before_external_operations(app, mocker):
 
     cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
 
+    get_github_storage().create_repo.assert_called_once_with(
+        cluster.hostname, "https://github.com/example/openstack-template"
+    )
     assert observed_steps == [
         "github_repository", "terraform_workspace", "variable_file", "resource_plan"
     ]

@@ -18,7 +18,6 @@ def context(mocker):
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
     db.init_app(app)
-    mocker.patch("mchub.resources.user_api.get_config", return_value={})
     mocker.patch("mchub.models.user.get_config", return_value={})
     with app.app_context():
         db.create_all()

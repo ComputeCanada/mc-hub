@@ -13,14 +13,6 @@
           <v-select :items="providers" v-model="newProject.provider" label="Cloud provider"></v-select>
           <v-text-field v-model="newProject.name" label="Project name"></v-text-field>
           <v-text-field
-            v-model="newProject.github_template"
-            label="Github Template (Optional)"
-            :placeholder="defaultGithubTemplate || ''"
-            :hint="defaultGithubTemplate ? `Default: ${defaultGithubTemplate}` : ''"
-            persistent-hint
-            clearable
-          ></v-text-field>
-          <v-text-field
             v-model="newProject.agent_pool_name"
             label="Agent Pool Name (optional)"
             clearable
@@ -63,12 +55,6 @@ export default {
   name: "CloudProviderInput",
   components: { MessageDialog, AwsCredentials, OpenStackSubnet },
   emits: ["newProject"],
-  props: {
-    defaultGithubTemplate: {
-      type: String,
-      default: null,
-    },
-  },
   data() {
     return {
       dialog: false,
@@ -83,7 +69,6 @@ export default {
       defaultProject: {
         name: "",
         provider: "openstack",
-        github_template: "",
         agent_pool_name: "",
         max_instance_hourly_price: null,
         env: {
@@ -95,7 +80,6 @@ export default {
       newProject: {
         name: "",
         provider: "openstack",
-        github_template: "",
         agent_pool_name: "",
         max_instance_hourly_price: null,
         env: {
@@ -121,9 +105,6 @@ export default {
       const payload = { ...this.newProject };
       if (!payload.agent_pool_name) {
         delete payload.agent_pool_name;
-      }
-      if (!payload.github_template) {
-        payload.github_template = this.defaultGithubTemplate || "";
       }
       try {
         await ProjectRepository.post(payload);

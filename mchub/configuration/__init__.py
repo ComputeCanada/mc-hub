@@ -6,6 +6,7 @@ from os import path
 from typing import Optional
 
 from marshmallow import Schema, fields, ValidationError, post_load
+from marshmallow.validate import OneOf, Regexp
 
 from .env import CONFIGURATION_FILE_PATH
 from ..models.auth_type import AuthType
@@ -33,7 +34,14 @@ class ConfigurationSchema(Schema):
     debug = fields.Boolean(load_default=True)
     github_token = fields.Str()
     github_organization = fields.Str()
-    github_default_template = fields.Str()
+    github_templates = fields.Dict(
+        keys=fields.Str(validate=OneOf(["aws", "openstack", "azure", "gcp", "ovh"])),
+        values=fields.Str(validate=Regexp(
+            r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$",
+            error="Use a GitHub repository URL: https://github.com/owner/repository",
+        )),
+        load_default=dict,
+    )
     magic_castle_version_range = fields.Str(
         required=True,
         validate=validate_magic_castle_version_range,

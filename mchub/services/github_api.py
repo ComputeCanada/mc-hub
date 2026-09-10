@@ -6,6 +6,7 @@ from github import Auth
 from github import GithubException
 import time
 import json
+from urllib.parse import urlparse
 
 
 import time
@@ -19,6 +20,16 @@ from ..models.version_constraint import (
 
 
 MAGIC_CASTLE_REPOSITORY = "ComputeCanada/magic_castle"
+
+
+def get_provider_template(provider):
+    template = get_config().get("github_templates", {}).get(provider)
+    if not template:
+        raise GithubStorageException(
+            f"No GitHub template configured for provider '{provider}'. "
+            "Ask the operator to set github_templates in configuration.json."
+        )
+    return template
 
 
 @contextmanager
@@ -83,6 +94,8 @@ class GithubStorage:
                 raise e
 
     def _get_template_repo(self, template_name):
+        if template_name.startswith("https://github.com/"):
+            template_name = urlparse(template_name).path.strip("/").removesuffix(".git")
         org = self.github.get_organization(self.organization)
         if "/" in template_name:
             return self.github.get_repo(template_name)

@@ -47,6 +47,10 @@ BASE_CONFIGURATION = {
     },
     "github_token": "EXAMPLE_TOKEN",
     "github_organization": "github_org",
+    "github_templates": {
+        "aws": "https://github.com/example/aws-template",
+        "openstack": "https://github.com/example/openstack-template",
+    },
     "magic_castle_version_range": ">= 14.0.0, < 15.0.0",
     "tfcloud_api_token": "EXAMPLE_TOKEN",
     "tfcloud_organization": "tfcloud_org",

@@ -60,7 +60,7 @@ from ...database import db
 
 from ...configuration import get_config
 from ...services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
-from ...services.github_api import get_github_storage
+from ...services.github_api import get_github_storage, get_provider_template
 
 
 def _encrypt_eyaml(value: str, cert_pem: str) -> str:
@@ -582,7 +582,7 @@ class MagicCastle:
             raise ClusterExistsException
 
         github_repo_fullname = get_github_storage().create_repo(
-            self.hostname, self.project.github_template
+            self.hostname, get_provider_template(self.project.provider)
         )
 
         workspace_name = self.config.cluster_name

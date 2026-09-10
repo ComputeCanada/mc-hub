@@ -6,7 +6,7 @@ from .api_view import ApiView
 from ..database import db
 from ..models.user import User, UserORM
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
-from ..services.github_api import get_github_storage
+from ..services.github_api import get_github_storage, get_provider_template
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
 from ..models.cloud.aws_manager import AWSManager
 from ..models.cloud.openstack_manager import OpenStackManager
@@ -52,7 +52,6 @@ class ProjectAPI(ApiView):
                 "name": project.name,
                 "provider": project.provider,
                 **aws_settings(project),
-                "github_template": project.github_template,
                 "nb_clusters": len(project.magic_castles),
                 "admin": is_admin,
                 "members": [member.scoped_id for member in project.members]
@@ -69,7 +68,6 @@ class ProjectAPI(ApiView):
                     "name": project.name,
                     "provider": project.provider,
                     **aws_settings(project),
-                    "github_template": project.github_template,
                     "nb_clusters": len(project.magic_castles),
                     "admin": user.is_project_admin(project),
                 }
@@ -88,7 +86,6 @@ class ProjectAPI(ApiView):
             provider = Provider(data["provider"])
             env = data["env"]
             name = data["name"]
-            github_template = data["github_template"]
         except KeyError as err:
             raise InvalidUsageException(f"Missing required field {err}")
         max_price = parse_price(data.get("max_instance_hourly_price"), provider)
@@ -108,11 +105,11 @@ class ProjectAPI(ApiView):
             }:
                 raise InvalidUsageException("Select an available OpenStack subnet.")
 
-        if github_template:
-            try:
-                get_github_storage().validate_template(github_template)
-            except GithubStorageException as e:
-                raise InvalidUsageException(str(e))
+        try:
+            github_template = get_provider_template(provider)
+            get_github_storage().validate_template(github_template)
+        except GithubStorageException as e:
+            raise InvalidUsageException(str(e))
 
         try:
             tfcloud_project_id = get_terraform_cloud().create_project(
@@ -151,7 +148,6 @@ class ProjectAPI(ApiView):
             "name": project.name,
             "provider": project.provider,
             **aws_settings(project),
-            "github_template": project.github_template,
             "nb_clusters": len(project.magic_castles),
             "admin": True,
         }, 200
@@ -182,14 +178,6 @@ class ProjectAPI(ApiView):
                 if project.magic_castles and env["AWS_DEFAULT_REGION"] != project.env["AWS_DEFAULT_REGION"]:
                     raise InvalidUsageException("A project with clusters cannot change AWS region.")
                 AWSManager(Project(provider=project.provider, env=env)).validate_project()
-
-        if "github_template" in data:
-            if data["github_template"]:
-                try:
-                    get_github_storage().validate_template(data["github_template"])
-                except GithubStorageException as e:
-                    raise InvalidUsageException(str(e))
-            project.github_template = data["github_template"]
 
         if "agent_pool_name" in data:
             try:

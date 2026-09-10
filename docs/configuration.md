@@ -45,7 +45,10 @@ An example `configuration.json` is shown below.
   },
   "github_token": "EXAMPLE_GITHUB_TOKEN",
   "github_organization": "EXAMPLE_GITHUB_ORGANIZATION",
-  "github_default_template": "owner/repo-template",
+  "github_templates": {
+    "aws": "https://github.com/owner/aws-template",
+    "openstack": "https://github.com/owner/openstack-template"
+  },
   "magic_castle_version_range": ">= 14.0.0, < 15.0.0",
   "tfcloud_api_token": "EXAMPLE_TF_TOKEN",
   "tfcloud_organization": "EXAMPLE_TFCLOUD_ORGANIZATION",
@@ -152,14 +155,13 @@ A [GitHub personal access token](https://github.com/settings/tokens) with approp
 
 The name of the GitHub organization where Magic Castle repositories will be created and managed. MC Hub will use the `github_token` to access this organization and create project repositories on behalf of users.
 
-### `github_default_template`
+### `github_templates`
 
-The default GitHub template repository to use when creating a new project. When set, this value is pre-filled in the project creation form and used automatically if no template is specified.
+An object mapping each cloud provider to its GitHub template repository URL, as shown above. Configure one URL for every provider you use (for example, `aws` and `openstack`). URLs must use the form `https://github.com/owner/repository`; a trailing slash or `.git` suffix is accepted. The `github_token` must have access to each repository.
 
-Two formats are supported:
+The operator controls template selection. Project creation and editing do not accept template overrides. New cluster repositories use the currently configured URL for the project's provider, including for existing projects. Existing cluster repositories are unaffected. Creating a project or cluster without a template configured for its provider produces an error.
 
-- **Repository name only** (e.g. `"my-template"`): the template is looked up within `github_organization`. This supports both public and private repositories, as long as `github_token` has access to the organization.
-- **Full `owner/repo` reference** (e.g. `"owner/repo-template"`): the template is fetched globally. This is useful for public templates hosted outside of `github_organization`. Private repositories outside the organization are also supported if `github_token` has read access to them.
+Replace the old `github_default_template` entry with this mapping when upgrading, and restart MC Hub after changing configuration. Previously stored per-project templates are no longer used.
 
 ### `magic_castle_version_range`
 
