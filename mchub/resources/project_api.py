@@ -9,6 +9,7 @@ from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVa
 from ..services.github_api import get_github_storage
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
 from ..models.cloud.aws_manager import AWSManager
+from ..models.cloud.openstack_manager import OpenStackManager
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
 )
@@ -101,6 +102,12 @@ class ProjectAPI(ApiView):
         if provider == Provider.AWS:
             AWSManager(Project(provider=provider, env=env)).validate_project()
 
+        if provider == Provider.OPENSTACK and env.get("OS_SUBNET_ID"):
+            if env["OS_SUBNET_ID"] not in {
+                subnet["id"] for subnet in OpenStackManager(Project(provider=provider, env=env)).subnets()
+            }:
+                raise InvalidUsageException("Select an available OpenStack subnet.")
+
         if github_template:
             try:
                 get_github_storage().validate_template(github_template)
@@ -169,6 +176,8 @@ class ProjectAPI(ApiView):
                 env = ENV_VALIDATORS[project.provider]({**project.env, **data["env"]} if project.provider == Provider.AWS else data["env"])
             except Exception:
                 raise InvalidUsageException("Missing required environment variables")
+            if project.provider == Provider.OPENSTACK and project.env.get("OS_SUBNET_ID"):
+                env["OS_SUBNET_ID"] = project.env["OS_SUBNET_ID"]
             if project.provider == Provider.AWS:
                 if project.magic_castles and env["AWS_DEFAULT_REGION"] != project.env["AWS_DEFAULT_REGION"]:
                     raise InvalidUsageException("A project with clusters cannot change AWS region.")
@@ -289,3 +298,15 @@ class AWSRegionsAPI(ApiView):
         except Exception:
             raise InvalidUsageException("Provide AWS access credentials to load regions.")
         return {"regions": AWSManager(Project(provider=Provider.AWS, env=env)).regions()}
+
+
+class OpenStackSubnetsAPI(ApiView):
+    def post(self, user: User):
+        if not getattr(user, "is_admin", False):
+            raise InvalidUsageException("Only admins can discover OpenStack project subnets", status_code=403)
+        data = request.get_json() or {}
+        try:
+            env = ENV_VALIDATORS[Provider.OPENSTACK](data.get("env", {}))
+        except Exception:
+            raise InvalidUsageException("Provide OpenStack credentials to load subnets.")
+        return {"subnets": OpenStackManager(Project(provider=Provider.OPENSTACK, env=env)).subnets()}

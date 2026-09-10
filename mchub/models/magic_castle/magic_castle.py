@@ -538,6 +538,8 @@ class MagicCastle:
         var_tf = self.config.get_var_tf()
         if self.project.provider == "aws":
             var_tf["region"] = self.project.env["AWS_DEFAULT_REGION"]
+        if self.project.provider == "openstack" and self.project.env.get("OS_SUBNET_ID"):
+            var_tf["subnet_id"] = self.project.env["OS_SUBNET_ID"]
         if self.cluster_token:
             mchub_url = get_config().get("mchub_url")
             tfe_token = self.cluster_token

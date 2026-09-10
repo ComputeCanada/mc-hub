@@ -10,50 +10,26 @@
       </v-card-title>
       <v-card-text>
         <v-container>
-          <v-list>
-            <v-list>
-              <v-list-item>
-                <v-select :items="providers" v-model="newProject.provider" label="Cloud provider"></v-select>
-              </v-list-item>
-              <v-list-item>
-                <v-text-field v-model="newProject.name" label="Project name"></v-text-field>
-              </v-list-item>
-              <v-list-item>
-                <v-text-field
-                  v-model="newProject.github_template"
-                  label="Github Template (Optional)"
-                  :placeholder="defaultGithubTemplate || ''"
-                  :hint="defaultGithubTemplate ? `Default: ${defaultGithubTemplate}` : ''"
-                  persistent-hint
-                  clearable
-                ></v-text-field>
-              </v-list-item>
-              <v-list-item>
-                <v-text-field
-                  v-model="newProject.agent_pool_name"
-                  label="Agent Pool Name (optional)"
-                  clearable
-                ></v-text-field>
-              </v-list-item>
-            </v-list>
-            <aws-credentials v-if="newProject.provider === 'aws'" v-model="newProject.env" />
-            <v-text-field
-              v-if="newProject.provider === 'aws'"
-              v-model="newProject.max_instance_hourly_price"
-              label="Maximum instance price (USD/hour)"
-              type="number"
-              min="0"
-              step="any"
-              clearable
-              hint="Optional, per instance. Compute only; excludes storage and IP charges."
-              persistent-hint
-            />
-            <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
-              <v-list-item>
-                <v-text-field v-model="newProject.env[env_var]" :label="env_var"></v-text-field>
-              </v-list-item>
-            </div>
-          </v-list>
+          <v-select :items="providers" v-model="newProject.provider" label="Cloud provider"></v-select>
+          <v-text-field v-model="newProject.name" label="Project name"></v-text-field>
+          <v-text-field
+            v-model="newProject.github_template"
+            label="Github Template (Optional)"
+            :placeholder="defaultGithubTemplate || ''"
+            :hint="defaultGithubTemplate ? `Default: ${defaultGithubTemplate}` : ''"
+            persistent-hint
+            clearable
+          ></v-text-field>
+          <v-text-field
+            v-model="newProject.agent_pool_name"
+            label="Agent Pool Name (optional)"
+            clearable
+          ></v-text-field>
+          <aws-credentials v-if="newProject.provider === 'aws'" v-model="newProject.env" />
+          <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
+            <v-text-field v-model="newProject.env[env_var]" :label="env_var"></v-text-field>
+          </div>
+          <open-stack-subnet v-if="newProject.provider === 'openstack'" v-model="newProject.env" />
         </v-container>
       </v-card-text>
       <v-card-actions>
@@ -64,7 +40,11 @@
           text
           @click="add"
           :loading="saving"
-          :disabled="saving || (newProject.provider === 'aws' && !newProject.env.AWS_DEFAULT_REGION)"
+          :disabled="
+            saving ||
+            (newProject.provider === 'aws' && !newProject.env.AWS_DEFAULT_REGION) ||
+            (newProject.provider === 'openstack' && !newProject.env.OS_SUBNET_ID)
+          "
         >
           Add
         </v-btn>
@@ -76,11 +56,12 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
+import OpenStackSubnet from "@/components/ui/OpenStackSubnet";
 import AwsCredentials from "@/components/ui/AWSCredentials";
 
 export default {
   name: "CloudProviderInput",
-  components: { MessageDialog, AwsCredentials },
+  components: { MessageDialog, AwsCredentials, OpenStackSubnet },
   emits: ["newProject"],
   props: {
     defaultGithubTemplate: {

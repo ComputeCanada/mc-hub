@@ -3,6 +3,9 @@ import Repository from "./Repository";
 const resource = "/projects";
 
 export default {
+  openstackSubnets(payload) {
+    return Repository.post(`${resource}/openstack/subnets`, payload);
+  },
   awsRegions(payload) {
     return Repository.post(`${resource}/aws/regions`, payload);
   },

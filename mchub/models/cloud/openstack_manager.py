@@ -1,4 +1,8 @@
 import openstack
+from keystoneauth1.exceptions import ClientException
+from requests.exceptions import RequestException
+
+from ...exceptions.invalid_usage_exception import InvalidUsageException
 
 from os import environ, path
 from re import match, IGNORECASE, compile
@@ -76,11 +80,30 @@ class OpenStackManager:
     def connection(self):
         if self._con is None:
             # Convert OS_* environment variable in keyword arguments
-            kargs = {key[3:].lower(): value for key, value in self.project.env.items()}
+            kargs = {key[3:].lower(): value for key, value in self.project.env.items()
+                     if key != "OS_SUBNET_ID"}
             kargs["auth_type"] = "v3applicationcredential"
             self._con = openstack.connect(**kargs)
 
         return self._con
+
+    def subnets(self):
+        try:
+            network = self.connection.network
+            internal_network_ids = {
+                net.id for net in network.networks(is_router_external=False)
+                if not net.is_router_external
+            }
+            return sorted(
+                ({"id": subnet.id, "name": subnet.name or "Unnamed subnet"}
+                 for subnet in network.subnets(ip_version=4)
+                 if subnet.ip_version == 4 and subnet.network_id in internal_network_ids),
+                key=lambda subnet: (subnet["name"].casefold(), subnet["id"]),
+            )
+        except (openstack.exceptions.SDKException, ClientException, RequestException) as exc:
+            raise InvalidUsageException(
+                "Unable to load OpenStack subnets. Check the project credentials and network permissions."
+            ) from exc
 
     @property
     def project_id(self):

@@ -57,6 +57,7 @@ class Project(db.Model):
 
 
 class OpenStackEnv(marshmallow.Schema):
+    OS_SUBNET_ID = fields.String(validate=Length(min=1))
     OS_AUTH_URL = fields.String(required=True, validate=[URL()])
     OS_APPLICATION_CREDENTIAL_ID = fields.String(
         required=True, validate=[Length(min=32)]
