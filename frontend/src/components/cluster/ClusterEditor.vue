@@ -86,7 +86,7 @@
               v-model="localSpecs.availability_zone"
               :items="(possibleResources && possibleResources.availability_zone) || []"
               label="Availability zone (optional)"
-              hint="Leave empty to use the deployment default."
+              hint="Leave empty to use the deployment default and show only instance types offered in every available zone."
               persistent-hint
               clearable
             />

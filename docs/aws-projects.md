@@ -10,7 +10,11 @@ The AWS cluster editor offers an optional **Availability zone** selector listing
 available, enabled standard zones in the project's region. Selecting a zone
 filters instance choices by that zone's offerings and saves `availability_zone`
 in the cluster definition and Terraform variables. Clearing it omits the variable
-so the template uses its default. Changing the zone triggers a new feasibility
+so the template uses its default. Without a selected zone, only types offered in
+every available, enabled standard zone in the region are allowed. The same rule
+is enforced by feasibility checks; selecting a specific zone permits types unique
+to that zone. Zone offerings are cached, and cold lookups run concurrently.
+Changing the zone triggers a new feasibility
 check; an existing instance selection that is not offered there is retained with
 an explanation. Zone changes can require replacement resources, which remain
 outside the final-state quota estimate. Local and Wavelength Zones are excluded.

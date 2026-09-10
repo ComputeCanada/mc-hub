@@ -191,6 +191,8 @@ class AWSManager:
 
     def zone_issues(self, definition):
         zone = definition.get("availability_zone")
+        if not self.availability_zones:
+            return [{"code": "availability_zone", "message": "AWS returned no available standard zones in the project's region."}]
         if zone not in (None, "") and zone not in self.availability_zones:
             return [{"code": "availability_zone", "message": "Select an available zone in the project's AWS region, or leave it unset."}]
         return []
@@ -204,6 +206,23 @@ class AWSManager:
                 )
             }
         return self._zone_offerings[zone]
+
+    @cached_property
+    def offered_in_all_zones(self):
+        zones = self.availability_zones
+        if not zones:
+            return set()
+        # Each zone's offerings use the shared catalog cache; fetch cold entries
+        # concurrently rather than adding one sequential request per zone.
+        with ThreadPoolExecutor(max_workers=min(4, len(zones))) as executor:
+            offerings = list(executor.map(self.offered_in_zone, zones))
+        return set.intersection(*offerings)
+
+    def offered_for_definition(self, definition):
+        if self.zone_issues(definition):
+            return set()
+        zone = definition.get("availability_zone")
+        return self.offered_in_zone(zone) if zone else self.offered_in_all_zones
 
     @cached_property
     def quotas_by_name(self):
@@ -438,8 +457,9 @@ class AWSManager:
                 issues.append({**price_issue, "message": f"{name}: {price_issue['message']}"})
             demand[t["quota_pool"]] += count * t["vcpus"]
             zone = definition.get("availability_zone")
-            if zone and not self.zone_issues(definition) and t["name"] not in self.offered_in_zone(zone):
-                issues.append({"code": "instance_zone", "message": f"{name}: {t['name']} is not offered in {zone}. Select another type or zone."})
+            if not self.zone_issues(definition) and t["name"] not in self.offered_for_definition(definition):
+                location = zone or "every available zone in the project's region"
+                issues.append({"code": "instance_zone", "message": f"{name}: {t['name']} is not offered in {location}. Select another type or a specific zone that offers it."})
             image = next((i for i in self.images if i["ImageId"] == definition.get("image")), None)
             boot_mode = image.get("BootMode") if image else None
             if boot_mode in {"uefi", "legacy-bios"} and boot_mode not in self.all_types[t["name"]].get("SupportedBootModes", []):
@@ -481,6 +501,7 @@ class AWSManager:
         if self.zone_issues(definition):
             return {name: [] for name in groups}
         volume_demand, _ = self.volume_demand(definition)
+        offered = self.offered_for_definition(definition)
         for name, group in groups.items():
             choices[name] = []
             if not isinstance(group, dict):
@@ -489,7 +510,7 @@ class AWSManager:
             del others["instances"][name]
             other_demand, _ = self.demand(others, incomplete=True)
             for t in self.types:
-                if self.price_issue(t):
+                if t["name"] not in offered or self.price_issue(t):
                     continue
                 candidate = {"instances": {name: {**group, "type": t["name"]}},
                              "image": definition.get("image"), "availability_zone": definition.get("availability_zone")}
@@ -519,7 +540,7 @@ class AWSManager:
     @property
     def available_resources(self):
         self.preload()
-        affordable = [t for t in self.types if not self.price_issue(t) and t["vcpus"] <= self.budget[t["quota_pool"]] and self.budget["gp2"] >= 20]
+        affordable = [t for t in self.types if t["name"] in self.offered_in_all_zones and not self.price_issue(t) and t["vcpus"] <= self.budget[t["quota_pool"]] and self.budget["gp2"] >= 20]
         return {"provider": "aws", "region": self.project.env["AWS_DEFAULT_REGION"], "quotas": {},
                 "possible_resources": {"image": [i["ImageId"] for i in self.images],
                     "availability_zone": self.availability_zones,

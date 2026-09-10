@@ -44,6 +44,7 @@ def manager(mocker):
         {"name": "m6i.2xlarge", "vcpus": 8, "ram": 32768, "quota_pool": STANDARD},
         {"name": "g5.xlarge", "vcpus": 4, "ram": 16384, "quota_pool": GPU},
     ]
+    manager.offered_in_all_zones = {t["name"] for t in manager.types}
     manager.all_types = {t["name"]: {"VCpuInfo": {"DefaultVCpus": t["vcpus"]}} for t in manager.types}
     manager.images = [{"ImageId": "ami-test", "Name": "AlmaLinux OS 9"}]
     manager.availability_zones = ["ca-central-1a", "ca-central-1b"]
@@ -434,3 +435,48 @@ def test_data_volume_storage_counted_once_per_matching_instance(manager):
     payload["instances"]["other"] = {"count": 1, "type": "m6i.large", "tags": ["node"]}
     payload["volumes"] = {"nfs": {"home": {"size": 100}}}
     assert manager.volume_demand(payload) == ({"gp2": 200}, [])
+
+
+@pytest.mark.parametrize("zone", [None, ""])
+def test_no_zone_requires_types_in_every_zone(manager, mocker, zone):
+    del manager.offered_in_all_zones
+    offerings = {"ca-central-1a": {"m6i.large", "m6i.xlarge"},
+                 "ca-central-1b": {"m6i.large", "g5.xlarge"}}
+    read = mocker.patch.object(manager, "offered_in_zone", side_effect=offerings.__getitem__)
+    payload = {**definition(type="m6i.xlarge"), "availability_zone": zone}
+    assert manager.choices(payload)["node"] == ["m6i.large"]
+    result = manager.evaluate(payload)
+    assert result["status"] == "blocked"
+    assert "every available zone" in result["issues"][0]["message"]
+    assert read.call_count == 2
+    assert manager.choices(payload)["node"] == ["m6i.large"]
+    assert read.call_count == 2
+    payload["availability_zone"] = "ca-central-1a"
+    assert manager.evaluate(payload)["status"] == "ready"
+    assert manager.choices(payload)["node"] == ["m6i.large", "m6i.xlarge"]
+
+
+def test_initial_discovery_excludes_types_not_in_all_zones(manager, mocker):
+    manager.offered_in_all_zones = {"m6i.large"}
+    mocker.patch.object(manager, "preload")
+    resources = manager.available_resources
+    assert resources["possible_resources"]["types"] == ["m6i.large"]
+    # Retain metadata for selections made after choosing a specific zone.
+    assert "m6i.xlarge" in {t["name"] for t in resources["resource_details"]["instance_types"]}
+    payload = definition(0)
+    assert manager.choices(payload)["node"] == ["m6i.large"]
+
+
+def test_empty_zone_offerings_do_not_fall_back_to_regional_types(manager, mocker):
+    del manager.offered_in_all_zones
+    mocker.patch.object(manager, "offered_in_zone", side_effect=lambda zone: {"m6i.large"} if zone.endswith("a") else set())
+    assert manager.choices(definition())["node"] == []
+    assert manager.evaluate(definition())["status"] == "blocked"
+
+
+def test_failed_zone_discovery_does_not_return_partial_intersection(manager, mocker):
+    del manager.offered_in_all_zones
+    mocker.patch.object(manager, "offered_in_zone", side_effect=InvalidUsageException("AWS lookup failed"))
+    with pytest.raises(InvalidUsageException, match="AWS lookup failed"):
+        manager.choices(definition())
+    assert "offered_in_all_zones" not in manager.__dict__
