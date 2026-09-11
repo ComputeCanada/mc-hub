@@ -1,11 +1,18 @@
+import re
+from decimal import Decimal, InvalidOperation
+
 from flask import request
+from sqlalchemy.exc import IntegrityError
 
 from .api_view import ApiView
+from ..configuration import get_config
 from ..database import db
-from ..models.user import User, UserORM
+from ..models.user import User, UserORM, TokenSuperUser
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
-from ..services.github_api import get_github_storage
-from ..models.cloud.project import Project, Provider, ENV_VALIDATORS
+from ..services.github_api import get_github_storage, get_provider_template
+from ..models.cloud.project import Project, Provider, ENV_VALIDATORS, validate_openstack_cloud
+from ..models.cloud.aws_manager import AWSManager
+from ..models.cloud.openstack_manager import OpenStackManager
 from ..exceptions.invalid_usage_exception import (
     InvalidUsageException,
 )
@@ -15,6 +22,27 @@ from ..exceptions.server_exception import (
 )
 
 
+def parse_price(value, provider):
+    if value is None or value == "":
+        return None
+    try:
+        price = Decimal(str(value))
+        if (provider != Provider.AWS or not price.is_finite() or price < 0
+                or price >= Decimal("100000000") or price.as_tuple().exponent < -10):
+            raise ValueError
+        return price
+    except (InvalidOperation, ValueError):
+        raise InvalidUsageException("Maximum instance price must be a nonnegative USD/hour amount with at most 10 decimal places, for an AWS project.")
+
+
+def aws_settings(project):
+    if project.provider != Provider.AWS:
+        return {}
+    price = getattr(project, "max_instance_hourly_price", None)
+    return {"region": project.env.get("AWS_DEFAULT_REGION"),
+            "max_instance_hourly_price": str(price) if price is not None else None}
+
+
 class ProjectAPI(ApiView):
     def get(self, user: User, id: int = None):
         if id is not None:
@@ -22,11 +50,20 @@ class ProjectAPI(ApiView):
             if project is None or project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
             is_admin = user.is_project_admin(project)
+            cloud_settings = {}
+            if project.provider == Provider.OPENSTACK:
+                cloud_settings["subnet_id"] = project.env.get("OS_SUBNET_ID")
+                cloud_settings["cloud_name"] = next(
+                    (cloud["name"] for cloud in get_config().get("openstack_clouds", [])
+                     if cloud["auth_url"] == project.env.get("OS_AUTH_URL")),
+                    None,
+                )
             return {
                 "id": project.id,
                 "name": project.name,
                 "provider": project.provider,
-                "github_template": project.github_template,
+                **aws_settings(project),
+                **cloud_settings,
                 "nb_clusters": len(project.magic_castles),
                 "admin": is_admin,
                 "members": [member.scoped_id for member in project.members]
@@ -42,7 +79,7 @@ class ProjectAPI(ApiView):
                     "id": project.id,
                     "name": project.name,
                     "provider": project.provider,
-                    "github_template": project.github_template,
+                    **aws_settings(project),
                     "nb_clusters": len(project.magic_castles),
                     "admin": user.is_project_admin(project),
                 }
@@ -50,10 +87,8 @@ class ProjectAPI(ApiView):
             ]
 
     def post(self, user: User):
-        if not getattr(user, "is_admin", False):
-            raise InvalidUsageException(
-                "Only admins can create projects", status_code=403
-            )
+        if isinstance(user, TokenSuperUser):
+            raise InvalidUsageException("Project creation requires a user identity", status_code=403)
         data = request.get_json()
         if not data:
             raise InvalidUsageException("No json data was provided")
@@ -61,37 +96,60 @@ class ProjectAPI(ApiView):
             provider = Provider(data["provider"])
             env = data["env"]
             name = data["name"]
-            github_template = data["github_template"]
         except KeyError as err:
             raise InvalidUsageException(f"Missing required field {err}")
-        agent_pool_name = data.get("agent_pool_name")
+        if not isinstance(name, str) or not name.strip():
+            raise InvalidUsageException("Project name is required")
+        # Terraform Cloud does not allow punctuation such as dots in usernames.
+        username = re.sub(r"[^A-Za-z0-9_-]", "-", user.username)
+        tfcloud_name = f"{username}-{name}"
+        if not re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9 _-]*[A-Za-z0-9_-]", tfcloud_name) or not 3 <= len(tfcloud_name) <= 40:
+            raise InvalidUsageException("Project name must use letters, numbers, spaces, hyphens or underscores, and fit within 40 characters including your username prefix.")
+        if db.session.scalar(db.select(Project.id).where(Project.tfcloud_project_name == tfcloud_name)) is not None:
+            raise InvalidUsageException("Project name is already in use for your username. Choose another name.", status_code=409)
+        max_price = parse_price(data.get("max_instance_hourly_price"), provider)
+        if "agent_pool_name" in data:
+            raise InvalidUsageException("Agent pools are configured by the operator, not per project.", status_code=403)
+        agent_pool_name = None
 
         try:
             env = ENV_VALIDATORS[provider](env)
         except Exception as err:
             raise InvalidUsageException("Missing required environment variables")
 
-        if github_template:
-            try:
-                get_github_storage().validate_template(github_template)
-            except GithubStorageException as e:
-                raise InvalidUsageException(str(e))
+        if provider == Provider.OPENSTACK:
+            agent_pool_name = validate_openstack_cloud(env).get("agent_pool_name")
+
+        if provider == Provider.AWS:
+            AWSManager(Project(provider=provider, env=env)).validate_project()
+
+        if provider == Provider.OPENSTACK and env.get("OS_SUBNET_ID"):
+            if env["OS_SUBNET_ID"] not in {
+                subnet["id"] for subnet in OpenStackManager(Project(provider=provider, env=env)).subnets()
+            }:
+                raise InvalidUsageException("Select an available OpenStack subnet.")
+
+        try:
+            github_template = get_provider_template(provider)
+            get_github_storage().validate_template(github_template)
+        except GithubStorageException as e:
+            raise InvalidUsageException(str(e))
 
         try:
             tfcloud_project_id = get_terraform_cloud().create_project(
-                name, agent_pool_name=agent_pool_name
+                tfcloud_name, agent_pool_name=agent_pool_name
             )
         except TerraformCloudException:
             raise InvalidUsageException(f"Error with Terraform Cloud project creation")
 
         terraform_vars = []
         for k, v in env.items():
-            sensitive = True if "SECRET" in k else False
+            sensitive = "SECRET" in k or "TOKEN" in k
             terraform_vars.append(
                 TerraformCloudVariable(name=k, value=v, sensitive=sensitive)
             )
         get_terraform_cloud().set_project_variable_set(
-            tfcloud_project_id, name, terraform_vars
+            tfcloud_project_id, tfcloud_name, terraform_vars
         )
 
         if user.orm.id is None:
@@ -100,19 +158,27 @@ class ProjectAPI(ApiView):
 
         project = Project(
             name=name,
+            tfcloud_project_name=tfcloud_name,
             provider=provider,
             env=env,
             github_template=github_template,
             tfcloud_project_id=tfcloud_project_id,
+            max_instance_hourly_price=max_price,
         )
         project.admins.append(user.orm)
         db.session.add(project)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            if db.session.scalar(db.select(Project.id).where(Project.tfcloud_project_name == tfcloud_name)) is not None:
+                raise InvalidUsageException("Project name is already in use for your username. Choose another name.", status_code=409)
+            raise
         return {
             "id": project.id,
             "name": project.name,
             "provider": project.provider,
-            "github_template": project.github_template,
+            **aws_settings(project),
             "nb_clusters": len(project.magic_castles),
             "admin": True,
         }, 200
@@ -129,33 +195,58 @@ class ProjectAPI(ApiView):
         if not data:
             raise InvalidUsageException("No json data was provided")
 
-        if "github_template" in data:
-            if data["github_template"]:
-                try:
-                    get_github_storage().validate_template(data["github_template"])
-                except GithubStorageException as e:
-                    raise InvalidUsageException(str(e))
-            project.github_template = data["github_template"]
+        max_price = parse_price(data.get("max_instance_hourly_price"), project.provider)
+
+        # Validate before changing any external project settings.
+        if "env" in data:
+            if (project.provider == Provider.OPENSTACK
+                    and isinstance(data["env"], dict)
+                    and data["env"].get("OS_AUTH_URL", project.env.get("OS_AUTH_URL")) != project.env.get("OS_AUTH_URL")):
+                raise InvalidUsageException("A project's OpenStack cloud cannot be changed.", status_code=403)
+            try:
+                env_data = data["env"]
+                if project.provider == Provider.AWS:
+                    env_data = {**project.env, **env_data}
+                elif project.provider == Provider.OPENSTACK:
+                    env_data = {**project.env, **env_data, "OS_AUTH_URL": project.env.get("OS_AUTH_URL")}
+                env = ENV_VALIDATORS[project.provider](env_data)
+            except Exception:
+                raise InvalidUsageException("Missing required environment variables")
+            if project.provider == Provider.OPENSTACK:
+                validate_openstack_cloud(env)
+            if (project.provider == Provider.OPENSTACK
+                    and env.get("OS_SUBNET_ID") != project.env.get("OS_SUBNET_ID")):
+                if env.get("OS_SUBNET_ID") not in {
+                    subnet["id"] for subnet in OpenStackManager(Project(provider=project.provider, env=env)).subnets()
+                }:
+                    raise InvalidUsageException("Select an available OpenStack subnet.")
+            if project.provider == Provider.AWS:
+                if project.magic_castles and env["AWS_DEFAULT_REGION"] != project.env["AWS_DEFAULT_REGION"]:
+                    raise InvalidUsageException("A project with clusters cannot change AWS region.")
+                AWSManager(Project(provider=project.provider, env=env)).validate_project()
 
         if "agent_pool_name" in data:
+            raise InvalidUsageException("Agent pools are configured by the operator, not per project.", status_code=403)
+
+        if "env" in data and project.provider == Provider.OPENSTACK:
+            agent_pool_name = validate_openstack_cloud(env).get("agent_pool_name")
             try:
-                get_terraform_cloud().update_project(project.tfcloud_project_id, data["agent_pool_name"])
+                get_terraform_cloud().update_project(project.tfcloud_project_id, agent_pool_name)
             except TerraformCloudException:
                 raise InvalidUsageException("Error updating agent pool")
 
         if "env" in data:
-            try:
-                env = ENV_VALIDATORS[project.provider](data["env"])
-            except Exception:
-                raise InvalidUsageException("Missing required environment variables")
             terraform_vars = [
-                TerraformCloudVariable(name=k, value=v, sensitive="SECRET" in k)
+                TerraformCloudVariable(name=k, value=v, sensitive="SECRET" in k or "TOKEN" in k)
                 for k, v in env.items()
             ]
             get_terraform_cloud().replace_project_variable_set(
-                project.tfcloud_project_id, project.name, terraform_vars
+                project.tfcloud_project_id, project.tfcloud_project_name, terraform_vars
             )
             project.env = env
+
+        if "max_instance_hourly_price" in data:
+            project.max_instance_hourly_price = max_price
 
         add_members = data.get("add", [])
         del_members = data.get("del", [])
@@ -229,3 +320,44 @@ class ProjectAPI(ApiView):
         db.session.delete(project)
         db.session.commit()
         return {}, 200
+
+
+class AWSRegionsAPI(ApiView):
+    def post(self, user: User):
+        data = request.get_json() or {}
+        project = db.session.get(Project, data["project_id"]) if data.get("project_id") else None
+        if data.get("project_id"):
+            if project is None or project.provider != Provider.AWS or not user.is_project_admin(project):
+                raise InvalidUsageException("Invalid project id", status_code=403)
+        try:
+            env = ENV_VALIDATORS[Provider.AWS]({**(project.env if project else {}), **data.get("env", {}), "AWS_DEFAULT_REGION": "us-east-1"})
+        except Exception:
+            raise InvalidUsageException("Provide AWS access credentials to load regions.")
+        return {"regions": AWSManager(Project(provider=Provider.AWS, env=env)).regions()}
+
+
+class OpenStackSubnetsAPI(ApiView):
+    def post(self, user: User):
+        data = request.get_json() or {}
+        project = db.session.get(Project, data["project_id"]) if data.get("project_id") else None
+        if data.get("project_id"):
+            if project is None or project.provider != Provider.OPENSTACK or not user.is_project_admin(project):
+                raise InvalidUsageException("Invalid project id", status_code=403)
+        try:
+            env_data = data.get("env", {})
+            if project:
+                env_data = {**project.env, **{key: value for key, value in env_data.items() if value},
+                            "OS_AUTH_URL": project.env.get("OS_AUTH_URL")}
+            env = ENV_VALIDATORS[Provider.OPENSTACK](env_data)
+        except Exception:
+            raise InvalidUsageException("Provide OpenStack credentials to load subnets.")
+        validate_openstack_cloud(env)
+        return {"subnets": OpenStackManager(Project(provider=Provider.OPENSTACK, env=env)).subnets()}
+
+
+class OpenStackCloudsAPI(ApiView):
+    def get(self, user: User):
+        from ..configuration import get_config
+
+        return {"clouds": [{"name": cloud["name"], "auth_url": cloud["auth_url"]}
+                           for cloud in get_config().get("openstack_clouds", [])]}

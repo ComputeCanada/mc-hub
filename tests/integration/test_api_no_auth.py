@@ -33,10 +33,12 @@ def test_get_current_user(client):
         "username": getuser(),
         "public_keys": getoutput("ssh-add -L").split("\n"),
         "usertype": "local",
+        "is_admin": True,
+        "default_project_id": 1,
     }
 
 
-def test_get_current_user(client):
+def test_get_default_template(client):
     res = client.get(f"/api/template/default")
     assert res.get_json() == DEFAULT_TEMPLATE
 

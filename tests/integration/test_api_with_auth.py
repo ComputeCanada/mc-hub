@@ -33,7 +33,7 @@ def test_get_current_user_authentified(client):
         "usertype": "saml",
         "public_keys": ["ssh-rsa FAKE"],
         "is_admin": False,
-        "github_default_template": None,
+        "default_project_id": 1,
     }
     res = client.get(f"/api/users/me", headers=BOB_HEADERS)
     assert res.get_json() == {
@@ -41,7 +41,7 @@ def test_get_current_user_authentified(client):
         "usertype": "saml",
         "public_keys": ["ssh-rsa FAKE"],
         "is_admin": False,
-        "github_default_template": None,
+        "default_project_id": 2,
     }
 
 

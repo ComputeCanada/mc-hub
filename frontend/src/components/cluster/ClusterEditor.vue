@@ -80,11 +80,43 @@
             </v-list-item-content>
           </v-col>
         </v-list-item>
+        <v-list-item v-if="isAWS">
+          <v-col cols="12" sm="6" class="py-0">
+            <v-select
+              v-model="localSpecs.availability_zone"
+              :items="(possibleResources && possibleResources.availability_zone) || []"
+              label="Availability zone (optional)"
+              hint="Leave empty to use the deployment default and show only instance types offered in every available zone."
+              persistent-hint
+              clearable
+            />
+          </v-col>
+        </v-list-item>
       </v-list>
       <v-divider />
 
       <!-- Instances -->
-      <v-list class="pt-0">
+      <v-progress-linear v-if="loading" indeterminate aria-label="Loading cloud resources" />
+      <p v-if="loading">Loading cloud resources…</p>
+      <v-alert v-if="resourceError" type="error"
+        >{{ resourceError }} <v-btn text @click="loadCloudResources">Retry</v-btn></v-alert
+      >
+      <v-alert v-if="isAWS" :type="awsStatus === 'ready' ? 'success' : awsStatus === 'blocked' ? 'error' : 'info'">
+        {{
+          awsStatus === "ready"
+            ? "Within quotas"
+            : awsStatus === "blocked"
+            ? "Cluster definition is blocked"
+            : awsChecking
+            ? "Checking cluster feasibility…"
+            : "Unable to verify cluster feasibility"
+        }}
+        <div v-for="(issue, index) in awsFeasibility ? awsFeasibility.issues : []" :key="index">
+          {{ issue.message }}
+        </div>
+        <div v-if="awsError">{{ awsError }} <v-btn text @click="checkAWS">Retry</v-btn></div>
+      </v-alert>
+      <v-list v-if="showOpenStackQuotas" class="pt-0">
         <v-list-item>
           <v-col cols="12" sm="3">
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
@@ -123,10 +155,11 @@
             </v-col>
             <v-col cols="12" sm="3" class="pt-0">
               <type-select
-                :types="getTypes(localSpecs.instances[id].tags)"
+                :types="getTypes(localSpecs.instances[id].tags, id)"
+                :loading="loading || (isAWS && !awsChoicesLoaded && awsChecking)"
                 v-model="localSpecs.instances[id].type"
                 label="Type"
-                :rules="[ramRule, coreRule]"
+                :rules="isAWS ? [awsTypeRule(id)] : [ramRule, coreRule]"
               />
             </v-col>
             <v-col cols="12" sm="4" class="pt-0">
@@ -151,75 +184,81 @@
       </v-list>
       <v-divider />
       <!-- Volumes -->
-      <v-list>
-        <v-list-item>
-          <v-spacer></v-spacer>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
-          </v-col>
-          <v-spacer></v-spacer>
-        </v-list-item>
-      </v-list>
-      <v-list>
-        <div :key="tag" v-for="tag in Object.keys(localSpecs.volumes)">
-          <div :key="id" v-for="id in Object.keys(localSpecs.volumes[tag])">
-            <v-list-item>
-              <v-spacer></v-spacer>
-              <v-col cols="12" sm="2" class="pt-0">
-                <v-combobox
-                  :items="Object.keys(localSpecs.volumes)"
-                  :value="tag"
-                  label="tag"
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                ></v-combobox>
-                <!-- <v-text-field :value="tag" label="tag" readonly /> -->
-              </v-col>
-              <v-col cols="12" sm="3" class="pt-0">
-                <v-text-field
-                  :value="id"
-                  label="volume name"
-                  v-on:change="changeVolumeName(id, $event)"
-                  :rules="[volumeNameRule(id)]"
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                />
-              </v-col>
-              <v-col cols="12" sm="2" class="pt-0">
-                <v-text-field
-                  v-model.number="localSpecs.volumes[tag][id].size"
-                  type="number"
-                  label="size"
-                  prefix="GB"
-                  :rules="[volumeCountRule, volumeSizeRule, greaterThanZeroRule]"
-                  min="0"
-                  dir="rtl"
-                  reverse
-                  :readonly="stateful && id in initialSpecs.volumes.nfs"
-                />
-              </v-col>
-              <v-col cols="12" sm="1" class="pt-0">
-                <v-btn
-                  @click="rmVolumeRow(id)"
-                  text
-                  icon
-                  small
-                  color="error"
-                  :disabled="stateful && id in initialSpecs.volumes.nfs"
-                >
-                  <v-icon> mdi-delete </v-icon>
-                </v-btn>
-              </v-col>
-              <v-spacer></v-spacer>
-            </v-list-item>
+      <template>
+        <v-list v-if="showOpenStackQuotas">
+          <v-list-item>
+            <v-spacer></v-spacer>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeSizeMax" :used="volumeSizeUsed" title="volume storage" suffix="GB" />
+            </v-col>
+            <v-col cols="12" sm="3">
+              <resource-usage-display :max="volumeCountMax" :used="volumeCountUsed" title="volumes" />
+            </v-col>
+            <v-spacer></v-spacer>
+          </v-list-item>
+        </v-list>
+        <v-list>
+          <div :key="tag" v-for="tag in Object.keys(localSpecs.volumes)">
+            <div :key="id" v-for="id in Object.keys(localSpecs.volumes[tag])">
+              <v-list-item>
+                <v-spacer></v-spacer>
+                <v-col cols="12" sm="2" class="pt-0">
+                  <v-combobox
+                    :items="Object.keys(localSpecs.volumes)"
+                    :value="tag"
+                    label="tag"
+                    :readonly="stateful && id in (initialSpecs.volumes.nfs || {})"
+                  ></v-combobox>
+                  <!-- <v-text-field :value="tag" label="tag" readonly /> -->
+                </v-col>
+                <v-col cols="12" sm="3" class="pt-0">
+                  <v-text-field
+                    :value="id"
+                    label="volume name"
+                    v-on:change="changeVolumeName(id, $event)"
+                    :rules="[volumeNameRule(id)]"
+                    :readonly="stateful && id in (initialSpecs.volumes.nfs || {})"
+                  />
+                </v-col>
+                <v-col cols="12" sm="2" class="pt-0">
+                  <v-text-field
+                    v-model.number="localSpecs.volumes[tag][id].size"
+                    type="number"
+                    label="size"
+                    prefix="GB"
+                    :rules="
+                      isAWS
+                        ? [greaterThanZeroRule, awsVolumeSizeRule]
+                        : [volumeCountRule, volumeSizeRule, greaterThanZeroRule]
+                    "
+                    min="0"
+                    dir="rtl"
+                    reverse
+                    :readonly="stateful && id in (initialSpecs.volumes.nfs || {})"
+                  />
+                </v-col>
+                <v-col cols="12" sm="1" class="pt-0">
+                  <v-btn
+                    @click="rmVolumeRow(id)"
+                    text
+                    icon
+                    small
+                    color="error"
+                    :disabled="stateful && id in (initialSpecs.volumes.nfs || {})"
+                  >
+                    <v-icon> mdi-delete </v-icon>
+                  </v-btn>
+                </v-col>
+                <v-spacer></v-spacer>
+              </v-list-item>
+            </div>
           </div>
-        </div>
-        <div class="text-center">
-          <v-btn @click="addVolumeRow" color="primary" class="ma-2"> Add volume row </v-btn>
-        </div>
-        <v-divider />
-      </v-list>
+          <div class="text-center">
+            <v-btn @click="addVolumeRow" color="primary" class="ma-2"> Add volume row </v-btn>
+          </div>
+          <v-divider />
+        </v-list>
+      </template>
 
       <!-- Networking & security -->
       <v-subheader>Networking and security</v-subheader>
@@ -312,7 +351,7 @@
           v-if="specs.undeployed"
           color="primary"
           class="ma-2"
-          :disabled="loading || dirtyForm || !validForm"
+          :disabled="loading || dirtyForm || !validForm || (isAWS && awsStatus !== 'ready')"
           large
           @click="$emit('rebuild')"
           >{{ status === "created" ? "Review build plan" : "Rebuild" }}</v-btn
@@ -371,13 +410,14 @@ export default {
     return {
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
       VOLUME_STUB: { size: 50 },
-      TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node", "pool"],
+      TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node", "pool", "dtn"],
       validForm: true,
       initialSpecs: null,
 
       clusterNameRegexRule: (value) =>
         value.match(CLUSTER_NAME_REGEX) !== null ||
         "Must contain lowercase alphanumeric characters and start with a letter. It can also include dashes.",
+      awsVolumeSizeRule: (value) => Number.isInteger(value) || "Use a whole number of GiB",
       greaterThanZeroRule: (value) => (typeof value === "number" && value > 0) || "Must be greater than zero",
       positiveNumberRule: (value) => (typeof value === "number" && value >= 0) || "Must be a positive number",
       passwordLengthRule: (value) =>
@@ -387,12 +427,31 @@ export default {
       tomorrowDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       promise: null,
       quotas: null,
+      provider: null,
+      resourceError: "",
+      resourceRequest: 0,
+      awsFeasibility: null,
+      awsChoices: {},
+      awsChoicesLoaded: false,
+      awsChecking: false,
+      awsError: "",
+      awsTimer: null,
+      awsRequest: 0,
+      awsInFlight: false,
+      awsCheckedDefinition: null,
+      awsDisposed: false,
       possibleResources: null,
       resourceDetails: null,
       projects: [],
     };
   },
   watch: {
+    awsDefinition: {
+      deep: true,
+      handler() {
+        this.scheduleAWS();
+      },
+    },
     specs(value) {
       this.initialSpecs = cloneDeep(value);
     },
@@ -400,6 +459,7 @@ export default {
       this.$emit("loading", this.loading);
     },
     possibleResources(possibleResources) {
+      if (possibleResources === null) return;
       // We set default values for select boxes based on possible resources fetched from the API
       // Domain
       if (this.localSpecs.domain === null) {
@@ -431,6 +491,8 @@ export default {
         }
       }
 
+      if (this.isAWS) return;
+
       // Instance type
       for (let key in this.localSpecs.instances) {
         if (this.localSpecs.instances[key].type === null) {
@@ -456,6 +518,8 @@ export default {
     },
   },
   created() {
+    // Declare the optional field before taking the baseline for dirty-form checks.
+    if (!("availability_zone" in this.localSpecs)) this.$set(this.localSpecs, "availability_zone", null);
     if (!this.existingCluster) {
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
@@ -468,12 +532,9 @@ export default {
         const projects = values[1].data;
         this.projects = projects;
         if (!this.existingCluster) {
-          try {
-            this.localSpecs.cloud.id = this.projects[0].id;
-          } catch (err) {
-            console.log("No cloud project available");
-            this.localSpecs.cloud.id = undefined;
-          }
+          const project = this.projects.find((project) => project.id === user.default_project_id);
+          this.localSpecs.cloud.id = project?.id;
+          this.localSpecs.cloud.name = project?.name;
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
         }
         this.initialSpecs = cloneDeep(this.localSpecs);
@@ -488,9 +549,31 @@ export default {
     this.$refs.form.validate();
   },
   beforeDestroy() {
+    this.awsDisposed = true;
+    clearTimeout(this.awsTimer);
+    this.awsRequest++;
+    this.resourceRequest++;
     this.$disableUnloadConfirmation();
   },
   computed: {
+    isAWS() {
+      return this.provider === "aws";
+    },
+    showOpenStackQuotas() {
+      return this.provider === "openstack" && this.quotas !== null && !this.loading;
+    },
+    awsStatus() {
+      return this.awsChecking ? "checking" : this.awsFeasibility?.status;
+    },
+    awsDefinition() {
+      return {
+        cloud: this.localSpecs.cloud,
+        instances: this.localSpecs.instances,
+        image: this.localSpecs.image,
+        availability_zone: this.localSpecs.availability_zone,
+        volumes: this.localSpecs.volumes,
+      };
+    },
     loading() {
       return this.promise !== null;
     },
@@ -513,6 +596,7 @@ export default {
         "cluster_name",
         "hieradata_entries",
         "image",
+        "availability_zone",
         "mc_version",
         "public_keys",
         "guest_passwd",
@@ -628,10 +712,66 @@ export default {
       return this.localSpecs !== null && this.resourceDetails !== null;
     },
     applyButtonEnabled() {
-      return !this.loading && this.validForm && this.dirtyForm;
+      return (
+        !this.loading &&
+        this.validForm &&
+        this.dirtyForm &&
+        !this.resourceError &&
+        (!this.isAWS || this.awsStatus === "ready")
+      );
     },
   },
   methods: {
+    scheduleAWS() {
+      if (this.awsFeasibility && !this.awsChecking && JSON.stringify(this.awsDefinition) === this.awsCheckedDefinition)
+        return;
+      clearTimeout(this.awsTimer);
+      this.awsRequest++;
+      this.awsFeasibility = null;
+      if (!this.isAWS) return;
+      this.awsChecking = true;
+      this.awsTimer = setTimeout(() => this.checkAWS(), 350);
+    },
+    async checkAWS() {
+      clearTimeout(this.awsTimer);
+      if (!this.isAWS || this.awsInFlight || this.awsDisposed) return;
+      this.awsInFlight = true;
+      const requestId = ++this.awsRequest;
+      this.awsChecking = true;
+      this.awsError = "";
+      try {
+        const response = this.existingCluster
+          ? await AvailableResourcesRepository.checkHost(this.hostname, this.awsDefinition)
+          : await AvailableResourcesRepository.checkCloud(this.localSpecs.cloud.id, this.awsDefinition);
+        if (requestId !== this.awsRequest) return;
+        this.awsFeasibility = response.data.feasibility;
+        this.awsChoices = response.data.instance_choices;
+        this.awsChoicesLoaded = true;
+        for (const [id, type] of Object.entries(response.data.instance_defaults || {})) {
+          const group = this.localSpecs.instances[id];
+          if (group && !group.type) group.type = type;
+        }
+        // These defaults were already checked together by the server.
+        this.awsCheckedDefinition = JSON.stringify(this.awsDefinition);
+      } catch (error) {
+        if (requestId === this.awsRequest) {
+          this.awsFeasibility = null;
+          this.awsError = error.response?.data?.message || "AWS could not verify this definition. Retry.";
+        }
+      } finally {
+        this.awsInFlight = false;
+        if (requestId === this.awsRequest) this.awsChecking = false;
+        else if (this.isAWS && !this.awsDisposed) {
+          clearTimeout(this.awsTimer);
+          this.awsTimer = setTimeout(() => this.checkAWS(), 350);
+        }
+      }
+    },
+    awsTypeRule(id) {
+      return (value) =>
+        this.awsChoices[id]?.includes(value) ||
+        "This type is unavailable for the current definition. Adjust the count or select another type.";
+    },
     changeHostnamePrefix(oldKey, newKey) {
       if (newKey != "" && !(newKey in this.localSpecs.instances)) {
         const instances = this.localSpecs.instances;
@@ -663,6 +803,7 @@ export default {
     publicTagRule(id) {
       var self = this;
       return function (tags) {
+        if (self.isAWS) return true;
         if (self.localSpecs.instances[id].count > 0 && tags.includes("public")) {
           let newPublicIP = 0;
           for (let key in self.localSpecs.instances) {
@@ -682,9 +823,16 @@ export default {
         return true;
       };
     },
-    getTypes(tags) {
+    getTypes(tags, id) {
       if (this.possibleResources === null || this.resourceDetails === null) {
         return [];
+      }
+      if (this.isAWS) {
+        const allowed = new Set(this.awsChoices[id] || []);
+        const selected = this.localSpecs.instances[id]?.type;
+        return this.resourceDetails.instance_types
+          .filter((t) => allowed.has(t.name) || t.name === selected)
+          .map((t) => ({ ...t, unavailable: !allowed.has(t.name) }));
       }
       // Retrieve all available types
       // Then filter based on the selected tags
@@ -699,6 +847,12 @@ export default {
       return this.resourceDetails.instance_types.filter((t) => allowedNamesSet.has(t.name));
     },
     getPossibleValues(fieldPath) {
+      if (this.isAWS && fieldPath === "image" && this.resourceDetails) {
+        return (this.resourceDetails.images || []).map((image) => ({
+          text: `${image.name} (${image.id})`,
+          value: image.id,
+        }));
+      }
       if (this.possibleResources === null) {
         return [];
       } else {
@@ -838,6 +992,7 @@ export default {
     },
     changeCloudProject() {
       this.quotas = null;
+      this.localSpecs.availability_zone = null;
       for (let key in this.localSpecs.instances) {
         this.localSpecs.instances[key].type = null;
       }
@@ -845,21 +1000,40 @@ export default {
       this.loadCloudResources();
     },
 
-    loadCloudResources() {
-      if (this.localSpecs.cloud.id === undefined) {
-        return;
-      }
-      this.promise = this.stateful
+    async loadCloudResources() {
+      if (this.localSpecs.cloud.id === undefined) return;
+      const requestId = ++this.resourceRequest;
+      this.awsRequest++;
+      clearTimeout(this.awsTimer);
+      this.provider = null;
+      this.possibleResources = null;
+      this.resourceDetails = null;
+      this.quotas = null;
+      this.awsChecking = false;
+      this.awsError = "";
+      this.awsFeasibility = null;
+      this.awsCheckedDefinition = null;
+      this.awsChoices = {};
+      this.awsChoicesLoaded = false;
+      this.resourceError = "";
+      this.promise = this.existingCluster
         ? AvailableResourcesRepository.getHost(this.hostname)
         : AvailableResourcesRepository.getCloud(this.localSpecs.cloud.id);
-      this.promise.then((response) => {
-        const data = response.data;
-        this.possibleResources = data.possible_resources;
-        this.quotas = data.quotas;
+      try {
+        const { data } = await this.promise;
+        if (requestId !== this.resourceRequest) return;
+        this.provider = data.provider || "openstack";
+        if (!this.localSpecs.volumes.nfs) this.$set(this.localSpecs.volumes, "nfs", {});
         this.resourceDetails = data.resource_details;
-        this.promise = null;
-      });
-      return this.promise;
+        this.quotas = this.isAWS ? null : data.quotas;
+        this.possibleResources = data.possible_resources;
+        this.scheduleAWS();
+      } catch (error) {
+        if (requestId === this.resourceRequest)
+          this.resourceError = error.response?.data?.message || "Unable to load cloud resources. Retry.";
+      } finally {
+        if (requestId === this.resourceRequest) this.promise = null;
+      }
     },
   },
 };

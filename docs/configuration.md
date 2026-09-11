@@ -2,12 +2,17 @@
 
 MC Hub's configuration is mostly stored in a single file named `configuration.json`.
 
+For AWS project credentials, region selection, and quota feasibility, see [AWS projects](aws-projects.md).
+
 An example `configuration.json` is shown below.
 
 ```json
 {
   "auth_type": ["NONE"],
   "admins": [],
+  "openstack_clouds": [
+    {"name": "Research Cloud", "auth_url": "https://cloud.example.org:5000/v3", "agent_pool_name": "research-agents"}
+  ],
   "mchub_url": "https://mc-hub.example.com",
   "cors_allowed_origins": ["https://mc-hub.example.com"],
   "domains": {
@@ -43,7 +48,10 @@ An example `configuration.json` is shown below.
   },
   "github_token": "EXAMPLE_GITHUB_TOKEN",
   "github_organization": "EXAMPLE_GITHUB_ORGANIZATION",
-  "github_default_template": "owner/repo-template",
+  "github_templates": {
+    "aws": "https://github.com/owner/aws-template",
+    "openstack": "https://github.com/owner/openstack-template"
+  },
   "magic_castle_version_range": ">= 14.0.0, < 15.0.0",
   "tfcloud_api_token": "EXAMPLE_TF_TOKEN",
   "tfcloud_organization": "EXAMPLE_TFCLOUD_ORGANIZATION",
@@ -65,7 +73,11 @@ If you are using a SAML authentication mechanism, you can set `auth_type` to `"S
 
 A list of users with administrator rights. This entry is ignored when `auth_type` is set to `"NONE"`.
 
-If `auth_type` is set to `"SAML"`, the values contained in `admins` are strings reprensenting the `eduPersonPrincipalName` attribute of the user. Administrators can view, modify and delete clusters created by any other user.
+If `auth_type` is set to `"SAML"`, the values in `admins` are users' `eduPersonPrincipalName` attributes. Terraform Cloud agent pools are controlled by operator configuration, not hub-administrator requests.
+
+Any authenticated user can register an OpenStack or AWS project with their own cloud credentials from **Projects** in the account menu. New Terraform Cloud projects are named `username-project_name`; MC Hub displays the entered project name. Unsupported characters in usernames (such as dots) become hyphens. The combined name must fit Terraform Cloud’s 40-character limit and be unique across cloud providers. Different usernames can reuse a display name; usernames that normalize to the same prefix share a namespace, including across identity domains. Duplicate registration returns a name-conflict error using the database only. Run database migrations when upgrading. Migration 0010 records existing Terraform names without renaming remote projects and moves the unique index to the Terraform name. The creator becomes a project administrator and can manage credentials and membership. Existing project access remains limited to its members and project administrators; being a hub administrator does not automatically grant membership.
+
+Registration creates a project and credential variable set in the operator's Terraform Cloud organization. OpenStack projects use the agent pool configured for their approved cloud, or the default execution mode if none is configured. New AWS projects use the default execution mode. Templates come from `github_templates` in operator configuration. The service token has no user identity and cannot register a project.
 
 ### `cors_allowed_origins`
 
@@ -150,14 +162,13 @@ A [GitHub personal access token](https://github.com/settings/tokens) with approp
 
 The name of the GitHub organization where Magic Castle repositories will be created and managed. MC Hub will use the `github_token` to access this organization and create project repositories on behalf of users.
 
-### `github_default_template`
+### `github_templates`
 
-The default GitHub template repository to use when creating a new project. When set, this value is pre-filled in the project creation form and used automatically if no template is specified.
+An object mapping each cloud provider to its GitHub template repository URL, as shown above. Configure one URL for every provider you use (for example, `aws` and `openstack`). URLs must use the form `https://github.com/owner/repository`; a trailing slash or `.git` suffix is accepted. The `github_token` must have access to each repository.
 
-Two formats are supported:
+The operator controls template selection. Project creation and editing do not accept template overrides. New cluster repositories use the currently configured URL for the project's provider, including for existing projects. Existing cluster repositories are unaffected. Creating a project or cluster without a template configured for its provider produces an error.
 
-- **Repository name only** (e.g. `"my-template"`): the template is looked up within `github_organization`. This supports both public and private repositories, as long as `github_token` has access to the organization.
-- **Full `owner/repo` reference** (e.g. `"owner/repo-template"`): the template is fetched globally. This is useful for public templates hosted outside of `github_organization`. Private repositories outside the organization are also supported if `github_token` has read access to them.
+Replace the old `github_default_template` entry with this mapping when upgrading, and restart MC Hub after changing configuration. Previously stored per-project templates are no longer used.
 
 ### `magic_castle_version_range`
 
@@ -178,3 +189,61 @@ The name of your [Terraform Cloud organization](https://developer.hashicorp.com/
 ### `tfcloud_oauth_vcs_token_id`
 
 The ID of the [OAuth VCS connection](https://developer.hashicorp.com/terraform/cloud-docs/vcs) between Terraform Cloud and your version control system (e.g., GitHub). This ID allows Terraform Cloud to access the Git repositories for each cluster. You can find or generate this token in the Terraform Cloud UI under “VCS Providers” when setting up a GitHub connection.
+
+### `tfcloud_autoscale_pool_variable` (optional)
+
+The Terraform variable that cluster tokens may read and update through the
+Terraform proxy. Defaults to `pool`. If the autoscaler uses `TFE_POOL_VAR`, set
+this operator configuration value to the same name and ensure the variable exists
+in the workspace. A cluster token cannot select a different variable itself.
+
+The proxy permits only the autoscaler's workspace lock read, pool-variable read
+and update, resource listing (including pagination), run creation, and run-status
+read. Workspace IDs must match the token's cluster. Variable updates are checked
+against the workspace's pool variable; run-status responses are returned only
+after checking their workspace relationship. Run creation permits only the
+workspace relationship and the autoscaler's message, targets, auto-apply flag,
+and pool override. Pool values must be JSON arrays of hostnames, not arbitrary
+HCL expressions. All other paths, methods, query parameters, and payload fields
+are denied. Upstream redirects are not followed.
+
+This supports `slurm-autoscale-tfe` 0.10.0 (reviewed commit `a92ce96`), including
+suspend/resume targets, automatic apply, and resource pagination. Cluster tokens
+retain the ability to scale their own workspace. This restriction does not impose
+scaling quotas or replace isolation of Terraform execution and cloud credentials.
+
+### `openstack_clouds`
+
+An operator-vetted list of OpenStack clouds. Each entry has a display `name` and
+an `auth_url` containing the exact Keystone authentication URL. The project
+creation and credential-editing forms show cloud names in a dropdown. Users
+supply their application credentials, but cannot enter their own endpoint.
+
+```json
+"openstack_clouds": [
+  {"name": "Research Cloud", "auth_url": "https://cloud.example.org:5000/v3", "agent_pool_name": "research-agents"},
+  {"name": "Teaching Cloud", "auth_url": "https://teaching.example.org:5000/v3"}
+]
+```
+
+The API enforces exact URL membership for registration, credential updates and
+subnet discovery, including requests from hub administrators. OpenStack SDK
+connections also check the list. An omitted or empty list allows no OpenStack
+clouds. When upgrading, add existing projects' authentication URLs before use;
+removing a cloud prevents further MC Hub OpenStack connections to it. Restart
+MC Hub after changing configuration. No database migration is required.
+
+Vet the cloud's identity service and its advertised service endpoints. This
+allowlist trusts the operator-selected cloud's service catalog and does not
+replace network egress controls or validation of that cloud's infrastructure.
+
+Each `openstack_clouds` entry may include `agent_pool_name`. Omit it or set it to
+`null` to use Terraform Cloud's default execution mode. MC Hub applies this setting
+when creating an OpenStack project and when saving its cloud credentials, including
+when switching clouds. Restarting after a configuration change does not update
+existing Terraform projects automatically; save their credentials to apply the
+new setting. Existing AWS execution settings are not changed by project edits.
+
+Agent pool fields are absent from all project forms, including AWS editing. The
+project API rejects `agent_pool_name` supplied by any user, including hub admins.
+Agent pool configuration is not returned by the cloud-list API.

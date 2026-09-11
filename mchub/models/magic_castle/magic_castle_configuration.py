@@ -65,6 +65,10 @@ class Schema(marshmallow.Schema):
     hieradata = fields.Str(load_default="")
 
 
+class AWSSchema(Schema):
+    availability_zone = fields.Str(allow_none=True)
+
+
 class MagicCastleConfiguration(Mapping):
     """
     MagicCastleConfiguration is responsible for loading and writing Magic Castle configurations.
@@ -83,7 +87,8 @@ class MagicCastleConfiguration(Mapping):
         """
 
         self.provider = provider
-        self._config = Schema().load(
+        schema = AWSSchema() if provider == "aws" else Schema()
+        self._config = schema.load(
             cluster_configuration,
             unknown=EXCLUDE,
         )
@@ -123,5 +128,7 @@ class MagicCastleConfiguration(Mapping):
         }
 
         var_tf_data["mc_version"] = self["mc_version"]
+        if self.provider == "aws" and self.get("availability_zone"):
+            var_tf_data["availability_zone"] = self["availability_zone"]
 
         return var_tf_data

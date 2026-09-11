@@ -14,7 +14,7 @@ def create_app(db_path=None):
     from .resources.progress_api import ProgressAPI
     from .resources.available_resources_api import AvailableResourcesApi
     from .resources.user_api import UserAPI
-    from .resources.project_api import ProjectAPI
+    from .resources.project_api import ProjectAPI, AWSRegionsAPI, OpenStackSubnetsAPI, OpenStackCloudsAPI
     from .resources.template_api import TemplateAPI
     from .resources.tfcloud_proxy import tfcloud_proxy
 
@@ -78,13 +78,13 @@ def create_app(db_path=None):
         "/api/available-resources/host/<string:hostname>",
         view_func=available_resources_view,
         defaults={"cloud_id": None},
-        methods=["GET"],
+        methods=["GET", "POST"],
     )
     app.add_url_rule(
         "/api/available-resources/cloud/<string:cloud_id>",
         view_func=available_resources_view,
         defaults={"hostname": None},
-        methods=["GET"],
+        methods=["GET", "POST"],
     )
 
     template_view = TemplateAPI.as_view("template")
@@ -101,9 +101,12 @@ def create_app(db_path=None):
     )
 
     user_view = UserAPI.as_view("user")
-    app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET"])
+    app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET", "PATCH"])
 
     project_view = ProjectAPI.as_view("projects")
+    app.add_url_rule("/api/projects/openstack/clouds", view_func=OpenStackCloudsAPI.as_view("openstack_clouds"), methods=["GET"])
+    app.add_url_rule("/api/projects/openstack/subnets", view_func=OpenStackSubnetsAPI.as_view("openstack_subnets"), methods=["POST"])
+    app.add_url_rule("/api/projects/aws/regions", view_func=AWSRegionsAPI.as_view("aws_regions"), methods=["POST"])
     app.add_url_rule(
         "/api/projects",
         view_func=project_view,

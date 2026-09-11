@@ -26,11 +26,18 @@ project_admins = db.Table(
 
 class Project(db.Model):
     __tablename__ = "project"
+    __table_args__ = (db.Index("uq_tfcloud_project_name", "tfcloud_project_name", unique=True),)
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
+    # Legacy inserts used the display name as the Terraform Cloud name.
+    tfcloud_project_name = db.Column(
+        db.String(), nullable=False, default=lambda context: context.get_current_parameters()["name"]
+    )
     provider = db.Column(db.Enum(Provider), nullable=False)
+    # Legacy column retained for database compatibility; templates come from operator configuration.
     github_template = db.Column(db.String(), nullable=False)
     env = db.Column(db.PickleType())
+    max_instance_hourly_price = db.Column(db.Numeric(18, 10), nullable=True)
     tfcloud_project_id = db.Column(db.String(), nullable=False)
     admins = db.relationship(
         "UserORM",
@@ -56,6 +63,7 @@ class Project(db.Model):
 
 
 class OpenStackEnv(marshmallow.Schema):
+    OS_SUBNET_ID = fields.String(validate=Length(min=1))
     OS_AUTH_URL = fields.String(required=True, validate=[URL()])
     OS_APPLICATION_CREDENTIAL_ID = fields.String(
         required=True, validate=[Length(min=32)]
@@ -65,6 +73,24 @@ class OpenStackEnv(marshmallow.Schema):
     )
 
 
+class AWSEnv(marshmallow.Schema):
+    AWS_ACCESS_KEY_ID = fields.String(required=True, validate=Length(min=1))
+    AWS_SECRET_ACCESS_KEY = fields.String(required=True, validate=Length(min=1))
+    AWS_SESSION_TOKEN = fields.String(load_default="")
+    AWS_DEFAULT_REGION = fields.String(required=True, validate=Length(min=1))
+
+
 ENV_VALIDATORS = {
+    Provider.AWS: partial(AWSEnv().load, unknown=EXCLUDE),
     Provider.OPENSTACK: partial(OpenStackEnv().load, unknown=EXCLUDE),
 }
+
+
+def validate_openstack_cloud(env):
+    from ...configuration import get_config
+    from ...exceptions.invalid_usage_exception import InvalidUsageException
+
+    for cloud in get_config().get("openstack_clouds", []):
+        if env.get("OS_AUTH_URL") == cloud["auth_url"]:
+            return cloud
+    raise InvalidUsageException("Select an OpenStack cloud approved by the operator.", status_code=403)

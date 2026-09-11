@@ -16,6 +16,10 @@ from tests.mocks.configuration.config_mock import config_auth_none_mock
 
 BASE_CONFIGURATION = {
     "token": "abcdefghijklmnopqrstuv123q123561",
+    "openstack_clouds": [
+        {"name": "Test cloud", "auth_url": "https://cloud.example.org:5000/v3"},
+        {"name": "Local test cloud", "auth_url": "http://localhost:5000/v3"},
+    ],
     "admins": ["the-admin@computecanada.ca"],
     "cors_allowed_origins": ["https://hc-hub.example.com"],
     "domains": {
@@ -47,6 +51,10 @@ BASE_CONFIGURATION = {
     },
     "github_token": "EXAMPLE_TOKEN",
     "github_organization": "github_org",
+    "github_templates": {
+        "aws": "https://github.com/example/aws-template",
+        "openstack": "https://github.com/example/openstack-template",
+    },
     "magic_castle_version_range": ">= 14.0.0, < 15.0.0",
     "tfcloud_api_token": "EXAMPLE_TOKEN",
     "tfcloud_organization": "tfcloud_org",

@@ -12,6 +12,8 @@ from ..exceptions.invalid_usage_exception import (
     RunIDNotSet,
 )
 from ..models.cloud.project import Project
+from ..models.cloud.aws_manager import ensure_aws_feasible
+from ..services.terraform_cloud_api import get_terraform_cloud
 from ..models.magic_castle.cluster_status_code import ClusterStatusCode
 from ..models.user import User
 from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
@@ -126,7 +128,9 @@ class MagicCastleAPI(ApiView):
                     raise
                 return {}, 204
             if action == "rebuild":
-                MagicCastle(orm).validate_rebuild()
+                cluster = MagicCastle(orm)
+                cluster.validate_rebuild()
+                ensure_aws_feasible(orm.project, cluster.config)
             self._claim_background_task(orm)
 
             def lifecycle_cluster(hostname):
@@ -157,6 +161,10 @@ class MagicCastleAPI(ApiView):
                 raise PlanNotCreatedException
             if magic_castle.tfcloud_run.run_id is None:
                 raise RunIDNotSet
+            if orm.project.provider == "aws":
+                _, is_destroy = get_terraform_cloud().get_run_status(magic_castle.tfcloud_run.run_id)
+                if not is_destroy:
+                    ensure_aws_feasible(orm.project, magic_castle.config, magic_castle.aws_resource_ids)
             self._claim_background_task(orm)
 
             def apply_cluster(hostname):
@@ -176,9 +184,10 @@ class MagicCastleAPI(ApiView):
 
             cloud = json_data.get("cloud", {"id": None})
             project = db.session.get(Project, cloud["id"])
-            if project and project not in user.projects:
+            if project is None or project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
             MagicCastle.validate_creation_version(json_data)
+            ensure_aws_feasible(project, json_data)
 
             user_id = user.orm.id
             self._run_in_background(app, MagicCastle().plan_creation, json_data, user_id)
@@ -195,7 +204,11 @@ class MagicCastleAPI(ApiView):
         if not json_data:
             raise InvalidUsageException("No json data was provided")
 
+        if json_data.get("cloud", {}).get("id", orm.project.id) != orm.project.id:
+            raise InvalidUsageException("An existing cluster cannot change cloud project.")
         MagicCastle(orm).validate_version_unchanged(json_data)
+        ensure_aws_feasible(orm.project, json_data,
+                            MagicCastle(orm).aws_resource_ids if orm.project.provider == "aws" else None)
         app = current_app._get_current_object()
         self._claim_background_task(orm)
 

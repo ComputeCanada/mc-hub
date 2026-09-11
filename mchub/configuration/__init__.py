@@ -6,6 +6,7 @@ from os import path
 from typing import Optional
 
 from marshmallow import Schema, fields, ValidationError, post_load
+from marshmallow.validate import OneOf, Regexp, URL, Length
 
 from .env import CONFIGURATION_FILE_PATH
 from ..models.auth_type import AuthType
@@ -22,24 +23,39 @@ def validate_magic_castle_version_range(value):
         raise ValidationError(str(error)) from error
 
 
+class OpenStackCloudSchema(Schema):
+    agent_pool_name = fields.Str(load_default=None, allow_none=True, validate=Length(min=1))
+    name = fields.Str(required=True, validate=Length(min=1))
+    auth_url = fields.Str(required=True, validate=URL(schemes={"https", "http"}))
+
+
 class ConfigurationSchema(Schema):
     auth_type = fields.List(fields.Str(required=True))
     admins = fields.List(fields.Str())
     token = fields.Str()
     cors_allowed_origins = fields.List(fields.Str(), required=True)
+    openstack_clouds = fields.List(fields.Nested(OpenStackCloudSchema), load_default=list)
     domains = fields.Dict()
     dns_providers = fields.Dict()
     port = fields.Integer(load_default=5000)
     debug = fields.Boolean(load_default=True)
     github_token = fields.Str()
     github_organization = fields.Str()
-    github_default_template = fields.Str()
+    github_templates = fields.Dict(
+        keys=fields.Str(validate=OneOf(["aws", "openstack", "azure", "gcp", "ovh"])),
+        values=fields.Str(validate=Regexp(
+            r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$",
+            error="Use a GitHub repository URL: https://github.com/owner/repository",
+        )),
+        load_default=dict,
+    )
     magic_castle_version_range = fields.Str(
         required=True,
         validate=validate_magic_castle_version_range,
     )
     tfcloud_api_token = fields.Str()
     tfcloud_organization = fields.Str()
+    tfcloud_autoscale_pool_variable = fields.Str(load_default="pool", validate=Regexp(r"^[A-Za-z_][A-Za-z0-9_-]*$"))
     tfcloud_oauth_vcs_token_id = fields.Str()
     mchub_url = fields.Str(load_default=None)
 

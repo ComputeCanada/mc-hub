@@ -95,3 +95,63 @@ def test_version_is_not_accepted_as_mc_version():
 
     with pytest.raises(ValidationError, match="mc_version"):
         MagicCastleConfiguration("openstack", config)
+
+
+def test_aws_availability_zone_is_saved_and_written_to_terraform():
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+
+    config = MagicCastleConfiguration("aws", {**deepcopy(CONFIG_DICT), "availability_zone": "ca-central-1a"})
+    assert dict(config)["availability_zone"] == "ca-central-1a"
+    assert config.get_var_tf()["availability_zone"] == "ca-central-1a"
+
+
+@pytest.mark.parametrize("zone", [None, ""])
+def test_empty_aws_availability_zone_uses_terraform_default(zone):
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+
+    config = MagicCastleConfiguration("aws", {**deepcopy(CONFIG_DICT), "availability_zone": zone})
+    assert "availability_zone" not in config.get_var_tf()
+    assert "availability_zone" not in MagicCastleConfiguration("aws", deepcopy(CONFIG_DICT)).get_var_tf()
+
+
+def test_openstack_does_not_accept_or_emit_aws_zone():
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+
+    config = MagicCastleConfiguration("openstack", {**deepcopy(CONFIG_DICT), "availability_zone": "ca-central-1a"})
+    assert "availability_zone" not in config
+    assert "availability_zone" not in config.get_var_tf()
+
+
+def test_aws_data_volumes_are_passed_to_terraform():
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+    volumes = {"nfs": {name: {"size": 100} for name in ("home", "project", "scratch", "volume1")}}
+    config = MagicCastleConfiguration("aws", {**deepcopy(CONFIG_DICT), "volumes": volumes})
+    assert config.get_var_tf()["volumes"] == volumes
+
+
+@pytest.mark.parametrize("zone", [None, "ca-central-1a"])
+def test_terraform_variables_use_authoritative_aws_project_region(zone):
+    from types import SimpleNamespace
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+
+    config = MagicCastleConfiguration("aws", {**deepcopy(CONFIG_DICT), "region": "us-east-1", "availability_zone": zone})
+    project = SimpleNamespace(provider="aws", env={"AWS_DEFAULT_REGION": "ca-central-1"})
+    cluster = MagicCastle(SimpleNamespace(config=config, project=project, cluster_token=None))
+    variables = cluster._get_var_tf()
+    assert variables["region"] == "ca-central-1"
+    assert variables.get("availability_zone") == zone
+    assert "AWS_DEFAULT_REGION" not in variables
+    project.env["AWS_DEFAULT_REGION"] = "us-west-2"
+    assert cluster._get_var_tf()["region"] == "us-west-2"
+
+
+def test_openstack_terraform_variables_do_not_include_aws_region():
+    from types import SimpleNamespace
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+
+    cluster = MagicCastle(SimpleNamespace(
+        config=MagicCastleConfiguration("openstack", deepcopy(CONFIG_DICT)),
+        project=SimpleNamespace(provider="openstack", env={}), cluster_token=None))
+    assert "region" not in cluster._get_var_tf()

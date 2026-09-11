@@ -6,6 +6,7 @@ from github import Auth
 from github import GithubException
 import time
 import json
+from urllib.parse import urlparse
 
 
 import time
@@ -19,6 +20,16 @@ from ..models.version_constraint import (
 
 
 MAGIC_CASTLE_REPOSITORY = "ComputeCanada/magic_castle"
+
+
+def get_provider_template(provider):
+    template = get_config().get("github_templates", {}).get(provider)
+    if not template:
+        raise GithubStorageException(
+            f"No GitHub template configured for provider '{provider}'. "
+            "Ask the operator to set github_templates in configuration.json."
+        )
+    return template
 
 
 @contextmanager
@@ -83,6 +94,8 @@ class GithubStorage:
                 raise e
 
     def _get_template_repo(self, template_name):
+        if template_name.startswith("https://github.com/"):
+            template_name = urlparse(template_name).path.strip("/").removesuffix(".git")
         org = self.github.get_organization(self.organization)
         if "/" in template_name:
             return self.github.get_repo(template_name)
@@ -181,10 +194,15 @@ class GithubStorage:
         repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
         return sha
 
-    def archive_repo(self, hostname):
+    def archive_repo(self, hostname, *, missing_ok=False):
         repo_name = self._get_repo_name(hostname)
         org = self.github.get_organization(self.organization)
-        repo = org.get_repo(repo_name)
+        try:
+            repo = org.get_repo(repo_name)
+        except GithubException as error:
+            if missing_ok and error.status == 404:
+                return
+            raise
         repo.edit(archived=True)
 
 
