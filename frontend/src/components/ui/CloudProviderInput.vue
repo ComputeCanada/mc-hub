@@ -17,12 +17,19 @@
             hint="Must be unique for your username"
             persistent-hint
           ></v-text-field>
-          <open-stack-cloud v-if="newProject.provider === 'openstack'" v-model="newProject.env.OS_AUTH_URL" />
           <aws-credentials v-if="newProject.provider === 'aws'" v-model="newProject.env" />
-          <div v-for="env_var in provider_var[newProject.provider]" :key="env_var">
-            <v-text-field v-model="newProject.env[env_var]" :label="env_var"></v-text-field>
-          </div>
-          <open-stack-subnet v-if="newProject.provider === 'openstack'" v-model="newProject.env" />
+          <v-text-field
+            v-if="newProject.provider === 'aws'"
+            v-model="newProject.max_instance_hourly_price"
+            label="Maximum instance price (USD/hour)"
+            type="number"
+            min="0"
+            step="any"
+            clearable
+            hint="Optional, per instance. Compute only; excludes storage and IP charges."
+            persistent-hint
+          />
+          <open-stack-credentials v-if="newProject.provider === 'openstack'" v-model="newProject.env" />
         </v-container>
       </v-card-text>
       <v-card-actions>
@@ -49,13 +56,12 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
-import OpenStackSubnet from "@/components/ui/OpenStackSubnet";
-import OpenStackCloud from "@/components/ui/OpenStackCloud";
+import OpenStackCredentials from "@/components/ui/OpenStackCredentials";
 import AwsCredentials from "@/components/ui/AWSCredentials";
 
 export default {
   name: "CloudProviderInput",
-  components: { MessageDialog, AwsCredentials, OpenStackSubnet, OpenStackCloud },
+  components: { MessageDialog, AwsCredentials, OpenStackCredentials },
   emits: ["newProject"],
   data() {
     return {
@@ -64,10 +70,6 @@ export default {
       errorDialog: false,
       errorMessage: "",
       providers: ["openstack", "aws"],
-      provider_var: {
-        openstack: ["OS_APPLICATION_CREDENTIAL_ID", "OS_APPLICATION_CREDENTIAL_SECRET"],
-        aws: [],
-      },
       defaultProject: {
         name: "",
         provider: "openstack",

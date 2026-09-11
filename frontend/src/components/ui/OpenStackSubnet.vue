@@ -4,7 +4,7 @@
       <v-select
         class="flex-grow-1"
         :value="value.OS_SUBNET_ID"
-        :items="subnets"
+        :items="subnetItems"
         item-text="name"
         item-value="id"
         label="OpenStack subnet"
@@ -26,11 +26,21 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 
 export default {
   name: "OpenStackSubnet",
-  props: { value: { type: Object, required: true } },
+  props: { value: { type: Object, required: true }, projectId: Number },
   data() {
     return { subnets: [], loading: false, error: "", requestId: 0 };
   },
+  created() {
+    if (this.projectId) this.loadSubnets();
+  },
   computed: {
+    subnetItems() {
+      const selected = this.value.OS_SUBNET_ID;
+      if (this.projectId && selected && !this.subnets.some((subnet) => subnet.id === selected)) {
+        return [{ id: selected, name: selected }, ...this.subnets];
+      }
+      return this.subnets;
+    },
     credentials() {
       return JSON.stringify([
         this.value.OS_AUTH_URL,
@@ -45,6 +55,7 @@ export default {
       this.loading = false;
       this.subnets = [];
       this.error = "";
+      if (this.projectId) return;
       const env = { ...this.value };
       delete env.OS_SUBNET_ID;
       this.$emit("input", env);
@@ -59,10 +70,14 @@ export default {
       this.loading = true;
       this.error = "";
       try {
-        const response = await ProjectRepository.openstackSubnets({ env: this.value });
+        const payload = { env: this.value };
+        if (this.projectId) payload.project_id = this.projectId;
+        const response = await ProjectRepository.openstackSubnets(payload);
         if (id === this.requestId) {
           this.subnets = response.data.subnets;
-          if (!this.subnets.some((subnet) => subnet.id === this.value.OS_SUBNET_ID)) this.setSubnet(undefined);
+          if (!this.projectId && !this.subnets.some((subnet) => subnet.id === this.value.OS_SUBNET_ID)) {
+            this.setSubnet(undefined);
+          }
         }
       } catch (error) {
         if (id === this.requestId)

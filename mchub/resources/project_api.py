@@ -5,6 +5,7 @@ from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from .api_view import ApiView
+from ..configuration import get_config
 from ..database import db
 from ..models.user import User, UserORM, TokenSuperUser
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
@@ -49,11 +50,20 @@ class ProjectAPI(ApiView):
             if project is None or project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
             is_admin = user.is_project_admin(project)
+            cloud_settings = {}
+            if project.provider == Provider.OPENSTACK:
+                cloud_settings["subnet_id"] = project.env.get("OS_SUBNET_ID")
+                cloud_settings["cloud_name"] = next(
+                    (cloud["name"] for cloud in get_config().get("openstack_clouds", [])
+                     if cloud["auth_url"] == project.env.get("OS_AUTH_URL")),
+                    None,
+                )
             return {
                 "id": project.id,
                 "name": project.name,
                 "provider": project.provider,
                 **aws_settings(project),
+                **cloud_settings,
                 "nb_clusters": len(project.magic_castles),
                 "admin": is_admin,
                 "members": [member.scoped_id for member in project.members]
@@ -189,14 +199,27 @@ class ProjectAPI(ApiView):
 
         # Validate before changing any external project settings.
         if "env" in data:
+            if (project.provider == Provider.OPENSTACK
+                    and isinstance(data["env"], dict)
+                    and data["env"].get("OS_AUTH_URL", project.env.get("OS_AUTH_URL")) != project.env.get("OS_AUTH_URL")):
+                raise InvalidUsageException("A project's OpenStack cloud cannot be changed.", status_code=403)
             try:
-                env = ENV_VALIDATORS[project.provider]({**project.env, **data["env"]} if project.provider == Provider.AWS else data["env"])
+                env_data = data["env"]
+                if project.provider == Provider.AWS:
+                    env_data = {**project.env, **env_data}
+                elif project.provider == Provider.OPENSTACK:
+                    env_data = {**project.env, **env_data, "OS_AUTH_URL": project.env.get("OS_AUTH_URL")}
+                env = ENV_VALIDATORS[project.provider](env_data)
             except Exception:
                 raise InvalidUsageException("Missing required environment variables")
             if project.provider == Provider.OPENSTACK:
                 validate_openstack_cloud(env)
-            if project.provider == Provider.OPENSTACK and project.env.get("OS_SUBNET_ID"):
-                env["OS_SUBNET_ID"] = project.env["OS_SUBNET_ID"]
+            if (project.provider == Provider.OPENSTACK
+                    and env.get("OS_SUBNET_ID") != project.env.get("OS_SUBNET_ID")):
+                if env.get("OS_SUBNET_ID") not in {
+                    subnet["id"] for subnet in OpenStackManager(Project(provider=project.provider, env=env)).subnets()
+                }:
+                    raise InvalidUsageException("Select an available OpenStack subnet.")
             if project.provider == Provider.AWS:
                 if project.magic_castles and env["AWS_DEFAULT_REGION"] != project.env["AWS_DEFAULT_REGION"]:
                     raise InvalidUsageException("A project with clusters cannot change AWS region.")
@@ -316,8 +339,16 @@ class AWSRegionsAPI(ApiView):
 class OpenStackSubnetsAPI(ApiView):
     def post(self, user: User):
         data = request.get_json() or {}
+        project = db.session.get(Project, data["project_id"]) if data.get("project_id") else None
+        if data.get("project_id"):
+            if project is None or project.provider != Provider.OPENSTACK or not user.is_project_admin(project):
+                raise InvalidUsageException("Invalid project id", status_code=403)
         try:
-            env = ENV_VALIDATORS[Provider.OPENSTACK](data.get("env", {}))
+            env_data = data.get("env", {})
+            if project:
+                env_data = {**project.env, **{key: value for key, value in env_data.items() if value},
+                            "OS_AUTH_URL": project.env.get("OS_AUTH_URL")}
+            env = ENV_VALIDATORS[Provider.OPENSTACK](env_data)
         except Exception:
             raise InvalidUsageException("Provide OpenStack credentials to load subnets.")
         validate_openstack_cloud(env)

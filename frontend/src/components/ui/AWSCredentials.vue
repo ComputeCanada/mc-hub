@@ -24,16 +24,6 @@
       >
     </div>
     <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
-    <v-text-field
-      v-model="max_instance_hourly_price"
-      label="Maximum instance price (USD/hour)"
-      type="number"
-      min="0"
-      step="any"
-      clearable
-      hint="Optional, per instance. Compute only; excludes storage and IP charges."
-      persistent-hint
-    />
   </div>
 </template>
 

@@ -38,3 +38,24 @@ test.each(["aws", "openstack"])("agent pool editing is absent for %s", async (pr
   await wrapper.vm.save();
   expect(ProjectRepository.patch.mock.calls[0][1].agent_pool_name).toBeUndefined();
 });
+
+test("OpenStack credentials can be updated without selecting a cloud", async () => {
+  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  const env = { OS_APPLICATION_CREDENTIAL_ID: "a".repeat(32), OS_APPLICATION_CREDENTIAL_SECRET: "s".repeat(86) };
+  await wrapper.setData({ project: { provider: "openstack", members: [], admins: [] }, env });
+  await wrapper.vm.save();
+  expect(ProjectRepository.patch).toHaveBeenCalledWith(1, expect.objectContaining({ env }));
+});
+
+test("OpenStack subnet can be saved with credentials left empty", async () => {
+  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  await wrapper.setData({
+    project: { provider: "openstack", members: [], admins: [], subnet_id: "old-subnet" },
+    env: { OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "", OS_SUBNET_ID: "new-subnet" },
+  });
+  await wrapper.vm.save();
+  expect(ProjectRepository.patch).toHaveBeenCalledWith(
+    1,
+    expect.objectContaining({ env: { OS_SUBNET_ID: "new-subnet" } })
+  );
+});

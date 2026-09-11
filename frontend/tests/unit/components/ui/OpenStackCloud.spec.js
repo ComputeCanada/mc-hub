@@ -1,5 +1,6 @@
 import { shallowMount } from "@vue/test-utils";
 import OpenStackCloud from "@/components/ui/OpenStackCloud";
+import OpenStackCredentials from "@/components/ui/OpenStackCredentials";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
 import ProjectMembership from "@/components/ui/ProjectMembership";
 import ProjectRepository from "@/repositories/ProjectRepository";
@@ -49,12 +50,19 @@ test("can retry after a list-loading failure", async () => {
   expect(wrapper.vm.clouds).toEqual(clouds);
 });
 
-test("creation and editing use the named selector instead of an auth URL textbox", async () => {
-  const create = shallowMount(CloudProviderInput);
+test("creation selects a cloud while editing displays its name read-only", async () => {
+  const create = shallowMount(CloudProviderInput, { stubs: { OpenStackCredentials } });
   expect(create.findComponent(OpenStackCloud).exists()).toBe(true);
   expect(create.find('[label="OS_AUTH_URL"]').exists()).toBe(false);
-  const edit = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
-  await edit.setData({ project: { provider: "openstack" } });
-  expect(edit.findComponent(OpenStackCloud).exists()).toBe(true);
+  const edit = shallowMount(ProjectMembership, {
+    propsData: { id: 1, admin: true },
+    stubs: { OpenStackCredentials },
+  });
+  await edit.setData({ project: { provider: "openstack", cloud_name: "Research Cloud" } });
+  expect(edit.findComponent(OpenStackCloud).exists()).toBe(false);
+  expect(edit.findComponent(OpenStackCredentials).props("cloudName")).toBe("Research Cloud");
+  const cloud = edit.find('[label="OpenStack cloud"]');
+  expect(cloud.attributes("value")).toBe("Research Cloud");
+  expect(cloud.attributes("readonly")).toBeDefined();
   expect(edit.find('[label="OS_AUTH_URL"]').exists()).toBe(false);
 });

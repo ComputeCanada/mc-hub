@@ -175,6 +175,30 @@ def test_unapproved_credential_rotation_rejected_before_external_mutation(client
     services.replace_project_variable_set.assert_not_called()
 
 
+def test_openstack_edit_displays_cloud_name_and_preserves_cloud(client, services):
+    project = db.session.scalar(db.select(Project).where(Project.name == "project-alice"))
+    url = f"/api/projects/{project.id}"
+    original_url = project.env["OS_AUTH_URL"]
+    assert client.get(url, headers=ALICE_HEADERS).json["cloud_name"] == "Local test cloud"
+    credentials = {"OS_APPLICATION_CREDENTIAL_ID": "b" * 32, "OS_APPLICATION_CREDENTIAL_SECRET": "t" * 86}
+    result = client.patch(url, headers=ALICE_HEADERS, json={"env": credentials})
+    assert result.status_code == 200, result.json
+    assert project.env["OS_AUTH_URL"] == original_url
+    assert project.env.items() >= credentials.items()
+
+
+def test_openstack_edit_cannot_switch_to_another_approved_cloud(client, services, mocker):
+    from mchub.configuration import get_config
+    project = db.session.scalar(db.select(Project).where(Project.name == "project-alice"))
+    other_url = "https://other.example.org/v3"
+    mocker.patch.dict(get_config(), {"openstack_clouds": [{"name": "Other cloud", "auth_url": other_url}]})
+    result = client.patch(f"/api/projects/{project.id}", headers=ALICE_HEADERS,
+                          json={"env": {**project.env, "OS_AUTH_URL": other_url}})
+    assert result.status_code == 403
+    services.replace_project_variable_set.assert_not_called()
+    services.update_project.assert_not_called()
+
+
 def test_no_configured_clouds_disables_openstack_discovery(client, services, mocker):
     from mchub.configuration import get_config
     mocker.patch.dict(get_config(), {"openstack_clouds": []})
@@ -202,3 +226,34 @@ def test_agent_pool_comes_from_openstack_cloud_config(client, services, payload,
         services.update_project.assert_called_once_with("new-tf-project", clouds[0]["agent_pool_name"])
     else:
         services.update_project.assert_not_called()
+
+
+def test_openstack_subnet_can_change_without_replacing_credentials(client, services):
+    project = db.session.scalar(db.select(Project).where(Project.name == "project-alice"))
+    original_env = project.env.copy()
+    url = f"/api/projects/{project.id}"
+    assert client.get(url, headers=ALICE_HEADERS).json["subnet_id"] == original_env.get("OS_SUBNET_ID")
+    result = client.post("/api/projects/openstack/subnets", headers=ALICE_HEADERS,
+                         json={"project_id": project.id, "env": {"OS_APPLICATION_CREDENTIAL_SECRET": ""}})
+    assert result.status_code == 200, result.json
+    assert result.json == {"subnets": [{"id": "subnet"}]}
+    result = client.patch(url, headers=ALICE_HEADERS, json={"env": {"OS_SUBNET_ID": "subnet"}})
+    assert result.status_code == 200, result.json
+    assert project.env == {**original_env, "OS_SUBNET_ID": "subnet"}
+
+
+def test_openstack_subnet_change_rejects_unavailable_subnet(client, services):
+    project = db.session.scalar(db.select(Project).where(Project.name == "project-alice"))
+    original_env = project.env.copy()
+    result = client.patch(f"/api/projects/{project.id}", headers=ALICE_HEADERS,
+                          json={"env": {"OS_SUBNET_ID": "unavailable"}})
+    assert result.status_code == 400
+    assert project.env == original_env
+    services.replace_project_variable_set.assert_not_called()
+
+
+def test_subnet_discovery_with_stored_credentials_requires_project_admin(client, services):
+    project = db.session.scalar(db.select(Project).where(Project.name == "project-alice"))
+    result = client.post("/api/projects/openstack/subnets", headers=BOB_HEADERS,
+                         json={"project_id": project.id})
+    assert result.status_code == 403

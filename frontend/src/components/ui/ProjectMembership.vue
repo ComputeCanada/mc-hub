@@ -16,24 +16,7 @@
             <template v-if="admin && project.provider === 'openstack'">
               <v-subheader>Cloud Credentials</v-subheader>
               <v-list-item>
-                <open-stack-cloud v-model="env.OS_AUTH_URL" />
-              </v-list-item>
-              <v-list-item>
-                <v-text-field
-                  v-model="env.OS_APPLICATION_CREDENTIAL_ID"
-                  label="OS_APPLICATION_CREDENTIAL_ID"
-                  hint="Leave empty to keep existing"
-                  persistent-hint
-                />
-              </v-list-item>
-              <v-list-item>
-                <v-text-field
-                  v-model="env.OS_APPLICATION_CREDENTIAL_SECRET"
-                  label="OS_APPLICATION_CREDENTIAL_SECRET"
-                  hint="Leave empty to keep existing"
-                  persistent-hint
-                  type="password"
-                />
+                <open-stack-credentials v-model="env" :project-id="id" :cloud-name="project.cloud_name" />
               </v-list-item>
             </template>
             <aws-credentials
@@ -104,12 +87,12 @@
 <script>
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
-import OpenStackCloud from "@/components/ui/OpenStackCloud";
 import AwsCredentials from "@/components/ui/AWSCredentials";
+import OpenStackCredentials from "@/components/ui/OpenStackCredentials";
 
 export default {
   name: "ProjectMembership",
-  components: { MessageDialog, AwsCredentials, OpenStackCloud },
+  components: { MessageDialog, AwsCredentials, OpenStackCredentials },
   props: {
     id: { type: Number, required: true },
     admin: { type: Boolean, default: false },
@@ -125,13 +108,20 @@ export default {
       entries: [], // [{ username, isAdmin }]
       newMember: "",
       newMemberIsAdmin: false,
-      env: { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" },
+      env: { OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" },
     };
   },
   watch: {
     async dialog(val) {
       if (val) {
         this.project = (await ProjectRepository.get(this.id)).data;
+        if (this.project.provider === "openstack") {
+          this.env = {
+            OS_APPLICATION_CREDENTIAL_ID: "",
+            OS_APPLICATION_CREDENTIAL_SECRET: "",
+            OS_SUBNET_ID: this.project.subnet_id,
+          };
+        }
         this.awsEnv = { AWS_DEFAULT_REGION: this.project.region };
         this.maxInstanceHourlyPrice = this.project.max_instance_hourly_price ?? null;
         const adminSet = new Set(this.project.admins);
@@ -170,7 +160,6 @@ export default {
       if (this.admin && this.project.provider === "aws") {
         payload.max_instance_hourly_price = this.maxInstanceHourlyPrice === "" ? null : this.maxInstanceHourlyPrice;
       }
-      const envValues = Object.values(this.env);
       if (
         this.project.provider === "aws" &&
         (this.awsEnv.AWS_ACCESS_KEY_ID !== undefined ||
@@ -178,14 +167,22 @@ export default {
       ) {
         payload.env = this.awsEnv;
       }
-      if (envValues.some((v) => v)) {
-        if (envValues.every((v) => v)) {
-          payload.env = { ...this.env };
-        } else {
+      if (this.project.provider === "openstack") {
+        const { OS_APPLICATION_CREDENTIAL_ID: credentialId, OS_APPLICATION_CREDENTIAL_SECRET: secret } = this.env;
+        if (Boolean(credentialId) !== Boolean(secret)) {
           this.errorMessage = "All credential fields must be filled to update credentials.";
           this.errorDialog = true;
           return;
         }
+        const env = {};
+        if (credentialId && secret) {
+          env.OS_APPLICATION_CREDENTIAL_ID = credentialId;
+          env.OS_APPLICATION_CREDENTIAL_SECRET = secret;
+        }
+        if (this.env.OS_SUBNET_ID && this.env.OS_SUBNET_ID !== this.project.subnet_id) {
+          env.OS_SUBNET_ID = this.env.OS_SUBNET_ID;
+        }
+        if (Object.keys(env).length) payload.env = env;
       }
       try {
         await ProjectRepository.patch(this.id, payload);
@@ -201,7 +198,7 @@ export default {
       this.entries = [];
       this.newMember = "";
       this.newMemberIsAdmin = false;
-      this.env = { OS_AUTH_URL: "", OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" };
+      this.env = { OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "" };
       this.dialog = false;
     },
   },

@@ -61,3 +61,25 @@ it("preserves a selected UUID when named subnet options refresh", async () => {
   expect(wrapper.emitted("input")).toBeUndefined();
   wrapper.destroy();
 });
+
+it("keeps the saved project subnet selected while loading and refreshing options", async () => {
+  let resolve;
+  ProjectRepository.openstackSubnets.mockReturnValue(new Promise((r) => (resolve = r)));
+  const wrapper = shallowMount(OpenStackSubnet, {
+    propsData: { projectId: 1, value: { OS_SUBNET_ID: "saved-subnet" } },
+  });
+  const select = () => wrapper.find("v-select-stub");
+  expect(select().props("value")).toBe("saved-subnet");
+  expect(select().props("items")).toContainEqual({ id: "saved-subnet", name: "saved-subnet" });
+  resolve({ data: { subnets: [{ id: "saved-subnet", name: "Private network" }] } });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(select().props("items")).toEqual([{ id: "saved-subnet", name: "Private network" }]);
+  expect(select().props("value")).toBe("saved-subnet");
+  ProjectRepository.openstackSubnets.mockResolvedValue({ data: { subnets: [] } });
+  await wrapper.vm.loadSubnets();
+  expect(select().props("value")).toBe("saved-subnet");
+  expect(wrapper.emitted("input")).toBeUndefined();
+  await wrapper.setProps({ value: { OS_SUBNET_ID: "saved-subnet", OS_APPLICATION_CREDENTIAL_SECRET: "updated" } });
+  expect(wrapper.emitted("input")).toBeUndefined();
+  wrapper.destroy();
+});
