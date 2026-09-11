@@ -2,7 +2,7 @@ import Vue from "vue";
 import Vuetify from "vuetify";
 import { shallowMount } from "@vue/test-utils";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
-import ProjectMembership from "@/components/ui/ProjectMembership";
+import ProjectEditor from "@/components/ui/ProjectEditor";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import AwsCredentials from "@/components/ui/AWSCredentials";
 
@@ -19,7 +19,7 @@ describe("AWS project price settings", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("renders one price field when editing an AWS project", async () => {
-    const wrapper = shallowMount(ProjectMembership, {
+    const wrapper = shallowMount(ProjectEditor, {
       propsData: { id: 1, admin: true },
       stubs: { AwsCredentials },
     });
@@ -39,7 +39,7 @@ describe("AWS project price settings", () => {
   });
 
   it.each(["0.25", 0, null, ""])("saves or clears the ceiling %s without credentials", async (price) => {
-    const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+    const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
     await wrapper.setData({ project, maxInstanceHourlyPrice: price, awsEnv: { AWS_DEFAULT_REGION: project.region } });
     await wrapper.vm.save();
     const payload = ProjectRepository.patch.mock.calls[0][1];

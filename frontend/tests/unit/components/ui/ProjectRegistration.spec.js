@@ -1,7 +1,7 @@
 import { shallowMount } from "@vue/test-utils";
 import AccountDropdown from "@/components/ui/AccountDropdown";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
-import ProjectMembership from "@/components/ui/ProjectMembership";
+import ProjectEditor from "@/components/ui/ProjectEditor";
 import ProjectRepository from "@/repositories/ProjectRepository";
 
 jest.mock("@/repositories/UserRepository", () => ({
@@ -32,15 +32,19 @@ test.each(["aws", "openstack"])("agent pool selection is absent on %s registrati
 });
 
 test.each(["aws", "openstack"])("agent pool editing is absent for %s", async (provider) => {
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
-  await wrapper.setData({ project: { provider, members: [], admins: [] }, agentPoolName: "private" });
+  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
+  await wrapper.setData({
+    project: { provider },
+    agentPoolName: "private",
+    env: { OS_SUBNET_ID: "new-subnet" },
+  });
   expect(wrapper.find('[label="Agent Pool Name"]').exists()).toBe(false);
   await wrapper.vm.save();
   expect(ProjectRepository.patch.mock.calls[0][1].agent_pool_name).toBeUndefined();
 });
 
 test("OpenStack credentials can be updated without selecting a cloud", async () => {
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
   const env = { OS_APPLICATION_CREDENTIAL_ID: "a".repeat(32), OS_APPLICATION_CREDENTIAL_SECRET: "s".repeat(86) };
   await wrapper.setData({ project: { provider: "openstack", members: [], admins: [] }, env });
   await wrapper.vm.save();
@@ -48,7 +52,7 @@ test("OpenStack credentials can be updated without selecting a cloud", async () 
 });
 
 test("OpenStack subnet can be saved with credentials left empty", async () => {
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
   await wrapper.setData({
     project: { provider: "openstack", members: [], admins: [], subnet_id: "old-subnet" },
     env: { OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "", OS_SUBNET_ID: "new-subnet" },

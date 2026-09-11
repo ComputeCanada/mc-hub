@@ -54,7 +54,7 @@ function projectMenu() {
   return mount(Projects, {
     localVue,
     vuetify: new Vuetify(),
-    stubs: ["CloudProviderInput", "ProjectMembership"],
+    stubs: ["CloudProviderInput", "ProjectMembership", "ProjectEditor"],
   });
 }
 
@@ -222,7 +222,7 @@ it.each([false, true])("clears the AWS banner while switching to OpenStack (load
   wrapper.destroy();
 });
 
-it("lets a project member replace the default and moves the badge after saving", async () => {
+it("lets a project member select exactly one default checkbox", async () => {
   let resolveSave;
   UserRepository.setDefaultProject.mockReturnValue(
     new Promise((resolve) => {
@@ -231,15 +231,18 @@ it("lets a project member replace the default and moves the badge after saving",
   );
   const wrapper = projectMenu();
   await flush();
-  expect(wrapper.findAll("tbody tr").at(1).text()).toContain("Default");
-  const button = wrapper.findAll("button").wrappers.find((button) => button.text() === "Default");
-  await button.trigger("click");
+  const checkboxes = wrapper.findAll('[role="checkbox"]');
+  expect(checkboxes.wrappers.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["false", "true"]);
+  await checkboxes.at(0).trigger("click");
   expect(UserRepository.setDefaultProject).toHaveBeenCalledWith(1);
   expect(wrapper.vm.defaultProjectId).toBe(2);
+  expect(checkboxes.wrappers.every((checkbox) => checkbox.classes("v-simple-checkbox--disabled"))).toBe(true);
   resolveSave({ data: { default_project_id: 1 } });
   await flush();
-  expect(wrapper.findAll("tbody tr").at(0).text()).toContain("Default");
-  expect(wrapper.findAll("tbody tr").at(1).find("button").text()).toBe("Default");
+  expect(checkboxes.wrappers.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["true", "false"]);
+  await checkboxes.at(0).trigger("click");
+  expect(UserRepository.setDefaultProject).toHaveBeenCalledTimes(1);
+  expect(checkboxes.at(0).attributes("aria-checked")).toBe("true");
   wrapper.destroy();
 });
 

@@ -2,7 +2,7 @@ import { shallowMount } from "@vue/test-utils";
 import OpenStackCloud from "@/components/ui/OpenStackCloud";
 import OpenStackCredentials from "@/components/ui/OpenStackCredentials";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
-import ProjectMembership from "@/components/ui/ProjectMembership";
+import ProjectEditor from "@/components/ui/ProjectEditor";
 import ProjectRepository from "@/repositories/ProjectRepository";
 
 jest.mock("@/repositories/ProjectRepository", () => ({ openstackClouds: jest.fn() }));
@@ -54,7 +54,7 @@ test("creation selects a cloud while editing displays its name read-only", async
   const create = shallowMount(CloudProviderInput, { stubs: { OpenStackCredentials } });
   expect(create.findComponent(OpenStackCloud).exists()).toBe(true);
   expect(create.find('[label="OS_AUTH_URL"]').exists()).toBe(false);
-  const edit = shallowMount(ProjectMembership, {
+  const edit = shallowMount(ProjectEditor, {
     propsData: { id: 1, admin: true },
     stubs: { OpenStackCredentials },
   });
