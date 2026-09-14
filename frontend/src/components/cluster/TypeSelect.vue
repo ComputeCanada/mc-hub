@@ -18,6 +18,8 @@
 </template>
 
 <script>
+import { GPU_TYPE_PREFIX } from "@/models/instanceTypes";
+
 const GPU_REGEX = /^g(?<gpu>[0-9]+)(?:-(?<gpu_ram>[0-9.]+)gb)?-/;
 const DISK_REGEX = /[pc][0-9]+-[0-9.]+gb-(?<disk>[0-9.]+)/;
 const TYPE_CATEGORIES = [
@@ -30,7 +32,7 @@ const TYPE_CATEGORIES = [
     name: "Compute types",
   },
   {
-    prefix: "g",
+    prefix: GPU_TYPE_PREFIX,
     name: "GPU types",
   },
   {

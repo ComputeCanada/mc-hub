@@ -134,49 +134,78 @@
       </v-list>
       <v-list>
         <div :key="id" v-for="id in Object.keys(localSpecs.instances)">
-          <v-list-item>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                v-model.number="localSpecs.instances[id].count"
-                label="count"
-                min="0"
-                type="number"
-                append-outer-icon="mdi-close"
-                :rules="[countRule]"
+          <div class="instance-row-scroll">
+            <v-list-item class="instance-row">
+              <v-col class="pt-0 instance-field">
+                <v-text-field
+                  v-model.number="localSpecs.instances[id].count"
+                  label="count"
+                  min="0"
+                  type="number"
+                  append-outer-icon="mdi-close"
+                  :rules="[countRule]"
+                />
+              </v-col>
+              <v-col class="pt-0 instance-field">
+                <v-text-field
+                  :value="id"
+                  label="hostname prefix"
+                  v-on:change="changeHostnamePrefix(id, $event)"
+                  :rules="[hostnamePrefixRule(id)]"
+                />
+              </v-col>
+              <v-col class="pt-0 instance-field">
+                <type-select
+                  :types="getTypes(localSpecs.instances[id].tags, id)"
+                  :loading="loading || (isAWS && !awsChoicesLoaded && awsChecking)"
+                  v-model="localSpecs.instances[id].type"
+                  label="Type"
+                  :rules="isAWS ? [awsTypeRule(id)] : [ramRule, coreRule]"
+                />
+              </v-col>
+              <v-col class="pt-0 instance-field">
+                <v-combobox
+                  v-model="localSpecs.instances[id].tags"
+                  :items="TAGS"
+                  label="tags"
+                  :rules="[publicTagRule(id)]"
+                  multiple
+                ></v-combobox>
+              </v-col>
+              <v-col class="pt-0 instance-field">
+                <span v-if="instanceSettingsErrors[id]" class="error--text text-caption d-block">Check settings</span>
+                <span v-else-if="optionalAttributeCount(id)" class="text-caption d-block"
+                  >{{ optionalAttributeCount(id) }} set</span
+                >
+                <v-btn
+                  icon
+                  small
+                  :aria-label="`Optional settings for ${id}`"
+                  :aria-expanded="expandedInstance === id ? 'true' : 'false'"
+                  :aria-controls="`instance-settings-${id}`"
+                  @click="expandedInstance = expandedInstance === id ? null : id"
+                >
+                  <v-icon>{{ expandedInstance === id ? "mdi-chevron-up" : "mdi-chevron-down" }}</v-icon>
+                </v-btn>
+                <v-btn @click="rmInstanceRow(id)" class="ml-4" text icon small color="error">
+                  <v-icon> mdi-delete </v-icon>
+                </v-btn>
+              </v-col>
+            </v-list-item>
+          </div>
+          <v-expand-transition>
+            <div v-show="expandedInstance === id" :id="`instance-settings-${id}`">
+              <instance-settings
+                :instance="localSpecs.instances[id]"
+                :name="id"
+                :provider="provider"
+                :has-gpu="instanceHasGpu(localSpecs.instances[id].type)"
+                :images="getPossibleValues('image')"
+                :additional-mig-profiles="getPossibleValues('additional_mig_profiles') || []"
+                @invalid="$set(instanceSettingsErrors, id, $event)"
               />
-            </v-col>
-            <v-col cols="12" sm="2" class="pt-0">
-              <v-text-field
-                :value="id"
-                label="hostname prefix"
-                v-on:change="changeHostnamePrefix(id, $event)"
-                :rules="[hostnamePrefixRule(id)]"
-              />
-            </v-col>
-            <v-col cols="12" sm="3" class="pt-0">
-              <type-select
-                :types="getTypes(localSpecs.instances[id].tags, id)"
-                :loading="loading || (isAWS && !awsChoicesLoaded && awsChecking)"
-                v-model="localSpecs.instances[id].type"
-                label="Type"
-                :rules="isAWS ? [awsTypeRule(id)] : [ramRule, coreRule]"
-              />
-            </v-col>
-            <v-col cols="12" sm="4" class="pt-0">
-              <v-combobox
-                v-model="localSpecs.instances[id].tags"
-                :items="TAGS"
-                label="tags"
-                :rules="[publicTagRule(id)]"
-                multiple
-              ></v-combobox>
-            </v-col>
-            <v-col cols="12" sm="1" class="pt-0">
-              <v-btn @click="rmInstanceRow(id)" text icon small color="error">
-                <v-icon> mdi-delete </v-icon>
-              </v-btn>
-            </v-col>
-          </v-list-item>
+            </div>
+          </v-expand-transition>
         </div>
         <div class="text-center">
           <v-btn @click="addInstanceRow" color="primary" class="ma-2"> Add instance row </v-btn>
@@ -368,10 +397,12 @@
 
 <script>
 import { cloneDeep, isEqual } from "lodash";
+import { isGpuTypeName } from "@/models/instanceTypes";
 import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import TypeSelect from "./TypeSelect";
+import InstanceSettings from "./InstanceSettings";
 import HieradataEditor from "@/components/ui/HieradataEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ProjectRepository from "@/repositories/ProjectRepository";
@@ -388,6 +419,7 @@ export default {
   components: {
     HieradataEditor,
     TypeSelect,
+    InstanceSettings,
     ResourceUsageDisplay,
   },
   props: {
@@ -411,6 +443,8 @@ export default {
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
       VOLUME_STUB: { size: 50 },
       TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node", "pool", "dtn"],
+      expandedInstance: null,
+      instanceSettingsErrors: {},
       validForm: true,
       initialSpecs: null,
 
@@ -772,6 +806,10 @@ export default {
         this.awsChoices[id]?.includes(value) ||
         "This type is unavailable for the current definition. Adjust the count or select another type.";
     },
+    optionalAttributeCount(id) {
+      return Object.keys(this.localSpecs.instances[id]).filter((key) => !["type", "count", "tags"].includes(key))
+        .length;
+    },
     changeHostnamePrefix(oldKey, newKey) {
       if (newKey != "" && !(newKey in this.localSpecs.instances)) {
         const instances = this.localSpecs.instances;
@@ -784,6 +822,7 @@ export default {
           }
         }
         this.localSpecs.instances = new_instances;
+        if (this.expandedInstance === oldKey) this.expandedInstance = newKey;
       }
     },
     changeVolumeName(oldKey, newKey) {
@@ -858,6 +897,15 @@ export default {
       } else {
         return fieldPath.split(".").reduce((acc, x) => acc[x], this.possibleResources);
       }
+    },
+    instanceHasGpu(instanceType) {
+      // Match TypeSelect's GPU category even when API GPU metadata is missing or empty.
+      if (isGpuTypeName(instanceType)) return true;
+      const type = this.resourceDetails?.instance_types?.find((item) => item.name === instanceType);
+      if (!type) return false;
+      if (Array.isArray(type.gpus)) return type.gpus.some((gpu) => gpu.count == null || gpu.count > 0);
+      if (typeof type.gpus === "number") return type.gpus > 0;
+      return false;
     },
     getInstanceDetail(instanceType, detailName, defaultValue = 0) {
       const matchingInstances = this.resourceDetails.instance_types.filter(
@@ -1038,3 +1086,24 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.instance-row-scroll {
+  overflow-x: auto;
+}
+.instance-row {
+  display: grid;
+  grid-template-columns: 96px 112px 144px minmax(280px, 1fr) 96px;
+  min-width: 760px;
+  align-items: center;
+}
+/* Vuetify's flex min-height spacer otherwise creates a second grid row. */
+.instance-row::after {
+  content: none;
+}
+.instance-row > .instance-field {
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+</style>

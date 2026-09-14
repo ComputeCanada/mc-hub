@@ -206,7 +206,7 @@ class MagicCastleAPI(ApiView):
 
         if json_data.get("cloud", {}).get("id", orm.project.id) != orm.project.id:
             raise InvalidUsageException("An existing cluster cannot change cloud project.")
-        MagicCastle(orm).validate_version_unchanged(json_data)
+        MagicCastle(orm).validate_modification_version(json_data)
         ensure_aws_feasible(orm.project, json_data,
                             MagicCastle(orm).aws_resource_ids if orm.project.provider == "aws" else None)
         app = current_app._get_current_object()

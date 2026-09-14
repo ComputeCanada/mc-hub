@@ -176,6 +176,22 @@ A Terraform-style version constraint describing the Magic Castle versions vetted
 
 Multiple constraints separated by commas and the `=`, `!=`, `>`, `>=`, `<`, `<=`, and `~>` operators are supported. For example, `">= 14.0.0, < 15.0.0"` accepts version 14 releases, while `"~> 14.1.0"` accepts patch releases from 14.1.
 
+### `additional_mig_profiles` (optional)
+
+Additional suggestions for the instance MIG profile picker. These extend the built-in list:
+`1g.5gb`, `1g.10gb`, `2g.10gb`, `3g.20gb`, `4g.20gb`, and `7g.40gb`.
+For example, add this property to `configuration.json`:
+
+```json
+"additional_mig_profiles": ["1g.20gb", "2g.40gb"]
+```
+
+Restart MC Hub after changing the configuration. Duplicate suggestions are shown only once.
+Users can also type custom profiles directly. Names must start with `1g.` through `7g.`,
+followed by a nonempty suffix without spaces. The editor multiplies the leading slice count
+by each quantity and limits their sum to 7. Clearing all rows removes the instance MIG override.
+Suggestions do not verify compatibility with the selected GPU.
+
 ### `tfcloud_api_token`
 
 A [Terraform Cloud API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) used to authenticate with the Terraform Cloud API. You can use either a **user token** or a **team token**, but **organization tokens are not supported** — they lack permissions required for certain operations, such as triggering a destroy run.
