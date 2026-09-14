@@ -200,6 +200,46 @@ def test_undeployed_magic_castle_rejects_unvetted_version(app):
     assert cluster.tfcloud_run.run_id == original_run_id
 
 
+@pytest.mark.parametrize(
+    "undeployed, payload, error",
+    [
+        (True, {"mc_version": "14.0.0"}, None),
+        (True, {"mc_version": "unvetted"}, "Invalid Magic Castle version"),
+        (True, {"mc_version": "14.1.2"}, None),
+        (True, {"description": "Updated description"}, None),
+        (False, {"mc_version": "14.0.0"},
+         "The Magic Castle version cannot be changed while the cluster is deployed"),
+        (False, {"mc_version": "14.1.2"}, None),
+    ],
+)
+def test_modify_api_validates_version_for_deployment_state(client, mocker, undeployed, payload, error):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+
+    hostname = "valid1.magic-castle.cloud"
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
+    orm.config = MagicCastleConfiguration("openstack", {**orm.config, "mc_version": "14.1.2"})
+    orm.undeployed = undeployed
+    orm.status = ClusterStatusCode.NOT_DEPLOYED if undeployed else ClusterStatusCode.PROVISIONING_SUCCESS
+    db.session.commit()
+    original_status = orm.status
+    background_task = mocker.patch.object(MagicCastleAPI, "_run_in_background")
+
+    response = client.put(f"/api/magic-castles/{hostname}", json=payload)
+
+    if error:
+        assert response.status_code == 400
+        assert response.get_json() == {"message": error}
+        background_task.assert_not_called()
+        assert orm.status == original_status
+    else:
+        assert response.status_code == 202
+        background_task.assert_called_once()
+
+
 def test_planned_status_waits_for_local_plan(app):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode

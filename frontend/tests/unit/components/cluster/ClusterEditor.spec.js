@@ -130,6 +130,47 @@ describe("ClusterEditor", () => {
     moxios.uninstall(Repository)
   })
 
+  it("expands one instance at a time and retains optional settings when collapsed", async () => {
+    const wrapper = await getDefaultClusterEditorWrapper();
+    const mgmt = wrapper.find('[aria-controls="instance-settings-mgmt"]');
+    const login = wrapper.find('[aria-controls="instance-settings-login"]');
+    expect(mgmt.attributes("aria-expanded")).toBe("false");
+    await mgmt.trigger("click");
+    expect(mgmt.attributes("aria-expanded")).toBe("true");
+    const settings = wrapper.findAllComponents({ name: "InstanceSettings" }).wrappers
+      .find(component => component.props("name") === "mgmt");
+    const disk = settings.findAllComponents({ name: "v-text-field" }).wrappers
+      .find(component => component.props("label") === "Root disk size");
+    disk.vm.$emit("input", "100");
+    await login.trigger("click");
+    expect(mgmt.attributes("aria-expanded")).toBe("false");
+    expect(login.attributes("aria-expanded")).toBe("true");
+    expect(wrapper.vm.specs.instances.mgmt.disk_size).toBe(100);
+    expect(wrapper.text()).toContain("1 set");
+    await login.trigger("click");
+    expect(login.attributes("aria-expanded")).toBe("false");
+    wrapper.destroy();
+  });
+
+  it("detects GPU types using cloud metadata or the OpenStack flavor name", () => {
+    const resourceDetails = { instance_types: [
+      { name: "g1-10gb-4" },
+      { name: "gpu12-120-850gb-a100x1", gpus: [] },
+      { name: "p4-6gb" },
+      { name: "p4d.24xlarge", gpus: [{ count: 8 }] },
+      { name: "g6f.large", gpus: [{ count: null, partition_size: 0.125 }] },
+      { name: "g1-8gb-4", gpus: [] },
+      { name: "g2-16gb-8", gpus: 0 },
+      { name: "p8-16gb", gpus: [] },
+    ] };
+    for (const name of ["g1-10gb-4", "p4d.24xlarge", "g6f.large", "g1-8gb-4", "g2-16gb-8", "g1-32gb-8", "gpu12-120-850gb-a100x1"]) {
+      expect(ClusterEditor.methods.instanceHasGpu.call({ resourceDetails }, name)).toBe(true);
+    }
+    for (const name of ["p4-6gb", "p8-16gb", "unknown", null]) {
+      expect(ClusterEditor.methods.instanceHasGpu.call({ resourceDetails }, name)).toBe(false);
+    }
+  });
+
   it("magicCastleGuestPasswordNonExisting", async () => {
     const clusterEditorWrapperNew = await getDefaultClusterEditorWrapper(false);
     expect(clusterEditorWrapperNew.vm.specs.guest_passwd.length).toBe(12);

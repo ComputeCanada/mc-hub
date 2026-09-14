@@ -2,6 +2,7 @@ from ..cloud.openstack_manager import OpenStackManager
 from ..cloud.aws_manager import AWSManager
 from ..cloud.dns_manager import DnsManager
 from ...services.github_api import get_github_storage
+from ...configuration import get_config
 import logging
 from time import monotonic
 
@@ -39,4 +40,5 @@ class CloudManager:
             "mc_version"
         ] = get_github_storage().get_magic_castle_versions()
         logger.info("Resource discovery stage=versions duration=%.3fs", monotonic() - started)
+        available_resources["possible_resources"]["additional_mig_profiles"] = get_config().get("additional_mig_profiles", [])
         return available_resources

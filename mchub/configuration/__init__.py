@@ -53,6 +53,13 @@ class ConfigurationSchema(Schema):
         required=True,
         validate=validate_magic_castle_version_range,
     )
+    additional_mig_profiles = fields.List(
+        fields.Str(validate=Regexp(
+            r"^[1-7]g\.\S+$",
+            error="Use a profile starting with 1g. through 7g., followed by a name without spaces.",
+        )),
+        load_default=list,
+    )
     tfcloud_api_token = fields.Str()
     tfcloud_organization = fields.Str()
     tfcloud_autoscale_pool_variable = fields.Str(load_default="pool", validate=Regexp(r"^[A-Za-z_][A-Za-z0-9_-]*$"))
