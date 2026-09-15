@@ -22,6 +22,9 @@
         <template v-slot:[`item.status`]="{ item }">
           <status-chip :status="item.status" :health="item.health" :undeployed="item.undeployed" />
         </template>
+        <template v-slot:[`item.owner`]="{ item }">
+          {{ item.owner || "Not set" }}
+        </template>
         <template #expanded-item="{ headers, item }">
           <td :colspan="headers.length" :key="item.hostname">
             <v-container>
@@ -168,6 +171,10 @@ export default {
         {
           text: "Project",
           value: "cloud.name",
+        },
+        {
+          text: "Owner",
+          value: "owner",
         },
         {
           text: "Age",
