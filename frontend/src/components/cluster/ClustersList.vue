@@ -23,7 +23,7 @@
           <status-chip :status="item.status" :health="item.health" :undeployed="item.undeployed" />
         </template>
         <template v-slot:[`item.owner`]="{ item }">
-          {{ item.owner || "Not set" }}
+          {{ item.owner ? item.owner.split("@")[0] : "Not set" }}
         </template>
         <template #expanded-item="{ headers, item }">
           <td :colspan="headers.length" :key="item.hostname">
