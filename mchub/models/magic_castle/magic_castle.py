@@ -190,6 +190,7 @@ class MagicCastleORM(db.Model):
     applied_config = db.Column(db.PickleType())
     eyaml_public_key = db.Column(db.Text)
     created_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    created_by = db.relationship("UserORM", foreign_keys=[created_by_user_id])
     project_id = db.Column(db.Integer, db.ForeignKey("project.id"))
     project = db.relationship(
         "Project",
@@ -478,6 +479,7 @@ class MagicCastle:
             "age": self.age,
             "expiration_date": self.expiration_date,
             "cloud": cloud,
+            "owner": self.orm.created_by.scoped_id if self.orm.created_by else None,
             "hieradata_entries": _hieradata_to_entries(config.get("hieradata", "")),
         }
 
