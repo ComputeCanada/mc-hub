@@ -65,7 +65,11 @@ def test_get_all_magic_castle_names(client):
         "valid1.magic-castle.cloud",
     ]
     for cluster_name in clusters:
-        assert results[cluster_name] == {**CLUSTERS[cluster_name], "undeployed": False}
+        assert results[cluster_name] == {
+            **CLUSTERS[cluster_name],
+            "undeployed": False,
+            "owner": None,
+        }
 
     assert res.status_code == 200
 
@@ -90,7 +94,7 @@ def test_query_magic_castles_local(client):
 def test_get_state_existing(client):
     res = client.get(f"/api/magic-castles/{EXISTING_HOSTNAME}", headers=ALICE_HEADERS)
     state = res.get_json()
-    assert state == {**EXISTING_CLUSTER_STATE, "undeployed": False}
+    assert state == {**EXISTING_CLUSTER_STATE, "undeployed": False, "owner": None}
     assert res.status_code == 200
 
 
