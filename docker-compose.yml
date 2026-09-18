@@ -6,18 +6,12 @@ services:
     command: ["flask", "db", "upgrade"]
     volumes: &hub-volumes
       - type: bind
-        source: ./run/clusters
-        target: /home/mcu/clusters
-      - type: bind
         source: ./run/configuration.json
         target: /home/mcu/configuration.json
         read_only: true
       - type: volume
         source: database
         target: /home/mcu/database
-      - type: volume
-        source: terraform-plugin-cache
-        target: /home/mcu/.terraform.d/plugin-cache
     user: mcu
 
   api:
