@@ -240,6 +240,37 @@ def test_modify_api_validates_version_for_deployment_state(client, mocker, undep
         background_task.assert_called_once()
 
 
+@pytest.mark.parametrize("expiration_date", ["2027-01-01", None])
+def test_expiration_only_update_finishes_without_a_plan(client, mocker, expiration_date):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+
+    hostname = "valid1.magic-castle.cloud"
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
+    orm.status = ClusterStatusCode.PROVISIONING_SUCCESS
+    orm.undeployed = False
+    orm.expiration_date = "2026-12-01"
+    db.session.commit()
+    payload = dict(orm.config)
+    payload.update(cloud={"id": orm.project.id}, expiration_date=expiration_date)
+    create_plan = mocker.patch.object(MagicCastle, "create_plan")
+
+    def run_background(app, target, *args, **kwargs):
+        assert orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING
+        target(*args)
+
+    mocker.patch.object(MagicCastleAPI, "_run_in_background", side_effect=run_background)
+    response = client.put(f"/api/magic-castles/{hostname}", json=payload)
+
+    assert response.status_code == 202
+    db.session.expire_all()
+    assert orm.expiration_date == expiration_date
+    assert orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
+    create_plan.assert_not_called()
+
+
 def test_planned_status_waits_for_local_plan(app):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode

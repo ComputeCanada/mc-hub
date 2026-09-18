@@ -649,7 +649,7 @@ class MagicCastle:
         self.create_plan(github_sha=github_commit)
         db.session.commit()
 
-    def plan_modification(self, data):
+    def plan_modification(self, data, previous_status=None):
         logger.debug(f"Call <{self.__class__.__name__}>:plan_modification")
 
         if not self.found:
@@ -680,7 +680,7 @@ class MagicCastle:
         # only be reflected in the database and do not
         # require a plan.
         # Add an exception if the cluster is stuck in a destroy error
-        if config_changed or self.status == ClusterStatusCode.DESTROY_ERROR:
+        if config_changed or (previous_status or self.status) == ClusterStatusCode.DESTROY_ERROR:
             try:
                 var_tf = self._get_var_tf()
                 sha = get_github_storage().write(var_tf, self.hostname)
@@ -690,7 +690,11 @@ class MagicCastle:
                     additional_details=f"hostname: {self.hostname}, error: {error}",
                 )
             self.create_plan(github_sha=sha)
-            db.session.commit()
+        elif previous_status is not None:
+            # Metadata-only updates finish without a Terraform run. Release the
+            # background task claim instead of leaving clients waiting for a plan.
+            self.status = previous_status
+        db.session.commit()
 
     def plan_destruction(self):
         logger.debug(f"Call <{self.__class__.__name__}:plan_destruction>")

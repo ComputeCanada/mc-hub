@@ -373,7 +373,7 @@ export default {
         return;
       }
       let planCreator = async () => MagicCastleRepository.update(this.hostname, this.magicCastle);
-      await this.showPlanConfirmationDialog({ planCreator });
+      await this.showPlanConfirmationDialog({ planCreator, modification: true });
     },
     async rebuildCluster() {
       if (this.status === ClusterStatusCode.CREATED) {
@@ -438,7 +438,13 @@ export default {
         const planPromise = options.planCreator();
         planPromise.catch(() => {});
         try {
-          await Promise.race([planPromise, this.sleep(PLAN_START_TIMEOUT_MS)]);
+          if (options.modification) {
+            // Wait for the update to be accepted before treating an unchanged
+            // deployment status as a completed metadata-only update.
+            await planPromise;
+          } else {
+            await Promise.race([planPromise, this.sleep(PLAN_START_TIMEOUT_MS)]);
+          }
         } catch (e) {
           if (e.response) {
             throw e;
@@ -450,7 +456,7 @@ export default {
         }
 
         // Fetch plan
-        const { status, message, progress } = await this.waitForPlanCompletion(hostname);
+        const { status, message, progress } = await this.waitForPlanCompletion(hostname, options.modification);
         if ([ClusterStatusCode.PLAN_ERROR, ClusterStatusCode.DESTROY_ERROR].includes(status)) {
           this.showError(message || "An error occurred while generating the plan.");
           this.clusterPlanRunningDialog = false;
@@ -459,6 +465,12 @@ export default {
         if (status === ClusterStatusCode.NOT_DEPLOYED) {
           this.clusterPlanRunningDialog = false;
           this.goHome();
+          return;
+        }
+        if (options.modification && status !== ClusterStatusCode.CREATED) {
+          this.clusterPlanRunningDialog = false;
+          this.$disableUnloadConfirmation();
+          this.startStatusPolling();
           return;
         }
         this.resourcesChanges =
@@ -497,7 +509,7 @@ export default {
       }
       return `${this.magicCastle.cluster_name}.${this.magicCastle.domain}`;
     },
-    async waitForPlanCompletion(hostname) {
+    async waitForPlanCompletion(hostname, modification = false) {
       if (!hostname) {
         throw new Error("Cluster hostname is missing.");
       }
@@ -515,7 +527,14 @@ export default {
             ClusterStatusCode.PLAN_ERROR,
             ClusterStatusCode.DESTROY_ERROR,
             ClusterStatusCode.NOT_DEPLOYED,
-          ].includes(status)
+          ].includes(status) ||
+          (modification &&
+            [
+              ClusterStatusCode.PROVISIONING_RUNNING,
+              ClusterStatusCode.PROVISIONING_SUCCESS,
+              ClusterStatusCode.PROVISIONING_ERROR,
+              ClusterStatusCode.BUILD_ERROR,
+            ].includes(status))
         ) {
           return { status, message, progress };
         }

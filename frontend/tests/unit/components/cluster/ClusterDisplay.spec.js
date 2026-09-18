@@ -35,6 +35,57 @@ describe("ClusterDisplay", () => {
       }
     );
 
+  it("closes the plan dialog after an expiration-only update without applying Terraform", async () => {
+    MagicCastleRepository.update = jest.fn().mockResolvedValue({ status: 202 });
+    MagicCastleRepository.apply.mockClear();
+    MagicCastleRepository.getStatus.mockReset();
+    MagicCastleRepository.getStatus
+      .mockResolvedValueOnce({ data: { status: ClusterStatusCode.PLAN_RUNNING } })
+      .mockResolvedValue({ data: { status: ClusterStatusCode.PROVISIONING_SUCCESS } });
+    const saved = { expiration_date: "2027-01-01" };
+    MagicCastleRepository.getState.mockResolvedValue({ data: saved });
+    const wrapper = mountDisplay();
+    wrapper.vm.$disableUnloadConfirmation = jest.fn();
+    jest.spyOn(wrapper.vm, "sleep").mockResolvedValue();
+    await wrapper.setData({ status: ClusterStatusCode.PROVISIONING_SUCCESS, magicCastle: saved });
+
+    await wrapper.vm.planModification();
+    await wrapper.vm.$nextTick();
+
+    expect(MagicCastleRepository.update).toHaveBeenCalledWith("test.example.com", saved);
+    expect(wrapper.vm.clusterPlanRunningDialog).toBe(false);
+    expect(wrapper.vm.clusterModificationDialog).toBe(false);
+    expect(MagicCastleRepository.apply).not.toHaveBeenCalled();
+    expect(MagicCastleRepository.getState).toHaveBeenCalledWith("test.example.com");
+    expect(wrapper.vm.$disableUnloadConfirmation).toHaveBeenCalled();
+    wrapper.destroy();
+  });
+
+  it("waits for update acceptance and still confirms resource changes", async () => {
+    let acceptUpdate;
+    MagicCastleRepository.update = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          acceptUpdate = resolve;
+        })
+    );
+    MagicCastleRepository.getStatus.mockReset();
+    const changes = [{ address: "node", change: { actions: ["update"] } }];
+    MagicCastleRepository.getStatus.mockResolvedValue({
+      data: { status: ClusterStatusCode.CREATED, progress: changes },
+    });
+    const wrapper = mountDisplay();
+    const updating = wrapper.vm.planModification();
+    expect(wrapper.vm.clusterPlanRunningDialog).toBe(true);
+    expect(MagicCastleRepository.getStatus).not.toHaveBeenCalled();
+    acceptUpdate({ status: 202 });
+    await updating;
+    expect(wrapper.vm.clusterPlanRunningDialog).toBe(false);
+    expect(wrapper.vm.clusterModificationDialog).toBe(true);
+    expect(wrapper.vm.resourcesChanges).toEqual(changes);
+    wrapper.destroy();
+  });
+
   it("keeps the accepted plan visible and polls through delayed apply statuses", async () => {
     jest.useFakeTimers();
     let acceptApply;
