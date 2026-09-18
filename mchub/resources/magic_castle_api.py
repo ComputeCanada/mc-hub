@@ -210,6 +210,7 @@ class MagicCastleAPI(ApiView):
         ensure_aws_feasible(orm.project, json_data,
                             MagicCastle(orm).aws_resource_ids if orm.project.provider == "aws" else None)
         app = current_app._get_current_object()
+        previous_status = orm.status
         self._claim_background_task(orm)
 
         def modify_cluster(hostname, payload):
@@ -218,7 +219,7 @@ class MagicCastleAPI(ApiView):
             ).scalar_one_or_none()
             if orm is None:
                 raise ClusterNotFoundException
-            MagicCastle(orm).plan_modification(payload)
+            MagicCastle(orm).plan_modification(payload, previous_status=previous_status)
 
         self._run_in_background(
             app, modify_cluster, hostname, json_data, hostname=hostname
