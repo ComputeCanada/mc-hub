@@ -1,6 +1,6 @@
 {
   "name": "@magic-castle/mc-hub",
-  "version": "13.1.2",
+  "version": "13.1.3",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
