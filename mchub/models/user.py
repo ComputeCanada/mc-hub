@@ -35,6 +35,10 @@ class UserORM(db.Model):
 
 
 class TokenSuperUser:
+    def can_access_cluster(self, orm):
+        """The service token has access to clusters in every project."""
+        return True
+
     @property
     def projects(self):
         return db.session.scalars(db.select(Project)).all()
