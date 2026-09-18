@@ -12,14 +12,13 @@ The deployment runs two long-lived containers:
   separate processes. Both use Flask application contexts and shared lifecycle
   code with direct database access; neither calls the hub's HTTP API.
 
-Compose also runs a one-time `initialize` container for database migrations,
-startup status cleanup, and cluster initialization. Both long-lived containers
-wait for it to succeed. All three use the same configuration, database volume,
-and cluster storage. Initialization is not repeated on ordinary web or worker
-container restarts.
+Compose also runs a one-time `initialize` container for database migrations
+(`flask db upgrade`). Both long-lived containers wait for it to succeed. All three
+use the same configuration, database volume, and cluster storage. Initialization
+is not repeated on ordinary web or worker container restarts.
 
 For an existing deployment, stop its containers before initialization so database
-migrations and startup status cleanup do not race with live operations:
+migrations do not race with live operations:
 
 ```sh
 docker compose down --remove-orphans
@@ -52,6 +51,12 @@ expiration process restarts; claims owned by HTTP workers are left untouched.
 External Terraform operations can continue during a process restart and are
 reconciled from their remote state. Planning has a five-minute polling deadline;
 remote request latency can extend it.
+
+Startup does not reset cluster statuses: Terraform Cloud operations can continue
+while MC Hub is stopped, and the observer refreshes their remote state. Abandoned
+`BACKGROUND_TASK_RUNNING` claims from interrupted HTTP tasks are not automatically
+recovered. Unlike expiration-owned claims, these need ownership or lease tracking
+before they can safely be released; the observer leaves them untouched.
 
 The observer refreshes clusters and then waits 30 seconds between sweeps. Slow
 remote requests and outages can delay observations. The dashboard shows the last

@@ -3,10 +3,7 @@ services:
     build:
       context: .
       target: background-worker
-    command:
-      - /bin/sh
-      - -c
-      - flask db upgrade && python -m mchub.schema_update && python -m mchub.init_clusters
+    command: ["flask", "db", "upgrade"]
     volumes: &hub-volumes
       - type: bind
         source: ./run/clusters

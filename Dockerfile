@@ -57,6 +57,4 @@ ENV MCH_DIST_PATH=/code/frontend
 ENV FLASK_APP="mchub:create_app"
 
 CMD flask db upgrade && \
-    python -m mchub.schema_update && \
-    python -m mchub.init_clusters && \
     python -m gunicorn --workers 5 --bind 0.0.0.0:5000 --worker-class gevent "mchub:create_app()"
