@@ -35,10 +35,12 @@ RUN adduser --disabled-password mcu && \
 
 ENV PATH="/code/.venv/bin:$PATH"
 
-FROM base-server as cleanup-daemon
+FROM base-server as background-worker
 USER mcu
 WORKDIR /home/mcu
-CMD python -m mchub.services.cull_expired_cluster
+RUN mkdir -p /home/mcu/clusters /home/mcu/database /home/mcu/credentials
+ENV FLASK_APP="mchub:create_app"
+CMD ["python", "-m", "mchub.services.background_worker"]
 
 ## PRODUCTION IMAGE
 FROM base-server as production-server

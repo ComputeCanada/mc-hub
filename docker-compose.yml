@@ -1,13 +1,13 @@
-version: "3.8"
-
 services:
-  api:
+  initialize:
     build:
       context: .
-      target: production-server
-    ports:
-      - 5000:5000
-    volumes:
+      target: background-worker
+    command:
+      - /bin/sh
+      - -c
+      - flask db upgrade && python -m mchub.schema_update && python -m mchub.init_clusters
+    volumes: &hub-volumes
       - type: bind
         source: ./run/clusters
         target: /home/mcu/clusters
@@ -23,18 +23,30 @@ services:
         target: /home/mcu/.terraform.d/plugin-cache
     user: mcu
 
-  cleanup:
+  api:
     build:
       context: .
-      target: cleanup-daemon
-    environment:
-      - MCHUB_HOST=api
-      - MCHUB_PORT=5000
-    volumes:
-      - type: bind
-        source: ./run/configuration.json
-        target: /home/mcu/configuration.json
-        read_only: true
+      target: production-server
+    command: ["python", "-m", "gunicorn", "--workers", "5", "--bind", "0.0.0.0:5000", "--worker-class", "gevent", "mchub:create_app()"]
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    ports:
+      - 5000:5000
+    volumes: *hub-volumes
+    user: mcu
+
+  background-worker:
+    build:
+      context: .
+      target: background-worker
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    volumes: *hub-volumes
+    restart: unless-stopped
+    stop_grace_period: 20s
+    user: mcu
 
 volumes:
   database:

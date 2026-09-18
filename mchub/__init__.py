@@ -16,6 +16,7 @@ def create_app(db_path=None):
     from .resources.user_api import UserAPI
     from .resources.project_api import ProjectAPI, AWSRegionsAPI, OpenStackSubnetsAPI, OpenStackCloudsAPI
     from .resources.template_api import TemplateAPI
+    from .resources.usage_api import UsageAPI
     from .resources.tfcloud_proxy import tfcloud_proxy
 
     if db_path is None:
@@ -38,6 +39,8 @@ def create_app(db_path=None):
         app,
         origins=get_config()["cors_allowed_origins"],
     )
+
+    app.add_url_rule("/api/usage", view_func=UsageAPI.as_view("usage"), methods=["GET"])
 
     magic_castle_view = MagicCastleAPI.as_view("magic_castle")
     app.add_url_rule(

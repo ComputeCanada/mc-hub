@@ -7,6 +7,7 @@ from marshmallow import fields, EXCLUDE
 from marshmallow.validate import URL, Length
 
 from ...database import db
+from ..usage import new_id
 
 
 class Provider(str, enum.Enum):
@@ -28,6 +29,7 @@ class Project(db.Model):
     __tablename__ = "project"
     __table_args__ = (db.Index("uq_tfcloud_project_name", "tfcloud_project_name", unique=True),)
     id = db.Column(db.Integer, primary_key=True)
+    usage_id = db.Column(db.String(36), nullable=False, default=new_id)
     name = db.Column(db.String(), nullable=False)
     # Legacy inserts used the display name as the Terraform Cloud name.
     tfcloud_project_name = db.Column(

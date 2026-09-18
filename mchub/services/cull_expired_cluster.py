@@ -1,110 +1,95 @@
+"""Expire deployments through shared lifecycle services, without loopback HTTP."""
 import logging
 import time
-
 from datetime import datetime
-from os import environ
 
-from requests import get, post
-from requests.exceptions import RequestException
-from requests.compat import urljoin
+from .. import create_app
+from ..database import db
+from ..exceptions.invalid_usage_exception import BusyClusterException
+from ..models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+from ..models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+from . import cluster_lifecycle as lifecycle
 
-from ..configuration import get_config
-from ..models.auth_type import AuthType
-from ..models.magic_castle.cluster_status_code import ClusterStatusCode
-
-MC_API_PATH = "api/magic-castles"
-MC_EXPIRATON_FORMAT = "%Y-%m-%d"
-PLAN_POLL_INTERVAL = 10
+logger = logging.getLogger(__name__)
+SWEEP_INTERVAL = 3600
 PLAN_WAIT_TIMEOUT = 5 * 60
 
-logging.basicConfig(level=logging.INFO)
+
+def is_expired(orm, now):
+    return (not orm.undeployed and orm.expiration_date is not None
+            and datetime.strptime(orm.expiration_date, "%Y-%m-%d") < now)
 
 
-def wait_for_destroy_plan(host_api, headers):
-    status_api = urljoin(f"{host_api}/", "status")
-    deadline = time.monotonic() + PLAN_WAIT_TIMEOUT
+def expire_cluster(orm, now):
+    # Refresh remote progress before deciding whether the cluster is busy/empty.
+    cluster = MagicCastle(orm)
+    cluster.status
+    if not is_expired(orm, now):
+        return
+    hostname = orm.hostname
+    lifecycle.claim_background_task(orm, owner="expiration")
+    logger.info("Tearing down expired cluster %s", hostname)
+    lifecycle.execute_claimed_task(hostname, lifecycle.plan_teardown, hostname, PLAN_WAIT_TIMEOUT)
 
-    while time.monotonic() < deadline:
-        response = get(status_api, headers=headers)
-        response.raise_for_status()
-        status = response.json().get("status")
-
-        if status == ClusterStatusCode.CREATED:
-            return True
-        if status in (ClusterStatusCode.NOT_FOUND, ClusterStatusCode.NOT_DEPLOYED):
-            # Empty clusters finish teardown without an apply.
-            return False
-        if status in (
-            ClusterStatusCode.PLAN_ERROR,
-            ClusterStatusCode.DESTROY_ERROR,
-        ):
-            raise RuntimeError(f"Destroy plan failed with status {status}")
-
-        time.sleep(PLAN_POLL_INTERVAL)
-
-    raise TimeoutError("Timed out waiting for the destroy plan")
+    orm = lifecycle.get_cluster(hostname)
+    if orm.undeployed or orm.status == Status.NOT_DEPLOYED:
+        return
+    # plan_destruction returns only after the destroy plan is available.
+    run_id = orm.tfcloud_run.run_id
+    lifecycle.validate_apply(orm)
+    # A user can extend expiration while planning finishes. Recheck before apply.
+    db.session.refresh(orm)
+    if not is_expired(orm, datetime.now()):
+        return
+    lifecycle.claim_background_task(orm, owner="expiration")
+    lifecycle.execute_claimed_task(hostname, lifecycle.apply_cluster, hostname, None, run_id)
 
 
-def main(host="127.0.0.1", port=5000, interval=3600):
-    host = f"http://{host}:{port}"
-    mc_api = urljoin(host, MC_API_PATH)
-    logging.info(f"Connecting to {mc_api}")
-    headers = {}
-    if AuthType.TOKEN in get_config()["auth_type"]:
-        headers["Authorization"] = f"token {get_config()['token']}"
-    while True:
-        now = datetime.now()
-        logging.info(f"Looking for expired clusters at {now}")
-
+def poll_once():
+    ids = list(db.session.scalars(db.select(MagicCastleORM.id).where(
+        MagicCastleORM.expiration_date.is_not(None), MagicCastleORM.undeployed.is_(False),
+    )))
+    for cluster_id in ids:
         try:
-            clusters = get(mc_api, headers=headers).json()
-        except RequestException as e:
-            logging.warning("Could not reach the API - 30 seconds pause.")
-            time.sleep(30)
-            continue
-        except Exception as e:
-            clusters = []
-            logging.error(e)
+            orm = db.session.get(MagicCastleORM, cluster_id)
+            if orm is not None and is_expired(orm, datetime.now()):
+                expire_cluster(orm, datetime.now())
+        except BusyClusterException:
+            db.session.rollback()
+            logger.info("Cluster %s is busy; expiration will retry next sweep", cluster_id)
+        except Exception:
+            db.session.rollback()
+            logger.exception("Could not expire cluster %s", cluster_id)
+        finally:
+            db.session.remove()
 
-        for cluster in clusters:
-            if cluster.get("undeployed"):
-                continue
-            if cluster.get("status") in (ClusterStatusCode.NOT_DEPLOYED, ClusterStatusCode.PLAN_RUNNING, ClusterStatusCode.BUILD_RUNNING, ClusterStatusCode.DESTROY_RUNNING):
-                continue
-            if cluster["expiration_date"] is None:
-                continue
-            exp_date = datetime.strptime(
-                cluster["expiration_date"], MC_EXPIRATON_FORMAT
-            )
-            if exp_date < now:
-                hostname = cluster["hostname"]
-                host_api = urljoin(f"{mc_api}/", hostname)
-                apply_api = urljoin(f"{host_api}/", "apply")
-                logging.info(f"Cluster {hostname} is expired - tearing down")
-                try:
-                    delete_response = post(f"{host_api}/teardown", headers=headers)
-                    delete_response.raise_for_status()
-                    if not wait_for_destroy_plan(host_api, headers):
-                        continue
-                except (RequestException, RuntimeError, TimeoutError) as e:
-                    logging.error(
-                        f"Error while planning {cluster['hostname']} teardown - {e}"
-                    )
-                    continue
 
-                try:
-                    apply_response = post(apply_api, headers=headers)
-                    apply_response.raise_for_status()
-                except RequestException as e:
-                    logging.error(
-                        f"Error while tearing down {cluster['hostname']} - {e}"
-                    )
-            else:
-                continue
+def recover_interrupted_expiration():
+    # The supervisor guarantees only one expiration process. Recover only its
+    # claims, leaving operations owned by HTTP request workers alone.
+    for orm in db.session.scalars(db.select(MagicCastleORM).where(
+        MagicCastleORM.creation_step == "expiration",
+    )):
+        if orm.status == Status.BACKGROUND_TASK_RUNNING:
+            orm.status = Status.PLAN_RUNNING if orm.tfcloud_run.run_id else Status.PLAN_ERROR
+        orm.creation_step = None
+    db.session.commit()
+
+
+def main(interval=SWEEP_INTERVAL):
+    logging.basicConfig(level=logging.INFO)
+    app = create_app()
+    with app.app_context():
+        recover_interrupted_expiration()
+    while True:
+        with app.app_context():
+            try:
+                poll_once()
+            except Exception:
+                db.session.rollback()
+                logger.exception("Expiration sweep failed")
         time.sleep(interval)
 
 
 if __name__ == "__main__":
-    host = environ.get("MCHUB_HOST", "127.0.0.1")
-    port = environ.get("MCHUB_PORT", 5000)
-    main(host=host, port=port)
+    main()
