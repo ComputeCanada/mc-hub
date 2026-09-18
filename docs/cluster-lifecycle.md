@@ -20,3 +20,5 @@ Destroy removes only an empty cluster definition. The backend checks all pages o
 - Cluster responses include `undeployed`; `not_deployed` is a new durable status. Build planning can temporarily change the status while `undeployed` remains true until apply starts.
 
 Apply database migration `0006` before running the updated application. It adds `undeployed` and `deployment_started_at`; existing clusters retain their current status and creation date. Rebuild provisioning timeouts use the new deployment start time.
+
+Deployment history and background readiness measurements are described in [Service adoption statistics](usage-statistics.md).

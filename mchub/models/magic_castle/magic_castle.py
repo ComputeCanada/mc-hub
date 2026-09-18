@@ -57,6 +57,8 @@ from ...exceptions.server_exception import (
 )
 
 from ...database import db
+from ..usage import new_id
+from ...services import usage
 
 from ...configuration import get_config
 from ...services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
@@ -170,6 +172,9 @@ class MagicCastleORM(db.Model):
     __tablename__ = "magiccastle"
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(256), unique=True, nullable=False)
+    usage_id = db.Column(db.String(36), nullable=False, default=new_id)
+    usage_legacy = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
+    usage_repository = db.Column(db.String)
 
     tfcloud_workspace = db.Column(db.String(256))
     cluster_token = db.Column(db.String(64), unique=True)
@@ -393,6 +398,7 @@ class MagicCastle:
         elif self.orm.status == ClusterStatusCode.DESTROY_SUCCESS:
             self.complete_teardown()
 
+        usage.observe(self.orm)
         db.session.commit()
         return self.orm.status
 
@@ -595,6 +601,7 @@ class MagicCastle:
             self.hostname, get_provider_template(self.project.provider)
         )
 
+        self.orm.usage_repository = github_repo_fullname
         workspace_name = self.config.cluster_name
 
         self.orm.creation_step = "terraform_workspace"
@@ -696,7 +703,7 @@ class MagicCastle:
             self.status = previous_status
         db.session.commit()
 
-    def plan_destruction(self):
+    def plan_destruction(self, timeout=None):
         logger.debug(f"Call <{self.__class__.__name__}:plan_destruction>")
         if self.is_busy:
             raise BusyClusterException
@@ -721,7 +728,7 @@ class MagicCastle:
             logger.info(
                 f"{self.hostname}: Apply destroy on workspace_id={self.orm.tfcloud_workspace} with run_id={run_id}"
             )
-            self.create_plan(run_id=run_id)
+            self.create_plan(run_id=run_id, timeout=timeout)
             db.session.commit()
 
     def discard_teardown(self):
@@ -749,10 +756,11 @@ class MagicCastle:
         self.status = ClusterStatusCode.PROVISIONING_SUCCESS
         db.session.commit()
 
-    def create_plan(self, github_sha=None, run_id=None):
+    def create_plan(self, github_sha=None, run_id=None, timeout=None):
         logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
 
         self.tfcloud_run = TerraformCloudRunORM()
+        deadline = time.monotonic() + timeout if timeout is not None else None
 
         try:
             if github_sha is None and run_id is None:
@@ -766,6 +774,7 @@ class MagicCastle:
             logger.debug(f"{github_sha=} match {run_id=}")
 
             self.orm.tfcloud_run.run_id = run_id
+            self.orm.tfcloud_run.commit_sha = github_sha
             db.session.commit()
 
             # A previous planned/pending runs can block the current run from running.
@@ -774,6 +783,8 @@ class MagicCastle:
 
             # Fetch lastest plan if currently empty
             while not self.plan:
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TimeoutError("Timed out waiting for the Terraform plan")
                 plan = tf.get_run_plan_log_json(run_id)
                 if plan is not None:
                     self.plan = plan
@@ -790,6 +801,7 @@ class MagicCastle:
 
     def complete_teardown(self):
         """Retain the definition and integrations after resources are removed."""
+        usage.end_lifetime(self.orm)
         self.orm.undeployed = True
         self.orm.applied_config = None
         self.orm.deployment_started_at = None
@@ -841,10 +853,11 @@ class MagicCastle:
                 storage.archive_repo(self.hostname, missing_ok=True)
             else:
                 storage.archive_repo(self.hostname)
+        usage.end_lifetime(self.orm)
         db.session.delete(self.orm)
         db.session.commit()
 
-    def apply(self):
+    def apply(self, initiated_by=None):
         if self.plan is None:
             raise PlanNotCreatedException
         if self.is_busy:
@@ -856,9 +869,12 @@ class MagicCastle:
         _, is_destroy = tf.get_run_status(self.tfcloud_run.run_id)
         if not is_destroy and self.orm.undeployed:
             self.validate_rebuild()
+        attempt = usage.begin_apply(self.orm, initiated_by) if not is_destroy else None
         if not is_destroy:
             self.orm.undeployed = False
             self.orm.deployment_started_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             # Persist deployment intent before the remote apply can allocate resources.
             db.session.commit()
         tf.apply_run(self.tfcloud_run.run_id)
+        if attempt is not None:
+            usage.accepted(attempt)

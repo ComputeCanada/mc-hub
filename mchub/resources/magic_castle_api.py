@@ -4,43 +4,20 @@ from flask import request
 from flask import current_app
 from .api_view import ApiView
 from ..exceptions.invalid_usage_exception import (
-    BusyClusterException,
     ClusterNotFoundException,
     InvalidUsageException,
-    PlanNotCreatedException,
-    PlanNotReadyException,
-    RunIDNotSet,
 )
 from ..models.cloud.project import Project
 from ..models.cloud.aws_manager import ensure_aws_feasible
 from ..services.terraform_cloud_api import get_terraform_cloud
-from ..models.magic_castle.cluster_status_code import ClusterStatusCode
 from ..models.user import User
 from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
 from ..database import db
+from ..services import cluster_lifecycle
 
 
 class MagicCastleAPI(ApiView):
-    @staticmethod
-    def _claim_background_task(orm):
-        if (
-            orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING
-            or MagicCastle(orm).is_busy
-        ):
-            raise BusyClusterException
-
-        previous_status = orm.status
-        result = db.session.execute(
-            db.update(MagicCastleORM)
-            .where(MagicCastleORM.id == orm.id)
-            .where(MagicCastleORM.status == previous_status)
-            .values(status=ClusterStatusCode.BACKGROUND_TASK_RUNNING, creation_step=None)
-            .execution_options(synchronize_session=False)
-        )
-        if result.rowcount != 1:
-            db.session.rollback()
-            raise BusyClusterException
-        db.session.commit()
+    _claim_background_task = staticmethod(cluster_lifecycle.claim_background_task)
 
     @staticmethod
     def _run_in_background(app, target, *args, hostname=None):
@@ -55,21 +32,8 @@ class MagicCastleAPI(ApiView):
             )
             with app.app_context():
                 try:
-                    if hostname is not None:
-                        orm = db.session.execute(
-                            db.select(MagicCastleORM).filter_by(hostname=hostname)
-                        ).scalar_one_or_none()
-                        if orm is not None:
-                            orm.status = ClusterStatusCode.BACKGROUND_TASK_RUNNING
-                            db.session.commit()
-                    target(*args)
+                    cluster_lifecycle.execute_claimed_task(hostname, target, *args)
                 except Exception:
-                    db.session.rollback()
-                    if hostname is not None:
-                        failed = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
-                        if failed is not None:
-                            failed.status = ClusterStatusCode.PLAN_ERROR
-                            db.session.commit()
                     app.logger.exception(
                         "Background task error: task=%s hostname=%s thread_name=%s",
                         task_name,
@@ -77,16 +41,6 @@ class MagicCastleAPI(ApiView):
                         thread_name,
                     )
                 finally:
-                    if hostname is not None:
-                        orm = db.session.execute(
-                            db.select(MagicCastleORM).filter_by(hostname=hostname)
-                        ).scalar_one_or_none()
-                        if (
-                            orm is not None
-                            and orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING
-                        ):
-                            orm.status = ClusterStatusCode.PLAN_RUNNING
-                            db.session.commit()
                     db.session.remove()
                     app.logger.info(
                         "Background task stop: task=%s hostname=%s thread_name=%s",
@@ -136,7 +90,7 @@ class MagicCastleAPI(ApiView):
             def lifecycle_cluster(hostname):
                 cluster = MagicCastle(db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname)))
                 if action == "teardown":
-                    cluster.plan_destruction()
+                    cluster_lifecycle.plan_teardown(hostname)
                 else:
                     cluster.plan_rebuild()
 
@@ -150,32 +104,18 @@ class MagicCastleAPI(ApiView):
                 raise ClusterNotFoundException
 
             magic_castle = MagicCastle(orm)
-            if (
-                orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING
-                or magic_castle.is_busy
-            ):
-                raise BusyClusterException
-            if orm.status != ClusterStatusCode.CREATED:
-                raise PlanNotReadyException
-            if magic_castle.plan is None:
-                raise PlanNotCreatedException
-            if magic_castle.tfcloud_run.run_id is None:
-                raise RunIDNotSet
+            cluster_lifecycle.validate_apply(orm)
             if orm.project.provider == "aws":
                 _, is_destroy = get_terraform_cloud().get_run_status(magic_castle.tfcloud_run.run_id)
                 if not is_destroy:
                     ensure_aws_feasible(orm.project, magic_castle.config, magic_castle.aws_resource_ids)
             self._claim_background_task(orm)
 
-            def apply_cluster(hostname):
-                orm = db.session.execute(
-                    db.select(MagicCastleORM).filter_by(hostname=hostname)
-                ).scalar_one_or_none()
-                if orm is None:
-                    raise ClusterNotFoundException
-                MagicCastle(orm).apply()
+            actor = getattr(getattr(user, "orm", None), "scoped_id", None)
 
-            self._run_in_background(app, apply_cluster, hostname, hostname=hostname)
+            self._run_in_background(
+                app, cluster_lifecycle.apply_cluster, hostname, actor, hostname=hostname
+            )
             return {}, 202
         else:
             json_data = request.get_json()

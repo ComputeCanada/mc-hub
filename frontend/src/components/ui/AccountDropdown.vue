@@ -7,6 +7,9 @@
       </v-btn>
     </template>
     <v-list>
+      <v-list-item v-if="currentUser.is_admin" to="/usage">
+        <v-list-item-title><v-icon class="mr-4">mdi-chart-bar</v-icon>Service adoption</v-list-item-title>
+      </v-list-item>
       <v-list-item @click="projects">
         <v-list-item-title> <v-icon class="mr-4">mdi-cloud-braces</v-icon>Projects </v-list-item-title>
       </v-list-item>

@@ -9,6 +9,7 @@ import ModifyCluster from "@/views/ModifyCluster";
 Vue.use(VueRouter);
 
 const routes = [
+  { path: "/usage", name: "Service adoption", component: () => import("@/views/Usage") },
   {
     path: "/",
     name: "Home",
