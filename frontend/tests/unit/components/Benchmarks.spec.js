@@ -36,6 +36,9 @@ const result = {
   benchmark,
   runs: [],
   total_runs: 0,
+  comparison_groups: [],
+  default_comparison_group: null,
+  unassigned_runs: 0,
   timing: { average_seconds: null, median_seconds: null, p95_seconds: null },
   success_rate: null,
 };
@@ -67,17 +70,35 @@ beforeEach(() => {
 });
 afterEach(() => mounts.splice(0).forEach((w) => w.destroy()));
 
-test("dashboard displays empty measurements and excludes failures from timing chart", async () => {
+test("dashboard compares one commit and criterion at a time and retains all history", async () => {
   const wrapper = mount(Benchmarks);
   await flush();
-  expect(wrapper.text()).toContain("No successful timed runs yet");
+  expect(wrapper.text()).toContain("No successful timed runs for this group");
+  const group = (id, commit, criterion, seconds) => ({
+    id,
+    commit_sha: commit,
+    success_criterion: criterion,
+    repository: "org/repo",
+    total_runs: 1,
+    timing: { average_seconds: seconds, median_seconds: seconds, p95_seconds: seconds },
+    success_rate: 1,
+  });
   await wrapper.setData({
+    comparisonGroup: "new-healthy",
     report: {
       ...result,
       benchmark: { ...benchmark },
+      comparison_groups: [
+        group("new-healthy", "new-sha", "healthy", 120),
+        group("old-healthy", "old-sha", "healthy", 600),
+        group("new-build", "new-sha", "build_completed", 60),
+      ],
+      unassigned_runs: 1,
       runs: [
         {
           id: "good",
+          commit_sha: "new-sha",
+          repository: "org/repo",
           success_criterion: "healthy",
           outcome: "successful",
           applied_at: "2027-01-01T12:00:00Z",
@@ -85,23 +106,80 @@ test("dashboard displays empty measurements and excludes failures from timing ch
         },
         {
           id: "build",
+          commit_sha: "new-sha",
+          repository: "org/repo",
           success_criterion: "build_completed",
           outcome: "successful",
           applied_at: "2027-01-01T12:00:00Z",
           duration_seconds: 60,
         },
-        { id: "failed", outcome: "failed", duration_seconds: null },
+        {
+          id: "old",
+          commit_sha: "old-sha",
+          repository: "org/repo",
+          success_criterion: "healthy",
+          outcome: "successful",
+          duration_seconds: 600,
+          applied_at: "2027-01-01T11:00:00Z",
+        },
+        {
+          id: "failed",
+          commit_sha: "new-sha",
+          repository: "org/repo",
+          success_criterion: "healthy",
+          outcome: "failed",
+          duration_seconds: null,
+        },
+        {
+          id: "unknown",
+          commit_sha: null,
+          repository: "org/repo",
+          success_criterion: "healthy",
+          outcome: "successful",
+          duration_seconds: 900,
+        },
       ],
     },
   });
   expect(wrapper.vm.points.map((p) => p.id)).toEqual(["good"]);
+  expect(wrapper.vm.cards[0].value).toBe("2.0 min");
+  expect(wrapper.text()).toContain("1 runs have no recorded commit");
+  expect(wrapper.find("v-data-table-stub").attributes("items")).toBeDefined();
   expect(wrapper.find('svg[aria-label="Benchmark deployment duration trend"]').exists()).toBe(true);
   expect(wrapper.text()).toContain("Apply to healthy over time");
-  await wrapper.setData({
-    report: { ...wrapper.vm.report, benchmark: { ...benchmark, success_criterion: "build_completed" } },
-  });
+  await wrapper.setData({ comparisonGroup: "old-healthy" });
+  expect(wrapper.vm.points.map((p) => p.id)).toEqual(["old"]);
+  expect(wrapper.vm.cards[0].value).toBe("10.0 min");
+  await wrapper.setData({ comparisonGroup: "new-build" });
   expect(wrapper.vm.points.map((p) => p.id)).toEqual(["build"]);
   expect(wrapper.text()).toContain("Apply to build completed over time");
+  expect(wrapper.vm.report.runs).toHaveLength(5);
+});
+
+test("refresh preserves a selected historical group and changing benchmarks resets it", async () => {
+  const groups = ["latest", "historical"].map((id) => ({
+    id,
+    commit_sha: id,
+    success_criterion: "healthy",
+    repository: "org/repo",
+    total_runs: 1,
+    timing: result.timing,
+    success_rate: null,
+  }));
+  const response = { ...result, comparison_groups: groups, default_comparison_group: "latest" };
+  Repository.get.mockImplementation((path) =>
+    Promise.resolve({ data: path === "/benchmarks" ? { projects: [{ id: 1 }], benchmarks: [benchmark] } : response })
+  );
+  const wrapper = mount(Benchmarks);
+  await flush();
+  expect(wrapper.vm.comparisonGroup).toBe("latest");
+  await wrapper.setData({ comparisonGroup: "historical" });
+  await wrapper.vm.loadReport();
+  expect(wrapper.vm.comparisonGroup).toBe("historical");
+  Repository.get.mockResolvedValue({ data: { ...response, benchmark: { ...benchmark, id: "bench-2" } } });
+  await wrapper.setData({ selected: "bench-2" });
+  await wrapper.vm.loadReport();
+  expect(wrapper.vm.comparisonGroup).toBe("latest");
 });
 
 test("Run now shows overlap rejection; pause uses the schedule-only API", async () => {

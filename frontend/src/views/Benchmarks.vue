@@ -58,9 +58,21 @@
           <v-btn text color="error" :disabled="busy" @click="archive">Archive</v-btn>
         </template>
       </v-card>
-      <p class="text-caption">
-        Statistics and trend include only runs targeting {{ criterionLabel(report.benchmark.success_criterion) }}. Run
-        history retains every criterion.
+      <v-select
+        v-model="comparisonGroup"
+        :items="comparisonOptions"
+        label="Commit and success criterion"
+        hint="Each group contains runs of one Git commit with the same success criterion. Name and schedule edits keep the same commit."
+        persistent-hint
+        class="mb-4"
+      />
+      <p v-if="selectedGroup" class="text-caption">
+        {{ selectedGroup.total_runs }} runs in this group · Commit {{ selectedGroup.commit_sha }} ·
+        {{ criterionLabel(selectedGroup.success_criterion) }} · Repository {{ selectedGroup.repository || "Unknown" }}.
+        Run history retains all groups.
+      </p>
+      <p v-if="report.unassigned_runs" class="text-caption">
+        {{ report.unassigned_runs }} runs have no recorded commit and appear only in the history.
       </p>
       <v-row
         ><v-col v-for="card in cards" :key="card.label" cols="6" md="3"
@@ -101,7 +113,7 @@
             {{ points[points.length - 1].applied_at.slice(0, 10) }}
           </text>
         </svg>
-        <p v-else>No successful timed runs yet.</p>
+        <p v-else>No successful timed runs for this group in the latest 500 runs.</p>
       </v-card>
       <v-card>
         <v-card-title>Run history</v-card-title>
@@ -120,6 +132,9 @@
           <template v-slot:[`item.requested_at`]="{ item }">{{ timestamp(item.requested_at) }}</template>
           <template v-slot:[`item.duration_seconds`]="{ item }">{{ duration(item.duration_seconds) }}</template>
           <template v-slot:[`item.success_criterion`]="{ item }">{{ criterionLabel(item.success_criterion) }}</template>
+          <template v-slot:[`item.commit_sha`]="{ item }">
+            <span :title="item.commit_sha">{{ item.commit_sha ? item.commit_sha.slice(0, 12) : "Unknown" }}</span>
+          </template>
           <template v-slot:[`item.outcome`]="{ item }"
             ><v-chip small :color="item.outcome === 'successful' ? 'success' : item.outcome ? 'error' : undefined">{{
               item.outcome || "In progress"
@@ -164,6 +179,7 @@ export default {
     selected: null,
     archived: false,
     report: null,
+    comparisonGroup: null,
     loading: true,
     busy: false,
     error: "",
@@ -172,6 +188,7 @@ export default {
     headers: [
       { text: "Requested", value: "requested_at" },
       { text: "Revision", value: "revision" },
+      { text: "Commit", value: "commit_sha" },
       { text: "Outcome", value: "outcome" },
       { text: "Success criterion", value: "success_criterion" },
       { text: "Apply to target", value: "duration_seconds" },
@@ -180,8 +197,19 @@ export default {
     ],
   }),
   computed: {
+    comparisonOptions() {
+      return this.report.comparison_groups.map((group) => ({
+        value: group.id,
+        text: `${group.commit_sha.slice(0, 12)} · ${this.criterionLabel(group.success_criterion)} · ${
+          group.total_runs
+        } runs`,
+      }));
+    },
+    selectedGroup() {
+      return this.report.comparison_groups.find((group) => group.id === this.comparisonGroup);
+    },
     timingLabel() {
-      return this.report.benchmark.success_criterion === "build_completed"
+      return (this.selectedGroup?.success_criterion || this.report.benchmark.success_criterion) === "build_completed"
         ? "Apply to build completed"
         : "Apply to healthy";
     },
@@ -192,22 +220,26 @@ export default {
     },
     cards() {
       return [
-        { label: "Average", value: this.duration(this.report.timing.average_seconds) },
-        { label: "Median", value: this.duration(this.report.timing.median_seconds) },
-        { label: "P95", value: this.duration(this.report.timing.p95_seconds) },
+        { label: "Average", value: this.duration(this.selectedGroup?.timing.average_seconds) },
+        { label: "Median", value: this.duration(this.selectedGroup?.timing.median_seconds) },
+        { label: "P95", value: this.duration(this.selectedGroup?.timing.p95_seconds) },
         {
           label: "Success rate",
-          value: this.report.success_rate === null ? "—" : `${Math.round(this.report.success_rate * 100)}%`,
+          value:
+            this.selectedGroup?.success_rate == null ? "—" : `${Math.round(this.selectedGroup.success_rate * 100)}%`,
         },
       ];
     },
     timedRuns() {
+      if (!this.selectedGroup) return [];
       return this.report.runs
         .filter(
           (r) =>
             r.outcome === "successful" &&
             r.duration_seconds !== null &&
-            r.success_criterion === this.report.benchmark.success_criterion
+            r.success_criterion === this.selectedGroup.success_criterion &&
+            r.commit_sha === this.selectedGroup.commit_sha &&
+            r.repository === this.selectedGroup.repository
         )
         .slice()
         .reverse();
@@ -273,7 +305,13 @@ export default {
       }
       try {
         const { data } = await Repository.get(`/benchmarks/${selected}`);
-        if (!this.disposed && selected === this.selected) this.report = data;
+        if (!this.disposed && selected === this.selected) {
+          const sameBenchmark = this.report?.benchmark.id === data.benchmark.id;
+          if (!sameBenchmark || !data.comparison_groups.some((group) => group.id === this.comparisonGroup)) {
+            this.comparisonGroup = data.default_comparison_group;
+          }
+          this.report = data;
+        }
       } catch (error) {
         this.report = null;
         this.error = error.response?.data?.message || "Unable to load results.";

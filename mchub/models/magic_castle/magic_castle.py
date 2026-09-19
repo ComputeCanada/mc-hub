@@ -178,6 +178,8 @@ class MagicCastleORM(db.Model):
     usage_repository = db.Column(db.String)
     benchmark_run_id = db.Column(db.String(36))
     benchmark_id = db.Column(db.String(36))
+    benchmark_configuration = db.Column(db.JSON)
+    benchmark_commit_sha = db.Column(db.String(64))
     __table_args__ = (
         db.Index("uq_magiccastle_benchmark_run", "benchmark_run_id", unique=True),
         db.Index("uq_magiccastle_benchmark", "benchmark_id", unique=True),
@@ -609,6 +611,7 @@ class MagicCastle:
         )):
             raise InvalidUsageException("Only this benchmark's undeployed cluster can reuse its integrations.")
         original_configuration = deepcopy(data)
+        benchmark_configuration = self.benchmark_configuration(data) if owner_id else None
         self.set_configuration(data)
         self.orm.created_by_user_id = created_by_user_id
         self.orm.benchmark_run_id = benchmark_run_id
@@ -691,6 +694,12 @@ class MagicCastle:
             f"{self.hostname}: New commit <{github_commit}> on repo <{github_repo_fullname}>"
         )
 
+        if owner_id:
+            self.orm.benchmark_configuration = benchmark_configuration
+            self.orm.benchmark_commit_sha = github_commit
+            if run is not None:
+                run.commit_sha, run.repository = github_commit, github_repo_fullname
+            db.session.commit()
         if initialize_only:
             self.complete_teardown()
             return
@@ -868,6 +877,57 @@ class MagicCastle:
         # Writing the saved variables creates a fresh commit/run even when unchanged.
         sha = get_github_storage().write(self._get_var_tf(), self.hostname)
         self.create_plan(github_sha=sha, timeout=timeout)
+
+    @staticmethod
+    def benchmark_configuration(data):
+        """Inputs to the saved Git configuration, excluding form metadata.
+
+        Keep the rendered commit while these inputs are unchanged: regenerating
+        encrypted Puppet values and the proxy token would produce new ciphertext.
+        Result comparisons use the resulting commit SHA, never these inputs.
+        """
+        configuration = deepcopy(data)
+        configuration.pop("cloud", None)  # A benchmark cannot change project.
+        configuration.pop("expiration_date", None)
+        if not configuration.get("availability_zone"):
+            configuration.pop("availability_zone", None)
+        return configuration
+
+    def plan_benchmark_run(self, configuration, timeout=None):
+        """Plan the attached benchmark run using its saved configuration commit."""
+        deadline = time.monotonic() + timeout if timeout is not None else None
+        self.validate_rebuild()
+        inputs = self.benchmark_configuration(configuration)
+        sha = self.orm.benchmark_commit_sha
+        if not sha or json.dumps(inputs, sort_keys=True) != json.dumps(self.orm.benchmark_configuration, sort_keys=True):
+            self.plan_modification(deepcopy(configuration))
+            sha = get_github_storage().write(self._get_var_tf(), self.hostname, trigger_run=False)
+            self.orm.benchmark_configuration = inputs
+            self.orm.benchmark_commit_sha = sha
+            db.session.commit()
+
+        from ..benchmark import BenchmarkRun
+        run = db.session.get(BenchmarkRun, self.orm.benchmark_run_id)
+        run.commit_sha, run.repository = sha, self.orm.usage_repository
+        db.session.commit()
+        # A commit identifies the configuration, not a deployment attempt. Reuse
+        # its imported configuration version but always request a fresh plan.
+        run_id = get_terraform_cloud().plan_from_commit(self.tfcloud_workspace, sha)
+        if run_id is None:
+            # The first deployment imports this commit through the VCS trigger.
+            created = get_github_storage().trigger_run(self.hostname, sha)
+            if not created:
+                # An existing tag may still be importing or its previous run may
+                # not yet be searchable. Never mistake that previous run for this
+                # attempt: wait for the version and request a fresh deployment.
+                while run_id is None:
+                    if deadline is not None and time.monotonic() >= deadline:
+                        raise TimeoutError("Timed out importing the benchmark commit")
+                    run_id = get_terraform_cloud().plan_from_commit(self.tfcloud_workspace, sha)
+                    if run_id is None:
+                        time.sleep(10)
+        remaining = max(0, deadline - time.monotonic()) if deadline is not None else None
+        self.create_plan(github_sha=sha, run_id=run_id, timeout=remaining)
 
     def destroy_empty_cluster(self):
         if self.is_busy:

@@ -105,6 +105,42 @@ def test_destroy_plan_failure(tf_cloud_client, mock_request):
     assert "Could not destroy workspace" in str(excinfo.value)
 
 
+@pytest.mark.parametrize("previous_destroy", [True, False])
+def test_benchmark_commit_creates_a_fresh_deployment_of_verified_configuration(tf_cloud_client, mock_request, previous_destroy):
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"id": "old-run", "attributes": {"is-destroy": previous_destroy},
+            "relationships": {"configuration-version": {"data": {"id": "cv-matching"}}}}]}),
+        mock_response(200, {"data": {"attributes": {"commit-sha": "saved-commit"}}}),
+        mock_response(201, {"data": {"id": "new-deployment"}}),
+    ]
+    assert tf_cloud_client.plan_from_commit("ws-benchmark", "saved-commit") == "new-deployment"
+    args, kwargs = mock_request.call_args
+    assert args == ("POST", tf_cloud_client.runs_url)
+    data = kwargs["json"]["data"]
+    assert data["attributes"]["is-destroy"] is False
+    assert data["attributes"]["auto-apply"] is False
+    assert data["attributes"]["plan-only"] is False
+    assert data["relationships"]["configuration-version"]["data"]["id"] == "cv-matching"
+    assert data["relationships"]["workspace"]["data"]["id"] == "ws-benchmark"
+
+
+def test_benchmark_commit_requires_import_when_not_found(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(200, {"data": []})
+    assert tf_cloud_client.plan_from_commit("ws", "new-commit") is None
+    mock_request.assert_called_once()
+
+
+@pytest.mark.parametrize("status,sha", [(200, "wrong-commit"), (403, "saved-commit")])
+def test_benchmark_commit_never_plans_an_unverified_configuration(tf_cloud_client, mock_request, status, sha):
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"relationships": {"configuration-version": {"data": {"id": "cv-wrong"}}}}]}),
+        mock_response(status, {"data": {"attributes": {"commit-sha": sha}}}),
+    ]
+    with pytest.raises(TerraformCloudException, match="verify"):
+        tf_cloud_client.plan_from_commit("ws", "saved-commit")
+    assert all(call.args[0] == "GET" for call in mock_request.call_args_list)
+
+
 @pytest.mark.parametrize(
     ("current_state", "expected"),
     [

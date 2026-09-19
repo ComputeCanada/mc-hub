@@ -72,10 +72,15 @@ When an apply response is lost or a process dies before recording acceptance, th
 run may succeed with unknown duration; no start time is invented. Results retain
 their original timing after later health changes or teardown.
 
-The dashboard shows the most recent 500 runs for the selected benchmark; summary
-statistics cover its entire recorded history for the definition's current success
-criterion. The trend uses that same criterion, so build and healthy durations are
-never combined. History identifies each run's original criterion and target timestamp.
+The dashboard's **Commit and success criterion** selector groups results by the
+full Git commit SHA, repository, and success criterion. Each group's summary covers
+its entire history; the trend shows matching results among the latest 500 runs.
+The default is the most recent group with the definition's current success criterion.
+Select another group to inspect older commits or another criterion independently.
+Build and healthy durations are never combined, and different SHAs remain separate
+even when their specifications happen to match. Runs with unknown SHAs appear in
+history but do not enter comparison groups. History identifies each run's commit,
+original criterion, and target timestamp.
 Infrastructure snapshots in run results omit passwords, public keys, and hieradata.
 Saved definitions and internal
 snapshots still contain the configuration needed to reproduce a deployment, with
@@ -87,9 +92,20 @@ Benchmark deployments are excluded from the hub's service-adoption dashboard.
 Success, failure, and timeout all transition into cleanup. The worker tears down
 resources and verifies that the workspace has no managed resources or pending runs.
 It retains the undeployed cluster definition, repository, and workspace for the next
-run. The next run verifies emptiness again, writes its specifications to a new Git
-commit, and creates a fresh Terraform deployment run. Historical results retain
-their original commit, Terraform run, and timings.
+run. The next run verifies emptiness again and creates a fresh Terraform deployment
+run from the saved Git configuration. Unchanged deployment settings reuse that
+commit, including the already encrypted proxy token and Puppet values. The worker
+does not regenerate ciphertext or write Terraform files just to start another run.
+Name, frequency, schedule, timeout, and success-criterion edits keep the same commit;
+the criterion still determines which result group receives the run.
+
+Changed deployment settings are written to a new commit on the next run. The first
+deployment of a commit imports it through the VCS tag; subsequent deployments use
+Terraform's [existing configuration version](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/run#create-a-run)
+to create a new run with automatic apply disabled. The worker explicitly applies
+that new plan and measures its acceptance as before. Historical results retain
+their original commit, Terraform run, and timings. The saved commit is pinned;
+external edits to the repository do not change an unchanged benchmark's deployment.
 
 Archiving a benchmark also schedules cleanup of its retained definition and
 integrations. Once its resources are gone, the repository is archived and the
@@ -125,11 +141,15 @@ responses into results.
 
 ## Deployment
 
-Apply migrations through `0015` before starting updated web and worker containers.
+Apply migrations through `0016` before starting updated web and worker containers.
 Existing runs keep their original names, measurements, and per-run cleanup policy.
 Existing reusable integrations are assigned to their benchmark. Definitions without
 completed setup must be saved before their next run. Future runs reserve the
 benchmark's configured name and reuse its integrations.
+Migration `0016` retains the inputs and Git commit of the prepared configuration.
+Existing benchmarks render and retain a commit on their first run after upgrading.
+Historical SHAs are not rewritten or merged; older runs that each created a different
+commit remain separate groups.
 An older definition with a conflicting or overlong name must be edited before its
 next run. Historical repositories and workspaces are not adopted or renamed.
 Compose's initialization service runs `flask db upgrade`.

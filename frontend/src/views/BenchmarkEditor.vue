@@ -9,7 +9,8 @@
       <v-alert type="info" outlined>
         The first save creates the Git repository, Terraform files, and workspace. Each run creates fresh resources
         using the benchmark's cluster name, Git repository, and Terraform workspace. Resources are torn down after
-        success, failure, or timeout. Cleanup retries block the next run. Times and schedules use UTC.
+        success, failure, or timeout. Cleanup retries block the next run. Times and schedules use UTC. Deployment
+        changes create a new commit on the next run; results are grouped by commit and success criterion.
       </v-alert>
       <cluster-editor
         v-if="specs && projects.length"

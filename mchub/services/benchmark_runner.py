@@ -52,9 +52,10 @@ def cluster_for(run):
 def refresh_measurement(run, orm):
     if orm is not None:
         run.repository = orm.usage_repository
-        if run.terraform_run_id is None and orm.tfcloud_run:
+        if run.terraform_run_id is None and orm.tfcloud_run and orm.tfcloud_run.run_id:
             run.terraform_run_id = orm.tfcloud_run.run_id
-            run.commit_sha = orm.tfcloud_run.commit_sha
+            if orm.tfcloud_run.commit_sha:
+                run.commit_sha = orm.tfcloud_run.commit_sha
     attempt = db.session.scalar(db.select(UsageApply).filter_by(run_id=run.terraform_run_id)) if run.terraform_run_id else None
     if attempt:
         run.applied_at, run.healthy_at = attempt.applied_at, attempt.healthy_at
@@ -103,8 +104,7 @@ def prepare_run(run, orm, creator):
         get_terraform_cloud().upsert_workspace_variable_set(orm.tfcloud_workspace, [
             TerraformCloudVariable(name="pool", value="[]", sensitive=False, hcl=True, category="terraform"),
         ])
-        cluster.plan_modification(deepcopy(run.configuration))
-        perform(orm, cluster.plan_rebuild, STEP_TIMEOUT - 10)
+        perform(orm, cluster.plan_benchmark_run, run.configuration, STEP_TIMEOUT - 10)
 
 
 def cleanup(run, orm):

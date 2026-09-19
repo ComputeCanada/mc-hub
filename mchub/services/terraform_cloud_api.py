@@ -421,6 +421,37 @@ class TerraformCloud:
                 additional_details=f"{workspace_id=}, error: {res.text}",
             )
 
+    def plan_from_commit(self, workspace_id, github_sha):
+        """Create a new deployment from this exact commit, or request VCS import.
+
+        Never return an old deployment or destroy run just because its SHA matches.
+        Explicitly bind the new run to the matching configuration version.
+        """
+        response = self._request("GET", f"{self.BASE_URL}/workspaces/{workspace_id}/runs",
+                                 params={"search[commit]": github_sha, "page[size]": 1})
+        if response.status_code != 200:
+            raise TerraformCloudException("Could not find the benchmark configuration version")
+        runs = response.json()["data"]
+        if not runs:
+            return None
+        version_id = runs[0]["relationships"]["configuration-version"]["data"]["id"]
+        # Verify the full SHA rather than trusting the commit search's matching.
+        ingress = self._request("GET", f"{self.BASE_URL}/configuration-versions/{version_id}/ingress-attributes")
+        if ingress.status_code != 200 or ingress.json()["data"]["attributes"].get("commit-sha") != github_sha:
+            raise TerraformCloudException("Could not verify the benchmark configuration commit")
+        payload = {"data": {
+            "type": "runs",
+            "attributes": {"message": "Benchmark deployment", "is-destroy": False, "auto-apply": False, "plan-only": False},
+            "relationships": {
+                "workspace": {"data": {"type": "workspaces", "id": workspace_id}},
+                "configuration-version": {"data": {"type": "configuration-versions", "id": version_id}},
+            },
+        }}
+        response = self._request("POST", self.runs_url, json=payload)
+        if response.status_code != 201:
+            raise TerraformCloudException("Could not create the benchmark deployment run")
+        return response.json()["data"]["id"]
+
     def get_run_apply_log(self, run_id) -> str:
         url = f"{self.BASE_URL}/runs/{run_id}/apply"
         res = self._request("GET", url)

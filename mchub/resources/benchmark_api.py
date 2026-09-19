@@ -71,6 +71,28 @@ def run_result(run):
     }
 
 
+def comparison_groups(runs):
+    """Keep commits, repositories, and target states separate across all history."""
+    groups = {}
+    for run in runs:
+        if not run.commit_sha:
+            continue  # An unknown commit is never evidence of comparability.
+        key = (run.repository, run.commit_sha, run.success_criterion)
+        groups.setdefault(key, []).append(run)
+    result = []
+    for (repository, sha, criterion), members in groups.items():
+        timed = [r.duration_seconds for r in members
+                 if r.outcome == "successful" and r.duration_seconds is not None]
+        completed = [r for r in members if r.outcome in ("successful", "failed", "timed_out")]
+        result.append({
+            "id": f"{repository or ''}@{sha}:{criterion}",
+            "repository": repository, "commit_sha": sha, "success_criterion": criterion,
+            "total_runs": len(members), "timing": durations(timed),
+            "success_rate": sum(r.outcome == "successful" for r in completed) / len(completed) if completed else None,
+        })
+    return result
+
+
 def update_definition(benchmark, payload, user, creating=False):
     if not isinstance(payload, dict):
         raise InvalidUsageException("Provide a benchmark definition.")
@@ -153,15 +175,16 @@ class BenchmarkAPI(ApiView):
         authorize(user, benchmark)
         runs = list(db.session.scalars(db.select(BenchmarkRun).filter_by(benchmark_id=benchmark_id)
                                       .order_by(BenchmarkRun.requested_at.desc())))
-        # An edit can change the target. Compare only runs with the current target;
-        # all revisions and their original criterion remain visible in the history.
-        comparable = [r for r in runs if r.success_criterion == benchmark.success_criterion]
-        timed = [r.duration_seconds for r in comparable
-                 if r.outcome == "successful" and r.duration_seconds is not None]
-        completed = [r for r in comparable if r.outcome in ("successful", "failed", "timed_out")]
+        groups = comparison_groups(runs)
+        # Default to the latest measured commit with the definition's current
+        # target; the dashboard can also inspect each older group independently.
+        selected = next((g for g in groups if g["success_criterion"] == benchmark.success_criterion), None)
         return {"benchmark": definition(benchmark), "runs": [run_result(r) for r in runs[:500]],
-                "total_runs": len(runs), "timing": durations(timed),
-                "success_rate": sum(r.outcome == "successful" for r in completed) / len(completed) if completed else None}
+                "total_runs": len(runs), "comparison_groups": groups,
+                "default_comparison_group": selected["id"] if selected else None,
+                "unassigned_runs": sum(not r.commit_sha for r in runs),
+                "timing": selected["timing"] if selected else durations([]),
+                "success_rate": selected["success_rate"] if selected else None}
 
     def post(self, user, benchmark_id=None):
         if benchmark_id:

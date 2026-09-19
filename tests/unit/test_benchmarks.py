@@ -35,9 +35,11 @@ def setup_backends(mocker, tmp_path):
     mocker.patch.object(benchmarks, "get_terraform_cloud", return_value=tf)
     tf.create_workspace.side_effect = lambda name, *_: f"ws-{name}"
     tf.get_run_status.return_value = (None, False)
+    tf.plan_from_commit.return_value = None
     storage = mocker.patch.object(mc_module, "get_github_storage").return_value
     storage.create_repo.side_effect = lambda hostname, *_: f"org/{hostname}"
     storage.write.return_value = "initial-sha"
+    storage.trigger_run.return_value = True
     mocker.patch.object(mc_module.DnsManager, "get_environment_variables", return_value={})
     return storage, tf
 
@@ -447,8 +449,8 @@ def test_successful_run_measures_then_cleans_up_and_is_excluded_from_adoption(ap
     assert db.session.scalar(db.select(BenchmarkRun)) is None
     storage.write.assert_called_once()
     assert storage.write.call_args.kwargs == {"trigger_run": False}
-    storage.write.return_value = "sha"
-    def initial_deployment(self, github_sha, timeout):
+    def initial_deployment(self, github_sha, timeout, run_id=None):
+        assert run_id is None
         self.orm.tfcloud_run = TerraformCloudRunORM(run_id="run-benchmark", commit_sha=github_sha, plan={"resource_changes": []})
         self.orm.status = Status.CREATED
         db.session.commit()
@@ -492,18 +494,19 @@ def test_successful_run_measures_then_cleans_up_and_is_excluded_from_adoption(ap
     assert run.active_benchmark_id is None
     assert run.cleanup_at is not None
     assert run.terraform_run_id == "run-benchmark"
-    assert run.commit_sha == "sha"
+    assert run.commit_sha == "initial-sha"
     assert run.duration_seconds == 300
     retained = runner.cluster_for(run)
     assert retained is not None
     assert retained.undeployed
     assert retained.tfcloud_workspace == "ws-test"
     tf.verify_workspace_empty.assert_called_with("ws-test")
-    # A second run rebuilds the same identity with new Terraform/Git run records.
-    storage.write.return_value = "sha-next"
-    def plan(self, github_sha, timeout):
-        assert timeout == runner.STEP_TIMEOUT - 10
-        self.orm.tfcloud_run = TerraformCloudRunORM(run_id="run-next", commit_sha=github_sha, plan={"resource_changes": []})
+    # A second deployment uses the same commit and a distinct Terraform run.
+    tf.plan_from_commit.return_value = "run-next"
+    def plan(self, github_sha, timeout, run_id=None):
+        assert 0 < timeout <= runner.STEP_TIMEOUT - 10
+        assert run_id == "run-next"
+        self.orm.tfcloud_run = TerraformCloudRunORM(run_id=run_id, commit_sha=github_sha, plan={"resource_changes": []})
         self.orm.status = Status.CREATED
         db.session.commit()
     mocker.patch.object(MagicCastle, "create_plan", plan)
@@ -524,12 +527,15 @@ def test_successful_run_measures_then_cleans_up_and_is_excluded_from_adoption(ap
     assert next_run.duration_seconds == 180
     assert next_run.hostname == run.hostname
     assert next_run.repository == run.repository
-    assert next_run.commit_sha == "sha-next"
+    assert next_run.commit_sha == run.commit_sha
     assert run.terraform_run_id == "run-benchmark"
     assert run.duration_seconds == 300
     create.assert_called_once()
     storage.create_repo.assert_called_once()
     tf.create_workspace.assert_called_once()
+    storage.write.assert_called_once()  # Both runs deploy the first save's commit.
+    storage.trigger_run.assert_called_once_with(run.hostname, "initial-sha")
+    assert tf.plan_from_commit.call_count == 2
     assert tf.upsert_workspace_variable_set.call_args.args[0] == "ws-test"
     assert tf.upsert_workspace_variable_set.call_args.args[1][0].value == "[]"
 
@@ -609,6 +615,7 @@ def test_statistics_compare_only_runs_with_current_success_criterion(app, benchm
         run.phase, run.active_benchmark_id = "complete", None
         run.applied_at = utcnow()
         run.outcome = outcome
+        run.commit_sha, run.repository = "same-sha", "org/repo"
         run.target_reached_at = run.applied_at + timedelta(seconds=seconds) if seconds else None
         db.session.commit()
     client = app.test_client()
@@ -624,6 +631,152 @@ def test_statistics_compare_only_runs_with_current_success_criterion(app, benchm
     assert build_report["total_runs"] == 3
     assert {r["success_criterion"] for r in build_report["runs"]} == {"healthy", "build_completed"}
     assert all(r["target_reached_at"] for r in build_report["runs"] if r["outcome"] == "successful")
+
+
+def test_proxy_token_and_encrypted_puppet_values_reuse_commit_until_specifications_change(app, benchmark, setup_backends, mocker):
+    from mchub.configuration import get_config
+    get_config()["mchub_url"] = "https://hub.example.org"
+    storage, tf = setup_backends
+    mocker.patch.object(runner, "get_terraform_cloud", return_value=tf)
+    mocker.patch.object(runner, "ensure_aws_feasible")
+    mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud")
+    encrypt = mocker.spy(mc_module, "_encrypt_eyaml")
+    benchmark.configuration = {**benchmark.configuration, "hieradata_entries": [
+        {"key": "profile::secret", "value": "secret-puppet-value", "encrypt": True},
+    ]}
+    benchmark.setup_status = "pending"
+    db.session.commit()
+    client = app.test_client()
+    url = f"/api/benchmarks/{benchmark.id}"
+    assert client.put(url, json=payload(benchmark), headers=OWNER_HEADERS).status_code == 200
+    orm = benchmarks.reusable_cluster(benchmark.id)
+    original_token = orm.cluster_token
+    assert original_token
+    original_hieradata = storage.write.call_args.args[0]["hieradata"]
+    assert "profile::slurm::controller::tfe_token: ENC[PKCS7," in original_hieradata
+    assert "profile::secret: ENC[PKCS7," in original_hieradata
+    assert original_token not in original_hieradata
+    assert "secret-puppet-value" not in original_hieradata
+    encryption_count = encrypt.call_count
+
+    tf.plan_from_commit.side_effect = ["run-first", "run-metadata", None]
+    def plan(self, github_sha, run_id=None, timeout=None):
+        self.orm.tfcloud_run = TerraformCloudRunORM(run_id=run_id or "run-new-specs", commit_sha=github_sha)
+        self.orm.status = Status.CREATED
+        db.session.commit()
+    mocker.patch.object(MagicCastle, "create_plan", plan)
+    def prepare_and_finish():
+        run = benchmarks.enqueue(benchmark)
+        db.session.commit()
+        runner.advance_run(run.id)
+        assert run.phase == "ready"
+        # This regression exercises planning only; no cloud resources are applied.
+        MagicCastle(orm).complete_teardown()
+        run.phase, run.active_benchmark_id = "complete", None
+        db.session.commit()
+        return run
+
+    first = prepare_and_finish()
+    metadata = deepcopy(payload(benchmark))
+    metadata.update(name="Renamed benchmark", frequency="weekly", enabled=False)
+    metadata["configuration"]["availability_zone"] = None  # Added by the shared editor.
+    assert client.put(url, json=metadata, headers=OWNER_HEADERS).status_code == 200
+    second = prepare_and_finish()
+    assert first.commit_sha == second.commit_sha == "initial-sha"
+    assert first.terraform_run_id != second.terraform_run_id
+    assert first.revision != second.revision
+    assert orm.cluster_token == original_token
+    assert encrypt.call_count == encryption_count
+    storage.write.assert_called_once()
+    storage.trigger_run.assert_not_called()
+
+    changed = deepcopy(payload(benchmark))
+    changed["configuration"]["instances"]["node"]["count"] += 1
+    assert client.put(url, json=changed, headers=OWNER_HEADERS).status_code == 200
+    storage.write.return_value = "changed-specification-sha"
+    third = prepare_and_finish()
+    assert third.commit_sha == "changed-specification-sha"
+    assert first.commit_sha == second.commit_sha == "initial-sha"
+    assert storage.write.call_count == 2
+    assert encrypt.call_count > encryption_count
+    assert orm.cluster_token == original_token
+    assert storage.write.call_args.kwargs == {"trigger_run": False}
+    storage.trigger_run.assert_called_once_with(orm.hostname, third.commit_sha)
+
+
+def test_comparison_groups_use_full_commit_and_criterion_preserving_unknown_runs(app, benchmark):
+    records = [("old-sha", "healthy", "successful", 600),
+               ("new-sha", "healthy", "successful", 120),
+               ("new-sha", "healthy", "failed", None),
+               ("new-sha", "build_completed", "successful", 60),
+               (None, "healthy", "successful", 999)]
+    for index, (sha, criterion, outcome, seconds) in enumerate(records):
+        benchmark.success_criterion = criterion
+        run = benchmarks.enqueue(benchmark)
+        run.phase, run.active_benchmark_id = "complete", None
+        run.requested_at = utcnow() + timedelta(seconds=index)
+        run.applied_at = utcnow()
+        run.outcome, run.commit_sha, run.repository = outcome, sha, "org/repo"
+        run.target_reached_at = run.applied_at + timedelta(seconds=seconds) if seconds else None
+        # Identical specifications with different SHAs must still stay separate.
+        db.session.commit()
+    report = app.test_client().get(f"/api/benchmarks/{benchmark.id}", headers=OWNER_HEADERS).get_json()
+    groups = {(g["commit_sha"], g["success_criterion"]): g for g in report["comparison_groups"]}
+    assert len(groups) == 3
+    assert groups[("old-sha", "healthy")]["timing"]["average_seconds"] == 600
+    assert groups[("new-sha", "healthy")]["timing"]["average_seconds"] == 120
+    assert groups[("new-sha", "healthy")]["success_rate"] == 0.5
+    assert groups[("new-sha", "build_completed")]["timing"]["average_seconds"] == 60
+    assert report["default_comparison_group"] == groups[("new-sha", "healthy")]["id"]
+    assert report["timing"]["average_seconds"] == 120
+    assert report["success_rate"] == 0.5
+    assert report["unassigned_runs"] == 1
+    assert report["total_runs"] == len(report["runs"]) == 5
+
+
+@pytest.mark.parametrize("remote_error", [False, True])
+def test_existing_import_tag_waits_for_a_fresh_run_and_preserves_failure_commit(app, benchmark, setup_backends, mocker, remote_error):
+    storage, tf = setup_backends
+    benchmark.setup_status = "pending"
+    db.session.commit()
+    assert app.test_client().put(f"/api/benchmarks/{benchmark.id}", json=payload(benchmark), headers=OWNER_HEADERS).status_code == 200
+    orm = benchmarks.reusable_cluster(benchmark.id)
+    run = benchmarks.enqueue(benchmark)
+    orm.benchmark_run_id = run.id
+    db.session.commit()
+    storage.trigger_run.return_value = False
+    tf.plan_from_commit.side_effect = [None, RuntimeError("API failed") if remote_error else "fresh-run"]
+    plan = mocker.patch.object(MagicCastle, "create_plan")
+    if remote_error:
+        with pytest.raises(RuntimeError, match="API failed"):
+            MagicCastle(orm).plan_benchmark_run(run.configuration, timeout=30)
+        runner.refresh_measurement(run, orm)
+        assert run.commit_sha == "initial-sha"
+        assert run.terraform_run_id is None
+        plan.assert_not_called()
+    else:
+        MagicCastle(orm).plan_benchmark_run(run.configuration, timeout=30)
+        assert plan.call_args.kwargs["run_id"] == "fresh-run"
+        assert plan.call_args.kwargs["github_sha"] == "initial-sha"
+    storage.write.assert_called_once()
+
+
+def test_group_summaries_cover_history_beyond_the_display_limit(app, benchmark):
+    now = utcnow()
+    runs = [BenchmarkRun(
+        benchmark_id=benchmark.id, configuration=deepcopy(benchmark.configuration), revision=1,
+        timeout_minutes=120, hostname="benchmark.example.org", repository="org/repo",
+        commit_sha="shared-sha", success_criterion="healthy", requested_at=now - timedelta(seconds=index),
+        applied_at=now, target_reached_at=now + timedelta(seconds=120), phase="complete", outcome="successful",
+    ) for index in range(501)]
+    db.session.add_all(runs)
+    db.session.commit()
+    report = app.test_client().get(f"/api/benchmarks/{benchmark.id}", headers=OWNER_HEADERS).get_json()
+    assert len(report["runs"]) == 500
+    assert report["comparison_groups"][0]["total_runs"] == 501
+    assert report["comparison_groups"][0]["timing"] == {
+        "count": 501, "average_seconds": 120, "median_seconds": 120, "p95_seconds": 120,
+    }
 
 
 def test_timeout_busy_cleanup_and_retry_keeps_benchmark_locked(benchmark, cluster, mocker):
@@ -741,6 +894,22 @@ def test_setup_migration_adopts_reusable_integrations_and_preserves_legacy_owner
             migration.downgrade()
         assert connection.execute(text("SELECT benchmark_run_id FROM magiccastle ORDER BY id")).all() == [("run-1",), ("run-2",)]
         assert [column["name"] for column in inspect(connection).get_columns("benchmark")] == ["id"]
+
+
+def test_commit_migration_preserves_historical_run_shas():
+    migration = importlib.import_module("migrations.versions.0016_benchmark_commits")
+    with create_engine("sqlite://").begin() as connection:
+        connection.execute(text("CREATE TABLE magiccastle (id INTEGER PRIMARY KEY)"))
+        connection.execute(text("INSERT INTO magiccastle VALUES (1)"))
+        connection.execute(text("CREATE TABLE benchmark_run (id INTEGER PRIMARY KEY, commit_sha TEXT)"))
+        connection.execute(text("INSERT INTO benchmark_run VALUES (1, 'original-sha')"))
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            assert connection.execute(text("SELECT benchmark_configuration, benchmark_commit_sha FROM magiccastle")).one() == (None, None)
+            assert connection.execute(text("SELECT commit_sha FROM benchmark_run")).scalar() == "original-sha"
+            migration.downgrade()
+        assert [column["name"] for column in inspect(connection).get_columns("magiccastle")] == ["id"]
+        assert connection.execute(text("SELECT commit_sha FROM benchmark_run")).scalar() == "original-sha"
 
 
 def test_pause_does_not_require_version_to_remain_in_catalog(app, benchmark, mocker):
