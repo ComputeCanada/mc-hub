@@ -11,7 +11,7 @@ from threading import Event
 from ..configuration.env import DATABASE_PATH
 
 logger = logging.getLogger(__name__)
-MODULES = ("mchub.services.usage_monitor", "mchub.services.cull_expired_cluster")
+MODULES = ("mchub.services.usage_monitor", "mchub.services.cull_expired_cluster", "mchub.services.benchmark_runner")
 
 
 class Supervisor:

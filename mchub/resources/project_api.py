@@ -8,6 +8,7 @@ from .api_view import ApiView
 from ..configuration import get_config
 from ..database import db
 from ..models.user import User, UserORM, TokenSuperUser
+from ..models.benchmark import Benchmark, BenchmarkRun
 from ..services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
 from ..services.github_api import get_github_storage, get_provider_template
 from ..models.cloud.project import Project, Provider, ENV_VALIDATORS, validate_openstack_cloud
@@ -315,6 +316,11 @@ class ProjectAPI(ApiView):
             raise InvalidUsageException(
                 "Cannot remove project that you are not the admin of"
             )
+        if db.session.scalar(db.select(Benchmark.id).where(
+            Benchmark.project_key == project.usage_id,
+            (Benchmark.archived.is_(False) | Benchmark.id.in_(db.select(BenchmarkRun.active_benchmark_id))),
+        ).limit(1)):
+            raise InvalidUsageException("Archive project benchmarks and wait for their cleanup before deleting the project.")
         if len(project.magic_castles) > 0:
             raise InvalidUsageException("Cannot remove project with running clusters")
         db.session.delete(project)

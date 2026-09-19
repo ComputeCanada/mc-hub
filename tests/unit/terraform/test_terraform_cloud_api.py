@@ -228,6 +228,31 @@ def test_set_variable_set_failure(tf_cloud_client, mock_request):
     assert "Could not set variable set" in str(excinfo.value)
 
 
+def test_workspace_variable_retry_updates_existing_and_creates_missing(tf_cloud_client, mock_request):
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"id": "var-env", "attributes": {"key": "pool", "category": "env"}}], "links": {"next": "page-2"}}),
+        mock_response(200, {"data": [{"id": "var-pool", "attributes": {"key": "pool", "category": "terraform"}}]}),
+        mock_response(200), mock_response(201),
+    ]
+    tf_cloud_client.upsert_workspace_variable_set("ws-test", [
+        TerraformCloudVariable("pool", "[]", False, hcl=True, category="terraform"),
+        TerraformCloudVariable("tfc_eyaml_key", "secret", True, category="terraform"),
+    ])
+    calls = mock_request.call_args_list
+    assert [call.args[0] for call in calls] == ["GET", "GET", "PATCH", "POST"]
+    assert calls[1].kwargs["params"]["page[number]"] == 2
+    assert calls[2].args[1].endswith("/workspaces/ws-test/vars/var-pool")
+    assert calls[2].kwargs["json"]["data"]["attributes"]["value"] == "[]"
+    assert calls[3].kwargs["json"]["data"]["attributes"]["key"] == "tfc_eyaml_key"
+
+
+def test_workspace_variables_are_not_created_when_lookup_fails(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(503)
+    with pytest.raises(TerraformCloudException, match="inspect workspace variables"):
+        tf_cloud_client.upsert_workspace_variable_set("ws-test", [TerraformCloudVariable("pool", "[]", False)])
+    mock_request.assert_called_once()
+
+
 def test_get_run_status_success(tf_cloud_client, mock_request):
     """Tests successful retrieval of run status and destroy flag."""
     mock_request.return_value = mock_response(

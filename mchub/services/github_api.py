@@ -165,7 +165,7 @@ class GithubStorage:
 
         return f"{self.organization}/{repo_name}"
 
-    def write(self, tf_data, hostname, filename="terraform.tfvars.json"):
+    def write(self, tf_data, hostname, filename="terraform.tfvars.json", *, trigger_run=True):
         # Check if the file exists in the repository
         repo_name = self._get_repo_name(hostname)
         org = self.github.get_organization(self.organization)
@@ -191,7 +191,8 @@ class GithubStorage:
             )
 
         sha = commit["commit"].sha
-        repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
+        if trigger_run:
+            repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
         return sha
 
     def archive_repo(self, hostname, *, missing_ok=False):

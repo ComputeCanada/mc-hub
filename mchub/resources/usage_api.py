@@ -55,7 +55,7 @@ class UsageAPI(ApiView):
         except (ValueError, OverflowError):
             raise InvalidUsageException("Use valid YYYY-MM-DD dates, a range of at most 10 years, and a positive page.")
 
-        all_lifetimes = list(db.session.scalars(db.select(UsageLifetime)))
+        all_lifetimes = list(db.session.scalars(db.select(UsageLifetime).where(UsageLifetime.benchmark_run_id.is_(None))))
         first = {}
         for row in all_lifetimes:
             if row.healthy_at and row.creator:

@@ -1,5 +1,6 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
+import { guardBenchmarkAccess } from "@/services/benchmarkAccess";
 import Home from "@/views/Home";
 import CreateCluster from "@/views/CreateCluster";
 import Projects from "@/views/Projects";
@@ -9,6 +10,25 @@ import ModifyCluster from "@/views/ModifyCluster";
 Vue.use(VueRouter);
 
 const routes = [
+  {
+    path: "/benchmarks",
+    name: "Benchmarks",
+    component: () => import("@/views/Benchmarks"),
+    meta: { requiresProjectAdmin: true },
+  },
+  {
+    path: "/benchmarks/new",
+    name: "New benchmark",
+    component: () => import("@/views/BenchmarkEditor"),
+    meta: { requiresProjectAdmin: true },
+  },
+  {
+    path: "/benchmarks/:id/edit",
+    name: "Edit benchmark",
+    meta: { requiresProjectAdmin: true },
+    component: () => import("@/views/BenchmarkEditor"),
+    props: true,
+  },
   { path: "/usage", name: "Service adoption", component: () => import("@/views/Usage") },
   {
     path: "/",
@@ -47,5 +67,7 @@ const router = new VueRouter({
   base: process.env.BASE_URL,
   routes,
 });
+
+router.beforeEach(guardBenchmarkAccess);
 
 export default router;

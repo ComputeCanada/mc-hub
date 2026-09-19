@@ -8,9 +8,9 @@ The service token does not grant access to reports.
 The deployment runs two long-lived containers:
 
 - `api` serves HTTP through Gunicorn, with no scheduled worker subprocesses.
-- `background-worker` supervises the usage observer and expiration worker as
-  separate processes. Both use Flask application contexts and shared lifecycle
-  code with direct database access; neither calls the hub's HTTP API.
+- `background-worker` supervises the usage observer, expiration worker, and
+  benchmark scheduler as separate processes. They use Flask application contexts
+  and shared lifecycle code with direct database access.
 
 Compose also runs a one-time `initialize` container for database migrations
 (`flask db upgrade`). Both long-lived containers wait for it to succeed. All three
@@ -30,7 +30,7 @@ They also remove the former standalone `cleanup` container. Migration `0011` is
 required for usage history and is applied by initialization.
 
 The supervisor restarts an exited child independently, with retry delays from one
-to 60 seconds, and stops both children on SIGTERM/SIGINT. Compose restarts the
+to 60 seconds, and stops its children on SIGTERM/SIGINT. Compose restarts the
 supervisor container unless it was explicitly stopped. A file lock on the shared
 database volume prevents two supervisors from running against that volume. Run
 only one background-worker container per hub. Errors and worker restarts are
@@ -65,6 +65,10 @@ logged; a sweep timestamp does not guarantee that every cluster refreshed
 successfully. Monitoring must run continuously for useful timing measurements.
 
 ## Definitions
+
+Automated [benchmark deployments](benchmarks.md) are excluded from all adoption
+counts and timing/lifetime aggregates on this dashboard. Their results appear on
+the separate Benchmarks page.
 
 - Successful deployments are cluster lifetimes first observed healthy in the
   selected period. Rebuilds start new lifetimes. Configuration updates have separate

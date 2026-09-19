@@ -25,6 +25,7 @@ class UsageLifetime(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=new_id)
     cluster_id = db.Column(db.String(36), nullable=False, index=True)
     active_cluster_id = db.Column(db.String(36), unique=True)
+    benchmark_run_id = db.Column(db.String(36))
     hostname = db.Column(db.String(256), nullable=False)
     project_id = db.Column(db.String(36), nullable=False)
     project_name = db.Column(db.String, nullable=False)

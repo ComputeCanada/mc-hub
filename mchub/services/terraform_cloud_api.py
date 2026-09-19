@@ -354,6 +354,32 @@ class TerraformCloud:
                     additional_details=f"{workspace_id=}, variable={variable.name}, error: {res.text}",
                 )
 
+    def upsert_workspace_variable_set(self, workspace_id, variables):
+        """Update only the supplied variables, including after partial setup."""
+        existing = {}
+        page = 1
+        url = f"{self.BASE_URL}/workspaces/{workspace_id}/vars"
+        while True:
+            response = self._request("GET", url, params={"page[number]": page, "page[size]": 100})
+            if response.status_code != 200:
+                raise TerraformCloudException("Could not inspect workspace variables")
+            payload = response.json()
+            for variable in payload["data"]:
+                attrs = variable["attributes"]
+                existing[(attrs["key"], attrs["category"])] = variable["id"]
+            if not (payload.get("links") or {}).get("next"):
+                break
+            page += 1
+        for variable in variables:
+            variable_id = existing.get((variable.name, variable.category))
+            if variable_id is None:
+                self.set_workspace_variable_set(workspace_id, [variable])
+            else:
+                data = {**variable.to_dict(), "id": variable_id}
+                response = self._request("PATCH", f"{url}/{variable_id}", json={"data": data})
+                if response.status_code != 200:
+                    raise TerraformCloudException("Could not update workspace variable")
+
     def get_run_status(self, run_id):
         url = f"{self.BASE_URL}/runs/{run_id}"
         res = self._request("GET", url)

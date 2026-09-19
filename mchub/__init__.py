@@ -17,6 +17,7 @@ def create_app(db_path=None):
     from .resources.project_api import ProjectAPI, AWSRegionsAPI, OpenStackSubnetsAPI, OpenStackCloudsAPI
     from .resources.template_api import TemplateAPI
     from .resources.usage_api import UsageAPI
+    from .resources.benchmark_api import BenchmarkAPI
     from .resources.tfcloud_proxy import tfcloud_proxy
 
     if db_path is None:
@@ -39,6 +40,11 @@ def create_app(db_path=None):
         app,
         origins=get_config()["cors_allowed_origins"],
     )
+
+    benchmark_view = BenchmarkAPI.as_view("benchmarks")
+    app.add_url_rule("/api/benchmarks", view_func=benchmark_view, defaults={"benchmark_id": None}, methods=["GET", "POST"])
+    app.add_url_rule("/api/benchmarks/<string:benchmark_id>", view_func=benchmark_view, methods=["GET", "PUT", "PATCH", "DELETE"])
+    app.add_url_rule("/api/benchmarks/<string:benchmark_id>/run", view_func=benchmark_view, methods=["POST"])
 
     app.add_url_rule("/api/usage", view_func=UsageAPI.as_view("usage"), methods=["GET"])
 

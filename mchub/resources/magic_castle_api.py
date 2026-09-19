@@ -62,7 +62,7 @@ class MagicCastleAPI(ApiView):
             else:
                 raise ClusterNotFoundException
         else:
-            return [mc.state for mc in user.magic_castles]
+            return [mc.state for mc in user.magic_castles if mc.orm.benchmark_run_id is None and mc.orm.benchmark_id is None]
 
     def post(self, user: User, hostname, apply=False, action=None):
         app = current_app._get_current_object()

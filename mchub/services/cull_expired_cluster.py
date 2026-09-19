@@ -47,6 +47,8 @@ def expire_cluster(orm, now):
 
 def poll_once():
     ids = list(db.session.scalars(db.select(MagicCastleORM.id).where(
+        MagicCastleORM.benchmark_run_id.is_(None),
+        MagicCastleORM.benchmark_id.is_(None),
         MagicCastleORM.expiration_date.is_not(None), MagicCastleORM.undeployed.is_(False),
     )))
     for cluster_id in ids:
