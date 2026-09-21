@@ -35,6 +35,10 @@ supervisor container unless it was explicitly stopped. A file lock on the shared
 database volume prevents two supervisors from running against that volume. Run
 only one background-worker container per hub. Errors and worker restarts are
 visible in `docker compose logs background-worker`.
+The supervisor, usage observer, expiration worker, and benchmark processes all log
+UTC timestamps with milliseconds, severity, process ID, and logger name. For logs
+captured before this format was added, use
+`docker compose logs --timestamps background-worker` to show Docker's timestamps.
 
 For development or custom deployments, initialize the database first, then run
 `python -m mchub.services.background_worker` alongside the web server with the same

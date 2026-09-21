@@ -1,4 +1,6 @@
 import pytest
+from datetime import datetime
+from copy import deepcopy
 from unittest.mock import patch, Mock
 import requests
 
@@ -43,6 +45,81 @@ def mock_response(status_code, json_data=None, text=""):
         # Avoid unexpected calls to .json() if not needed
         mock.json.side_effect = AttributeError("json() not available")
     return mock
+
+
+@pytest.fixture
+def completed_apply():
+    return {
+        "data": {
+            "id": "run-measured", "type": "runs",
+            "attributes": {"status": "applied", "is-destroy": False},
+            "relationships": {"apply": {"data": {"id": "apply-measured", "type": "applies"}}},
+        },
+        "included": [{
+            "id": "apply-measured", "type": "applies",
+            "attributes": {"status": "finished", "status-timestamps": {
+                "started-at": "2026-09-20T22:16:34+00:00",
+                "finished-at": "2026-09-20T22:17:53+00:00",
+            }},
+        }],
+    }
+
+
+@pytest.mark.parametrize("offset", ["Z", "+00:00", "-04:00"])
+def test_apply_timestamps_use_linked_apply_and_normalize_utc(tf_cloud_client, mock_request, completed_apply, offset):
+    hour = "18" if offset == "-04:00" else "22"
+    completed_apply["included"][0]["attributes"]["status-timestamps"] = {
+        "started-at": f"2026-09-20T{hour}:16:34{offset}",
+        "finished-at": f"2026-09-20T{hour}:17:53{offset}",
+    }
+    unrelated = deepcopy(completed_apply["included"][0])
+    unrelated["id"] = "other-apply"
+    unrelated["attributes"]["status-timestamps"] = {"started-at": "wrong", "finished-at": "wrong"}
+    completed_apply["included"].insert(0, unrelated)
+    mock_request.return_value = mock_response(200, completed_apply)
+    assert tf_cloud_client.get_apply_timestamps("run-measured") == (
+        datetime(2026, 9, 20, 22, 16, 34), datetime(2026, 9, 20, 22, 17, 53),
+    )
+    mock_request.assert_called_once_with("GET", f"{tf_cloud_client.BASE_URL}/runs/run-measured", params={"include": "apply"})
+
+
+@pytest.mark.parametrize("timestamps", [
+    {}, {"started-at": "2026-09-20T22:16:34Z"},
+    {"started-at": "bad", "finished-at": "2026-09-20T22:17:53Z"},
+    {"started-at": None, "finished-at": "2026-09-20T22:17:53Z"},
+    {"started-at": "2026-09-20T22:18:00Z", "finished-at": "2026-09-20T22:17:53Z"},
+    {"started-at": "2026-09-20T22:16:34", "finished-at": "2026-09-20T22:17:53"},
+])
+def test_apply_timestamps_never_invent_missing_or_invalid_times(tf_cloud_client, mock_request, completed_apply, timestamps):
+    completed_apply["included"][0]["attributes"]["status-timestamps"] = timestamps
+    mock_request.return_value = mock_response(200, completed_apply)
+    assert tf_cloud_client.get_apply_timestamps("run-measured") == (None, None)
+
+
+@pytest.mark.parametrize("case", ["different_run", "destroy", "applying", "no_apply", "unlinked", "missing", "running"])
+def test_apply_timestamps_require_completed_original_deployment(tf_cloud_client, mock_request, completed_apply, case):
+    if case == "different_run":
+        completed_apply["data"]["id"] = "another-run"
+    elif case == "destroy":
+        completed_apply["data"]["attributes"]["is-destroy"] = True
+    elif case == "applying":
+        completed_apply["data"]["attributes"]["status"] = "applying"
+    elif case == "no_apply":
+        completed_apply["data"]["relationships"]["apply"]["data"] = None
+    elif case == "unlinked":
+        completed_apply["included"][0]["id"] = "other-apply"
+    elif case == "missing":
+        completed_apply["included"] = []
+    else:
+        completed_apply["included"][0]["attributes"]["status"] = "running"
+    mock_request.return_value = mock_response(200, completed_apply)
+    assert tf_cloud_client.get_apply_timestamps("run-measured") == (None, None)
+
+
+def test_apply_timestamps_report_api_failure(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(403)
+    with pytest.raises(TerraformCloudException, match="apply timestamps"):
+        tf_cloud_client.get_apply_timestamps("run-measured")
 
 
 def test_terraform_cloud_variable_to_dict():

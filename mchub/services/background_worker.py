@@ -9,6 +9,7 @@ from pathlib import Path
 from threading import Event
 
 from ..configuration.env import DATABASE_PATH
+from .worker_logging import configure_worker_logging
 
 logger = logging.getLogger(__name__)
 MODULES = ("mchub.services.usage_monitor", "mchub.services.cull_expired_cluster", "mchub.services.benchmark_runner")
@@ -71,7 +72,7 @@ class Supervisor:
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_worker_logging()
     # Prevent a second supervisor from starting duplicate workers on this volume.
     with (Path(DATABASE_PATH) / "background-worker.lock").open("a") as lock:
         try:

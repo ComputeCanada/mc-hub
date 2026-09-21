@@ -84,9 +84,13 @@
       >
       <v-card class="my-4 pa-4">
         <h2 class="text-h6">{{ timingLabel }} over time</h2>
-        <p class="text-caption">
-          First observation of the selected state. Successful runs with known apply acceptance times only. Later health
-          changes do not change a result.
+        <p v-if="isBuildComparison" class="text-caption">
+          Terraform Cloud apply start to apply finish. Queue time and worker polling delays are excluded. Older build
+          results without Terraform timestamps remain in history but are excluded from timing comparisons.
+        </p>
+        <p v-else class="text-caption">
+          Apply acceptance to first observation of healthy services. Successful runs with known apply acceptance times
+          only. Later health changes do not change a result.
         </p>
         <svg
           v-if="points.length"
@@ -105,12 +109,13 @@
           />
           <circle v-for="point in points" :key="point.id" :cx="point.x" :cy="point.y" r="4" fill="#1976d2">
             <title>
-              {{ timestamp(point.applied_at) }}: {{ duration(point.duration_seconds) }} (revision {{ point.revision }})
+              {{ timestamp(point.measurement_started_at) }}: {{ duration(point.duration_seconds) }} (revision
+              {{ point.revision }})
             </title>
           </circle>
-          <text x="45" y="193" font-size="12">{{ points[0].applied_at.slice(0, 10) }}</text>
+          <text x="45" y="193" font-size="12">{{ points[0].measurement_started_at.slice(0, 10) }}</text>
           <text x="780" y="193" text-anchor="end" font-size="12">
-            {{ points[points.length - 1].applied_at.slice(0, 10) }}
+            {{ points[points.length - 1].measurement_started_at.slice(0, 10) }}
           </text>
         </svg>
         <p v-else>No successful timed runs for this group in the latest 500 runs.</p>
@@ -153,9 +158,19 @@
             ><td :colspan="headers.length" class="pa-4">
               <v-alert v-if="item.error" type="error" outlined>{{ item.error }}</v-alert>
               <v-alert v-if="item.cleanup_error" type="warning" outlined>{{ item.cleanup_error }}</v-alert>
-              <p>
-                Cluster: {{ item.hostname }} · Apply accepted: {{ timestamp(item.applied_at) }} · Target reached:
-                {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
+              <p>Cluster: {{ item.hostname }} · Apply accepted: {{ timestamp(item.applied_at) }}</p>
+              <p v-if="item.success_criterion === 'build_completed' && item.apply_started_at">
+                Terraform apply started: {{ timestamp(item.apply_started_at) }} · Terraform apply finished:
+                {{ timestamp(item.target_reached_at) }} (Build completed)
+              </p>
+              <p v-else-if="item.success_criterion === 'build_completed'">
+                Terraform apply timestamps unavailable; excluded from timing comparisons.
+                <span v-if="item.target_reached_at"
+                  >Previously observed target: {{ timestamp(item.target_reached_at) }}.</span
+                >
+              </p>
+              <p v-else>
+                Target reached: {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
               </p>
               <p>
                 Terraform run: {{ item.terraform_run_id || "Unknown" }} · Repository:
@@ -191,7 +206,7 @@ export default {
       { text: "Commit", value: "commit_sha" },
       { text: "Outcome", value: "outcome" },
       { text: "Success criterion", value: "success_criterion" },
-      { text: "Apply to target", value: "duration_seconds" },
+      { text: "Duration", value: "duration_seconds" },
       { text: "Phase", value: "phase" },
       { text: "Cleanup", value: "cleanup_at" },
     ],
@@ -208,10 +223,11 @@ export default {
     selectedGroup() {
       return this.report.comparison_groups.find((group) => group.id === this.comparisonGroup);
     },
+    isBuildComparison() {
+      return (this.selectedGroup?.success_criterion || this.report.benchmark.success_criterion) === "build_completed";
+    },
     timingLabel() {
-      return (this.selectedGroup?.success_criterion || this.report.benchmark.success_criterion) === "build_completed"
-        ? "Apply to build completed"
-        : "Apply to healthy";
+      return this.isBuildComparison ? "Terraform apply duration" : "Apply to healthy";
     },
     visibleBenchmarks() {
       return this.benchmarks.filter(
@@ -236,7 +252,8 @@ export default {
         .filter(
           (r) =>
             r.outcome === "successful" &&
-            r.duration_seconds !== null &&
+            r.duration_seconds != null &&
+            r.measurement_started_at &&
             r.success_criterion === this.selectedGroup.success_criterion &&
             r.commit_sha === this.selectedGroup.commit_sha &&
             r.repository === this.selectedGroup.repository
@@ -250,11 +267,11 @@ export default {
     points() {
       const runs = this.timedRuns;
       if (!runs.length) return [];
-      const start = Date.parse(runs[0].applied_at);
-      const span = Date.parse(runs[runs.length - 1].applied_at) - start || 1;
+      const start = Date.parse(runs[0].measurement_started_at);
+      const span = Date.parse(runs[runs.length - 1].measurement_started_at) - start || 1;
       return runs.map((r) => ({
         ...r,
-        x: 45 + (735 * (Date.parse(r.applied_at) - start)) / span,
+        x: 45 + (735 * (Date.parse(r.measurement_started_at) - start)) / span,
         y: 170 - (145 * r.duration_seconds) / this.maxDuration,
       }));
     },

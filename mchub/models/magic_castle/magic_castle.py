@@ -277,8 +277,16 @@ class MagicCastle:
 
     @property
     def age(self):
+        if self.orm.undeployed:
+            return "—"
+        lifetime = usage.current_lifetime(self.orm)
+        # Deployment timestamps also reset on updates; the lifetime retains the
+        # start of the current instance across those applies.
+        started_at = lifetime.started_at if lifetime else self.orm.deployment_started_at
+        if started_at is None:
+            return "—"
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        delta = now - self.orm.created
+        delta = now - started_at
         return humanize.naturaldelta(delta)
 
     @property

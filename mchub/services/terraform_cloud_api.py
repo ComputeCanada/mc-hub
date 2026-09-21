@@ -1,5 +1,6 @@
 from typing import Optional, List
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
 
@@ -398,6 +399,42 @@ class TerraformCloud:
                 "Could not find trigger run",
                 additional_details=f"{run_id=}, error: {res.text}",
             )
+
+    def get_apply_timestamps(self, run_id):
+        """Return the completed deployment apply's UTC execution interval.
+
+        Missing/incomplete timestamps remain unknown; callers must never replace
+        them with the time they happened to poll. Match the apply relationship so
+        another included resource cannot supply this deployment's measurement.
+        """
+        response = self._request("GET", f"{self.BASE_URL}/runs/{run_id}", params={"include": "apply"})
+        if response.status_code != 200:
+            raise TerraformCloudException("Could not retrieve Terraform apply timestamps")
+        payload = response.json()
+        run = payload["data"]
+        if (run["id"] != run_id or run["attributes"].get("is-destroy") is not False
+                or run["attributes"]["status"] != "applied"):
+            return None, None
+        apply_id = ((run.get("relationships", {}).get("apply", {}).get("data")) or {}).get("id")
+        if not apply_id:
+            return None, None
+        for included in payload.get("included", []):
+            if included.get("type") != "applies" or included.get("id") != apply_id:
+                continue
+            attrs = included["attributes"]
+            if attrs.get("status") != "finished":
+                return None, None
+            timestamps = attrs.get("status-timestamps") or {}
+            try:
+                started = datetime.fromisoformat(timestamps["started-at"])
+                finished = datetime.fromisoformat(timestamps["finished-at"])
+                if started.tzinfo is None or finished.tzinfo is None or finished < started:
+                    return None, None
+            except (KeyError, TypeError, ValueError):
+                return None, None
+            return (started.astimezone(timezone.utc).replace(tzinfo=None),
+                    finished.astimezone(timezone.utc).replace(tzinfo=None))
+        return None, None
 
     def get_run_by_commit(self, workspace_id, github_sha):
         url = f"{self.BASE_URL}/workspaces/{workspace_id}/runs"

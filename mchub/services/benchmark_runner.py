@@ -24,7 +24,8 @@ from ..models.user import UserORM
 from ..exceptions.invalid_usage_exception import InvalidUsageException
 from .benchmarks import schedule_due, reusable_cluster, benchmark_lock
 from . import cluster_lifecycle as lifecycle
-from .terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
+from .terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable, TFCloudStatusCode
+from .worker_logging import configure_worker_logging
 
 logger = logging.getLogger(__name__)
 POLL_INTERVAL = 10
@@ -195,8 +196,13 @@ def advance_run(run_id):
                 if run.terraform_run_id else (None, None)
             )
             status = Status.from_tfcloudstatus(remote, is_destroy)
-            if is_destroy is False and Status.is_provisioning(status) and run.target_reached_at is None:
-                run.target_reached_at = utcnow()
+            if is_destroy is False and remote == TFCloudStatusCode.PLANNED_AND_FINISHED:
+                finish(run, "failed", "Terraform completed without an apply; no build was measured.")
+                return
+            if is_destroy is False and remote == TFCloudStatusCode.APPLIED and run.apply_started_at is None:
+                started, finished = get_terraform_cloud().get_apply_timestamps(run.terraform_run_id)
+                if started is not None and finished is not None:
+                    run.apply_started_at, run.target_reached_at = started, finished
         else:
             status = cluster.status
             refresh_measurement(run, orm)
@@ -204,7 +210,10 @@ def advance_run(run_id):
                 run.target_reached_at = run.healthy_at
         db.session.commit()
         deadline = run.started_at + timedelta(minutes=run.timeout_minutes)
-        if run.target_reached_at and run.target_reached_at <= deadline:
+        measured_target = run.target_reached_at
+        if run.success_criterion == "build_completed" and run.apply_started_at is None:
+            measured_target = None  # An older local observation is not an apply timestamp.
+        if measured_target and measured_target <= deadline:
             finish(run, "successful")
             return
         if utcnow() >= deadline:
@@ -305,7 +314,11 @@ def main():
                         if run.id in children:
                             continue
                         timeout = STEP_TIMEOUT
-                        if run.started_at and run.phase != "cleanup":
+                        # A build may have finished before its deadline while the
+                        # worker was unavailable. Allow the bounded observation
+                        # step to read Terraform's completion time before expiring it.
+                        checking_build = run.success_criterion == "build_completed" and run.phase in ("waiting", "applying")
+                        if run.started_at and run.phase != "cleanup" and not checking_build:
                             timeout = min(timeout, max(1, (run.started_at + timedelta(minutes=run.timeout_minutes) - utcnow()).total_seconds()))
                         process = subprocess.Popen([sys.executable, "-m", "mchub.services.benchmark_runner", "--step", run.id, "--parent", str(os.getpid())])
                         children[run.id] = (process, time.monotonic() + timeout)
@@ -319,7 +332,7 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    configure_worker_logging()
     parser = argparse.ArgumentParser()
     parser.add_argument("--step")
     parser.add_argument("--parent", type=int)

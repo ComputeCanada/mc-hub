@@ -96,6 +96,47 @@ def test_initial_apply_leaves_undeployed_lifecycle(app):
     assert cluster.orm.deployment_started_at is not None
 
 
+def test_age_tracks_current_instance_across_updates_and_rebuilds(app):
+    from freezegun import freeze_time
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+
+    with freeze_time("2026-09-01"):
+        cluster = MagicCastle()
+        cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+        assert cluster.age == "—"
+
+    with freeze_time("2026-09-10"):
+        cluster.apply()
+
+    with freeze_time("2026-09-12"):
+        assert cluster.state["age"] == "2 days"
+        # A subsequent apply changes the provisioning timeout, not instance age.
+        cluster.apply()
+        assert cluster.age == "2 days"
+        cluster.complete_teardown()
+        assert cluster.age == "—"
+        cluster.orm.expiration_date = None
+        cluster.plan_rebuild()
+        cluster.apply()
+
+    with freeze_time("2026-09-13"):
+        assert cluster.age == "a day"
+
+
+def test_age_without_usage_history_uses_only_recorded_deployment_start(app):
+    import datetime
+    from freezegun import freeze_time
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+
+    cluster = MagicCastle()
+    cluster.orm.created = datetime.datetime(2026, 9, 1)
+    cluster.orm.undeployed = False
+    with freeze_time("2026-09-13"):
+        assert cluster.age == "—"
+        cluster.orm.deployment_started_at = datetime.datetime(2026, 9, 12)
+        assert cluster.age == "a day"
+
+
 def test_create_magic_castle_rejects_unvetted_version(app):
     from mchub.exceptions.invalid_usage_exception import InvalidUsageException
     from mchub.models.magic_castle.magic_castle import MagicCastle

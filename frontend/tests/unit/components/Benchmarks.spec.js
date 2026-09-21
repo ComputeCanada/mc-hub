@@ -102,6 +102,7 @@ test("dashboard compares one commit and criterion at a time and retains all hist
           success_criterion: "healthy",
           outcome: "successful",
           applied_at: "2027-01-01T12:00:00Z",
+          measurement_started_at: "2027-01-01T12:00:00Z",
           duration_seconds: 120,
         },
         {
@@ -110,7 +111,9 @@ test("dashboard compares one commit and criterion at a time and retains all hist
           repository: "org/repo",
           success_criterion: "build_completed",
           outcome: "successful",
-          applied_at: "2027-01-01T12:00:00Z",
+          applied_at: null,
+          apply_started_at: "2027-01-01T12:01:00Z",
+          measurement_started_at: "2027-01-01T12:01:00Z",
           duration_seconds: 60,
         },
         {
@@ -121,6 +124,19 @@ test("dashboard compares one commit and criterion at a time and retains all hist
           outcome: "successful",
           duration_seconds: 600,
           applied_at: "2027-01-01T11:00:00Z",
+          measurement_started_at: "2027-01-01T11:00:00Z",
+        },
+        {
+          id: "legacy-build",
+          commit_sha: "new-sha",
+          repository: "org/repo",
+          success_criterion: "build_completed",
+          outcome: "successful",
+          applied_at: "2027-01-01T11:00:00Z",
+          target_reached_at: "2027-01-01T11:16:00Z",
+          measurement_started_at: null,
+          apply_started_at: null,
+          duration_seconds: null,
         },
         {
           id: "failed",
@@ -152,8 +168,11 @@ test("dashboard compares one commit and criterion at a time and retains all hist
   expect(wrapper.vm.cards[0].value).toBe("10.0 min");
   await wrapper.setData({ comparisonGroup: "new-build" });
   expect(wrapper.vm.points.map((p) => p.id)).toEqual(["build"]);
-  expect(wrapper.text()).toContain("Apply to build completed over time");
-  expect(wrapper.vm.report.runs).toHaveLength(5);
+  expect(wrapper.text()).toContain("Terraform apply duration over time");
+  expect(wrapper.text()).toContain("Queue time and worker polling delays are excluded");
+  expect(wrapper.vm.points[0].measurement_started_at).toBe("2027-01-01T12:01:00Z");
+  expect(wrapper.vm.points[0].x).toBe(45);
+  expect(wrapper.vm.report.runs).toHaveLength(6);
 });
 
 test("refresh preserves a selected historical group and changing benchmarks resets it", async () => {

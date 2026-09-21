@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import timedelta
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import PropertyMock
 import importlib
@@ -456,6 +456,10 @@ def test_successful_run_measures_then_cleans_up_and_is_excluded_from_adoption(ap
         db.session.commit()
     mocker.patch.object(MagicCastle, "create_plan", initial_deployment)
     tf.get_run_status.side_effect = [(TFStatus.PLANNED, False), (TFStatus.APPLIED, False)]
+    tf.get_apply_timestamps.side_effect = [
+        (datetime(2027, 1, 1), datetime(2027, 1, 1, 0, 5)),
+        (datetime(2027, 1, 1, 0, 10), datetime(2027, 1, 1, 0, 13)),
+    ]
     def apply(self, initiated_by=None):
         usage.accepted(usage.begin_apply(self.orm, initiated_by))
         self.orm.undeployed = False
@@ -542,7 +546,7 @@ def test_successful_run_measures_then_cleans_up_and_is_excluded_from_adoption(ap
 
 @pytest.mark.parametrize("remote,is_destroy,expected", [
     (TFStatus.APPLIED, False, "successful"),
-    (TFStatus.PLANNED_AND_FINISHED, False, "successful"),
+    (TFStatus.PLANNED_AND_FINISHED, False, "failed"),
     (TFStatus.APPLYING, False, None),
     (TFStatus.PLANNED, False, None),
     (TFStatus.APPLIED, True, None),
@@ -559,6 +563,7 @@ def test_build_target_uses_completed_deployment_without_health_checks(benchmark,
         db.session.commit()
     tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
     tf.get_run_status.return_value = (remote, is_destroy)
+    tf.get_apply_timestamps.return_value = (datetime(2027, 1, 1, 0, 1), datetime(2027, 1, 1, 0, 3))
     # Even a failed or stalled health probe must not block this criterion.
     health = mocker.patch.object(MagicCastle, "status", new_callable=PropertyMock, side_effect=AssertionError("Probed health"))
     with freeze_time("2027-01-01 00:05:00"):
@@ -569,15 +574,18 @@ def test_build_target_uses_completed_deployment_without_health_checks(benchmark,
         tf.get_run_status.assert_called_once_with("run-1")
         if expected == "successful":
             assert run.phase == "cleanup"
-            assert run.target_reached_at == utcnow()
-            assert run.duration_seconds == 300
+            assert run.apply_started_at == datetime(2027, 1, 1, 0, 1)
+            assert run.target_reached_at == datetime(2027, 1, 1, 0, 3)
+            assert run.duration_seconds == 120
+            tf.get_apply_timestamps.assert_called_once_with("run-1")
             # Later edits and cleanup cannot replace this run's result.
             benchmark.success_criterion = "healthy"
             runner.refresh_measurement(run, cluster)
             assert run.success_criterion == "build_completed"
-            assert run.duration_seconds == 300
+            assert run.duration_seconds == 120
         else:
             assert run.target_reached_at is None
+            tf.get_apply_timestamps.assert_not_called()
 
 
 def test_healthy_target_waits_after_build_completion(benchmark, cluster, mocker):
@@ -595,16 +603,70 @@ def test_healthy_target_waits_after_build_completion(benchmark, cluster, mocker)
     assert run.target_reached_at is None
 
 
-def test_build_target_observed_after_deadline_times_out(benchmark, cluster, mocker):
+@pytest.mark.parametrize("finish_offset,outcome", [(0, "successful"), (1, "timed_out")])
+def test_build_deadline_uses_actual_completion_even_when_observed_late(benchmark, cluster, mocker, finish_offset, outcome):
     benchmark.success_criterion = "build_completed"
     run = benchmarks.enqueue(benchmark)
     cluster.benchmark_run_id = run.id
     run.phase, run.started_at = "waiting", utcnow() - timedelta(hours=3)
+    deadline = run.started_at + timedelta(minutes=run.timeout_minutes)
     db.session.commit()
-    mocker.patch.object(runner, "get_terraform_cloud").return_value.get_run_status.return_value = (TFStatus.APPLIED, False)
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_run_status.return_value = (TFStatus.APPLIED, False)
+    tf.get_apply_timestamps.return_value = (deadline - timedelta(seconds=79), deadline + timedelta(seconds=finish_offset))
     runner.advance_run(run.id)
-    assert run.outcome == "timed_out"
+    assert run.outcome == outcome
     assert run.phase == "cleanup"
+    assert run.target_reached_at == deadline + timedelta(seconds=finish_offset)
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+def test_build_uses_terraform_interval_despite_queueing_and_delayed_observation(app, benchmark, cluster, mocker, accepted):
+    benchmark.success_criterion = "build_completed"
+    with freeze_time("2026-09-20 22:00:59"):
+        run = benchmarks.enqueue(benchmark)
+        cluster.benchmark_run_id = run.id
+        run.phase, run.started_at = "waiting", utcnow()
+        if accepted:
+            usage.accepted(usage.begin_apply(cluster))
+        db.session.commit()
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_run_status.return_value = (TFStatus.APPLIED, False)
+    tf.get_apply_timestamps.return_value = (datetime(2026, 9, 20, 22, 16, 34), datetime(2026, 9, 20, 22, 17, 53))
+    with freeze_time("2026-09-20 22:25:00"):
+        runner.advance_run(run.id)
+    assert run.outcome == "successful"
+    assert run.duration_seconds == 79
+    assert run.applied_at == (datetime(2026, 9, 20, 22, 0, 59) if accepted else None)
+    result = app.test_client().get(f"/api/benchmarks/{benchmark.id}", headers=OWNER_HEADERS).get_json()["runs"][0]
+    assert result["measurement_started_at"] == result["apply_started_at"] == "2026-09-20T22:16:34Z"
+    assert result["target_reached_at"] == "2026-09-20T22:17:53Z"
+    assert result["duration_seconds"] == 79
+    # Cleanup or usage refreshes cannot overwrite the provider measurement.
+    original_run = run.terraform_run_id
+    cluster.tfcloud_run.run_id = "destroy-run"
+    runner.refresh_measurement(run, cluster)
+    assert run.terraform_run_id == original_run
+    assert run.duration_seconds == 79
+
+
+def test_build_waits_for_missing_remote_timestamps_without_inventing_measurement(benchmark, cluster, mocker):
+    benchmark.success_criterion = "build_completed"
+    run = benchmarks.enqueue(benchmark)
+    cluster.benchmark_run_id = run.id
+    run.phase, run.started_at = "waiting", utcnow()
+    db.session.commit()
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_run_status.return_value = (TFStatus.APPLIED, False)
+    tf.get_apply_timestamps.return_value = (None, None)
+    runner.advance_run(run.id)
+    assert run.outcome is None
+    assert run.target_reached_at is None
+    assert run.duration_seconds is None
+    with freeze_time(run.started_at + timedelta(hours=3)):
+        runner.advance_run(run.id)
+    assert run.outcome == "timed_out"
+    assert run.target_reached_at is None
 
 
 def test_statistics_compare_only_runs_with_current_success_criterion(app, benchmark):
@@ -614,6 +676,7 @@ def test_statistics_compare_only_runs_with_current_success_criterion(app, benchm
         run = benchmarks.enqueue(benchmark)
         run.phase, run.active_benchmark_id = "complete", None
         run.applied_at = utcnow()
+        run.apply_started_at = run.applied_at if criterion == "build_completed" else None
         run.outcome = outcome
         run.commit_sha, run.repository = "same-sha", "org/repo"
         run.target_reached_at = run.applied_at + timedelta(seconds=seconds) if seconds else None
@@ -716,6 +779,7 @@ def test_comparison_groups_use_full_commit_and_criterion_preserving_unknown_runs
         run.phase, run.active_benchmark_id = "complete", None
         run.requested_at = utcnow() + timedelta(seconds=index)
         run.applied_at = utcnow()
+        run.apply_started_at = run.applied_at if criterion == "build_completed" else None
         run.outcome, run.commit_sha, run.repository = outcome, sha, "org/repo"
         run.target_reached_at = run.applied_at + timedelta(seconds=seconds) if seconds else None
         # Identical specifications with different SHAs must still stay separate.
@@ -817,6 +881,48 @@ def test_interrupted_apply_is_not_replayed_and_cluster_edits_are_blocked(benchma
     apply.assert_not_called()
     with pytest.raises(InvalidUsageException, match="managed by its benchmark"):
         cluster_lifecycle.claim_background_task(cluster)
+
+
+def test_legacy_build_observations_are_preserved_but_not_compared_with_execution(app, benchmark):
+    benchmark.success_criterion = "build_completed"
+    old = benchmarks.enqueue(benchmark)
+    old.phase, old.active_benchmark_id, old.outcome = "complete", None, "successful"
+    old.applied_at = datetime(2026, 9, 20, 22, 0, 59)
+    old.target_reached_at = datetime(2026, 9, 20, 22, 17, 2)
+    old.repository, old.commit_sha = "org/repo", "same-commit"
+    db.session.commit()
+    new = benchmarks.enqueue(benchmark)
+    new.phase, new.active_benchmark_id, new.outcome = "complete", None, "successful"
+    new.apply_started_at = datetime(2026, 9, 21, 22, 16, 34)
+    new.target_reached_at = datetime(2026, 9, 21, 22, 17, 53)
+    new.repository, new.commit_sha = old.repository, old.commit_sha
+    db.session.commit()
+    report = app.test_client().get(f"/api/benchmarks/{benchmark.id}", headers=OWNER_HEADERS).get_json()
+    assert report["timing"]["count"] == 1
+    assert report["timing"]["average_seconds"] == 79
+    assert report["total_runs"] == 2
+    assert old.target_reached_at == datetime(2026, 9, 20, 22, 17, 2)
+    assert old.duration_seconds is None
+    legacy = next(row for row in report["runs"] if row["id"] == old.id)
+    assert legacy["target_reached_at"] == "2026-09-20T22:17:02Z"
+    assert legacy["apply_started_at"] is None
+    assert legacy["duration_seconds"] is None
+
+
+def test_apply_timing_migration_preserves_historical_timestamps():
+    migration = importlib.import_module("migrations.versions.0017_benchmark_apply_timing")
+    with create_engine("sqlite://").begin() as connection:
+        connection.execute(text("CREATE TABLE benchmark_run (id INTEGER PRIMARY KEY, applied_at DATETIME, target_reached_at DATETIME)"))
+        connection.execute(text("INSERT INTO benchmark_run VALUES (1, '2026-09-20 22:00:59', '2026-09-20 22:17:02')"))
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            assert connection.execute(text("SELECT applied_at, target_reached_at, apply_started_at FROM benchmark_run")).one() == (
+                "2026-09-20 22:00:59", "2026-09-20 22:17:02", None,
+            )
+            migration.downgrade()
+        assert connection.execute(text("SELECT applied_at, target_reached_at FROM benchmark_run")).one() == (
+            "2026-09-20 22:00:59", "2026-09-20 22:17:02",
+        )
 
 
 def test_migration_preserves_existing_usage():
@@ -952,6 +1058,34 @@ def test_scheduler_launches_isolated_steps_and_stops_them_on_shutdown(app, bench
     assert popen.call_args.args[0][1:] == ["-m", "mchub.services.benchmark_runner", "--step", run_id, "--parent", str(os.getpid())]
     process.terminate.assert_called_once()
     process.wait.assert_called_once_with(timeout=5)
+
+
+def test_scheduler_allows_late_build_completion_check_to_finish(app, benchmark, mocker):
+    from threading import Event
+    benchmark.success_criterion = "build_completed"
+    run = benchmarks.enqueue(benchmark)
+    run.phase, run.started_at = "waiting", utcnow() - timedelta(hours=3)
+    db.session.commit()
+    stop = Event()
+    ticks = [100]
+    def wait(_):
+        if ticks[0] == 100:
+            ticks[0] += 2  # Process startup and the completion request take >1s.
+        else:
+            stop.set()
+    mocker.patch.object(stop, "wait", side_effect=wait)
+    mocker.patch.object(runner, "Event", return_value=stop)
+    mocker.patch.object(runner, "create_app", return_value=app)
+    mocker.patch.object(runner.signal, "signal")
+    mocker.patch.object(runner, "schedule_due")
+    mocker.patch.object(runner.time, "monotonic", side_effect=lambda: ticks[0])
+    process = mocker.Mock()
+    process.poll.return_value = None
+    popen = mocker.patch.object(runner.subprocess, "Popen", return_value=process)
+    error = mocker.patch.object(runner, "record_error")
+    runner.main()
+    popen.assert_called_once()
+    error.assert_not_called()  # Do not time out before reading Terraform's finish.
 
 
 def test_membership_and_hub_admin_status_do_not_grant_benchmark_access(app, benchmark, cluster):

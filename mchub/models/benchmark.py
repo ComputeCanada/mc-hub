@@ -45,6 +45,7 @@ class BenchmarkRun(db.Model):
     requested_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     started_at = db.Column(db.DateTime)
     applied_at = db.Column(db.DateTime)
+    apply_started_at = db.Column(db.DateTime)
     healthy_at = db.Column(db.DateTime)
     target_reached_at = db.Column(db.DateTime)
     finished_at = db.Column(db.DateTime)
@@ -59,7 +60,13 @@ class BenchmarkRun(db.Model):
     repository = db.Column(db.String)
 
     @property
+    def measurement_started_at(self):
+        # Historical build observations have no Terraform execution start and
+        # must not be mixed into execution-time comparisons.
+        return self.apply_started_at if self.success_criterion == "build_completed" else self.applied_at
+
+    @property
     def duration_seconds(self):
-        if self.applied_at and self.target_reached_at:
-            return (self.target_reached_at - self.applied_at).total_seconds()
+        if self.measurement_started_at and self.target_reached_at:
+            return (self.target_reached_at - self.measurement_started_at).total_seconds()
         return None

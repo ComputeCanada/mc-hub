@@ -55,22 +55,34 @@ benchmark cleanup.
 
 ## Timing and results
 
-A successful measurement begins when MC Hub receives Terraform's apply acceptance
-and ends when it first observes the run's selected target state. Build benchmarks
-succeed when the deployment's Terraform apply completes, without waiting for service
-health. Healthy benchmarks wait for all configured health checks to pass. Cleanup
-begins after the selected target is reached, or after failure or timeout. The dashboard
-shows mean, median, nearest-rank P95, success rate, a duration trend, and individual
-run details. Polling records first observation, not the exact instant the target
-state was reached. The benchmark scheduler polls every 10 seconds, with
-additional process startup and remote API latency; the usage observer can also
-record readiness.
+**Build completed** measures Terraform Cloud's apply `started-at` to `finished-at`
+for the original deployment run. These timestamps come from the
+[Applies API](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/applies),
+not the worker's observation time. Queueing, planning, worker polling delays, and
+later service health checks are excluded from this duration. The locally recorded
+apply acceptance remains available separately for diagnostics. Missing or invalid
+Terraform timestamps are retried until the run deadline; no local timestamp is
+substituted. A plan that finishes without an apply fails the benchmark because it
+does not measure a deployment.
+
+**Provisioning completed (healthy)** measures MC Hub's apply acceptance to its
+first observation that all configured health checks pass. The scheduler polls
+every 10 seconds, with additional process startup and remote API latency; the usage
+observer can also record readiness. This criterion retains observation-based timing.
+
+Cleanup begins after the selected target is reached, or after failure or timeout.
+The maximum run time still includes planning and queueing. A build completed before
+the deadline succeeds even if the worker observes it later. The dashboard shows
+mean, median, nearest-rank P95, success rate, a duration trend, and individual run
+details. Historical build results without a Terraform apply start retain their
+original timestamps in history but do not enter timing aggregates or trends.
 
 Failed and timed-out attempts are included in the success-rate denominator but not
 in duration aggregates. Cancelled queued runs are excluded from that denominator.
-When an apply response is lost or a process dies before recording acceptance, the
-run may succeed with unknown duration; no start time is invented. Results retain
-their original timing after later health changes or teardown.
+When an apply response is lost or a process dies before recording acceptance,
+healthy runs may succeed with unknown duration; no start time is invented. Build
+runs can still be measured using Terraform's execution timestamps. Results retain
+their recorded timing after later health changes or teardown.
 
 The dashboard's **Commit and success criterion** selector groups results by the
 full Git commit SHA, repository, and success criterion. Each group's summary covers
@@ -103,7 +115,7 @@ Changed deployment settings are written to a new commit on the next run. The fir
 deployment of a commit imports it through the VCS tag; subsequent deployments use
 Terraform's [existing configuration version](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/run#create-a-run)
 to create a new run with automatic apply disabled. The worker explicitly applies
-that new plan and measures its acceptance as before. Historical results retain
+that new plan and records its acceptance separately from execution. Historical results retain
 their original commit, Terraform run, and timings. The saved commit is pinned;
 external edits to the repository do not change an unchanged benchmark's deployment.
 
@@ -128,7 +140,9 @@ through the cluster API, and are excluded from the general expiration worker.
 The scheduler runs in the existing supervised background container. It executes up
 to four lifecycle operations concurrently in isolated processes, prioritizing
 cleanup and readiness checks over new creation. Each operation has a five-minute
-watchdog, bounded further by the run deadline while deploying. A stalled operation
+watchdog, bounded further by the run deadline while deploying. Build completion
+checks retain the full watchdog window to verify Terraform timestamps after a
+deadline has passed. A stalled operation
 is terminated locally and moves to cleanup; remote Terraform work may continue and
 is reconciled before resource deletion. Per-benchmark file locks prevent simultaneous
 operations, and operation processes exit if their scheduler parent dies. Interrupted
@@ -141,7 +155,7 @@ responses into results.
 
 ## Deployment
 
-Apply migrations through `0016` before starting updated web and worker containers.
+Apply migrations through `0017` before starting updated web and worker containers.
 Existing runs keep their original names, measurements, and per-run cleanup policy.
 Existing reusable integrations are assigned to their benchmark. Definitions without
 completed setup must be saved before their next run. Future runs reserve the
@@ -150,6 +164,9 @@ Migration `0016` retains the inputs and Git commit of the prepared configuration
 Existing benchmarks render and retain a commit on their first run after upgrading.
 Historical SHAs are not rewritten or merged; older runs that each created a different
 commit remain separate groups.
+Migration `0017` adds the Terraform apply-start timestamp. Historical build timing
+is not backfilled automatically; those runs remain visible but are excluded from
+execution-time comparisons. Healthy results are unchanged.
 An older definition with a conflicting or overlong name must be edited before its
 next run. Historical repositories and workspaces are not adopted or renamed.
 Compose's initialization service runs `flask db upgrade`.
