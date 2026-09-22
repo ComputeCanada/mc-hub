@@ -40,7 +40,7 @@ class TerraformCloudMock:
     def get_run_apply_log(self, run_id):
         return None
 
-    def get_run_plan_log_json(self, run_id):
+    def get_run_plan_log_json(self, run_id, *, allow_errored=False):
         return {"MOCK": "PLAN_LOG"}
 
     def get_run_status(self, run_id):

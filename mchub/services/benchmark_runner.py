@@ -116,7 +116,9 @@ def cleanup(run, orm):
         return
     cluster = MagicCastle(orm)
     if orm.tfcloud_run.run_id and cluster.plan is None:
-        plan = get_terraform_cloud().get_run_plan_log_json(orm.tfcloud_run.run_id)
+        # Initialization failures produce no plan JSON. They must not prevent
+        # cleanup, which independently verifies state before removing a cluster.
+        plan = get_terraform_cloud().get_run_plan_log_json(orm.tfcloud_run.run_id, allow_errored=True)
         if plan is not None:
             cluster.plan = plan
     status = cluster.status

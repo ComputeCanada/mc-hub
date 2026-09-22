@@ -497,6 +497,23 @@ def test_get_run_plan_log_json_not_finished(tf_cloud_client, mock_request):
     mock_request.assert_called_once()  # Only the first request should run
 
 
+def test_errored_plan_only_allows_missing_output_for_cleanup(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(
+        200, {"data": {"id": "plan-failed", "attributes": {"status": "errored"}}},
+    )
+    with pytest.raises(TerraformCloudException, match="Plan return error"):
+        tf_cloud_client.get_run_plan_log_json("run-failed")
+    mock_request.reset_mock()
+    assert tf_cloud_client.get_run_plan_log_json("run-failed", allow_errored=True) is None
+    mock_request.assert_called_once()
+
+
+def test_cleanup_plan_lookup_still_raises_api_errors(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(503)
+    with pytest.raises(TerraformCloudException):
+        tf_cloud_client.get_run_plan_log_json("run-failed", allow_errored=True)
+
+
 def test_get_tf_state_finalized_success(tf_cloud_client, mock_request):
     """Tests successful retrieval of the state JSON when state is finalized."""
     state_download_url = "https://state-storage.com/state-123.json"

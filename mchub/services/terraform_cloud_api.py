@@ -508,11 +508,14 @@ class TerraformCloud:
                 additional_details=f"{run_id=}, error: {res.text}",
             )
 
-    def get_run_plan_log_json(self, run_id) -> Optional[dict]:
+    def get_run_plan_log_json(self, run_id, *, allow_errored=False) -> Optional[dict]:
+        """Read a finished plan; cleanup may accept missing output from a failed plan."""
         url = f"{self.BASE_URL}/runs/{run_id}/plan"
         res = self._request("GET", url)
         if res.status_code == 200:
             if res.json()["data"]["attributes"]["status"] == "errored":
+                if allow_errored:
+                    return None
                 raise TerraformCloudException(
                     "Plan return error",
                     additional_details=f"{run_id=}, error: {res.text}",

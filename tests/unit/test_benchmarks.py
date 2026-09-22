@@ -351,6 +351,39 @@ def test_legacy_run_keeps_per_run_cleanup(benchmark, cluster, mocker):
     assert run.phase == "complete"
 
 
+@pytest.mark.parametrize("undeployed", [True, False])
+def test_cleanup_without_plan_after_terraform_failure(benchmark, cluster, mocker, undeployed):
+    run = benchmarks.enqueue(benchmark)
+    run.phase, run.outcome = "cleanup", "failed"
+    cluster.benchmark_run_id = run.id
+    cluster.status = Status.PLAN_ERROR
+    cluster.undeployed = undeployed
+    cluster.tfcloud_workspace = "ws-failed"
+    cluster.tfcloud_run.run_id = "run-failed"
+    cluster.tfcloud_run.plan = None
+    db.session.commit()
+    mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud")
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_run_plan_log_json.return_value = None
+    tf.get_run_status.return_value = (TFStatus.ERRORED, False)
+    perform = mocker.patch.object(runner, "perform")
+
+    runner.advance_run(run.id)
+
+    tf.get_run_plan_log_json.assert_called_once_with("run-failed", allow_errored=True)
+    assert run.outcome == "failed"
+    if undeployed:
+        tf.verify_workspace_empty.assert_called_once_with("ws-failed")
+        assert run.phase == "complete"
+        assert run.active_benchmark_id is None
+        assert cluster.status == Status.NOT_DEPLOYED
+        perform.assert_not_called()
+    else:
+        assert run.phase == "cleanup"
+        assert run.active_benchmark_id == benchmark.id
+        perform.assert_called_once_with(cluster, runner.lifecycle.plan_teardown, cluster.hostname, runner.STEP_TIMEOUT - 10)
+
+
 def test_unverified_workspace_blocks_cleanup_and_next_run(benchmark, cluster, mocker):
     run = benchmarks.enqueue(benchmark)
     run.phase, run.outcome = "cleanup", "successful"
