@@ -263,3 +263,52 @@ new setting. Existing AWS execution settings are not changed by project edits.
 Agent pool fields are absent from all project forms, including AWS editing. The
 project API rejects `agent_pool_name` supplied by any user, including hub admins.
 Agent pool configuration is not returned by the cloud-list API.
+
+## External service status
+
+MC-Hub displays an advisory banner when GitHub or Terraform Cloud reports an
+incident affecting monitored components. The background-worker service polls
+public feeds every 60 seconds and saves snapshots in the shared database.
+`GET /api/service-status` uses normal API authentication and reads those snapshots
+without contacting providers. Data becomes stale after three minutes without a
+successful check. Run `flask db upgrade` before starting the updated services;
+the Compose initialize service does this automatically.
+
+By default, MC-Hub watches GitHub API Requests, Git Operations and Webhooks through
+GitHub's Statuspage summary API, and HCP Terraform through HashiCorp's RSS feed.
+The optional `service_status_providers` configuration replaces that default list.
+Use an empty list to disable monitoring, or `enabled: false` to disable one entry.
+For example, this configuration monitors only Terraform Cloud:
+
+```json
+{
+  "service_status_providers": [
+    {
+      "id": "terraform_cloud",
+      "name": "Terraform Cloud",
+      "adapter": "hashicorp_rss",
+      "enabled": true,
+      "feed_url": "https://status.hashicorp.com/feed.rss",
+      "status_url": "https://status.hashicorp.com/",
+      "components": ["HCP Terraform"]
+    }
+  ]
+}
+```
+
+Each provider needs a unique stable ID, display name, HTTPS feed and status-page
+URLs, adapter and nonempty component list. `statuspage` accepts component IDs or
+exact names; `hashicorp_rss` matches exact names in the affected-components list.
+Other Statuspage providers can be added through configuration. Other feed formats
+need a parser in `mchub/services/service_status.py` and an adapter name in the
+configuration schema; the endpoint, database and banner accept any number of
+providers without changes.
+
+RSS status is an incident advisory, not a complete component health check.
+Unclassified incidents are logged for operator review and do not trigger a banner.
+Resolved incidents and completed maintenance clear their warnings. Monitoring-phase
+incidents remain visible. Previously active RSS incidents missing from subsequent
+feeds remain visible as unconfirmed until explicit resolution is received. Scheduled
+future maintenance does not trigger a disruption warning. Parser/network failures
+preserve the previous snapshot, and missing or stale information is labelled in the
+banner. No cluster actions are blocked by these advisories.

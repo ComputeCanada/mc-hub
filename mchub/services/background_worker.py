@@ -12,7 +12,7 @@ from ..configuration.env import DATABASE_PATH
 from .worker_logging import configure_worker_logging
 
 logger = logging.getLogger(__name__)
-MODULES = ("mchub.services.usage_monitor", "mchub.services.cull_expired_cluster", "mchub.services.benchmark_runner")
+MODULES = ("mchub.services.usage_monitor", "mchub.services.cull_expired_cluster", "mchub.services.benchmark_runner", "mchub.services.service_status_monitor")
 
 
 class Supervisor:

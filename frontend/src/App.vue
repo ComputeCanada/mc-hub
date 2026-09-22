@@ -7,6 +7,7 @@
         <v-spacer />
         <account-dropdown />
       </v-app-bar>
+      <service-status-banner />
       <v-container style="height: 100%">
         <router-view />
       </v-container>
@@ -15,10 +16,11 @@
 </template>
 <script>
 import { benchmarkAccess, refreshBenchmarkAccess } from "@/services/benchmarkAccess";
+import ServiceStatusBanner from "@/components/ui/ServiceStatusBanner";
 import AccountDropdown from "@/components/ui/AccountDropdown";
 
 export default {
-  components: { AccountDropdown },
+  components: { AccountDropdown, ServiceStatusBanner },
   data: () => ({ benchmarkAccess }),
   watch: {
     $route: { immediate: true, handler: refreshBenchmarkAccess },

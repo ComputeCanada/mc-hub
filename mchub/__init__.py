@@ -19,6 +19,7 @@ def create_app(db_path=None):
     from .resources.usage_api import UsageAPI
     from .resources.benchmark_api import BenchmarkAPI
     from .resources.tfcloud_proxy import tfcloud_proxy
+    from .resources.service_status_api import ServiceStatusAPI
 
     if db_path is None:
         db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
@@ -40,6 +41,8 @@ def create_app(db_path=None):
         app,
         origins=get_config()["cors_allowed_origins"],
     )
+
+    app.add_url_rule("/api/service-status", view_func=ServiceStatusAPI.as_view("service_status"), methods=["GET"])
 
     benchmark_view = BenchmarkAPI.as_view("benchmarks")
     app.add_url_rule("/api/benchmarks", view_func=benchmark_view, defaults={"benchmark_id": None}, methods=["GET", "POST"])
