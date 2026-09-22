@@ -1,5 +1,6 @@
 """Public status feed adapters and shared advisory snapshots."""
 import json
+import hashlib
 import logging
 import re
 from datetime import datetime, timezone
@@ -23,6 +24,9 @@ DEFAULT_PROVIDERS = [
          status_url="https://status.hashicorp.com/", components=["HCP Terraform"]),
 ]
 STALE_SECONDS = 180
+# Only retain fingerprints from the latest valid feed. Warnings may recur after
+# a worker restart, but unchanged incidents do not generate one per poll.
+_rss_unclassified = {}
 
 
 def providers():
@@ -103,28 +107,37 @@ def hashicorp_rss(payload, provider):
     channel = root.find("channel")
     if root.tag != "rss" or channel is None:
         raise ValueError("Invalid RSS feed")
-    incidents, seen = [], []
+    incidents, seen, unclassified = [], [], {}
     for item in channel.findall("item"):
         identity = item.findtext("guid") or item.findtext("link")
         if not identity:
             raise ValueError("Incident has no identity")
         description = FeedDescription()
         description.feed(item.findtext("description") or "")
-        names = [re.sub(r"\s*\([^()]*\)\s*$", "", c).strip() for c in description.components]
-        if not names:
-            logger.warning("Unclassified HashiCorp incident: %s", identity)
-        if not set(names).intersection(provider["components"]):
-            continue
         match = re.search(r"Status:[ \t]*([A-Za-z_ ]+)", "".join(description.text))
         status = match.group(1).strip().lower() if match else ""
-        if status not in {"resolved", "complete", "completed", "investigating", "identified", "monitoring", "scheduled", "in progress", "in_progress", "verifying"}:
+        if status in {"resolved", "complete", "completed", "scheduled"}:
+            # Resolution must clear a previously tracked incident even when its
+            # latest update no longer includes affected-component metadata.
+            seen.append(identity)
+            continue
+        names = [re.sub(r"\s*\([^()]*\)\s*$", "", c).strip() for c in description.components]
+        if not names:
+            unclassified[identity] = hashlib.sha256(ElementTree.tostring(item)).hexdigest()
+        if not set(names).intersection(provider["components"]):
+            continue
+        if status not in {"investigating", "identified", "monitoring", "in progress", "in_progress", "verifying"}:
             raise ValueError("Unknown RSS incident status")
         seen.append(identity)
-        if status in {"resolved", "complete", "completed", "scheduled"}:
-            continue
         incidents.append(dict(id=identity, title=item.findtext("title") or "Service incident",
             status=status, url=safe_url(item.findtext("link"), provider["status_url"]),
             updated_at=item.findtext("pubDate"), confirmed=True))
+    key = (provider["id"], provider["feed_url"])
+    previous = _rss_unclassified.get(key, {})
+    for identity, fingerprint in unclassified.items():
+        if previous.get(identity) != fingerprint:
+            logger.warning("Unclassified HashiCorp incident: %s", identity)
+    _rss_unclassified[key] = unclassified
     return dict(reported_status="disruption" if incidents else "no_incidents",
                 affected_components=provider["components"] if incidents else [], incidents=incidents,
                 seen_ids=seen)

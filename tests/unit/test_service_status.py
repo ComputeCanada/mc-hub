@@ -25,11 +25,52 @@ def app(config_mock):
 
 
 def rss(state="Investigating", component="HCP Terraform", identity="one"):
+    components = f"<b>Affected components</b><ul><li>{component} (Under maintenance)</li></ul>" if component else ""
     return f'''<rss><channel><item><guid>{identity}</guid><title>Delayed runs</title>
     <link>https://status.hashicorp.com/incidents/one</link>
     <description><![CDATA[<b>Status: {state}</b><br/>Some explanation.
-    <b>Affected components</b><ul><li>{component} (Under maintenance)</li></ul>]]></description>
+    {components}]]></description>
     </item></channel></rss>'''.encode()
+
+
+@pytest.mark.parametrize("state", ["Resolved", "Complete", "Completed", "Scheduled"])
+def test_rss_inactive_without_components_is_silent(state, caplog):
+    result = status.hashicorp_rss(rss(state, component=None), status.DEFAULT_PROVIDERS[1])
+    assert result["seen_ids"] == ["one"]
+    assert result["reported_status"] == "no_incidents"
+    assert not caplog.records
+
+
+def test_rss_unclassified_warnings_only_for_new_or_changed_entries(mocker, caplog):
+    mocker.patch.object(status, "_rss_unclassified", {})
+    provider = status.DEFAULT_PROVIDERS[1]
+    status.hashicorp_rss(rss(component=None), provider)
+    status.hashicorp_rss(rss(component=None), provider)
+    assert len(caplog.records) == 1
+    status.hashicorp_rss(rss("Monitoring", component=None), provider)
+    assert len(caplog.records) == 2
+    status.hashicorp_rss(rss("Monitoring", component=None, identity="two"), provider)
+    assert len(caplog.records) == 3
+    status.hashicorp_rss(rss("Resolved", component=None, identity="two"), provider)
+    assert len(caplog.records) == 3
+    assert status._rss_unclassified[(provider["id"], provider["feed_url"])] == {}
+
+
+def test_rss_resolution_without_components_clears_tracked_incident(app, mocker):
+    provider = status.DEFAULT_PROVIDERS[1]
+    mocker.patch.object(status, "providers", return_value=[provider])
+    fetch = mocker.patch.object(status, "fetch", side_effect=lambda p: status.hashicorp_rss(rss(), p))
+    status.poll_once()
+    assert status.read_status()["providers"][0]["reported_status"] == "disruption"
+    # Missing classification on an active update must not falsely clear it.
+    fetch.side_effect = lambda p: status.hashicorp_rss(rss(component=None), p)
+    status.poll_once()
+    assert status.read_status()["providers"][0]["incidents"][0]["confirmed"] is False
+    fetch.side_effect = lambda p: status.hashicorp_rss(rss("Resolved", component=None), p)
+    status.poll_once()
+    result = status.read_status()["providers"][0]
+    assert result["reported_status"] == "no_incidents"
+    assert result["incidents"] == []
 
 
 def test_rss_filters_and_resolves():
