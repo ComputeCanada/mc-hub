@@ -67,7 +67,7 @@ def create_app(db_path=None):
         methods=["POST"],
     )
 
-    for action in ("teardown", "rebuild", "discard-teardown"):
+    for action in ("teardown", "rebuild", "discard-teardown", "retry-plan"):
         app.add_url_rule(
             f"/api/magic-castles/<string:hostname>/{action}",
             view_func=magic_castle_view,

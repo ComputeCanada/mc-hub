@@ -413,3 +413,37 @@ def test_discard_teardown_rejects_a_build_plan(client, mocker):
     assert response.status_code >= 400
     discard.assert_not_called()
     assert cluster.tfcloud_run.run_id == "build-run"
+
+
+def test_retry_plan_is_accepted_without_applying(client, app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    orm.status = Status.BUILD_ERROR
+    orm.terraform_failure = {'run_id': orm.tfcloud_run.run_id, 'timeout': True, 'phase': 'apply', 'is_destroy': False}
+    db.session.commit()
+    mocker.patch.object(MagicCastle, '_update_status_from_tf_cloud')
+    background = mocker.patch.object(MagicCastleAPI, '_run_in_background')
+    apply = mocker.patch.object(MagicCastle, 'apply')
+    response = client.post(f'/api/magic-castles/{EXISTING_HOSTNAME}/retry-plan')
+    assert response.status_code == 202
+    background.assert_called_once()
+    apply.assert_not_called()
+
+
+def test_retry_plan_rejects_non_timeout_failure(client, app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    orm.status = Status.BUILD_ERROR
+    orm.terraform_failure = {'run_id': orm.tfcloud_run.run_id, 'timeout': False}
+    db.session.commit()
+    mocker.patch.object(MagicCastle, '_update_status_from_tf_cloud')
+    background = mocker.patch.object(MagicCastleAPI, '_run_in_background')
+    response = client.post(f'/api/magic-castles/{EXISTING_HOSTNAME}/retry-plan')
+    assert response.status_code == 400
+    background.assert_not_called()

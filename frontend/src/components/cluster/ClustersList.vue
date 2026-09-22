@@ -102,6 +102,13 @@
                   Check progress
                 </v-btn>
                 <div v-else>
+                  <v-btn
+                    v-if="['build_error', 'destroy_error', 'plan_error'].includes(item.status)"
+                    color="error"
+                    text
+                    :to="`/clusters/${item.hostname}`"
+                    >View failure details</v-btn
+                  >
                   <v-btn color="secondary" text :to="`/clusters/${item.hostname}`">
                     <v-icon class="mr-2">mdi-pencil</v-icon>
                     Edit

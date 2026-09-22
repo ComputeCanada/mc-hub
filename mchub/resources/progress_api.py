@@ -10,7 +10,7 @@ class ProgressAPI(ApiView):
         orm = db.session.execute(
             db.select(MagicCastleORM).filter_by(hostname=hostname)
         ).scalar_one_or_none()
-        if orm and orm.project in user.projects:
+        if orm and orm.project in user.projects and user.can_access_cluster(orm):
             magic_castle = MagicCastle(orm)
         else:
             return {"status": ClusterStatusCode.NOT_FOUND}
@@ -31,6 +31,8 @@ class ProgressAPI(ApiView):
                 "stateful": stateful,
                 "undeployed": magic_castle.orm.undeployed,
                 "creation_step": orm.creation_step,
+                "failure": orm.terraform_failure,
+                "run_id": magic_castle.tfcloud_run.run_id,
             }
         else:
             return {
@@ -40,5 +42,7 @@ class ProgressAPI(ApiView):
                 "stateful": stateful,
                 "undeployed": magic_castle.orm.undeployed,
                 "creation_step": orm.creation_step,
+                "failure": orm.terraform_failure,
+                "run_id": magic_castle.tfcloud_run.run_id,
                 "progress": progress,
             }

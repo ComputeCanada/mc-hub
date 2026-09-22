@@ -355,3 +355,66 @@ describe("declining teardown", () => {
     expect(context.showError).toHaveBeenCalledWith("Discard failed");
   });
 });
+
+it("loads a saved failure on the first visit without needing a status transition", async () => {
+  const failure = { run_id: "run-failed", phase: "apply", diagnostic: "Error: timeout", timeout: true };
+  MagicCastleRepository.getStatus.mockResolvedValue({
+    data: {
+      status: ClusterStatusCode.BUILD_ERROR,
+      failure,
+      run_id: "run-failed",
+    },
+  });
+  MagicCastleRepository.getState.mockResolvedValue({ data: {} });
+  const wrapper = shallowMount(
+    { ...ClusterDisplay, created() {} },
+    {
+      propsData: { hostname: "test.example.com" },
+      stubs: [
+        "v-container",
+        "v-card",
+        "v-card-title",
+        "v-card-text",
+        "v-list",
+        "v-list-item",
+        "v-list-item-content",
+        "v-list-item-subtitle",
+        "v-list-item-title",
+        "v-divider",
+      ],
+    }
+  );
+  await wrapper.vm.fetchStatus();
+  expect(wrapper.vm.failure).toEqual(failure);
+  expect(wrapper.findComponent({ name: "ClusterFailure" }).props("previous")).toBe(false);
+  expect(wrapper.vm.errorDialog).toBe(false);
+  wrapper.destroy();
+});
+
+it("requires confirmation for a retry even when the new plan has no resource changes", async () => {
+  MagicCastleRepository.getStatus.mockResolvedValue({ data: { status: ClusterStatusCode.CREATED, progress: [] } });
+  MagicCastleRepository.apply.mockClear();
+  const wrapper = shallowMount(
+    { ...ClusterDisplay, created() {} },
+    {
+      propsData: { hostname: "test.example.com" },
+      stubs: [
+        "v-container",
+        "v-card",
+        "v-card-title",
+        "v-card-text",
+        "v-list",
+        "v-list-item",
+        "v-list-item-content",
+        "v-list-item-subtitle",
+        "v-list-item-title",
+        "v-divider",
+      ],
+    }
+  );
+  const planCreator = jest.fn().mockResolvedValue({ status: 202 });
+  await wrapper.vm.showPlanConfirmationDialog({ retry: true, planCreator });
+  expect(wrapper.vm.clusterModificationDialog).toBe(true);
+  expect(MagicCastleRepository.apply).not.toHaveBeenCalled();
+  wrapper.destroy();
+});

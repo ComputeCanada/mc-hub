@@ -8,6 +8,15 @@
         <v-card-title v-if="stateful" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
         <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
         <v-card-text>
+          <cluster-failure
+            v-if="failure || failureStatus"
+            :failure="failure"
+            :status="status"
+            :hostname="hostname"
+            :previous="!!failure && failure.run_id !== runId"
+            :busy="busy || clusterPlanRunningDialog"
+            @retry="retryPlan"
+          />
           <v-list v-if="existingCluster">
             <v-list-item>
               <v-list-item-content>
@@ -123,6 +132,7 @@ import StatusChip from "@/components/ui/StatusChip";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
+import ClusterFailure from "@/components/cluster/ClusterFailure";
 import { isEqual } from "lodash";
 
 const POLL_STATUS_INTERVAL = 1000;
@@ -134,6 +144,7 @@ export default {
   components: {
     StatusChip,
     ClusterEditor,
+    ClusterFailure,
     ConfirmDialog,
     MessageDialog,
     ClusterResources,
@@ -178,6 +189,8 @@ export default {
       applyRequested: false,
       stateful: false,
       undeployed: false,
+      failure: null,
+      runId: null,
     };
   },
   async created() {
@@ -201,6 +214,11 @@ export default {
     this.stopStatusPolling();
   },
   computed: {
+    failureStatus() {
+      return [ClusterStatusCode.BUILD_ERROR, ClusterStatusCode.DESTROY_ERROR, ClusterStatusCode.PLAN_ERROR].includes(
+        this.status
+      );
+    },
     creationStepIndex() {
       return this.creationSteps.findIndex((step) => step.id === this.creationStep);
     },
@@ -249,7 +267,9 @@ export default {
       if (!applyWasRequested && this.applyRequested) {
         return;
       }
-      const { status, health, stateful, progress, undeployed } = response.data;
+      const { status, health, stateful, progress, undeployed, failure, run_id } = response.data;
+      this.failure = failure || null;
+      this.runId = run_id || null;
       if (
         ![
           ClusterStatusCode.CREATED,
@@ -300,16 +320,13 @@ export default {
         // this.successDialog = true;
         // break;
         case ClusterStatusCode.BUILD_ERROR:
-          this.errorDialog = true;
-          this.showError("An error occurred while creating the cluster.");
           break;
         case ClusterStatusCode.PROVISIONING_ERROR:
           this.errorDialog = true;
           this.showError("An error occurred while provisioning the cluster.");
           break;
         case ClusterStatusCode.DESTROY_ERROR:
-          this.errorDialog = true;
-          this.showError("An error occurred while tearing down resources.");
+          break;
       }
     },
     showError(message) {
@@ -417,8 +434,19 @@ export default {
         this.startStatusPolling();
       } catch (e) {
         this.applyRequested = false;
-        this.showError(e.response.data.message);
+        this.showError(
+          e.response?.data?.message ||
+            "Could not confirm whether the apply request was accepted. Refresh to check its status."
+        );
       }
+    },
+    async retryPlan() {
+      await this.showPlanConfirmationDialog({
+        planCreator: () => MagicCastleRepository.retryPlan(this.hostname),
+        destroy: this.failure?.is_destroy === true,
+        retry: true,
+      });
+      this.startStatusPolling();
     },
     async goToClustersList() {
       await this.$router.push("/");
@@ -438,7 +466,7 @@ export default {
         const planPromise = options.planCreator();
         planPromise.catch(() => {});
         try {
-          if (options.modification) {
+          if (options.modification || options.retry) {
             // Wait for the update to be accepted before treating an unchanged
             // deployment status as a completed metadata-only update.
             await planPromise;
@@ -482,7 +510,7 @@ export default {
           this.showError(message);
         } else if (options.destroy === true) {
           this.clusterDestructionDialog = true;
-        } else if (this.resourcesChanges.length !== 0) {
+        } else if (this.resourcesChanges.length !== 0 || options.retry) {
           this.clusterModificationDialog = true;
         } else {
           this.applyCluster();

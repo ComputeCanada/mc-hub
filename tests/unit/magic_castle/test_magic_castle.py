@@ -200,7 +200,7 @@ def test_progress_api_reports_creation_step(app):
     orm.creation_step = "terraform_workspace"
     db.session.commit()
 
-    result = ProgressAPI().get(SimpleNamespace(projects=[orm.project]), orm.hostname)
+    result = ProgressAPI().get(SimpleNamespace(projects=[orm.project], can_access_cluster=lambda cluster: True), orm.hostname)
 
     assert result["creation_step"] == "terraform_workspace"
 
@@ -859,3 +859,80 @@ def test_cluster_can_be_deleted_after_missing_github_template(app, mocker):
     user = SimpleNamespace(projects=[cluster.project], can_access_cluster=lambda orm: True)
     assert MagicCastleAPI().delete(user, cluster.hostname) == ({}, 204)
     assert db.session.get(MagicCastleORM, cluster_id) is None
+
+
+def test_failed_apply_is_persisted_without_browser_and_survives_new_run(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode as TFStatus
+    from mchub.models.terraform_cloud import TerraformCloudRunORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    cluster.orm.undeployed = False
+    hostname = cluster.hostname
+    remote = mocker.patch('mchub.models.magic_castle.magic_castle.get_tf_status_cache', return_value=(TFStatus.ERRORED, False))
+    get_failure = mocker.patch.object(get_terraform_cloud(), 'get_run_failure', create=True, return_value={
+        'phase': 'apply', 'diagnostic': 'Error: timed out', 'timeout': True,
+        'diagnostic_available': True, 'failed_at': '2026-09-22T12:00:00Z',
+    })
+    assert cluster.status == Status.BUILD_ERROR
+    failure = cluster.orm.terraform_failure
+    db.session.remove()
+    cluster = MagicCastle(db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname)))
+    assert cluster.status == Status.BUILD_ERROR
+    assert cluster.orm.terraform_failure == failure
+    get_failure.assert_called_once()
+    cluster.tfcloud_run = TerraformCloudRunORM(run_id='run-retry')
+    db.session.commit()
+    remote.return_value = (TFStatus.PLANNING, False)
+    assert cluster.status == Status.PLAN_RUNNING
+    assert cluster.orm.terraform_failure == failure
+    remote.return_value = (TFStatus.APPLIED, False)
+    assert cluster.status in (Status.PROVISIONING_RUNNING, Status.PROVISIONING_SUCCESS)
+    assert cluster.orm.terraform_failure is None
+
+
+def test_retry_uses_fresh_plan_for_failed_configuration(app, mocker):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    cluster.orm.terraform_failure = {'is_destroy': False}
+    sha = cluster.tfcloud_run.commit_sha
+    fresh = mocker.patch.object(get_terraform_cloud(), 'plan_from_commit', create=True, return_value='run-fresh')
+    create_plan = mocker.patch.object(MagicCastle, 'create_plan')
+    apply = mocker.patch.object(get_terraform_cloud(), 'apply_run')
+    cluster.plan_retry()
+    fresh.assert_called_once_with(cluster.tfcloud_workspace, sha, message='Retry after application timeout')
+    create_plan.assert_called_once_with(github_sha=sha, run_id='run-fresh')
+    apply.assert_not_called()
+
+
+@pytest.mark.parametrize('timeout, run_id, allowed', [(True, 'MOCK_RUN_ID', True), (False, 'MOCK_RUN_ID', False), (True, 'old-run', False)])
+def test_retry_requires_current_timeout_failure(app, mocker, timeout, run_id, allowed):
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    cluster = MagicCastle()
+    cluster.plan_creation(deepcopy(VALID_CLUSTER_CONFIGURATION))
+    mocker.patch.object(MagicCastle, 'status', new=property(lambda self: Status.BUILD_ERROR))
+    cluster.orm.terraform_failure = {'timeout': timeout, 'run_id': run_id}
+    if allowed:
+        cluster.validate_retry_plan()
+    else:
+        with pytest.raises(InvalidUsageException):
+            cluster.validate_retry_plan()
+
+
+def test_progress_failure_respects_cluster_access(app):
+    from types import SimpleNamespace
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.progress_api import ProgressAPI
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname='buildplanning.magic-castle.cloud'))
+    orm.terraform_failure = {'diagnostic': 'private diagnostic'}
+    result = ProgressAPI().get(SimpleNamespace(projects=[orm.project], can_access_cluster=lambda cluster: False), orm.hostname)
+    assert result == {'status': 'not_found'}

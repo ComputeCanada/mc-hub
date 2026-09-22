@@ -196,6 +196,7 @@ class MagicCastleORM(db.Model):
 
     status = db.Column(db.Enum(ClusterStatusCode), default=ClusterStatusCode.NOT_FOUND)
     creation_step = db.Column(db.String(32))
+    terraform_failure = db.Column(db.JSON)
     deployment_started_at = db.Column(db.DateTime())
     undeployed = db.Column(db.Boolean(), nullable=False, default=False, server_default="0")
     created = db.Column(db.DateTime(), default=func.now())
@@ -352,6 +353,30 @@ class MagicCastle:
                 status = ClusterStatusCode.from_tfcloudstatus(
                     tf_status, is_destroy
                 )
+                if tf_status == TFCloudStatusCode.ERRORED:
+                    failure = self.orm.terraform_failure
+                    if not failure or failure.get("run_id") != self.tfcloud_run.run_id or not failure.get("diagnostic_available"):
+                        observed_at = (
+                            failure.get("observed_at")
+                            if failure and failure.get("run_id") == self.tfcloud_run.run_id
+                            else datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        )
+                        try:
+                            details = get_terraform_cloud().get_run_failure(self.tfcloud_run.run_id)
+                        except (TerraformCloudException, requests.RequestException):
+                            details = None
+                        if details:
+                            failure = {**details, "run_id": self.tfcloud_run.run_id,
+                                       "is_destroy": is_destroy, "observed_at": observed_at}
+                        elif not failure or failure.get("run_id") != self.tfcloud_run.run_id:
+                            failure = {"run_id": self.tfcloud_run.run_id, "phase": "unknown",
+                                       "is_destroy": is_destroy, "diagnostic": "", "timeout": False,
+                                       "diagnostic_available": False, "observed_at": observed_at}
+                        self.orm.terraform_failure = failure
+                    if failure.get("phase") == "apply":
+                        status = ClusterStatusCode.DESTROY_ERROR if is_destroy else ClusterStatusCode.BUILD_ERROR
+                elif tf_status == TFCloudStatusCode.APPLIED:
+                    self.orm.terraform_failure = None
                 # Terraform Cloud can report a completed plan before its plan
                 # JSON is available. Keep clients polling until the plan has
                 # actually been persisted locally.
@@ -370,7 +395,7 @@ class MagicCastle:
                     self.status = status
 
             # Fetch the apply_log
-            if self.plan and not self.apply_url:
+            if self.plan and not self.apply_url and tf_status != TFCloudStatusCode.ERRORED:
                 tf = get_terraform_cloud()
                 apply_url = tf.get_run_apply_log(self.tfcloud_run.run_id)
                 logger.info(f"Update apply log for {self.tfcloud_run.run_id=}")
@@ -474,6 +499,8 @@ class MagicCastle:
         self.orm.tfcloud_run.apply_log_url = apply_url
 
     def get_progress(self):
+        if self.orm.status in (ClusterStatusCode.PLAN_ERROR, ClusterStatusCode.BUILD_ERROR, ClusterStatusCode.DESTROY_ERROR):
+            return None
         if self.apply_url and self.plan:
             res = requests.get(self.apply_url)
             apply_log = ""
@@ -868,6 +895,7 @@ class MagicCastle:
         self.orm.applied_config = None
         self.orm.deployment_started_at = None
         self.orm.creation_step = None
+        self.orm.terraform_failure = None
         self.tfcloud_run = TerraformCloudRunORM()
         self.status = ClusterStatusCode.NOT_DEPLOYED
         db.session.commit()
@@ -885,6 +913,30 @@ class MagicCastle:
         # Writing the saved variables creates a fresh commit/run even when unchanged.
         sha = get_github_storage().write(self._get_var_tf(), self.hostname)
         self.create_plan(github_sha=sha, timeout=timeout)
+
+    def validate_retry_plan(self):
+        status = self.status
+        failure = self.orm.terraform_failure or {}
+        if (status not in (ClusterStatusCode.BUILD_ERROR, ClusterStatusCode.DESTROY_ERROR)
+                or failure.get("run_id") != self.tfcloud_run.run_id
+                or not failure.get("timeout")):
+            raise InvalidUsageException("Only a failed apply with a timeout can be retried here")
+
+    def plan_retry(self):
+        # The HTTP handler validates before claiming the background task.
+        if self.orm.terraform_failure["is_destroy"]:
+            self.plan_destruction()
+        else:
+            sha = self.tfcloud_run.commit_sha
+            if sha:
+                run_id = get_terraform_cloud().plan_from_commit(
+                    self.tfcloud_workspace, sha, message="Retry after application timeout"
+                )
+                if run_id is None:
+                    raise InvalidUsageException("The previous configuration could not be found")
+                self.create_plan(github_sha=sha, run_id=run_id)
+            else:
+                raise InvalidUsageException("The previous configuration commit is unavailable")
 
     @staticmethod
     def benchmark_configuration(data):

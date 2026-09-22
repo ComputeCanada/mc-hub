@@ -710,3 +710,35 @@ def test_discard_preserves_plans_when_resources_remain(tf_cloud_client, mock_req
     with pytest.raises(InvalidUsageException, match="Tear down all resources"):
         tf_cloud_client.discard_workspace_plans("ws-existing")
     mock_request.assert_called_once_with("GET", f"{tf_cloud_client.BASE_URL}/workspaces/ws-existing/runs")
+
+
+@pytest.mark.parametrize('phase', ['apply', 'plan'])
+def test_failure_diagnostic_uses_failed_stage(tf_cloud_client, mock_request, mocker, phase):
+    responses = [] if phase == 'apply' else [mock_response(200, {'data': {'attributes': {'status': 'pending'}}})]
+    responses.append(mock_response(200, {'data': {'attributes': {
+        'status': 'errored', 'log-read-url': 'https://logs.example/signed',
+        'status-timestamps': {'errored-at': '2026-09-22T12:00:00Z'},
+    }}}))
+    mock_request.side_effect = responses
+    download = mocker.patch('mchub.services.terraform_cloud_api.requests.get',
+                           return_value=mock_response(200, text='Error: file provisioner error\ntimeout - last error: SSH authentication failed'))
+    failure = tf_cloud_client.get_run_failure('run-failed')
+    assert failure['phase'] == phase
+    assert failure['timeout'] is (phase == 'apply')
+    assert failure['failed_at'] == '2026-09-22T12:00:00Z'
+    assert failure['diagnostic_available'] is True
+    assert 'log-read-url' not in failure
+    download.assert_called_once_with('https://logs.example/signed', timeout=15)
+
+
+@pytest.mark.parametrize('download_status', [200, 403])
+def test_failure_without_diagnostic(tf_cloud_client, mock_request, mocker, download_status):
+    mock_request.return_value = mock_response(200, {'data': {'attributes': {
+        'status': 'errored', 'log-read-url': 'https://logs.example/signed',
+    }}})
+    mocker.patch('mchub.services.terraform_cloud_api.requests.get', return_value=mock_response(download_status, text=''))
+    failure = tf_cloud_client.get_run_failure('run-failed')
+    assert failure['phase'] == 'apply'
+    assert failure['diagnostic'] == ''
+    assert failure['diagnostic_available'] is (download_status == 200)
+    assert failure['timeout'] is False

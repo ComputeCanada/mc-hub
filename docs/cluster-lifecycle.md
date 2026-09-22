@@ -22,3 +22,24 @@ Destroy removes only an empty cluster definition. The backend checks all pages o
 Apply database migration `0006` before running the updated application. It adds `undeployed` and `deployment_started_at`; existing clusters retain their current status and creation date. Rebuild provisioning timeouts use the new deployment start time.
 
 Deployment history and background readiness measurements are described in [Service adoption statistics](usage-statistics.md).
+
+### Terraform failures
+
+The cluster stores its latest Terraform failure with the run ID, failed stage,
+provider diagnostic, and failure timestamp (or detection time when Terraform
+provides no timestamp). Status checks capture failures even when the deployment
+page was closed. The cluster list links to persistent failure details.
+
+A new attempt retains the previous failure as historical context until an apply
+succeeds or teardown completes. Error diagnostics are displayed as text; log
+URLs and complete execution logs are not sent to the browser. Missing diagnostics
+and temporarily unavailable diagnostics have separate fallback messages.
+
+Only explicit timeouts during application offer **Review a new plan**. This
+creates a new Terraform run from the failed configuration (or a new teardown
+plan), never reapplies the failed plan, and always requires confirmation before
+applying, including when no resource changes are reported. Other errors display
+Terraform's diagnostic and offer copying details for an administrator.
+
+Migration `0018` adds the nullable failure record and must be applied before
+running the updated application.
