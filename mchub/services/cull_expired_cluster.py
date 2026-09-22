@@ -9,6 +9,7 @@ from ..exceptions.invalid_usage_exception import BusyClusterException
 from ..models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..models.magic_castle.cluster_status_code import ClusterStatusCode as Status
 from . import cluster_lifecycle as lifecycle
+from .worker_logging import configure_worker_logging
 
 logger = logging.getLogger(__name__)
 SWEEP_INTERVAL = 3600
@@ -47,6 +48,8 @@ def expire_cluster(orm, now):
 
 def poll_once():
     ids = list(db.session.scalars(db.select(MagicCastleORM.id).where(
+        MagicCastleORM.benchmark_run_id.is_(None),
+        MagicCastleORM.benchmark_id.is_(None),
         MagicCastleORM.expiration_date.is_not(None), MagicCastleORM.undeployed.is_(False),
     )))
     for cluster_id in ids:
@@ -77,7 +80,7 @@ def recover_interrupted_expiration():
 
 
 def main(interval=SWEEP_INTERVAL):
-    logging.basicConfig(level=logging.INFO)
+    configure_worker_logging()
     app = create_app()
     with app.app_context():
         recover_interrupted_expiration()

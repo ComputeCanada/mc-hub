@@ -181,6 +181,31 @@ describe("ClusterEditor", () => {
     expect(clusterEditorWrapperExisting.vm.specs.guest_passwd.length).toBe(0);
   });
 
+  it("validates the full benchmark internal hostname and locks its identity", async () => {
+    const wrapper = await getDefaultClusterEditorWrapper(false);
+    await wrapper.setProps({ benchmarkMode: true, identityLocked: true });
+    const name = wrapper
+      .findAllComponents({ name: "v-text-field" })
+      .wrappers.find((field) => field.props("label") === "Cluster name");
+    const domain = wrapper
+      .findAllComponents({ name: "v-select" })
+      .wrappers.find((field) => field.props("label") === "Domain");
+    expect(name.props("readonly")).toBe(true);
+    expect(domain.props("readonly")).toBe(true);
+    const remaining = 63 - `.int.${wrapper.vm.specs.domain}`.length;
+    wrapper.vm.specs.cluster_name = "b".repeat(remaining);
+    await wrapper.vm.$nextTick();
+    expect(
+      name
+        .props("rules")
+        .every((rule) => (typeof rule === "function" ? rule(wrapper.vm.specs.cluster_name) === true : rule === true))
+    ).toBe(true);
+    wrapper.vm.specs.cluster_name += "b";
+    await wrapper.vm.$nextTick();
+    expect(name.props("rules")).toContain("Cluster name + .int. + domain must be at most 63 characters.");
+    wrapper.destroy();
+  });
+
   it("defaults to the first vetted Magic Castle version", async () => {
     const specs = cloneDeep(DEFAULT_MAGIC_CASTLE);
     specs.mc_version = null;

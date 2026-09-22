@@ -1,4 +1,6 @@
 import pytest
+from datetime import datetime
+from copy import deepcopy
 from unittest.mock import patch, Mock
 import requests
 
@@ -43,6 +45,81 @@ def mock_response(status_code, json_data=None, text=""):
         # Avoid unexpected calls to .json() if not needed
         mock.json.side_effect = AttributeError("json() not available")
     return mock
+
+
+@pytest.fixture
+def completed_apply():
+    return {
+        "data": {
+            "id": "run-measured", "type": "runs",
+            "attributes": {"status": "applied", "is-destroy": False},
+            "relationships": {"apply": {"data": {"id": "apply-measured", "type": "applies"}}},
+        },
+        "included": [{
+            "id": "apply-measured", "type": "applies",
+            "attributes": {"status": "finished", "status-timestamps": {
+                "started-at": "2026-09-20T22:16:34+00:00",
+                "finished-at": "2026-09-20T22:17:53+00:00",
+            }},
+        }],
+    }
+
+
+@pytest.mark.parametrize("offset", ["Z", "+00:00", "-04:00"])
+def test_apply_timestamps_use_linked_apply_and_normalize_utc(tf_cloud_client, mock_request, completed_apply, offset):
+    hour = "18" if offset == "-04:00" else "22"
+    completed_apply["included"][0]["attributes"]["status-timestamps"] = {
+        "started-at": f"2026-09-20T{hour}:16:34{offset}",
+        "finished-at": f"2026-09-20T{hour}:17:53{offset}",
+    }
+    unrelated = deepcopy(completed_apply["included"][0])
+    unrelated["id"] = "other-apply"
+    unrelated["attributes"]["status-timestamps"] = {"started-at": "wrong", "finished-at": "wrong"}
+    completed_apply["included"].insert(0, unrelated)
+    mock_request.return_value = mock_response(200, completed_apply)
+    assert tf_cloud_client.get_apply_timestamps("run-measured") == (
+        datetime(2026, 9, 20, 22, 16, 34), datetime(2026, 9, 20, 22, 17, 53),
+    )
+    mock_request.assert_called_once_with("GET", f"{tf_cloud_client.BASE_URL}/runs/run-measured", params={"include": "apply"})
+
+
+@pytest.mark.parametrize("timestamps", [
+    {}, {"started-at": "2026-09-20T22:16:34Z"},
+    {"started-at": "bad", "finished-at": "2026-09-20T22:17:53Z"},
+    {"started-at": None, "finished-at": "2026-09-20T22:17:53Z"},
+    {"started-at": "2026-09-20T22:18:00Z", "finished-at": "2026-09-20T22:17:53Z"},
+    {"started-at": "2026-09-20T22:16:34", "finished-at": "2026-09-20T22:17:53"},
+])
+def test_apply_timestamps_never_invent_missing_or_invalid_times(tf_cloud_client, mock_request, completed_apply, timestamps):
+    completed_apply["included"][0]["attributes"]["status-timestamps"] = timestamps
+    mock_request.return_value = mock_response(200, completed_apply)
+    assert tf_cloud_client.get_apply_timestamps("run-measured") == (None, None)
+
+
+@pytest.mark.parametrize("case", ["different_run", "destroy", "applying", "no_apply", "unlinked", "missing", "running"])
+def test_apply_timestamps_require_completed_original_deployment(tf_cloud_client, mock_request, completed_apply, case):
+    if case == "different_run":
+        completed_apply["data"]["id"] = "another-run"
+    elif case == "destroy":
+        completed_apply["data"]["attributes"]["is-destroy"] = True
+    elif case == "applying":
+        completed_apply["data"]["attributes"]["status"] = "applying"
+    elif case == "no_apply":
+        completed_apply["data"]["relationships"]["apply"]["data"] = None
+    elif case == "unlinked":
+        completed_apply["included"][0]["id"] = "other-apply"
+    elif case == "missing":
+        completed_apply["included"] = []
+    else:
+        completed_apply["included"][0]["attributes"]["status"] = "running"
+    mock_request.return_value = mock_response(200, completed_apply)
+    assert tf_cloud_client.get_apply_timestamps("run-measured") == (None, None)
+
+
+def test_apply_timestamps_report_api_failure(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(403)
+    with pytest.raises(TerraformCloudException, match="apply timestamps"):
+        tf_cloud_client.get_apply_timestamps("run-measured")
 
 
 def test_terraform_cloud_variable_to_dict():
@@ -103,6 +180,42 @@ def test_destroy_plan_failure(tf_cloud_client, mock_request):
         tf_cloud_client.destroy_plan("ws-fail")
 
     assert "Could not destroy workspace" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("previous_destroy", [True, False])
+def test_benchmark_commit_creates_a_fresh_deployment_of_verified_configuration(tf_cloud_client, mock_request, previous_destroy):
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"id": "old-run", "attributes": {"is-destroy": previous_destroy},
+            "relationships": {"configuration-version": {"data": {"id": "cv-matching"}}}}]}),
+        mock_response(200, {"data": {"attributes": {"commit-sha": "saved-commit"}}}),
+        mock_response(201, {"data": {"id": "new-deployment"}}),
+    ]
+    assert tf_cloud_client.plan_from_commit("ws-benchmark", "saved-commit") == "new-deployment"
+    args, kwargs = mock_request.call_args
+    assert args == ("POST", tf_cloud_client.runs_url)
+    data = kwargs["json"]["data"]
+    assert data["attributes"]["is-destroy"] is False
+    assert data["attributes"]["auto-apply"] is False
+    assert data["attributes"]["plan-only"] is False
+    assert data["relationships"]["configuration-version"]["data"]["id"] == "cv-matching"
+    assert data["relationships"]["workspace"]["data"]["id"] == "ws-benchmark"
+
+
+def test_benchmark_commit_requires_import_when_not_found(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(200, {"data": []})
+    assert tf_cloud_client.plan_from_commit("ws", "new-commit") is None
+    mock_request.assert_called_once()
+
+
+@pytest.mark.parametrize("status,sha", [(200, "wrong-commit"), (403, "saved-commit")])
+def test_benchmark_commit_never_plans_an_unverified_configuration(tf_cloud_client, mock_request, status, sha):
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"relationships": {"configuration-version": {"data": {"id": "cv-wrong"}}}}]}),
+        mock_response(status, {"data": {"attributes": {"commit-sha": sha}}}),
+    ]
+    with pytest.raises(TerraformCloudException, match="verify"):
+        tf_cloud_client.plan_from_commit("ws", "saved-commit")
+    assert all(call.args[0] == "GET" for call in mock_request.call_args_list)
 
 
 @pytest.mark.parametrize(
@@ -226,6 +339,31 @@ def test_set_variable_set_failure(tf_cloud_client, mock_request):
         tf_cloud_client.set_project_variable_set("proj-id", "proj-name", variables)
 
     assert "Could not set variable set" in str(excinfo.value)
+
+
+def test_workspace_variable_retry_updates_existing_and_creates_missing(tf_cloud_client, mock_request):
+    mock_request.side_effect = [
+        mock_response(200, {"data": [{"id": "var-env", "attributes": {"key": "pool", "category": "env"}}], "links": {"next": "page-2"}}),
+        mock_response(200, {"data": [{"id": "var-pool", "attributes": {"key": "pool", "category": "terraform"}}]}),
+        mock_response(200), mock_response(201),
+    ]
+    tf_cloud_client.upsert_workspace_variable_set("ws-test", [
+        TerraformCloudVariable("pool", "[]", False, hcl=True, category="terraform"),
+        TerraformCloudVariable("tfc_eyaml_key", "secret", True, category="terraform"),
+    ])
+    calls = mock_request.call_args_list
+    assert [call.args[0] for call in calls] == ["GET", "GET", "PATCH", "POST"]
+    assert calls[1].kwargs["params"]["page[number]"] == 2
+    assert calls[2].args[1].endswith("/workspaces/ws-test/vars/var-pool")
+    assert calls[2].kwargs["json"]["data"]["attributes"]["value"] == "[]"
+    assert calls[3].kwargs["json"]["data"]["attributes"]["key"] == "tfc_eyaml_key"
+
+
+def test_workspace_variables_are_not_created_when_lookup_fails(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(503)
+    with pytest.raises(TerraformCloudException, match="inspect workspace variables"):
+        tf_cloud_client.upsert_workspace_variable_set("ws-test", [TerraformCloudVariable("pool", "[]", False)])
+    mock_request.assert_called_once()
 
 
 def test_get_run_status_success(tf_cloud_client, mock_request):
@@ -357,6 +495,23 @@ def test_get_run_plan_log_json_not_finished(tf_cloud_client, mock_request):
 
     assert plan_json is None
     mock_request.assert_called_once()  # Only the first request should run
+
+
+def test_errored_plan_only_allows_missing_output_for_cleanup(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(
+        200, {"data": {"id": "plan-failed", "attributes": {"status": "errored"}}},
+    )
+    with pytest.raises(TerraformCloudException, match="Plan return error"):
+        tf_cloud_client.get_run_plan_log_json("run-failed")
+    mock_request.reset_mock()
+    assert tf_cloud_client.get_run_plan_log_json("run-failed", allow_errored=True) is None
+    mock_request.assert_called_once()
+
+
+def test_cleanup_plan_lookup_still_raises_api_errors(tf_cloud_client, mock_request):
+    mock_request.return_value = mock_response(503)
+    with pytest.raises(TerraformCloudException):
+        tf_cloud_client.get_run_plan_log_json("run-failed", allow_errored=True)
 
 
 def test_get_tf_state_finalized_success(tf_cloud_client, mock_request):

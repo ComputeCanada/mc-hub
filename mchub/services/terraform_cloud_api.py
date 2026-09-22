@@ -1,5 +1,6 @@
 from typing import Optional, List
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
 
@@ -354,6 +355,32 @@ class TerraformCloud:
                     additional_details=f"{workspace_id=}, variable={variable.name}, error: {res.text}",
                 )
 
+    def upsert_workspace_variable_set(self, workspace_id, variables):
+        """Update only the supplied variables, including after partial setup."""
+        existing = {}
+        page = 1
+        url = f"{self.BASE_URL}/workspaces/{workspace_id}/vars"
+        while True:
+            response = self._request("GET", url, params={"page[number]": page, "page[size]": 100})
+            if response.status_code != 200:
+                raise TerraformCloudException("Could not inspect workspace variables")
+            payload = response.json()
+            for variable in payload["data"]:
+                attrs = variable["attributes"]
+                existing[(attrs["key"], attrs["category"])] = variable["id"]
+            if not (payload.get("links") or {}).get("next"):
+                break
+            page += 1
+        for variable in variables:
+            variable_id = existing.get((variable.name, variable.category))
+            if variable_id is None:
+                self.set_workspace_variable_set(workspace_id, [variable])
+            else:
+                data = {**variable.to_dict(), "id": variable_id}
+                response = self._request("PATCH", f"{url}/{variable_id}", json={"data": data})
+                if response.status_code != 200:
+                    raise TerraformCloudException("Could not update workspace variable")
+
     def get_run_status(self, run_id):
         url = f"{self.BASE_URL}/runs/{run_id}"
         res = self._request("GET", url)
@@ -372,6 +399,42 @@ class TerraformCloud:
                 "Could not find trigger run",
                 additional_details=f"{run_id=}, error: {res.text}",
             )
+
+    def get_apply_timestamps(self, run_id):
+        """Return the completed deployment apply's UTC execution interval.
+
+        Missing/incomplete timestamps remain unknown; callers must never replace
+        them with the time they happened to poll. Match the apply relationship so
+        another included resource cannot supply this deployment's measurement.
+        """
+        response = self._request("GET", f"{self.BASE_URL}/runs/{run_id}", params={"include": "apply"})
+        if response.status_code != 200:
+            raise TerraformCloudException("Could not retrieve Terraform apply timestamps")
+        payload = response.json()
+        run = payload["data"]
+        if (run["id"] != run_id or run["attributes"].get("is-destroy") is not False
+                or run["attributes"]["status"] != "applied"):
+            return None, None
+        apply_id = ((run.get("relationships", {}).get("apply", {}).get("data")) or {}).get("id")
+        if not apply_id:
+            return None, None
+        for included in payload.get("included", []):
+            if included.get("type") != "applies" or included.get("id") != apply_id:
+                continue
+            attrs = included["attributes"]
+            if attrs.get("status") != "finished":
+                return None, None
+            timestamps = attrs.get("status-timestamps") or {}
+            try:
+                started = datetime.fromisoformat(timestamps["started-at"])
+                finished = datetime.fromisoformat(timestamps["finished-at"])
+                if started.tzinfo is None or finished.tzinfo is None or finished < started:
+                    return None, None
+            except (KeyError, TypeError, ValueError):
+                return None, None
+            return (started.astimezone(timezone.utc).replace(tzinfo=None),
+                    finished.astimezone(timezone.utc).replace(tzinfo=None))
+        return None, None
 
     def get_run_by_commit(self, workspace_id, github_sha):
         url = f"{self.BASE_URL}/workspaces/{workspace_id}/runs"
@@ -395,6 +458,37 @@ class TerraformCloud:
                 additional_details=f"{workspace_id=}, error: {res.text}",
             )
 
+    def plan_from_commit(self, workspace_id, github_sha):
+        """Create a new deployment from this exact commit, or request VCS import.
+
+        Never return an old deployment or destroy run just because its SHA matches.
+        Explicitly bind the new run to the matching configuration version.
+        """
+        response = self._request("GET", f"{self.BASE_URL}/workspaces/{workspace_id}/runs",
+                                 params={"search[commit]": github_sha, "page[size]": 1})
+        if response.status_code != 200:
+            raise TerraformCloudException("Could not find the benchmark configuration version")
+        runs = response.json()["data"]
+        if not runs:
+            return None
+        version_id = runs[0]["relationships"]["configuration-version"]["data"]["id"]
+        # Verify the full SHA rather than trusting the commit search's matching.
+        ingress = self._request("GET", f"{self.BASE_URL}/configuration-versions/{version_id}/ingress-attributes")
+        if ingress.status_code != 200 or ingress.json()["data"]["attributes"].get("commit-sha") != github_sha:
+            raise TerraformCloudException("Could not verify the benchmark configuration commit")
+        payload = {"data": {
+            "type": "runs",
+            "attributes": {"message": "Benchmark deployment", "is-destroy": False, "auto-apply": False, "plan-only": False},
+            "relationships": {
+                "workspace": {"data": {"type": "workspaces", "id": workspace_id}},
+                "configuration-version": {"data": {"type": "configuration-versions", "id": version_id}},
+            },
+        }}
+        response = self._request("POST", self.runs_url, json=payload)
+        if response.status_code != 201:
+            raise TerraformCloudException("Could not create the benchmark deployment run")
+        return response.json()["data"]["id"]
+
     def get_run_apply_log(self, run_id) -> str:
         url = f"{self.BASE_URL}/runs/{run_id}/apply"
         res = self._request("GET", url)
@@ -414,11 +508,14 @@ class TerraformCloud:
                 additional_details=f"{run_id=}, error: {res.text}",
             )
 
-    def get_run_plan_log_json(self, run_id) -> Optional[dict]:
+    def get_run_plan_log_json(self, run_id, *, allow_errored=False) -> Optional[dict]:
+        """Read a finished plan; cleanup may accept missing output from a failed plan."""
         url = f"{self.BASE_URL}/runs/{run_id}/plan"
         res = self._request("GET", url)
         if res.status_code == 200:
             if res.json()["data"]["attributes"]["status"] == "errored":
+                if allow_errored:
+                    return None
                 raise TerraformCloudException(
                     "Plan return error",
                     additional_details=f"{run_id=}, error: {res.text}",

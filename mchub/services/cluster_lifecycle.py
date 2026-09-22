@@ -21,6 +21,8 @@ def get_cluster(hostname):
 
 
 def claim_background_task(orm, owner=None):
+    if (orm.benchmark_id or orm.benchmark_run_id) and owner != "benchmark":
+        raise InvalidUsageException("This cluster is managed by its benchmark.", status_code=403)
     if orm.status == Status.BACKGROUND_TASK_RUNNING or MagicCastle(orm).is_busy:
         raise BusyClusterException
     result = db.session.execute(

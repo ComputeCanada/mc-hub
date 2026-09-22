@@ -165,7 +165,7 @@ class GithubStorage:
 
         return f"{self.organization}/{repo_name}"
 
-    def write(self, tf_data, hostname, filename="terraform.tfvars.json"):
+    def write(self, tf_data, hostname, filename="terraform.tfvars.json", *, trigger_run=True):
         # Check if the file exists in the repository
         repo_name = self._get_repo_name(hostname)
         org = self.github.get_organization(self.organization)
@@ -191,8 +191,25 @@ class GithubStorage:
             )
 
         sha = commit["commit"].sha
-        repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
+        if trigger_run:
+            repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
         return sha
+
+    def trigger_run(self, hostname, sha):
+        """Import a saved benchmark commit; retries reuse its existing tag."""
+        repo = self.github.get_organization(self.organization).get_repo(self._get_repo_name(hostname))
+        ref = f"tags/apply-{sha[:10]}"
+        try:
+            existing = repo.get_git_ref(ref)
+        except GithubException as error:
+            if error.status != 404:
+                raise
+            repo.create_git_ref(ref=f"refs/{ref}", sha=sha)
+            return True
+        else:
+            if existing.object.sha != sha:
+                raise GithubStorageException("The deployment tag points to a different commit")
+            return False
 
     def archive_repo(self, hostname, *, missing_ok=False):
         repo_name = self._get_repo_name(hostname)

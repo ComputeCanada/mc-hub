@@ -5,6 +5,7 @@ import github
 import requests
 import json
 import logging
+from copy import deepcopy
 from cachetools import cached, TTLCache
 
 import base64
@@ -175,6 +176,14 @@ class MagicCastleORM(db.Model):
     usage_id = db.Column(db.String(36), nullable=False, default=new_id)
     usage_legacy = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
     usage_repository = db.Column(db.String)
+    benchmark_run_id = db.Column(db.String(36))
+    benchmark_id = db.Column(db.String(36))
+    benchmark_configuration = db.Column(db.JSON)
+    benchmark_commit_sha = db.Column(db.String(64))
+    __table_args__ = (
+        db.Index("uq_magiccastle_benchmark_run", "benchmark_run_id", unique=True),
+        db.Index("uq_magiccastle_benchmark", "benchmark_id", unique=True),
+    )
 
     tfcloud_workspace = db.Column(db.String(256))
     cluster_token = db.Column(db.String(64), unique=True)
@@ -268,8 +277,16 @@ class MagicCastle:
 
     @property
     def age(self):
+        if self.orm.undeployed:
+            return "—"
+        lifetime = usage.current_lifetime(self.orm)
+        # Deployment timestamps also reset on updates; the lifetime retains the
+        # start of the current instance across those applies.
+        started_at = lifetime.started_at if lifetime else self.orm.deployment_started_at
+        if started_at is None:
+            return "—"
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        delta = now - self.orm.created
+        delta = now - started_at
         return humanize.naturaldelta(delta)
 
     @property
@@ -582,12 +599,31 @@ class MagicCastle:
         else:
             self.validate_version_unchanged(data)
 
-    def plan_creation(self, data, created_by_user_id=None):
+    def plan_creation(self, data, created_by_user_id=None, benchmark_run_id=None, timeout=None,
+                      reuse_integrations=False, benchmark_id=None, initialize_only=False):
         logger.debug(f"Call <{type(self).__name__}>:plan_creation")
 
         self.validate_creation_version(data)
+        # Reserving names prevents ordinary clusters from taking an idle benchmark's
+        # Terraform workspace name, including before its first deployment.
+        from ..benchmark import Benchmark, BenchmarkRun
+        reserved = db.session.scalar(db.select(Benchmark).filter_by(cluster_name=data["cluster_name"])) if data.get("cluster_name") else None
+        run = db.session.get(BenchmarkRun, benchmark_run_id) if benchmark_run_id else None
+        owner_id = benchmark_id or (run.benchmark_id if run is not None and run.reuse_cluster else None)
+        if reserved is not None and owner_id != reserved.id:
+            raise InvalidUsageException("This cluster name is reserved by a benchmark.", status_code=409)
+        if initialize_only and owner_id is None:
+            raise InvalidUsageException("Only benchmark setup can initialize without a deployment plan.")
+        if reuse_integrations and (owner_id is None or not self.orm.undeployed or not (
+            self.orm.benchmark_id == owner_id or (run is not None and self.orm.benchmark_run_id == run.id)
+        )):
+            raise InvalidUsageException("Only this benchmark's undeployed cluster can reuse its integrations.")
+        original_configuration = deepcopy(data)
+        benchmark_configuration = self.benchmark_configuration(data) if owner_id else None
         self.set_configuration(data)
         self.orm.created_by_user_id = created_by_user_id
+        self.orm.benchmark_run_id = benchmark_run_id
+        self.orm.benchmark_id = owner_id
         self.orm.undeployed = True
         self.orm.status = ClusterStatusCode.PLAN_RUNNING
         self.orm.creation_step = "github_repository"
@@ -597,9 +633,11 @@ class MagicCastle:
         except IntegrityError:
             raise ClusterExistsException
 
-        github_repo_fullname = get_github_storage().create_repo(
-            self.hostname, get_provider_template(self.project.provider)
-        )
+        github_repo_fullname = self.orm.usage_repository if reuse_integrations else None
+        if not github_repo_fullname:
+            github_repo_fullname = get_github_storage().create_repo(
+                self.hostname, get_provider_template(self.project.provider)
+            )
 
         self.orm.usage_repository = github_repo_fullname
         workspace_name = self.config.cluster_name
@@ -607,9 +645,13 @@ class MagicCastle:
         self.orm.creation_step = "terraform_workspace"
         db.session.commit()
         tf = get_terraform_cloud()
-        workspace_id = tf.create_workspace(
-            workspace_name, github_repo_fullname, self.orm.project.tfcloud_project_id
-        )
+        workspace_id = self.orm.tfcloud_workspace if reuse_integrations else None
+        if not workspace_id:
+            workspace_id = tf.create_workspace(
+                workspace_name, github_repo_fullname, self.orm.project.tfcloud_project_id
+            )
+        self.orm.tfcloud_workspace = workspace_id
+        db.session.commit()
         dns_envs = DnsManager(self.domain).get_environment_variables()
         terraform_vars = [TerraformCloudVariable(name=k, value=v, sensitive=True) for k, v in dns_envs.items()]
         terraform_vars.append(
@@ -623,13 +665,18 @@ class MagicCastle:
             TerraformCloudVariable(name="tfc_eyaml_key", value=eyaml_private_key_b64, sensitive=True, category="terraform")
         )
 
-        tf.set_workspace_variable_set(workspace_id, terraform_vars)
+        if reuse_integrations:
+            tf.upsert_workspace_variable_set(workspace_id, terraform_vars)
+        else:
+            tf.set_workspace_variable_set(workspace_id, terraform_vars)
 
         mchub_url = get_config().get("mchub_url")
         if mchub_url:
             self.orm.cluster_token = secrets.token_urlsafe(32)
 
         self.orm.tfcloud_workspace = workspace_id
+        # Encrypt the submitted Puppet entries only after this cluster has a key.
+        self.set_configuration(original_configuration)
 
         logger.info(
             f"{self.hostname}: terraformcloud workspace=<{workspace_id}> created"
@@ -640,9 +687,13 @@ class MagicCastle:
         db.session.commit()
         try:
             var_tf = self._get_var_tf()
-            github_commit = get_github_storage().write(var_tf, self.hostname)
+            if initialize_only:
+                github_commit = get_github_storage().write(var_tf, self.hostname, trigger_run=False)
+            else:
+                github_commit = get_github_storage().write(var_tf, self.hostname)
         except Exception as error:
-            self.delete()
+            if benchmark_run_id is None and owner_id is None:
+                self.delete()
             raise PlanException(
                 "Could not write variables.tf on the storage backend.",
                 additional_details=f"hostname: {self.hostname}, error: {error}",
@@ -651,9 +702,18 @@ class MagicCastle:
             f"{self.hostname}: New commit <{github_commit}> on repo <{github_repo_fullname}>"
         )
 
+        if owner_id:
+            self.orm.benchmark_configuration = benchmark_configuration
+            self.orm.benchmark_commit_sha = github_commit
+            if run is not None:
+                run.commit_sha, run.repository = github_commit, github_repo_fullname
+            db.session.commit()
+        if initialize_only:
+            self.complete_teardown()
+            return
         self.orm.creation_step = "resource_plan"
         db.session.commit()
-        self.create_plan(github_sha=github_commit)
+        self.create_plan(github_sha=github_commit, timeout=timeout)
         db.session.commit()
 
     def plan_modification(self, data, previous_status=None):
@@ -768,6 +828,8 @@ class MagicCastle:
 
             tf = get_terraform_cloud()
             while run_id is None:
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TimeoutError("Timed out waiting for the Terraform run")
                 run_id = tf.get_run_by_commit(self.tfcloud_workspace, github_sha)
                 if run_id is None:
                     time.sleep(10)
@@ -818,11 +880,62 @@ class MagicCastle:
         if self.expiration_date and datetime.date.fromisoformat(self.expiration_date) <= datetime.date.today():
             raise InvalidUsageException("Choose a future expiration date or no expiration before rebuilding")
 
-    def plan_rebuild(self):
+    def plan_rebuild(self, timeout=None):
         self.validate_rebuild()
         # Writing the saved variables creates a fresh commit/run even when unchanged.
         sha = get_github_storage().write(self._get_var_tf(), self.hostname)
-        self.create_plan(github_sha=sha)
+        self.create_plan(github_sha=sha, timeout=timeout)
+
+    @staticmethod
+    def benchmark_configuration(data):
+        """Inputs to the saved Git configuration, excluding form metadata.
+
+        Keep the rendered commit while these inputs are unchanged: regenerating
+        encrypted Puppet values and the proxy token would produce new ciphertext.
+        Result comparisons use the resulting commit SHA, never these inputs.
+        """
+        configuration = deepcopy(data)
+        configuration.pop("cloud", None)  # A benchmark cannot change project.
+        configuration.pop("expiration_date", None)
+        if not configuration.get("availability_zone"):
+            configuration.pop("availability_zone", None)
+        return configuration
+
+    def plan_benchmark_run(self, configuration, timeout=None):
+        """Plan the attached benchmark run using its saved configuration commit."""
+        deadline = time.monotonic() + timeout if timeout is not None else None
+        self.validate_rebuild()
+        inputs = self.benchmark_configuration(configuration)
+        sha = self.orm.benchmark_commit_sha
+        if not sha or json.dumps(inputs, sort_keys=True) != json.dumps(self.orm.benchmark_configuration, sort_keys=True):
+            self.plan_modification(deepcopy(configuration))
+            sha = get_github_storage().write(self._get_var_tf(), self.hostname, trigger_run=False)
+            self.orm.benchmark_configuration = inputs
+            self.orm.benchmark_commit_sha = sha
+            db.session.commit()
+
+        from ..benchmark import BenchmarkRun
+        run = db.session.get(BenchmarkRun, self.orm.benchmark_run_id)
+        run.commit_sha, run.repository = sha, self.orm.usage_repository
+        db.session.commit()
+        # A commit identifies the configuration, not a deployment attempt. Reuse
+        # its imported configuration version but always request a fresh plan.
+        run_id = get_terraform_cloud().plan_from_commit(self.tfcloud_workspace, sha)
+        if run_id is None:
+            # The first deployment imports this commit through the VCS trigger.
+            created = get_github_storage().trigger_run(self.hostname, sha)
+            if not created:
+                # An existing tag may still be importing or its previous run may
+                # not yet be searchable. Never mistake that previous run for this
+                # attempt: wait for the version and request a fresh deployment.
+                while run_id is None:
+                    if deadline is not None and time.monotonic() >= deadline:
+                        raise TimeoutError("Timed out importing the benchmark commit")
+                    run_id = get_terraform_cloud().plan_from_commit(self.tfcloud_workspace, sha)
+                    if run_id is None:
+                        time.sleep(10)
+        remaining = max(0, deadline - time.monotonic()) if deadline is not None else None
+        self.create_plan(github_sha=sha, run_id=run_id, timeout=remaining)
 
     def destroy_empty_cluster(self):
         if self.is_busy:

@@ -9,9 +9,9 @@ def test_failed_child_restarts_with_backoff_without_restarting_peer(mocker):
     for process in (observer, culler, replacement):
         process.poll.return_value = None
     popen = mocker.patch.object(worker.subprocess, "Popen", side_effect=[observer, culler, replacement])
-    supervisor = worker.Supervisor()
+    supervisor = worker.Supervisor(worker.MODULES[:2])
     supervisor.tick()
-    assert [call.args[0][2] for call in popen.call_args_list] == list(worker.MODULES)
+    assert [call.args[0][2] for call in popen.call_args_list] == list(worker.MODULES[:2])
     observer.poll.return_value = 1
     supervisor.tick()
     assert popen.call_count == 2
@@ -31,7 +31,7 @@ def test_spawn_failure_does_not_prevent_other_worker_starting(mocker):
     mocker.patch.object(worker.time, "monotonic", return_value=0)
     peer = mocker.Mock()
     mocker.patch.object(worker.subprocess, "Popen", side_effect=[OSError("spawn failed"), peer])
-    supervisor = worker.Supervisor()
+    supervisor = worker.Supervisor(worker.MODULES[:2])
     supervisor.tick()
     assert supervisor.children[worker.MODULES[0]]["retry_at"] == 1
     assert supervisor.children[worker.MODULES[1]]["process"] is peer
@@ -41,7 +41,7 @@ def test_shutdown_terminates_both_then_kills_slow_child(mocker):
     slow, peer = mocker.Mock(), mocker.Mock()
     slow.poll.return_value = peer.poll.return_value = None
     mocker.patch.object(worker.subprocess, "Popen", side_effect=[slow, peer])
-    supervisor = worker.Supervisor()
+    supervisor = worker.Supervisor(worker.MODULES[:2])
     supervisor.tick()
     def wait(**_):
         peer.terminate.assert_called_once()

@@ -30,6 +30,7 @@ def ensure_lifetime(orm):
         # An existing deployment has an unknown start; never invent historical usage.
         legacy = orm.usage_legacy and not orm.undeployed
         lifetime = UsageLifetime(
+            benchmark_run_id=orm.benchmark_run_id,
             cluster_id=orm.usage_id, active_cluster_id=orm.usage_id, hostname=orm.hostname,
             project_id=orm.project.usage_id, project_name=orm.project.name,
             provider=orm.project.provider, creator=orm.created_by.scoped_id if orm.created_by else None,

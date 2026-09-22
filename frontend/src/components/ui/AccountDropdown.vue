@@ -7,6 +7,9 @@
       </v-btn>
     </template>
     <v-list>
+      <v-list-item v-if="benchmarkAccess.allowed" to="/benchmarks">
+        <v-list-item-title><v-icon class="mr-4">mdi-timer-outline</v-icon>Benchmarks</v-list-item-title>
+      </v-list-item>
       <v-list-item v-if="currentUser.is_admin" to="/usage">
         <v-list-item-title><v-icon class="mr-4">mdi-chart-bar</v-icon>Service adoption</v-list-item-title>
       </v-list-item>
@@ -21,10 +24,12 @@
 </template>
 
 <script>
+import { benchmarkAccess } from "@/services/benchmarkAccess";
 import UserRepository from "@/repositories/UserRepository";
 export default {
   data() {
     return {
+      benchmarkAccess,
       currentUser: { full_name: null, username: null, usertype: "local", public_keys: [], is_admin: false },
     };
   },

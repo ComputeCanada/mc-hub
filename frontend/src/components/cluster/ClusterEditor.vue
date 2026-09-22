@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-form ref="form" v-model="validForm">
+      <slot name="benchmark-fields" />
       <v-subheader>General configuration</v-subheader>
       <v-list class="pt-0">
         <v-list-item>
@@ -19,7 +20,7 @@
               <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
             </v-list-item-content>
           </v-col>
-          <v-col cols="6" class="py-0">
+          <v-col v-if="!benchmarkMode" cols="6" class="py-0">
             <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
               <template v-slot:activator="{ on, attrs }">
                 <v-text-field
@@ -45,7 +46,14 @@
             <v-text-field
               v-model="localSpecs.cluster_name"
               label="Cluster name"
-              :rules="[clusterNameRegexRule]"
+              :readonly="identityLocked"
+              :rules="[clusterNameRegexRule, benchmarkHostnameRule]"
+              :hint="
+                benchmarkMode
+                  ? 'Used exactly as entered for every run. The name and domain are fixed after the first save.'
+                  : undefined
+              "
+              :persistent-hint="benchmarkMode"
               validate-on-blur
             />
           </v-col>
@@ -54,6 +62,7 @@
               v-model="localSpecs.domain"
               :items="getPossibleValues('domain')"
               label="Domain"
+              :readonly="identityLocked"
               :rules="[domainRule]"
             />
           </v-col>
@@ -290,57 +299,59 @@
       </template>
 
       <!-- Networking & security -->
-      <v-subheader>Networking and security</v-subheader>
+      <v-subheader v-if="!benchmarkMode">Networking and security</v-subheader>
       <v-list>
-        <v-list-item>
-          <v-combobox
-            v-model="localSpecs.public_keys"
-            label="SSH Keys"
-            multiple
-            chips
-            append-icon
-            clearable
-            deletable-chips
-            :rules="[publicKeysRule]"
-            hint="Paste a key then press enter. Only the comment section will be displayed."
-          >
-            <template v-slot:selection="data">
-              <v-chip
-                :key="JSON.stringify(data.item)"
-                v-bind="data.attrs"
-                @click:close="data.parent.selectItem(data.item)"
-                close
-                close-icon="mdi-delete"
-              >
-                {{
-                  data.item.split(" ").length > 2
-                    ? data.item.split(" ")[2]
-                    : data.item.slice(0, 15) + "..." + data.item.slice(-5)
-                }}
-              </v-chip>
-            </template>
-          </v-combobox>
-        </v-list-item>
-        <v-list-item>
-          <v-text-field v-model.number="localSpecs.nb_users" type="number" label="Number of guest users" min="0" />
-        </v-list-item>
-        <v-list-item v-if="!stateful">
-          <v-text-field v-model="localSpecs.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click="generateGuestPassword()">
-                <v-icon>mdi-refresh</v-icon>
-              </v-btn>
-            </template>
-            <span>Generate new password</span>
-          </v-tooltip>
-        </v-list-item>
-        <v-list-item v-else>
-          <v-list-item-content>
-            <v-list-item-subtitle>Guest password</v-list-item-subtitle>
-            <v-list-item-title>{{ localSpecs.guest_passwd }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
+        <template v-if="!benchmarkMode">
+          <v-list-item>
+            <v-combobox
+              v-model="localSpecs.public_keys"
+              label="SSH Keys"
+              multiple
+              chips
+              append-icon
+              clearable
+              deletable-chips
+              :rules="[publicKeysRule]"
+              hint="Paste a key then press enter. Only the comment section will be displayed."
+            >
+              <template v-slot:selection="data">
+                <v-chip
+                  :key="JSON.stringify(data.item)"
+                  v-bind="data.attrs"
+                  @click:close="data.parent.selectItem(data.item)"
+                  close
+                  close-icon="mdi-delete"
+                >
+                  {{
+                    data.item.split(" ").length > 2
+                      ? data.item.split(" ")[2]
+                      : data.item.slice(0, 15) + "..." + data.item.slice(-5)
+                  }}
+                </v-chip>
+              </template>
+            </v-combobox>
+          </v-list-item>
+          <v-list-item>
+            <v-text-field v-model.number="localSpecs.nb_users" type="number" label="Number of guest users" min="0" />
+          </v-list-item>
+          <v-list-item v-if="!stateful">
+            <v-text-field v-model="localSpecs.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn icon v-bind="attrs" v-on="on" @click="generateGuestPassword()">
+                  <v-icon>mdi-refresh</v-icon>
+                </v-btn>
+              </template>
+              <span>Generate new password</span>
+            </v-tooltip>
+          </v-list-item>
+          <v-list-item v-else>
+            <v-list-item-content>
+              <v-list-item-subtitle>Guest password</v-list-item-subtitle>
+              <v-list-item-title>{{ localSpecs.guest_passwd }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </template>
         <v-list-group prepend-icon="mdi-script-text-outline">
           <template #activator>
             <v-list-item-content>
@@ -373,8 +384,8 @@
       <!-- Apply and cancel -->
       <div class="text-center">
         <p v-if="!validForm" class="error--text">Some form fields are invalid.</p>
-        <v-btn @click="apply" color="primary" class="ma-2" :disabled="!applyButtonEnabled" large>{{
-          specs.undeployed ? "Save configuration" : "Apply"
+        <v-btn @click="apply" color="primary" class="ma-2" :disabled="!applyButtonEnabled || submitDisabled" large>{{
+          submitLabel || (specs.undeployed ? "Save configuration" : "Apply")
         }}</v-btn>
         <v-btn
           v-if="specs.undeployed"
@@ -389,7 +400,9 @@
           Save any configuration changes before rebuilding. Choose a future expiration date or no expiration. Rebuilding
           creates new resources; deleted data is not restored and connection details may change.
         </p>
-        <v-btn to="/" class="ma-2" :disabled="loading" large outlined color="primary">Cancel</v-btn>
+        <v-btn :to="benchmarkMode ? '/benchmarks' : '/'" class="ma-2" :disabled="loading" large outlined color="primary"
+          >Cancel</v-btn
+        >
       </div>
     </v-form>
   </div>
@@ -423,6 +436,12 @@ export default {
     ResourceUsageDisplay,
   },
   props: {
+    benchmarkMode: Boolean,
+    identityLocked: Boolean,
+    preserveSpecs: Boolean,
+    submitDisabled: Boolean,
+    submitLabel: String,
+    projectIds: Array,
     specs: {
       type: Object,
       required: true,
@@ -554,7 +573,7 @@ export default {
   created() {
     // Declare the optional field before taking the baseline for dirty-form checks.
     if (!("availability_zone" in this.localSpecs)) this.$set(this.localSpecs, "availability_zone", null);
-    if (!this.existingCluster) {
+    if (!this.existingCluster && !this.preserveSpecs) {
       this.localSpecs.cluster_name = generatePetName();
       this.localSpecs.guest_passwd = generatePassword();
     }
@@ -564,9 +583,9 @@ export default {
       Promise.all([user_promise, project_promise]).then((values) => {
         const user = values[0].data;
         const projects = values[1].data;
-        this.projects = projects;
-        if (!this.existingCluster) {
-          const project = this.projects.find((project) => project.id === user.default_project_id);
+        this.projects = this.projectIds ? projects.filter((p) => this.projectIds.includes(p.id)) : projects;
+        if (!this.existingCluster && !this.preserveSpecs) {
+          const project = this.projects.find((project) => project.id === user.default_project_id) || this.projects[0];
           this.localSpecs.cloud.id = project?.id;
           this.localSpecs.cloud.name = project?.name;
           this.localSpecs.public_keys = user.public_keys.filter((key) => key.match(SSH_PUBLIC_KEY_REGEX));
@@ -590,6 +609,13 @@ export default {
     this.$disableUnloadConfirmation();
   },
   computed: {
+    benchmarkHostnameRule() {
+      return (
+        !this.benchmarkMode ||
+        `${this.localSpecs.cluster_name}.int.${this.localSpecs.domain}`.length <= 63 ||
+        "Cluster name + .int. + domain must be at most 63 characters."
+      );
+    },
     isAWS() {
       return this.provider === "aws";
     },
@@ -749,7 +775,7 @@ export default {
       return (
         !this.loading &&
         this.validForm &&
-        this.dirtyForm &&
+        (this.benchmarkMode || this.dirtyForm) &&
         !this.resourceError &&
         (!this.isAWS || this.awsStatus === "ready")
       );

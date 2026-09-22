@@ -7,6 +7,7 @@ from ..database import db
 from ..models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from ..models.magic_castle.cluster_status_code import ClusterStatusCode as Status
 from . import usage
+from .worker_logging import configure_worker_logging
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def poll_once():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_worker_logging()
     app = create_app()
     while True:
         with app.app_context():
