@@ -101,7 +101,7 @@ EXISTING_CLUSTER_STATE = {
     "hostname": "valid1.magic-castle.cloud",
     "freeipa_passwd": "FAKE",
     "expiration_date": "2029-01-01",
-    "age": "a moment",
+    "age": "—",
     "hieradata_entries": [],
 }
 
@@ -344,6 +344,7 @@ CLUSTERS_CONFIG = {
     },
 }
 
+# These legacy fixtures have no recorded deployment start, so their age is unknown.
 CLUSTERS = {
     "buildplanning.magic-castle.cloud": {
         **CLUSTERS_CONFIG["buildplanning.magic-castle.cloud"],
@@ -354,7 +355,7 @@ CLUSTERS = {
         "health": "unknown",
         "services": {},
         "freeipa_passwd": None,
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
     "created.magic-castle.cloud": {
@@ -366,7 +367,7 @@ CLUSTERS = {
         "health": "unknown",
         "services": {},
         "freeipa_passwd": None,
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
     "valid1.magic-castle.cloud": {
@@ -394,7 +395,7 @@ CLUSTERS = {
             },
         },
         "freeipa_passwd": "FAKE",
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
     "empty-state.magic-castle.cloud": {
@@ -406,7 +407,7 @@ CLUSTERS = {
         "health": "unknown",
         "services": {},
         "freeipa_passwd": None,
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
     "missingfloatingips.mc.ca": {
@@ -418,7 +419,7 @@ CLUSTERS = {
         "health": "unknown",
         "services": {},
         "freeipa_passwd": None,
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
     "missingnodes.mc.ca": {
@@ -430,7 +431,7 @@ CLUSTERS = {
         "health": "unknown",
         "services": {},
         "freeipa_passwd": "FAKE",
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
     "noowner.magic-castle.cloud": {
@@ -458,7 +459,7 @@ CLUSTERS = {
             },
         },
         "freeipa_passwd": "FAKE",
-        "age": "a moment",
+        "age": "—",
         "hieradata_entries": [],
     },
 }
