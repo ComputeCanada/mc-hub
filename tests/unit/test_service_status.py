@@ -1,0 +1,123 @@
+import json
+import importlib
+
+import pytest
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
+from sqlalchemy import create_engine, inspect
+
+from mchub import create_app
+from mchub.database import db
+from mchub.services import service_status as status
+from mchub.models.service_status import ServiceStatusSnapshot
+from tests.mocks.configuration.config_mock import config_auth_saml_mock as config_mock
+from tests.data import ALICE_HEADERS
+
+
+@pytest.fixture
+def app(config_mock):
+    app = create_app("sqlite://")
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+
+
+def rss(state="Investigating", component="HCP Terraform", identity="one"):
+    return f'''<rss><channel><item><guid>{identity}</guid><title>Delayed runs</title>
+    <link>https://status.hashicorp.com/incidents/one</link>
+    <description><![CDATA[<b>Status: {state}</b><br/>Some explanation.
+    <b>Affected components</b><ul><li>{component} (Under maintenance)</li></ul>]]></description>
+    </item></channel></rss>'''.encode()
+
+
+def test_rss_filters_and_resolves():
+    provider = status.DEFAULT_PROVIDERS[1]
+    assert status.hashicorp_rss(rss(), provider)["incidents"][0]["status"] == "investigating"
+    for state in ("Resolved", "Complete", "Scheduled"):
+        result = status.hashicorp_rss(rss(state), provider)
+        assert result["incidents"] == []
+        assert result["seen_ids"] == ["one"]
+    assert status.hashicorp_rss(rss(component="HCP Vault Radar"), provider)["incidents"] == []
+    with pytest.raises(ValueError):
+        status.hashicorp_rss(rss("Unexpected"), provider)
+    with pytest.raises(ValueError):
+        status.hashicorp_rss(b"<html/>", provider)
+
+
+def test_statuspage_filters_and_validates():
+    provider = {**status.DEFAULT_PROVIDERS[0], "components": ["Git Operations"]}
+    data = dict(components=[dict(id="git", name="Git Operations", status="operational")],
+        incidents=[dict(id="x", name="Copilot", status="investigating", components=[dict(id="copilot")])])
+    assert status.statuspage(json.dumps(data), provider)["reported_status"] == "no_incidents"
+    data["incidents"][0]["components"] = [dict(id="git")]
+    data["incidents"][0]["status"] = "monitoring"
+    data["incidents"][0]["shortlink"] = "javascript:alert(1)"
+    result = status.statuspage(json.dumps(data), provider)
+    assert result["reported_status"] == "disruption"
+    assert result["incidents"][0]["url"] == provider["status_url"]
+    data["components"] = []
+    with pytest.raises(ValueError):
+        status.statuspage(json.dumps(data), provider)
+
+
+def test_poll_failure_staleness_and_recovery(app, mocker):
+    clock = mocker.patch.object(status, "now", return_value=1000)
+    provider = status.DEFAULT_PROVIDERS[1]
+    mocker.patch.object(status, "providers", return_value=[provider])
+    fetch = mocker.patch.object(status, "fetch", side_effect=lambda p: status.hashicorp_rss(rss(), p))
+    status.poll_once()
+    assert status.read_status()["providers"][0]["freshness"] == "fresh"
+    fetch.side_effect = TimeoutError
+    clock.return_value = 1180
+    status.poll_once()
+    result = status.read_status()["providers"][0]
+    assert result["freshness"] == "stale"
+    assert result["reported_status"] == "disruption"
+    assert result["last_attempt_ok"] is False
+    fetch.side_effect = lambda p: status.hashicorp_rss(b"<rss><channel/></rss>", p)
+    status.poll_once()
+    assert status.read_status()["providers"][0]["incidents"][0]["confirmed"] is False
+    fetch.side_effect = lambda p: status.hashicorp_rss(rss("Resolved"), p)
+    status.poll_once()
+    assert status.read_status()["providers"][0]["reported_status"] == "no_incidents"
+
+
+def test_provider_failure_isolated_and_endpoint_reads_only(app, mocker):
+    def fetch(p):
+        if p["id"] == "github":
+            raise TimeoutError()
+        return status.hashicorp_rss(rss(), p)
+    network = mocker.patch.object(status, "fetch", side_effect=fetch)
+    status.poll_once()
+    assert db.session.get(ServiceStatusSnapshot, "terraform_cloud").last_attempt_ok
+    network.reset_mock()
+    response = app.test_client().get("/api/service-status", headers=ALICE_HEADERS)
+    assert response.status_code == 200
+    assert response.json["providers"][0]["freshness"] == "unknown"
+    network.assert_not_called()
+    assert app.test_client().get("/api/service-status").status_code == 400
+
+
+def test_migration_roundtrip():
+    migration = importlib.import_module("migrations.versions.0019_service_status")
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            assert "service_status_snapshot" in inspect(connection).get_table_names()
+            migration.downgrade()
+            assert "service_status_snapshot" not in inspect(connection).get_table_names()
+
+
+def test_provider_configuration_validation():
+    from marshmallow import ValidationError
+    from mchub.configuration import ConfigurationSchema
+    config = dict(auth_type=["NONE"], cors_allowed_origins=[], magic_castle_version_range=">= 13.0.0")
+    schema = ConfigurationSchema()
+    assert schema.load({**config, "service_status_providers": []})["service_status_providers"] == []
+    assert "service_status_providers" not in schema.load(config)
+    assert len(schema.load({**config, "service_status_providers": status.DEFAULT_PROVIDERS})["service_status_providers"]) == 2
+    with pytest.raises(ValidationError, match="unique"):
+        schema.load({**config, "service_status_providers": [status.DEFAULT_PROVIDERS[0]] * 2})

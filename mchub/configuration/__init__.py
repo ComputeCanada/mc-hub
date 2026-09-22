@@ -5,7 +5,7 @@ import sys
 from os import path
 from typing import Optional
 
-from marshmallow import Schema, fields, ValidationError, post_load
+from marshmallow import Schema, fields, ValidationError, post_load, validates_schema
 from marshmallow.validate import OneOf, Regexp, URL, Length
 
 from .env import CONFIGURATION_FILE_PATH
@@ -29,7 +29,25 @@ class OpenStackCloudSchema(Schema):
     auth_url = fields.Str(required=True, validate=URL(schemes={"https", "http"}))
 
 
+class ServiceStatusProviderSchema(Schema):
+    id = fields.Str(required=True, validate=Regexp(r"^[a-z][a-z0-9_]{0,99}$"))
+    name = fields.Str(required=True, validate=Length(min=1))
+    adapter = fields.Str(required=True, validate=OneOf(["statuspage", "hashicorp_rss"]))
+    enabled = fields.Bool(load_default=True)
+    feed_url = fields.Str(required=True, validate=URL(schemes={"https"}))
+    status_url = fields.Str(required=True, validate=URL(schemes={"https"}))
+    components = fields.List(fields.Str(validate=Length(min=1)), required=True, validate=Length(min=1))
+
+
 class ConfigurationSchema(Schema):
+    service_status_providers = fields.List(fields.Nested(ServiceStatusProviderSchema))
+
+    @validates_schema
+    def unique_status_providers(self, data, **kwargs):
+        ids = [p["id"] for p in data.get("service_status_providers", [])]
+        if len(ids) != len(set(ids)):
+            raise ValidationError("Service status provider IDs must be unique")
+
     auth_type = fields.List(fields.Str(required=True))
     admins = fields.List(fields.Str())
     token = fields.Str()
