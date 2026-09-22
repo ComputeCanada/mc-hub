@@ -13,7 +13,7 @@ const ClusterFormattedStatus = Object.freeze({
   provisioning_running: { text: "Provisioning running", color: "orange" },
   provisioning_success: { text: "Healthy", color: "green" },
   provisioning_error: { text: "Provisioning error", color: "red" },
-  build_error: { text: "Build error", color: "red" },
+  build_error: { text: "Plan application failed", color: "red" },
   destroy_running: { text: "Tearing down", color: "orange" },
   destroy_error: { text: "Teardown error", color: "red" },
   destroy_success: { text: "Destroyed", color: "green" },

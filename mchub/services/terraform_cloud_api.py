@@ -458,7 +458,7 @@ class TerraformCloud:
                 additional_details=f"{workspace_id=}, error: {res.text}",
             )
 
-    def plan_from_commit(self, workspace_id, github_sha):
+    def plan_from_commit(self, workspace_id, github_sha, *, message="Benchmark deployment"):
         """Create a new deployment from this exact commit, or request VCS import.
 
         Never return an old deployment or destroy run just because its SHA matches.
@@ -467,7 +467,7 @@ class TerraformCloud:
         response = self._request("GET", f"{self.BASE_URL}/workspaces/{workspace_id}/runs",
                                  params={"search[commit]": github_sha, "page[size]": 1})
         if response.status_code != 200:
-            raise TerraformCloudException("Could not find the benchmark configuration version")
+            raise TerraformCloudException("Could not find the configuration version")
         runs = response.json()["data"]
         if not runs:
             return None
@@ -475,10 +475,10 @@ class TerraformCloud:
         # Verify the full SHA rather than trusting the commit search's matching.
         ingress = self._request("GET", f"{self.BASE_URL}/configuration-versions/{version_id}/ingress-attributes")
         if ingress.status_code != 200 or ingress.json()["data"]["attributes"].get("commit-sha") != github_sha:
-            raise TerraformCloudException("Could not verify the benchmark configuration commit")
+            raise TerraformCloudException("Could not verify the configuration commit")
         payload = {"data": {
             "type": "runs",
-            "attributes": {"message": "Benchmark deployment", "is-destroy": False, "auto-apply": False, "plan-only": False},
+            "attributes": {"message": message, "is-destroy": False, "auto-apply": False, "plan-only": False},
             "relationships": {
                 "workspace": {"data": {"type": "workspaces", "id": workspace_id}},
                 "configuration-version": {"data": {"type": "configuration-versions", "id": version_id}},
@@ -486,7 +486,7 @@ class TerraformCloud:
         }}
         response = self._request("POST", self.runs_url, json=payload)
         if response.status_code != 201:
-            raise TerraformCloudException("Could not create the benchmark deployment run")
+            raise TerraformCloudException("Could not create the deployment run")
         return response.json()["data"]["id"]
 
     def get_run_apply_log(self, run_id) -> str:
@@ -507,6 +507,39 @@ class TerraformCloud:
                 "Could not find apply run log",
                 additional_details=f"{run_id=}, error: {res.text}",
             )
+
+    def get_run_failure(self, run_id):
+        """Read the failed stage and its diagnostic, never returning signed log URLs."""
+        from ..models.terraform.diagnostics import extract_diagnostics, is_timeout
+
+        for phase in ("apply", "plan"):
+            response = self._request("GET", f"{self.BASE_URL}/runs/{run_id}/{phase}")
+            if response.status_code == 404:
+                continue
+            if response.status_code != 200:
+                raise TerraformCloudException("Could not retrieve Terraform failure details")
+            attrs = response.json()["data"]["attributes"]
+            if attrs.get("status") != "errored":
+                continue
+            diagnostic = ""
+            available = not attrs.get("log-read-url")
+            if attrs.get("log-read-url"):
+                try:
+                    # Signed URLs must not receive the Terraform API credentials.
+                    log = requests.get(attrs["log-read-url"], timeout=15)
+                    available = log.status_code == 200
+                    if available:
+                        diagnostic = extract_diagnostics(log.text)
+                except requests.RequestException:
+                    available = False
+            return {
+                "phase": phase,
+                "diagnostic": diagnostic,
+                "diagnostic_available": available,
+                "timeout": phase == "apply" and is_timeout(diagnostic),
+                "failed_at": (attrs.get("status-timestamps") or {}).get("errored-at"),
+            }
+        return None
 
     def get_run_plan_log_json(self, run_id, *, allow_errored=False) -> Optional[dict]:
         """Read a finished plan; cleanup may accept missing output from a failed plan."""

@@ -27,6 +27,9 @@ export default {
   rebuild(hostname) {
     return Repository.post(`${resource}/${hostname}/rebuild`);
   },
+  retryPlan(hostname) {
+    return Repository.post(`${resource}/${hostname}/retry-plan`);
+  },
   delete(hostname) {
     return Repository.delete(`${resource}/${hostname}`);
   },

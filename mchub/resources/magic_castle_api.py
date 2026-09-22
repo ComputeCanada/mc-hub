@@ -85,12 +85,16 @@ class MagicCastleAPI(ApiView):
                 cluster = MagicCastle(orm)
                 cluster.validate_rebuild()
                 ensure_aws_feasible(orm.project, cluster.config)
+            if action == "retry-plan":
+                MagicCastle(orm).validate_retry_plan()
             self._claim_background_task(orm)
 
             def lifecycle_cluster(hostname):
                 cluster = MagicCastle(db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname)))
                 if action == "teardown":
                     cluster_lifecycle.plan_teardown(hostname)
+                elif action == "retry-plan":
+                    cluster.plan_retry()
                 else:
                     cluster.plan_rebuild()
 
