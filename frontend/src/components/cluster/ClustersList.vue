@@ -93,9 +93,7 @@
                 </v-btn>
                 <v-spacer />
                 <v-btn
-                  v-if="
-                    ['build_running', 'destroy_running', 'plan_running', 'provisioning_running'].includes(item.status)
-                  "
+                  v-if="['build_running', 'destroy_running', 'plan_running'].includes(item.status)"
                   color="secondary"
                   text
                   :to="`/clusters/${item.hostname}`"
