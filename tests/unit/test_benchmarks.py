@@ -12,6 +12,8 @@ from sqlalchemy import create_engine, inspect, text
 
 from mchub.database import db
 from mchub.models.benchmark import Benchmark, BenchmarkRun
+from mchub.models.service_status import ServiceStatusSnapshot
+from mchub.services import service_status
 from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
 from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration, validate_cluster_name
@@ -22,6 +24,7 @@ from mchub.services import benchmark_runner as runner, benchmarks, usage, cluste
 import mchub.models.magic_castle.magic_castle as mc_module
 from mchub.exceptions.invalid_usage_exception import InvalidUsageException
 from mchub.resources.usage_api import UsageAPI
+from mchub.resources.benchmark_api import run_result
 from tests.unit.test_usage import app, cluster, config_mock  # noqa: F401
 from tests.data import NON_EXISTING_CLUSTER_CONFIGURATION, ALICE_HEADERS
 
@@ -63,6 +66,95 @@ def benchmark(cluster, mocker):
 def payload(benchmark):
     return {"project_id": benchmark.project_id, "name": benchmark.name,
             "configuration": benchmark.configuration, "frequency": "daily", "enabled": True, "timeout_minutes": 120}
+
+
+@pytest.mark.parametrize("provider", ["github", "terraform_cloud"])
+@pytest.mark.parametrize("scheduled", [False, True])
+@pytest.mark.parametrize("frequency,retry", [
+    ("hourly", timedelta(minutes=1)),
+    ("daily", timedelta(hours=1)),
+    ("weekly", timedelta(days=1)),
+])
+def test_provider_disruption_postpones_and_resumes_same_run(benchmark, mocker, provider, scheduled, frequency, retry):
+    network = mocker.patch.object(service_status, "fetch")
+    prepare = mocker.patch.object(runner, "prepare_run")
+    feasible = mocker.patch.object(runner, "ensure_aws_feasible")
+    with freeze_time("2026-09-23 12:00:00"):
+        snapshot = ServiceStatusSnapshot(provider=provider, last_success_at=service_status.now(),
+            last_attempt_ok=True, snapshot={"reported_status": "disruption"})
+        db.session.add(snapshot)
+        benchmark.frequency = frequency
+        benchmark.next_run_at = utcnow()
+        db.session.commit()
+        if scheduled:
+            benchmarks.schedule_due()
+            run = db.session.scalar(db.select(BenchmarkRun).filter_by(benchmark_id=benchmark.id))
+        else:
+            run = benchmarks.enqueue(benchmark, "manual-requester")
+        runner.advance_run(run.id)
+        assert run.phase == "queued"
+        assert run.started_at is None
+        assert run.outcome is None
+        assert run.finished_at is None
+        assert run.active_benchmark_id == benchmark.id
+        assert run.next_attempt_at == utcnow() + retry
+        assert "Postponed" in run.error
+        result = run_result(run)
+        assert result["next_attempt_at"] is not None
+        assert result["error"] == run.error
+        prepare.assert_not_called()
+        feasible.assert_not_called()
+        with pytest.raises(InvalidUsageException):
+            benchmarks.enqueue(benchmark)
+    # Waiting beyond the run timeout and feed freshness must not fail or release it.
+    with freeze_time("2026-10-01 12:00:00"):
+        runner.advance_run(run.id)
+        benchmarks.schedule_due()
+        assert db.session.query(BenchmarkRun).count() == 1
+        assert run.phase == "queued"
+        assert run.started_at is None
+        assert run.next_attempt_at == utcnow() + retry
+    with freeze_time(datetime(2026, 10, 1, 12) + retry):
+        snapshot.snapshot = {"reported_status": "no_incidents"}
+        snapshot.last_success_at = service_status.now()
+        db.session.commit()
+        runner.advance_run(run.id)
+        assert run.phase == "ready"
+        assert run.started_at == utcnow()
+        assert run.error is None
+        assert run.outcome is None
+        prepare.assert_called_once()
+        feasible.assert_called_once()
+    network.assert_not_called()
+
+
+@pytest.mark.parametrize("state", ["unknown", "no_incidents", "disabled"])
+def test_unreported_or_disabled_disruption_does_not_block(benchmark, mocker, state):
+    if state != "unknown":
+        db.session.add(ServiceStatusSnapshot(provider="github", last_success_at=0,
+            snapshot={"reported_status": "disruption" if state == "disabled" else state}))
+        db.session.commit()
+    if state == "disabled":
+        mocker.patch.object(service_status, "providers", return_value=[])
+    prepare = mocker.patch.object(runner, "prepare_run")
+    mocker.patch.object(runner, "ensure_aws_feasible")
+    run = benchmarks.enqueue(benchmark)
+    runner.advance_run(run.id)
+    assert run.phase == "ready"
+    prepare.assert_called_once()
+
+
+def test_archiving_and_cleanup_do_not_wait_for_provider_status(benchmark, mocker):
+    status = mocker.patch.object(runner, "read_status", side_effect=AssertionError("Must not gate cleanup"))
+    run = benchmarks.enqueue(benchmark)
+    benchmark.archived = True
+    db.session.commit()
+    runner.advance_run(run.id)
+    assert run.outcome == "cancelled"
+    runner.advance_run(run.id)
+    assert run.phase == "complete"
+    assert run.active_benchmark_id is None
+    status.assert_not_called()
 
 
 def test_project_admin_authorization_and_input_validation(app, benchmark):

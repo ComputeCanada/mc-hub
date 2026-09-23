@@ -142,7 +142,7 @@
           </template>
           <template v-slot:[`item.outcome`]="{ item }"
             ><v-chip small :color="item.outcome === 'successful' ? 'success' : item.outcome ? 'error' : undefined">{{
-              item.outcome || "In progress"
+              item.outcome || (item.phase === "queued" ? (item.error ? "Postponed" : "Queued") : "In progress")
             }}</v-chip></template
           >
           <template v-slot:[`item.cleanup_at`]="{ item }">{{
@@ -156,7 +156,12 @@
           }}</template>
           <template #expanded-item="{ headers, item }"
             ><td :colspan="headers.length" class="pa-4">
-              <v-alert v-if="item.error" type="error" outlined>{{ item.error }}</v-alert>
+              <v-alert v-if="item.error" :type="item.phase === 'queued' ? 'warning' : 'error'" outlined>{{
+                item.error
+              }}</v-alert>
+              <p v-if="item.phase === 'queued' && item.error">
+                Next status check: {{ timestamp(item.next_attempt_at) }}
+              </p>
               <v-alert v-if="item.cleanup_error" type="warning" outlined>{{ item.cleanup_error }}</v-alert>
               <p>Cluster: {{ item.hostname }} · Apply accepted: {{ timestamp(item.applied_at) }}</p>
               <p v-if="item.success_criterion === 'build_completed' && item.apply_started_at">
