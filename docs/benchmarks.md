@@ -44,6 +44,24 @@ there is no backlog after downtime. When an earlier run or its cleanup is active
 the scheduled occurrence is skipped. Manual and scheduled requests share the same
 database uniqueness constraint, so a benchmark cannot overlap itself.
 
+Before starting either a manual or scheduled run, the worker reads the shared
+service-provider snapshots maintained by MC Hub's existing status monitor. A
+reported disruption for any enabled, configured provider (GitHub and Terraform
+Cloud by default) keeps the run queued and reserves its benchmark. It checks again
+every minute for hourly benchmarks, every hour for daily benchmarks, and every day
+for weekly benchmarks, using the definition's current frequency at each check.
+It starts automatically when a check reports no disruption. The history
+shows **Postponed**, the affected providers, and the next check time. Waiting does
+not start the maximum-run-time clock or count as a failed result. Further scheduled
+occurrences coalesce while the run is queued.
+
+The existing provider/component configuration also controls these checks. Retained
+disruptions, including stale snapshots and incidents awaiting confirmed resolution,
+continue to postpone runs. Unknown status or a stale snapshot with no reported
+disruption does not block them. These checks do not fetch feeds directly. Runs that
+have already started and cleanup continue during disruptions; archiving still
+cancels queued runs.
+
 Edits affect future runs only. Each run retains its success criterion, definition
 revision, specifications, requester, Terraform run ID, commit SHA, repository, and
 timing fields. Pausing stops

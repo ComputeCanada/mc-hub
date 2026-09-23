@@ -26,9 +26,11 @@ from .benchmarks import schedule_due, reusable_cluster, benchmark_lock
 from . import cluster_lifecycle as lifecycle
 from .terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable, TFCloudStatusCode
 from .worker_logging import configure_worker_logging
+from .service_status import read_status
 
 logger = logging.getLogger(__name__)
 POLL_INTERVAL = 10
+SERVICE_STATUS_RETRY_SECONDS = {"hourly": 60, "daily": 3600, "weekly": 86400}
 STEP_TIMEOUT = 300
 MAX_OPERATIONS = 4
 
@@ -171,6 +173,16 @@ def advance_run(run_id):
         if project is None or project.usage_id != benchmark.project_key:
             finish(run, "failed", "The benchmark project is no longer available.")
             return
+        disrupted = [provider["name"] for provider in read_status()["providers"]
+                     if provider["reported_status"] == "disruption"]
+        if disrupted:
+            # Keep the reservation and snapshot, but do not start the run clock.
+            # Retained disruptions still block when the monitor's feed is stale.
+            run.error = f"Postponed: service disruption reported by {', '.join(disrupted)}."
+            run.next_attempt_at = utcnow() + timedelta(seconds=SERVICE_STATUS_RETRY_SECONDS[benchmark.frequency])
+            db.session.commit()
+            return
+        run.error = None
         run.phase, run.started_at = "creating", utcnow()
         db.session.commit()
         ensure_aws_feasible(project, run.configuration)

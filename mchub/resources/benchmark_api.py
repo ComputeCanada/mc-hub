@@ -62,6 +62,7 @@ def run_result(run):
         "id": run.id, "revision": run.revision, "hostname": run.hostname,
         "configuration": specs, "phase": run.phase, "outcome": run.outcome,
         "requested_at": iso(run.requested_at), "applied_at": iso(run.applied_at),
+        "next_attempt_at": iso(run.next_attempt_at),
         "apply_started_at": iso(run.apply_started_at), "measurement_started_at": iso(run.measurement_started_at),
         "healthy_at": iso(run.healthy_at), "cleanup_at": iso(run.cleanup_at),
         "success_criterion": run.success_criterion, "target_reached_at": iso(run.target_reached_at),
