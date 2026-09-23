@@ -26,6 +26,7 @@
         </template>
         <template v-slot:[`item.actions`]="{ item }">
           <div class="d-flex flex-nowrap align-center justify-end text-no-wrap">
+            <v-btn text :to="{ path: '/capacity', query: { project: item.id } }">Capacity</v-btn>
             <project-editor :id="item.id" :admin="item.admin" />
             <project-membership :id="item.id" :admin="item.admin" @saved="updateProjectList" />
             <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">

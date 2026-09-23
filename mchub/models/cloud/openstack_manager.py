@@ -122,6 +122,7 @@ class OpenStackManager:
     def available_resources(self):
         return {
             "quotas": self.quotas,
+            "total_quotas": self.total_quotas,
             "resource_details": self.resource_details,
             "possible_resources": self.possible_resources,
         }
@@ -136,6 +137,18 @@ class OpenStackManager:
             "volume_size": {"max": self.available_volume_size},
             "ips": {"max": self.available_floating_ip_count},
         }
+
+    @property
+    def total_quotas(self):
+        limits = {
+            "instance_count": self.compute_quotas["instances"]["limit"],
+            "ram": self.compute_quotas["ram"]["limit"],
+            "vcpus": self.compute_quotas["cores"]["limit"],
+            "volume_count": self.volume_quotas["volumes"]["limit"],
+            "volume_size": self.volume_quotas["gigabytes"]["limit"],
+            "ips": self.network_quotas["floatingip"]["limit"],
+        }
+        return {key: {"max": None if limit < 0 else limit} for key, limit in limits.items()}
 
     @property
     def possible_resources(self):

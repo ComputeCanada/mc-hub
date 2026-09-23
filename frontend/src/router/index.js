@@ -10,6 +10,7 @@ import ModifyCluster from "@/views/ModifyCluster";
 Vue.use(VueRouter);
 
 const routes = [
+  { path: "/capacity", name: "Capacity planner", component: () => import("@/views/CapacityPlanner") },
   {
     path: "/benchmarks",
     name: "Benchmarks",

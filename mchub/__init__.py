@@ -20,6 +20,7 @@ def create_app(db_path=None):
     from .resources.benchmark_api import BenchmarkAPI
     from .resources.tfcloud_proxy import tfcloud_proxy
     from .resources.service_status_api import ServiceStatusAPI
+    from .resources.capacity_api import CapacityAPI
 
     if db_path is None:
         db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
@@ -43,6 +44,14 @@ def create_app(db_path=None):
     )
 
     app.add_url_rule("/api/service-status", view_func=ServiceStatusAPI.as_view("service_status"), methods=["GET"])
+
+    capacity_view = CapacityAPI.as_view("capacity")
+    app.add_url_rule("/api/projects/<int:project_id>/capacity", view_func=capacity_view,
+                     defaults={"plan_id": None}, methods=["GET", "POST"])
+    app.add_url_rule("/api/projects/<int:project_id>/capacity/preview", view_func=capacity_view,
+                     defaults={"plan_id": None, "preview": True}, methods=["POST"])
+    app.add_url_rule("/api/projects/<int:project_id>/capacity/<int:plan_id>", view_func=capacity_view,
+                     methods=["GET", "DELETE"])
 
     benchmark_view = BenchmarkAPI.as_view("benchmarks")
     app.add_url_rule("/api/benchmarks", view_func=benchmark_view, defaults={"benchmark_id": None}, methods=["GET", "POST"])
