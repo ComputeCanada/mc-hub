@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
+from .notifications import provider_events
 from ..configuration import get_config
 from ..database import db
 from ..models.service_status import ServiceStatusSnapshot
@@ -180,6 +181,7 @@ def poll_once():
                         snapshot["reported_status"] = "disruption"
                 if row.snapshot != snapshot:
                     logger.info("Service status changed for %s: %s", provider["id"], snapshot["reported_status"])
+                provider_events(row, provider, snapshot)
                 row.snapshot, row.last_success_at = snapshot, now()
             db.session.commit()
         except Exception:

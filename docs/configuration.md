@@ -312,3 +312,102 @@ feeds remain visible as unconfirmed until explicit resolution is received. Sched
 future maintenance does not trigger a disruption warning. Parser/network failures
 preserve the previous snapshot, and missing or stale information is labelled in the
 banner. No cluster actions are blocked by these advisories.
+
+## External notifications
+
+The background-worker service also runs a notification worker. Provider status
+changes and notification events are saved in one database transaction; deliveries
+are retried independently for each destination. Run `flask db upgrade` before
+starting the updated services (Compose's initialize service does this).
+
+Add `notification_destinations` to `configuration.json` and restart the services:
+
+```json
+{
+  "notification_destinations": [
+    {
+      "id": "operations_slack",
+      "type": "slack",
+      "url": "https://hooks.slack.com/services/REPLACE/THIS/SECRET"
+    },
+    {
+      "id": "automation",
+      "type": "webhook",
+      "url": "https://automation.example.org/mchub/events",
+      "token": "replace-with-bearer-token"
+    }
+  ]
+}
+```
+
+Omitting the list or setting it to `[]` disables notifications. IDs must be unique
+and stable; `type` is `slack` or `webhook`, URLs must use HTTPS, and `enabled`
+defaults to `true`. The optional `token` adds a Bearer Authorization header.
+Protect the configuration file: webhook URLs and tokens are credentials. Redirects
+are rejected. Credentials are not copied into the outbox or delivery errors.
+
+All enabled destinations receive `provider.disruption_started` and
+`provider.disruption_resolved` events. An active disruption is announced on the
+first successful poll after notifications are initially enabled, even if the
+banner was already active. New incidents during an existing disruption generate
+another started event with the current incident list. Unchanged polls and incident
+text/status updates do not generate events. Recovery means the provider reports
+no remaining monitored disruptions. Failed polls and unconfirmed RSS incidents do
+not generate recovery events. Notifications describe provider reports, not checks
+of individual clusters.
+
+Generic webhooks receive an HTTP POST with `Content-Type: application/json` and
+`X-MC-Hub-Event-ID`. The body has this shape:
+
+```json
+{
+  "version": 1,
+  "id": "b5094f47-4216-40f3-a1cc-b5db7ea77cbd",
+  "type": "provider.disruption_started",
+  "resource_id": "terraform_cloud",
+  "occurred_at": "2026-09-23T12:00:00+00:00",
+  "data": {
+    "provider": "terraform_cloud",
+    "name": "Terraform Cloud",
+    "status_url": "https://status.hashicorp.com/",
+    "reported_status": "disruption",
+    "affected_components": ["HCP Terraform"],
+    "incidents": []
+  }
+}
+```
+
+Any HTTP 2xx response acknowledges delivery. Network errors, HTTP 408/429 and 5xx
+responses retry with exponential backoff up to one hour; `Retry-After` can extend
+the delay. Other HTTP errors mark the delivery failed for operator inspection.
+A pending retry holds later events for that destination to preserve order, while
+other destinations continue. Delivery is at least once: a crash after the remote
+service accepts a message but before its database acknowledgement can cause a
+duplicate. Webhook consumers should deduplicate using the event ID.
+
+The `notification_event` and `notification_delivery` database tables retain events
+and delivery state (`pending`, `delivered`, `failed`), attempts, next attempt time,
+and sanitized errors. There is no automatic retention cleanup or management UI.
+After fixing a permanently failed destination, administrators can retry a delivery
+using the application's Flask shell:
+
+```python
+from mchub.database import db
+from mchub.models.notification import NotificationDelivery
+row = db.session.get(NotificationDelivery, DELIVERY_ID)
+row.state = "pending"
+row.next_attempt_at = 0
+db.session.commit()
+```
+
+Disabled or removed destination IDs keep their pending deliveries paused. Restoring
+the same ID resumes them; changing its URL redirects those pending deliveries to
+the new URL. Newly added IDs receive future events only. Events occurring while all
+notifications are disabled are not queued. Run one notification worker through the
+existing supervisor, whose lock prevents duplicate supervisors on the database
+volume; do not launch additional standalone notification consumers.
+
+Other workers can reuse `notifications.enqueue()` with their own event type,
+resource ID and JSON payload, committing it together with the associated state
+change. Additional event types use a basic Slack message with the event type, resource
+ID and optional payload `summary`; generic webhooks use the common event envelope. Cluster failure events are not enabled.
