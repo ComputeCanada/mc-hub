@@ -8,3 +8,4 @@ class ServiceStatusSnapshot(db.Model):
     last_attempt_at = db.Column(db.Float)
     last_attempt_ok = db.Column(db.Boolean)
     snapshot = db.Column(db.JSON)
+    notification_snapshot = db.Column(db.JSON)

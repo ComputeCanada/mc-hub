@@ -39,7 +39,23 @@ class ServiceStatusProviderSchema(Schema):
     components = fields.List(fields.Str(validate=Length(min=1)), required=True, validate=Length(min=1))
 
 
+class NotificationDestinationSchema(Schema):
+    id = fields.Str(required=True, validate=Regexp(r"^[a-z][a-z0-9_]{0,99}$"))
+    type = fields.Str(required=True, validate=OneOf(["slack", "webhook"]))
+    url = fields.Str(required=True, validate=URL(schemes={"https"}))
+    enabled = fields.Bool(load_default=True)
+    token = fields.Str(validate=Regexp(r"^[^\r\n]+$"))
+
+
 class ConfigurationSchema(Schema):
+    notification_destinations = fields.List(fields.Nested(NotificationDestinationSchema), load_default=list)
+
+    @validates_schema
+    def unique_notification_destinations(self, data, **kwargs):
+        ids = [d["id"] for d in data.get("notification_destinations", [])]
+        if len(ids) != len(set(ids)):
+            raise ValidationError("Notification destination IDs must be unique")
+
     service_status_providers = fields.List(fields.Nested(ServiceStatusProviderSchema))
 
     @validates_schema
