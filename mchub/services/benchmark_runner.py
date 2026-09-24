@@ -237,7 +237,10 @@ def advance_run(run_id):
         if utcnow() >= deadline:
             finish(run, "timed_out", "The benchmark exceeded its maximum run time.")
             return
-        if status in (Status.PLAN_ERROR, Status.BUILD_ERROR, Status.PROVISIONING_ERROR):
+        # PROVISIONING_ERROR reflects the cluster's fixed one-hour health-check
+        # limit, not a Terraform failure. Benchmarks have their own deadline and
+        # must keep checking readiness until that deadline expires.
+        if status in (Status.PLAN_ERROR, Status.BUILD_ERROR):
             finish(run, "failed", f"Deployment reported {status.value}.")
             return
         if run.phase == "ready":

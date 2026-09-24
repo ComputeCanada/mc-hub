@@ -728,6 +728,42 @@ def test_healthy_target_waits_after_build_completion(benchmark, cluster, mocker)
     assert run.target_reached_at is None
 
 
+@pytest.mark.parametrize("recovers", [True, False])
+def test_healthy_target_uses_benchmark_deadline_after_provisioning_error(benchmark, cluster, mocker, recovers):
+    with freeze_time("2027-01-01 00:00:00"):
+        run = benchmarks.enqueue(benchmark)
+        cluster.benchmark_run_id = run.id
+        run.phase, run.started_at = "waiting", utcnow()
+        cluster.deployment_started_at = utcnow()
+        usage.accepted(usage.begin_apply(cluster))
+        db.session.commit()
+
+    # A successful Terraform apply keeps allowing fresh service-health probes.
+    def update_status(self):
+        self.status = Status.PROVISIONING_RUNNING
+
+    mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud", update_status)
+    health = mocker.patch.object(MagicCastle, "services_are_online", new_callable=PropertyMock, return_value=False)
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_apply_timestamps.return_value = (datetime(2027, 1, 1, 0, 1), datetime(2027, 1, 1, 0, 5))
+    with freeze_time("2027-01-01 01:01:00"):
+        runner.advance_run(run.id)
+        assert cluster.status == Status.PROVISIONING_ERROR
+        assert run.phase == "waiting"
+        assert run.outcome is None
+
+    health.return_value = recovers
+    with freeze_time("2027-01-01 01:30:00" if recovers else "2027-01-01 02:00:00"):
+        runner.advance_run(run.id)
+        assert run.phase == "cleanup"
+        assert run.outcome == ("successful" if recovers else "timed_out")
+        if recovers:
+            assert run.target_reached_at == utcnow()
+            assert run.duration_seconds == 89 * 60
+        else:
+            assert run.target_reached_at is None
+
+
 @pytest.mark.parametrize("finish_offset,outcome", [(0, "successful"), (1, "timed_out")])
 def test_build_deadline_uses_actual_completion_even_when_observed_late(benchmark, cluster, mocker, finish_offset, outcome):
     benchmark.success_criterion = "build_completed"

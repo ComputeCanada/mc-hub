@@ -89,6 +89,8 @@ every 10 seconds, with additional process startup and remote API latency; the us
 observer can also record readiness. The end timestamp remains observation-based; queueing before
 apply execution is excluded. Missing or invalid Terraform timestamps are retried until
 the run deadline; no local start timestamp is substituted.
+The cluster's one-hour provisioning warning does not end a healthy-target benchmark;
+health checks continue until the benchmark's configured maximum run time expires.
 
 Cleanup begins after the selected target is reached, or after failure or timeout.
 The maximum run time still includes planning and queueing. A build completed before
