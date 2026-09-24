@@ -21,6 +21,7 @@ def create_app(db_path=None):
     from .resources.tfcloud_proxy import tfcloud_proxy
     from .resources.service_status_api import ServiceStatusAPI
     from .resources.capacity_api import CapacityAPI
+    from .resources.project_notification_api import ProjectNotificationAPI
 
     if db_path is None:
         db_path = f"sqlite:///{DATABASE_PATH}/{DATABASE_FILENAME}"
@@ -44,6 +45,9 @@ def create_app(db_path=None):
     )
 
     app.add_url_rule("/api/service-status", view_func=ServiceStatusAPI.as_view("service_status"), methods=["GET"])
+
+    app.add_url_rule("/api/projects/<int:project_id>/notification-destination",
+                     view_func=ProjectNotificationAPI.as_view("project_notifications"), methods=["GET", "PUT", "DELETE"])
 
     capacity_view = CapacityAPI.as_view("capacity")
     app.add_url_rule("/api/projects/<int:project_id>/capacity", view_func=capacity_view,

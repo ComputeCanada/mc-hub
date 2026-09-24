@@ -25,7 +25,7 @@ def due(plan, mocker):
     db.session.commit()
     mocker.patch.object(preflight, "CloudManager")
     mocker.patch.object(preflight, "budget", return_value={"vcpus": 3})
-    mocker.patch.object(notifications, "destinations", return_value=TARGETS)
+    mocker.patch.object(notifications, "project_destinations", return_value=TARGETS)
     return plan
 
 
@@ -140,7 +140,7 @@ def test_cloud_failure_is_unknown_and_retries_without_false_shortage(due, mocker
 
 
 def test_without_destinations_warning_is_still_stored(due, mocker):
-    mocker.patch.object(notifications, "destinations", return_value=[])
+    mocker.patch.object(notifications, "project_destinations", return_value=[])
     preflight.check_project(due.project_id)
     assert events() == []
     assert db.session.get(CapacityQuotaCheck, due.project_id).result["status"] == "insufficient"

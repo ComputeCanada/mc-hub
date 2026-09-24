@@ -9,11 +9,19 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from ..configuration import get_config
 from ..database import db
-from ..models.notification import NotificationDelivery, NotificationEvent
+from ..models.notification import NotificationDelivery, NotificationEvent, ProjectNotificationDestination
 
 
 def destinations():
     return [d for d in get_config().get("notification_destinations", []) if d.get("enabled", True)]
+
+
+def project_destinations(project_id=None):
+    query = db.select(ProjectNotificationDestination).where(ProjectNotificationDestination.enabled.is_(True))
+    if project_id is not None:
+        query = query.where(ProjectNotificationDestination.project_id == project_id)
+    return [{"id": row.delivery_id, "type": row.type, "url": row.url, "token": row.token,
+             "project_id": row.project_id} for row in db.session.scalars(query)]
 
 
 def enqueue(event_type, resource_id, payload, targets):
@@ -102,7 +110,7 @@ def retry_after(headers, now):
 
 def deliver_once():
     """Single supervised consumer; pending rows survive crashes during HTTP delivery."""
-    configured = {d["id"]: d for d in destinations()}
+    configured = {d["id"]: d for d in [*destinations(), *project_destinations()]}
     if not configured:
         return
     for destination in configured.values():
@@ -121,7 +129,23 @@ def _deliver_destination(destination):
         if delivery.next_attempt_at > time.time():
             db.session.remove()
             break
+        if delivery.state != "pending":
+            db.session.remove()
+            continue
         event = delivery.event
+        if destination["id"].startswith("project:"):
+            # Recheck settings before every delivery, including queued retries.
+            current = db.session.scalar(db.select(ProjectNotificationDestination).where(
+                ProjectNotificationDestination.delivery_id == destination["id"],
+                ProjectNotificationDestination.enabled.is_(True)))
+            allowed = current is not None and event.event_type.startswith("capacity.") and event.resource_id == str(current.project_id)
+        else:
+            allowed = not event.event_type.startswith("capacity.")
+        if not allowed:
+            delivery.state = "cancelled"
+            db.session.commit()
+            db.session.remove()
+            continue
         db.session.expunge(event)
         db.session.expunge(delivery)
         # Close the read transaction before network I/O, especially on SQLite.

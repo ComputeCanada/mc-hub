@@ -26,12 +26,11 @@
         </template>
         <template v-slot:[`item.actions`]="{ item }">
           <div class="d-flex flex-nowrap align-center justify-end text-no-wrap">
-            <v-btn text :to="{ path: '/capacity', query: { project: item.id } }">Capacity</v-btn>
             <project-editor :id="item.id" :admin="item.admin" />
             <project-membership :id="item.id" :admin="item.admin" @saved="updateProjectList" />
+            <project-notifications v-if="item.can_manage_notifications" :id="item.id" />
             <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
-              <v-icon> mdi-delete </v-icon>
-              delete
+              <v-icon>mdi-delete</v-icon>
             </v-btn>
             <div v-else>not owner</div>
           </div>
@@ -46,11 +45,13 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 import UserRepository from "@/repositories/UserRepository";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
 import ProjectEditor from "@/components/ui/ProjectEditor";
+import ProjectNotifications from "@/components/ui/ProjectNotifications";
 import ProjectMembership from "@/components/ui/ProjectMembership";
 
 export default {
   name: "Projects",
   components: {
+    ProjectNotifications,
     CloudProviderInput,
     ProjectMembership,
     ProjectEditor,
@@ -65,7 +66,7 @@ export default {
         { text: "Default", value: "default", sortable: false, align: "center" },
         { text: "Name", value: "name" },
         { text: "Provider", value: "provider" },
-        { text: "# Clusters", value: "nb_clusters", align: "right" },
+        { text: "# Clusters", value: "nb_clusters", align: "end" },
         { text: "", value: "actions", sortable: false, width: "1%" },
       ],
     };

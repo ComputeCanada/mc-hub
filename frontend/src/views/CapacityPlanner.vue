@@ -31,7 +31,7 @@
         {{ formatDateOnly(check.starts_at) }}: short by {{ resources(check.shortages) }}.
       </div>
       <div v-if="report.preflight.status === 'insufficient' && !report.preflight.notifications_enabled">
-        External notifications are not configured. This warning is available in the planner.
+        No notification destination is enabled for this project. This warning is available in the planner.
       </div>
     </v-alert>
     <v-card v-if="specs" max-width="900" class="mx-auto mb-6">

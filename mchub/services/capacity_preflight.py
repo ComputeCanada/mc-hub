@@ -61,10 +61,11 @@ def check_project(project_id, now=None):
     if project is None:
         return
     plans, targets, deployed, fingerprint = inputs(project_id, now)
+    targets_config = notifications.project_destinations(project_id)
+    fingerprint = signature({"inputs": fingerprint, "destinations": [d["id"] for d in targets_config]})
     row = db.session.get(CapacityQuotaCheck, project_id)
     if row is not None and row.input_signature == fingerprint and row.next_check_at > now:
         return
-    targets_config = notifications.destinations()
     payload = {"project_id": project_id, "project_name": project.name, "checked_at": iso(now),
                "plans": [{"id": p.id, "name": p.definition.get("cluster_name", ""),
                           "starts_at": iso(p.starts_at), "ends_at": iso(p.ends_at)} for p in targets],
@@ -84,7 +85,9 @@ def check_project(project_id, now=None):
     db.session.rollback()
     if db.session.get(Project, project_id) is None:
         return
-    if inputs(project_id, time.time())[3] != fingerprint:
+    current_fingerprint = signature({"inputs": inputs(project_id, time.time())[3],
+                                     "destinations": [d["id"] for d in notifications.project_destinations(project_id)]})
+    if current_fingerprint != fingerprint:
         db.session.rollback()
         return
     row = db.session.get(CapacityQuotaCheck, project_id)
@@ -97,7 +100,8 @@ def check_project(project_id, now=None):
     row.result = payload
     if payload["status"] == "insufficient":
         # checked_at changes hourly; exclude it from deduplication.
-        alert_signature = signature({"plans": payload["plans"], "checks": payload["checks"]})
+        alert_signature = signature({"plans": payload["plans"], "checks": payload["checks"],
+                                     "destinations": [d["id"] for d in targets_config]})
         if targets_config and row.notification_signature != alert_signature:
             lines = [f'{project.name}: insufficient available quota for plans starting within 24 hours.']
             lines.extend(f'{p["name"]} starts {p["starts_at"]}' for p in payload["plans"])

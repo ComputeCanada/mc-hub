@@ -252,5 +252,5 @@ test("planner displays the day-before shortage in GiB and explains when external
   });
   expect(wrapper.text()).toContain("24-hour quota check");
   expect(wrapper.text()).toContain("RAM (GiB): 2");
-  expect(wrapper.text()).toContain("External notifications are not configured");
+  expect(wrapper.text()).toContain("No notification destination is enabled for this project");
 });

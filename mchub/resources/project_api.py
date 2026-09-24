@@ -5,6 +5,7 @@ from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from .api_view import ApiView
+from .project_notification_api import can_manage_notifications, retire_deliveries
 from ..configuration import get_config
 from ..database import db
 from ..models.user import User, UserORM, TokenSuperUser
@@ -67,6 +68,7 @@ class ProjectAPI(ApiView):
                 **cloud_settings,
                 "nb_clusters": len(project.magic_castles),
                 "admin": is_admin,
+                "can_manage_notifications": can_manage_notifications(user, project),
                 "members": [member.scoped_id for member in project.members]
                 if is_admin
                 else [],
@@ -83,6 +85,7 @@ class ProjectAPI(ApiView):
                     **aws_settings(project),
                     "nb_clusters": len(project.magic_castles),
                     "admin": user.is_project_admin(project),
+                    "can_manage_notifications": can_manage_notifications(user, project),
                 }
                 for project in user.projects
             ]
@@ -323,6 +326,8 @@ class ProjectAPI(ApiView):
             raise InvalidUsageException("Archive project benchmarks and wait for their cleanup before deleting the project.")
         if len(project.magic_castles) > 0:
             raise InvalidUsageException("Cannot remove project with running clusters")
+        if project.notification_destination is not None:
+            retire_deliveries(project.notification_destination)
         db.session.delete(project)
         db.session.commit()
         return {}, 200

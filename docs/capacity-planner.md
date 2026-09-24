@@ -67,8 +67,8 @@ are included in current cloud usage and are not added again. Current external us
 is conservatively assumed to continue; future cleanup or quota changes may alter the
 outcome. Checks do not guarantee resource availability at launch.
 
-A shortage queues one `capacity.quota_insufficient` event per project to the existing
-configured Slack/webhook destinations. The event includes plan names and dates,
+A shortage queues one `capacity.quota_insufficient` event per project to that project’s
+enabled Slack/webhook destination. It never falls back to global destinations. The event includes plan names and dates,
 available quota, required resources, and shortages at each affected start. It excludes
 cluster configuration, passwords, keys, and project credentials. Unchanged shortages
 are not sent again, including after worker restart. Changed shortages or affected
@@ -76,16 +76,17 @@ plans produce an updated warning. Delivery uses the existing durable outbox and 
 worker. There is no automatic email or direct-message delivery to individual owners.
 
 The planner shows the latest **24-hour quota check** even when no external destinations
-are configured. To enable external delivery, configure `notification_destinations`
-as described in [External notifications](configuration.md#external-notifications).
+are configured. To enable external delivery, a hub operator who also administers the project can
+open **Projects → Notifications** and configure its destination. See
+[Project notifications](configuration.md#project-notification-destinations).
 These checks and notifications do not block saving plans or change their creation setting.
 
 ## Operations
 
-Apply database migrations through `0022` using the deployment's normal `flask db upgrade`
+Apply database migrations through `0023` using the deployment's normal `flask db upgrade`
 step and restart the web service and background-worker supervisor. The supervisor
 includes `mchub.services.capacity_worker`; keep one supervisor per database volume.
-Checks use existing project credentials. External alerts require configured notification destinations.
+Checks use existing project credentials. External alerts require a notification destination configured for the project.
 
 Automatic start claims are durable and are not retried blindly after a failure or
 worker restart. Review the reported failure and any partial cluster before retrying

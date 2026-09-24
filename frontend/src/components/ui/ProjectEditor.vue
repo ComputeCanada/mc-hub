@@ -1,9 +1,21 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
-    <template v-slot:activator="{ on, attrs }">
-      <v-btn color="secondary" text v-bind="attrs" v-on="on" :disabled="!admin">
-        <v-icon>mdi-pencil</v-icon> edit
-      </v-btn>
+    <template #activator="{ on: dialogOn, attrs: dialogAttrs }">
+      <v-tooltip bottom>
+        <template #activator="{ on: tooltipOn, attrs: tooltipAttrs }">
+          <v-btn
+            color="secondary"
+            text
+            aria-label="Edit"
+            v-bind="{ ...dialogAttrs, ...tooltipAttrs }"
+            v-on="{ ...tooltipOn, ...dialogOn }"
+            :disabled="!admin"
+          >
+            <v-icon>mdi-pencil</v-icon>
+          </v-btn>
+        </template>
+        <span>Edit</span>
+      </v-tooltip>
     </template>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <v-card>
