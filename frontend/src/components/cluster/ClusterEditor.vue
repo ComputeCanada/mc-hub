@@ -48,11 +48,6 @@
               label="Cluster name"
               :readonly="identityLocked"
               :rules="[clusterNameRegexRule, benchmarkHostnameRule]"
-              :hint="
-                benchmarkMode
-                  ? 'Used exactly as entered for every run. The name and domain are fixed after the first save.'
-                  : undefined
-              "
               :persistent-hint="benchmarkMode"
               validate-on-blur
             />
