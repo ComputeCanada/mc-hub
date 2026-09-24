@@ -1108,7 +1108,7 @@ export default {
         this.provider = data.provider || "openstack";
         if (!this.localSpecs.volumes.nfs) this.$set(this.localSpecs.volumes, "nfs", {});
         this.resourceDetails = data.resource_details;
-        const quotas = this.plannerMode && data.total_quotas ? data.total_quotas : data.quotas;
+        const quotas = (this.plannerMode || this.benchmarkMode) && data.total_quotas ? data.total_quotas : data.quotas;
         this.quotas = this.isAWS
           ? null
           : Object.fromEntries(
