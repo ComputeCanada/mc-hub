@@ -718,10 +718,10 @@ export default {
       return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;
     },
     instanceCountMax() {
-      return this.quotas ? this.quotas.instance_count.max : 0;
+      return this.quotas?.instance_count?.max ?? 0;
     },
     ipsCountMax() {
-      return this.quotas ? this.quotas.ips.max : 0;
+      return this.quotas?.ips?.max ?? 0;
     },
     ramRule() {
       return this.plannerMode || this.ramGbUsed <= this.ramGbMax || "Ram quota exceeded";
@@ -738,7 +738,7 @@ export default {
         : 0;
     },
     ramGbMax() {
-      return this.quotas ? this.quotas.ram.max / MB_PER_GB : 0;
+      return (this.quotas?.ram?.max ?? 0) / MB_PER_GB;
     },
     vcpuUsed() {
       return this.usedResourcesLoaded
@@ -749,7 +749,7 @@ export default {
         : 0;
     },
     vcpuMax() {
-      return this.quotas ? this.quotas.vcpus.max : 0;
+      return this.quotas?.vcpus?.max ?? 0;
     },
     volumeCountUsed() {
       return this.usedResourcesLoaded
@@ -760,7 +760,7 @@ export default {
         : 0;
     },
     volumeCountMax() {
-      return this.quotas ? this.quotas.volume_count.max : 0;
+      return this.quotas?.volume_count?.max ?? 0;
     },
     volumeSizeUsed() {
       return this.usedResourcesLoaded
@@ -769,7 +769,7 @@ export default {
         : 0;
     },
     volumeSizeMax() {
-      return this.quotas ? this.quotas.volume_size.max : 0;
+      return this.quotas?.volume_size?.max ?? 0;
     },
     instancesVolumeSizeUsed() {
       return this.instances.reduce(
