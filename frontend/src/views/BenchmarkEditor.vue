@@ -30,7 +30,7 @@
             v-model="successCriterion"
             :items="successCriteria"
             label="Success criterion"
-            hint="Time from apply acceptance to this state. Cleanup starts as soon as the target is reached."
+            hint="Time from Terraform Cloud apply start to this state. Cleanup starts as soon as the target is reached."
             persistent-hint
           />
           <v-row>

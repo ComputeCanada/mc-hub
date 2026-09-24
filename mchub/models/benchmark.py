@@ -61,9 +61,9 @@ class BenchmarkRun(db.Model):
 
     @property
     def measurement_started_at(self):
-        # Historical build observations have no Terraform execution start and
+        # Historical observations have no Terraform execution start and
         # must not be mixed into execution-time comparisons.
-        return self.apply_started_at if self.success_criterion == "build_completed" else self.applied_at
+        return self.apply_started_at
 
     @property
     def duration_seconds(self):

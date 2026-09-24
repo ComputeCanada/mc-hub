@@ -19,7 +19,7 @@ from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as S
 from mchub.models.magic_castle.magic_castle_configuration import MagicCastleConfiguration, validate_cluster_name
 from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode as TFStatus
 from mchub.models.terraform_cloud import TerraformCloudRunORM
-from mchub.models.usage import utcnow
+from mchub.models.usage import UsageApply, utcnow
 from mchub.services import benchmark_runner as runner, benchmarks, usage, cluster_lifecycle
 import mchub.models.magic_castle.magic_castle as mc_module
 from mchub.exceptions.invalid_usage_exception import InvalidUsageException
@@ -775,23 +775,66 @@ def test_build_uses_terraform_interval_despite_queueing_and_delayed_observation(
     assert run.duration_seconds == 79
 
 
-def test_build_waits_for_missing_remote_timestamps_without_inventing_measurement(benchmark, cluster, mocker):
-    benchmark.success_criterion = "build_completed"
+@pytest.mark.parametrize("accepted", [True, False])
+@pytest.mark.parametrize("missing_start", [True, False])
+def test_healthy_uses_terraform_start_and_retries_missing_timestamps(app, benchmark, cluster, mocker, accepted, missing_start):
+    with freeze_time("2027-01-01 00:00:00"):
+        run = benchmarks.enqueue(benchmark)
+        cluster.benchmark_run_id = run.id
+        run.phase, run.started_at = "waiting", utcnow()
+        if accepted:
+            usage.accepted(usage.begin_apply(cluster))
+        db.session.commit()
+    observed = datetime(2027, 1, 1, 0, 5)
+    started = datetime(2027, 1, 1, 0, 2)
+    mocker.patch.object(MagicCastle, "status", new_callable=PropertyMock, return_value=Status.PROVISIONING_RUNNING)
+    run.healthy_at = observed
+    if accepted:
+        attempt = db.session.scalar(db.select(UsageApply).filter_by(run_id="run-1"))
+        attempt.healthy_at = observed
+    db.session.commit()
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_apply_timestamps.return_value = (None, None) if missing_start else (started, observed - timedelta(minutes=1))
+    with freeze_time(observed):
+        runner.advance_run(run.id)
+    assert run.target_reached_at == observed
+    if missing_start:
+        assert run.outcome is None
+        assert run.duration_seconds is None
+        tf.get_apply_timestamps.return_value = (started, observed - timedelta(minutes=1))
+        with freeze_time(observed + timedelta(seconds=10)):
+            runner.advance_run(run.id)
+    assert run.outcome == "successful"
+    assert run.apply_started_at == started
+    assert run.target_reached_at == observed
+    assert run.duration_seconds == 180
+    tf.get_apply_timestamps.assert_called_with("run-1")
+    result = app.test_client().get(f"/api/benchmarks/{benchmark.id}", headers=OWNER_HEADERS).get_json()["runs"][0]
+    assert result["measurement_started_at"] == "2027-01-01T00:02:00Z"
+    assert result["duration_seconds"] == 180
+
+
+@pytest.mark.parametrize("criterion", ["healthy", "build_completed"])
+def test_waits_for_missing_remote_timestamps_without_inventing_measurement(benchmark, cluster, mocker, criterion):
+    benchmark.success_criterion = criterion
     run = benchmarks.enqueue(benchmark)
     cluster.benchmark_run_id = run.id
     run.phase, run.started_at = "waiting", utcnow()
+    if criterion == "healthy":
+        run.healthy_at = utcnow()
+        mocker.patch.object(MagicCastle, "status", new_callable=PropertyMock, return_value=Status.PROVISIONING_RUNNING)
     db.session.commit()
     tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
     tf.get_run_status.return_value = (TFStatus.APPLIED, False)
     tf.get_apply_timestamps.return_value = (None, None)
     runner.advance_run(run.id)
     assert run.outcome is None
-    assert run.target_reached_at is None
+    assert run.target_reached_at == run.healthy_at
     assert run.duration_seconds is None
     with freeze_time(run.started_at + timedelta(hours=3)):
         runner.advance_run(run.id)
     assert run.outcome == "timed_out"
-    assert run.target_reached_at is None
+    assert run.target_reached_at == run.healthy_at
 
 
 def test_statistics_compare_only_runs_with_current_success_criterion(app, benchmark):
@@ -801,7 +844,7 @@ def test_statistics_compare_only_runs_with_current_success_criterion(app, benchm
         run = benchmarks.enqueue(benchmark)
         run.phase, run.active_benchmark_id = "complete", None
         run.applied_at = utcnow()
-        run.apply_started_at = run.applied_at if criterion == "build_completed" else None
+        run.apply_started_at = run.applied_at
         run.outcome = outcome
         run.commit_sha, run.repository = "same-sha", "org/repo"
         run.target_reached_at = run.applied_at + timedelta(seconds=seconds) if seconds else None
@@ -904,7 +947,7 @@ def test_comparison_groups_use_full_commit_and_criterion_preserving_unknown_runs
         run.phase, run.active_benchmark_id = "complete", None
         run.requested_at = utcnow() + timedelta(seconds=index)
         run.applied_at = utcnow()
-        run.apply_started_at = run.applied_at if criterion == "build_completed" else None
+        run.apply_started_at = run.applied_at
         run.outcome, run.commit_sha, run.repository = outcome, sha, "org/repo"
         run.target_reached_at = run.applied_at + timedelta(seconds=seconds) if seconds else None
         # Identical specifications with different SHAs must still stay separate.
@@ -956,7 +999,7 @@ def test_group_summaries_cover_history_beyond_the_display_limit(app, benchmark):
         benchmark_id=benchmark.id, configuration=deepcopy(benchmark.configuration), revision=1,
         timeout_minutes=120, hostname="benchmark.example.org", repository="org/repo",
         commit_sha="shared-sha", success_criterion="healthy", requested_at=now - timedelta(seconds=index),
-        applied_at=now, target_reached_at=now + timedelta(seconds=120), phase="complete", outcome="successful",
+        applied_at=now, apply_started_at=now, target_reached_at=now + timedelta(seconds=120), phase="complete", outcome="successful",
     ) for index in range(501)]
     db.session.add_all(runs)
     db.session.commit()
@@ -1008,8 +1051,9 @@ def test_interrupted_apply_is_not_replayed_and_cluster_edits_are_blocked(benchma
         cluster_lifecycle.claim_background_task(cluster)
 
 
-def test_legacy_build_observations_are_preserved_but_not_compared_with_execution(app, benchmark):
-    benchmark.success_criterion = "build_completed"
+@pytest.mark.parametrize("criterion", ["healthy", "build_completed"])
+def test_legacy_observations_are_preserved_but_not_compared_with_execution(app, benchmark, criterion):
+    benchmark.success_criterion = criterion
     old = benchmarks.enqueue(benchmark)
     old.phase, old.active_benchmark_id, old.outcome = "complete", None, "successful"
     old.applied_at = datetime(2026, 9, 20, 22, 0, 59)

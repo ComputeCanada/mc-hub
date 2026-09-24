@@ -222,10 +222,14 @@ def advance_run(run_id):
             refresh_measurement(run, orm)
             if run.target_reached_at is None:
                 run.target_reached_at = run.healthy_at
+            if run.target_reached_at is not None and run.apply_started_at is None and run.terraform_run_id:
+                started, _ = get_terraform_cloud().get_apply_timestamps(run.terraform_run_id)
+                if started is not None and started <= run.target_reached_at:
+                    run.apply_started_at = started
         db.session.commit()
         deadline = run.started_at + timedelta(minutes=run.timeout_minutes)
         measured_target = run.target_reached_at
-        if run.success_criterion == "build_completed" and run.apply_started_at is None:
+        if run.apply_started_at is None:
             measured_target = None  # An older local observation is not an apply timestamp.
         if measured_target and measured_target <= deadline:
             finish(run, "successful")

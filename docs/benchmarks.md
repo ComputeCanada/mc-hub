@@ -83,23 +83,25 @@ Terraform timestamps are retried until the run deadline; no local timestamp is
 substituted. A plan that finishes without an apply fails the benchmark because it
 does not measure a deployment.
 
-**Provisioning completed (healthy)** measures MC Hub's apply acceptance to its
+**Provisioning completed (healthy)** measures Terraform Cloud's apply `started-at` to MC Hub's
 first observation that all configured health checks pass. The scheduler polls
 every 10 seconds, with additional process startup and remote API latency; the usage
-observer can also record readiness. This criterion retains observation-based timing.
+observer can also record readiness. The end timestamp remains observation-based; queueing before
+apply execution is excluded. Missing or invalid Terraform timestamps are retried until
+the run deadline; no local start timestamp is substituted.
 
 Cleanup begins after the selected target is reached, or after failure or timeout.
 The maximum run time still includes planning and queueing. A build completed before
 the deadline succeeds even if the worker observes it later. The dashboard shows
 mean, median, nearest-rank P95, success rate, a duration trend, and individual run
-details. Historical build results without a Terraform apply start retain their
+details. Historical results without a Terraform apply start retain their
 original timestamps in history but do not enter timing aggregates or trends.
 
 Failed and timed-out attempts are included in the success-rate denominator but not
 in duration aggregates. Cancelled queued runs are excluded from that denominator.
 When an apply response is lost or a process dies before recording acceptance,
-healthy runs may succeed with unknown duration; no start time is invented. Build
-runs can still be measured using Terraform's execution timestamps. Results retain
+both criteria can still be measured using Terraform's apply start timestamp; no
+start time is invented. Results retain
 their recorded timing after later health changes or teardown.
 
 The dashboard's **Commit and success criterion** selector groups results by the
