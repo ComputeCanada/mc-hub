@@ -130,6 +130,29 @@ describe("ClusterEditor", () => {
     moxios.uninstall(Repository)
   })
 
+  it("renders partial quota data without losing the editor", async () => {
+    const wrapper = await getDefaultClusterEditorWrapper();
+    const errors = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      wrapper.vm.quotas = { ram: { max: 2048 } };
+      await wrapper.vm.$nextTick();
+      expect(wrapper.vm.ramGbMax).toBe(2);
+      expect(wrapper.vm.instanceCountMax).toBe(0);
+      expect(wrapper.vm.ipsCountMax).toBe(0);
+      expect(wrapper.vm.vcpuMax).toBe(0);
+      expect(wrapper.vm.volumeCountMax).toBe(0);
+      expect(wrapper.vm.volumeSizeMax).toBe(0);
+      wrapper.vm.quotas = {};
+      await wrapper.vm.$nextTick();
+      expect(wrapper.vm.ramGbMax).toBe(0);
+      expect(wrapper.find('[aria-controls="instance-settings-mgmt"]').exists()).toBe(true);
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+      wrapper.destroy();
+    }
+  });
+
   it("expands one instance at a time and retains optional settings when collapsed", async () => {
     const wrapper = await getDefaultClusterEditorWrapper();
     const mgmt = wrapper.find('[aria-controls="instance-settings-mgmt"]');

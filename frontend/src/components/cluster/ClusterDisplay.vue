@@ -27,9 +27,15 @@
             </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
+          <v-alert v-if="magicCastle && magicCastle.capacity_ends_at" type="warning"
+            >This cluster will be automatically torn down at
+            {{ new Date(magicCastle.capacity_ends_at).toLocaleString() }}, deleting its resources and data.</v-alert
+          >
           <cluster-editor
             v-if="magicCastle && !busy && !clusterDestructionDialog"
             :existing-cluster="existingCluster"
+            :preserve-specs="!!capacityPlanId"
+            :project-ids="capacityProjectId ? [Number(capacityProjectId)] : undefined"
             :specs="magicCastle"
             :status="status"
             :stateful="stateful"
@@ -124,6 +130,7 @@
 </template>
 
 <script>
+import Repository from "@/repositories/Repository";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import TemplateRepository from "@/repositories/TemplateRepository";
 import ClusterStatusCode, { canDestroyCluster } from "@/models/ClusterStatusCode";
@@ -207,13 +214,32 @@ export default {
       }
       this.startStatusPolling();
     } else {
-      this.magicCastle = (await TemplateRepository.get("default")).data;
+      try {
+        if (this.capacityPlanId) {
+          const plan = (
+            await Repository.get(`/projects/${Number(this.capacityProjectId)}/capacity/${Number(this.capacityPlanId)}`)
+          ).data;
+          this.magicCastle = plan.definition;
+          this.magicCastle.capacity_plan_id = plan.id;
+          this.$set(this.magicCastle, "capacity_ends_at", plan.ends_at);
+        } else {
+          this.magicCastle = (await TemplateRepository.get("default")).data;
+        }
+      } catch (e) {
+        this.showError(e.response?.data?.message || e.message);
+      }
     }
   },
   beforeDestroy() {
     this.stopStatusPolling();
   },
   computed: {
+    capacityPlanId() {
+      return this.$route?.query?.capacityPlan;
+    },
+    capacityProjectId() {
+      return this.$route?.query?.capacityProject;
+    },
     failureStatus() {
       return [ClusterStatusCode.BUILD_ERROR, ClusterStatusCode.DESTROY_ERROR, ClusterStatusCode.PLAN_ERROR].includes(
         this.status

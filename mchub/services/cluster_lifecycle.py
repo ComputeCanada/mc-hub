@@ -49,6 +49,8 @@ def validate_apply(orm):
         raise PlanNotCreatedException
     if cluster.tfcloud_run.run_id is None:
         raise RunIDNotSet
+    from .capacity import validate_plan_apply
+    validate_plan_apply(orm)
 
 
 def execute_claimed_task(hostname, target, *args):
@@ -69,7 +71,7 @@ def execute_claimed_task(hostname, target, *args):
             if orm is not None:
                 if orm.status == Status.BACKGROUND_TASK_RUNNING:
                     orm.status = Status.PLAN_RUNNING
-                if orm.creation_step == "expiration":
+                if orm.creation_step in {"expiration", "capacity"}:
                     orm.creation_step = None
                 db.session.commit()
 

@@ -20,7 +20,7 @@
               <v-list-item-title>{{ localSpecs.cloud.name }}</v-list-item-title>
             </v-list-item-content>
           </v-col>
-          <v-col v-if="!benchmarkMode" cols="6" class="py-0">
+          <v-col v-if="!benchmarkMode && !plannerMode && !specs.capacity_ends_at" cols="6" class="py-0">
             <v-menu :nudge-right="40" transition="scale-transition" offset-y min-width="auto">
               <template v-slot:activator="{ on, attrs }">
                 <v-text-field
@@ -57,7 +57,7 @@
               validate-on-blur
             />
           </v-col>
-          <v-col cols="6" class="py-0">
+          <v-col v-if="showDeploymentConfiguration" cols="6" class="py-0">
             <v-select
               v-model="localSpecs.domain"
               :items="getPossibleValues('domain')"
@@ -67,7 +67,7 @@
             />
           </v-col>
         </v-list-item>
-        <v-list-item>
+        <v-list-item v-if="showDeploymentConfiguration">
           <v-col cols="6" class="py-0">
             <v-select v-if="!stateful" v-model="localSpecs.image" :items="getPossibleValues('image')" label="Image" />
             <v-list-item-content v-else>
@@ -131,7 +131,7 @@
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
           </v-col>
           <v-col cols="12" sm="3">
-            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GiB" />
           </v-col>
           <v-col cols="12" sm="3">
             <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
@@ -299,8 +299,8 @@
       </template>
 
       <!-- Networking & security -->
-      <v-subheader v-if="!benchmarkMode">Networking and security</v-subheader>
-      <v-list>
+      <v-subheader v-if="showDeploymentConfiguration && !benchmarkMode">Networking and security</v-subheader>
+      <v-list v-if="showDeploymentConfiguration">
         <template v-if="!benchmarkMode">
           <v-list-item>
             <v-combobox
@@ -400,7 +400,14 @@
           Save any configuration changes before rebuilding. Choose a future expiration date or no expiration. Rebuilding
           creates new resources; deleted data is not restored and connection details may change.
         </p>
-        <v-btn :to="benchmarkMode ? '/benchmarks' : '/'" class="ma-2" :disabled="loading" large outlined color="primary"
+        <v-btn
+          :to="plannerMode ? undefined : benchmarkMode ? '/benchmarks' : '/'"
+          @click="plannerMode && $emit('cancel')"
+          class="ma-2"
+          :disabled="loading"
+          large
+          outlined
+          color="primary"
           >Cancel</v-btn
         >
       </div>
@@ -437,6 +444,8 @@ export default {
   },
   props: {
     benchmarkMode: Boolean,
+    plannerMode: Boolean,
+    autoCreate: Boolean,
     identityLocked: Boolean,
     preserveSpecs: Boolean,
     submitDisabled: Boolean,
@@ -609,6 +618,9 @@ export default {
     this.$disableUnloadConfirmation();
   },
   computed: {
+    showDeploymentConfiguration() {
+      return !this.plannerMode || this.autoCreate;
+    },
     benchmarkHostnameRule() {
       return (
         !this.benchmarkMode ||
@@ -697,25 +709,25 @@ export default {
       );
     },
     volumeCountRule() {
-      return this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
+      return this.plannerMode || this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
     },
     volumeSizeRule() {
-      return this.volumeSizeUsed <= this.volumeSizeMax || "Volume size quota exceeded";
+      return this.plannerMode || this.volumeSizeUsed <= this.volumeSizeMax || "Volume size quota exceeded";
     },
     instanceCountUsed() {
       return this.usedResourcesLoaded ? this.instances.reduce((acc, instance) => acc + instance.count, 0) : 0;
     },
     instanceCountMax() {
-      return this.quotas ? this.quotas.instance_count.max : 0;
+      return this.quotas?.instance_count?.max ?? 0;
     },
     ipsCountMax() {
-      return this.quotas ? this.quotas.ips.max : 0;
+      return this.quotas?.ips?.max ?? 0;
     },
     ramRule() {
-      return this.ramGbUsed <= this.ramGbMax || "Ram quota exceeded";
+      return this.plannerMode || this.ramGbUsed <= this.ramGbMax || "Ram quota exceeded";
     },
     coreRule() {
-      return this.vcpuUsed <= this.vcpuMax || "Core quota exceeded";
+      return this.plannerMode || this.vcpuUsed <= this.vcpuMax || "Core quota exceeded";
     },
     ramGbUsed() {
       return this.usedResourcesLoaded
@@ -726,7 +738,7 @@ export default {
         : 0;
     },
     ramGbMax() {
-      return this.quotas ? this.quotas.ram.max / MB_PER_GB : 0;
+      return (this.quotas?.ram?.max ?? 0) / MB_PER_GB;
     },
     vcpuUsed() {
       return this.usedResourcesLoaded
@@ -737,7 +749,7 @@ export default {
         : 0;
     },
     vcpuMax() {
-      return this.quotas ? this.quotas.vcpus.max : 0;
+      return this.quotas?.vcpus?.max ?? 0;
     },
     volumeCountUsed() {
       return this.usedResourcesLoaded
@@ -748,7 +760,7 @@ export default {
         : 0;
     },
     volumeCountMax() {
-      return this.quotas ? this.quotas.volume_count.max : 0;
+      return this.quotas?.volume_count?.max ?? 0;
     },
     volumeSizeUsed() {
       return this.usedResourcesLoaded
@@ -757,7 +769,7 @@ export default {
         : 0;
     },
     volumeSizeMax() {
-      return this.quotas ? this.quotas.volume_size.max : 0;
+      return this.quotas?.volume_size?.max ?? 0;
     },
     instancesVolumeSizeUsed() {
       return this.instances.reduce(
@@ -775,9 +787,9 @@ export default {
       return (
         !this.loading &&
         this.validForm &&
-        (this.benchmarkMode || this.dirtyForm) &&
+        (this.plannerMode || this.benchmarkMode || (!this.existingCluster && this.preserveSpecs) || this.dirtyForm) &&
         !this.resourceError &&
-        (!this.isAWS || this.awsStatus === "ready")
+        (this.plannerMode || !this.isAWS || this.awsStatus === "ready")
       );
     },
   },
@@ -829,6 +841,7 @@ export default {
     },
     awsTypeRule(id) {
       return (value) =>
+        (this.plannerMode && !!value) ||
         this.awsChoices[id]?.includes(value) ||
         "This type is unavailable for the current definition. Adjust the count or select another type.";
     },
@@ -868,7 +881,7 @@ export default {
     publicTagRule(id) {
       var self = this;
       return function (tags) {
-        if (self.isAWS) return true;
+        if (self.isAWS || self.plannerMode) return true;
         if (self.localSpecs.instances[id].count > 0 && tags.includes("public")) {
           let newPublicIP = 0;
           for (let key in self.localSpecs.instances) {
@@ -892,13 +905,14 @@ export default {
       if (this.possibleResources === null || this.resourceDetails === null) {
         return [];
       }
-      if (this.isAWS) {
+      if (this.isAWS && !this.plannerMode) {
         const allowed = new Set(this.awsChoices[id] || []);
         const selected = this.localSpecs.instances[id]?.type;
         return this.resourceDetails.instance_types
           .filter((t) => allowed.has(t.name) || t.name === selected)
           .map((t) => ({ ...t, unavailable: !allowed.has(t.name) }));
       }
+      if (this.isAWS && this.plannerMode) return this.resourceDetails.instance_types;
       // Retrieve all available types
       // Then filter based on the selected tags
       let allowedNames = this.possibleResources["types"];
@@ -1099,7 +1113,15 @@ export default {
         this.provider = data.provider || "openstack";
         if (!this.localSpecs.volumes.nfs) this.$set(this.localSpecs.volumes, "nfs", {});
         this.resourceDetails = data.resource_details;
-        this.quotas = this.isAWS ? null : data.quotas;
+        const quotas = this.plannerMode && data.total_quotas ? data.total_quotas : data.quotas;
+        this.quotas = this.isAWS
+          ? null
+          : Object.fromEntries(
+              Object.entries(quotas || {}).map(([key, quota]) => [
+                key,
+                { ...quota, max: quota.max === null ? Infinity : quota.max },
+              ])
+            );
         this.possibleResources = data.possible_resources;
         this.scheduleAWS();
       } catch (error) {

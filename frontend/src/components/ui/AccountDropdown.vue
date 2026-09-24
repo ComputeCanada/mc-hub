@@ -7,6 +7,11 @@
       </v-btn>
     </template>
     <v-list>
+      <v-list-item to="/capacity"
+        ><v-list-item-title
+          ><v-icon class="mr-4">mdi-calendar-clock</v-icon>Capacity planner</v-list-item-title
+        ></v-list-item
+      >
       <v-list-item v-if="benchmarkAccess.allowed" to="/benchmarks">
         <v-list-item-title><v-icon class="mr-4">mdi-timer-outline</v-icon>Benchmarks</v-list-item-title>
       </v-list-item>

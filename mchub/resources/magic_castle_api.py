@@ -1,4 +1,6 @@
 from threading import Thread, current_thread
+from copy import deepcopy
+import time
 
 from flask import request
 from flask import current_app
@@ -58,7 +60,13 @@ class MagicCastleAPI(ApiView):
                 db.select(MagicCastleORM).filter_by(hostname=hostname)
             ).scalar_one_or_none()
             if orm and orm.project in user.projects and user.can_access_cluster(orm):
-                return MagicCastle(orm).state
+                from ..models.capacity_plan import CapacityPlan
+                from ..services.capacity import iso
+                state = MagicCastle(orm).state
+                plan = db.session.scalar(db.select(CapacityPlan).where(CapacityPlan.cluster_usage_id == orm.usage_id))
+                if plan is not None:
+                    state["capacity_ends_at"] = iso(plan.ends_at)
+                return state
             else:
                 raise ClusterNotFoundException
         else:
@@ -134,7 +142,48 @@ class MagicCastleAPI(ApiView):
             ensure_aws_feasible(project, json_data)
 
             user_id = user.orm.id
-            self._run_in_background(app, MagicCastle().plan_creation, json_data, user_id)
+            if json_data.get("capacity_plan_id") is not None:
+                from ..models.capacity_plan import CapacityPlan
+                from ..models.usage import new_id
+                from .capacity_api import can_manage
+                from ..services.capacity import resource_demand
+                plan = db.session.get(CapacityPlan, json_data["capacity_plan_id"])
+                if plan is None or plan.project_id != project.id or not can_manage(user, plan):
+                    raise InvalidUsageException("Invalid capacity plan", status_code=403)
+                if plan.auto_create or time.time() >= plan.ends_at:
+                    raise InvalidUsageException("This plan is automatic or its period has ended.")
+                demand = resource_demand(project, json_data)
+                cluster = MagicCastle()
+                cluster.orm.usage_id = new_id()
+                json_data["expiration_date"] = None
+                claimed = db.session.execute(db.update(CapacityPlan).where(
+                    CapacityPlan.id == plan.id, CapacityPlan.status == "planned",
+                    CapacityPlan.cluster_usage_id.is_(None)
+                ).values(status="manual_starting", cluster_usage_id=cluster.orm.usage_id,
+                         demand=demand, definition=deepcopy(json_data)))
+                db.session.commit()
+                if claimed.rowcount != 1:
+                    raise InvalidUsageException("This capacity plan has already started or was cancelled.", status_code=409)
+                plan_id = plan.id
+                user_id = plan.owner_id
+
+                def create_planned_cluster():
+                    try:
+                        cluster.plan_creation(json_data, user_id)
+                        linked = db.session.get(CapacityPlan, plan_id)
+                        linked.status = "manual_ready"
+                        linked.message = "Review and apply the cluster plan. Resources will be torn down at the planned end."
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+                        linked = db.session.get(CapacityPlan, plan_id)
+                        linked.status = "failed"
+                        linked.message = "Creation failed. Review the cluster; end-of-period cleanup remains scheduled."
+                        db.session.commit()
+                        raise
+                self._run_in_background(app, create_planned_cluster)
+            else:
+                self._run_in_background(app, MagicCastle().plan_creation, json_data, user_id)
             return {}, 202
 
     def put(self, user: User, hostname):

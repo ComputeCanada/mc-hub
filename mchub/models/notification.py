@@ -26,3 +26,14 @@ class NotificationDelivery(db.Model):
         db.UniqueConstraint("event_id", "destination_id", name="uq_notification_destination"),
         db.Index("ix_notification_due", "state", "next_attempt_at"),
     )
+
+
+class ProjectNotificationDestination(db.Model):
+    __tablename__ = "project_notification_destination"
+    project_id = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
+    delivery_id = db.Column(db.String(100), nullable=False, unique=True)
+    type = db.Column(db.String(20), nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    token = db.Column(db.Text, nullable=False, default="")
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
+    project = db.relationship("Project", backref=db.backref("notification_destination", uselist=False, cascade="all, delete-orphan"))

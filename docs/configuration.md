@@ -340,13 +340,14 @@ Add `notification_destinations` to `configuration.json` and restart the services
 }
 ```
 
-Omitting the list or setting it to `[]` disables notifications. IDs must be unique
+Omitting the list or setting it to `[]` disables global provider notifications.
+Project destinations are configured separately. IDs must be unique
 and stable; `type` is `slack` or `webhook`, URLs must use HTTPS, and `enabled`
 defaults to `true`. The optional `token` adds a Bearer Authorization header.
 Protect the configuration file: webhook URLs and tokens are credentials. Redirects
 are rejected. Credentials are not copied into the outbox or delivery errors.
 
-All enabled destinations receive `provider.disruption_started` and
+All enabled global destinations receive `provider.disruption_started` and
 `provider.disruption_resolved` events. An active disruption is announced on the
 first successful poll after notifications are initially enabled, even if the
 banner was already active. New incidents during an existing disruption generate
@@ -355,6 +356,13 @@ text/status updates do not generate events. Recovery means the provider reports
 no remaining monitored disruptions. Failed polls and unconfirmed RSS incidents do
 not generate recovery events. Notifications describe provider reports, not checks
 of individual clusters.
+
+The capacity planner emits `capacity.quota_insufficient` only to the affected
+project’s enabled destination (see below), never to these global destinations.
+A live quota check finds shortages for plans starting within 24 hours. It groups overlapping demand by project, checks hourly, and suppresses
+unchanged alerts across restarts. The event includes plan names/dates, current
+available quota, required resources, shortages, and a plain-text `summary` for Slack.
+No cluster secrets are included. See [capacity planner](capacity-planner.md#quota-checks-24-hours-before-start).
 
 Generic webhooks receive an HTTP POST with `Content-Type: application/json` and
 `X-MC-Hub-Event-ID`. The body has this shape:
@@ -400,7 +408,7 @@ row.next_attempt_at = 0
 db.session.commit()
 ```
 
-Disabled or removed destination IDs keep their pending deliveries paused. Restoring
+Disabled or removed global destination IDs keep their pending deliveries paused. Restoring
 the same ID resumes them; changing its URL redirects those pending deliveries to
 the new URL. Newly added IDs receive future events only. Events occurring while all
 notifications are disabled are not queued. Run one notification worker through the
@@ -411,3 +419,46 @@ Other workers can reuse `notifications.enqueue()` with their own event type,
 resource ID and JSON payload, committing it together with the associated state
 change. Additional event types use a basic Slack message with the event type, resource
 ID and optional payload `summary`; generic webhooks use the common event envelope. Cluster failure events are not enabled.
+
+
+## Project notification destinations
+
+In **Projects → Notifications**, configure one Slack incoming webhook or generic
+HTTPS webhook per project. Managing these settings requires **both** hub operator
+status (`admins` in the hub configuration) and administrator access to that project.
+Project administrators without hub operator status, hub operators who do not
+administer the project, ordinary members, and service tokens cannot read or change
+these settings. The UI uses the same server-provided permission check as the API.
+
+A destination has a type (`slack` or `webhook`), an HTTPS URL, an optional Bearer token,
+and an enabled flag. Stored URLs and tokens are write-only: GET and save responses
+return only configuration flags and the latest delivery status. Leave credential
+fields blank in the form to retain existing values; use **Remove stored token** to
+clear it explicitly. Errors from delivery contain only HTTP status codes or exception
+types. No live notification is sent just by saving settings.
+
+The URL and token are stored in the application database, like project cloud
+credentials. Restrict database and backup access; these fields are not encrypted
+separately by MC-Hub. URLs must not contain embedded user credentials or fragments.
+The delivery worker requires HTTPS and rejects redirects. A generic webhook receives
+the existing versioned notification envelope; Slack receives a plain-text block.
+
+Project capacity warnings route only to the project destination. If it is absent or
+disabled, the warning remains available in the planner and is not broadcast globally.
+Provider outage notifications continue to use global `notification_destinations`.
+Changing or enabling a project destination triggers another preflight check on the
+next worker sweep; an existing shortage can then be announced to the new destination.
+Disabling, replacing, or removing a destination cancels pending deliveries. A request
+already in flight may complete. Delivery diagnostics show the latest attempt for the
+current destination.
+
+Apply migrations through `0023` and restart the web service and background workers.
+This migration cancels pending capacity alerts previously queued to global destinations;
+it does not copy global webhook credentials into projects. Configure each project’s
+destination explicitly. Saved project settings take effect without a service restart.
+
+Operator/project-admin API:
+
+- `GET /api/projects/<id>/notification-destination`: configuration flags and latest delivery status, never credentials.
+- `PUT /api/projects/<id>/notification-destination`: create or update `{type, url, token, enabled}`. Omitted fields retain their values; `token: ""` clears the token.
+- `DELETE /api/projects/<id>/notification-destination`: remove the destination and cancel pending deliveries.
