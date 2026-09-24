@@ -89,8 +89,8 @@
           results without Terraform timestamps remain in history but are excluded from timing comparisons.
         </p>
         <p v-else class="text-caption">
-          Apply acceptance to first observation of healthy services. Successful runs with known apply acceptance times
-          only. Later health changes do not change a result.
+          Terraform Cloud apply start to first observation of healthy services. Successful runs with known Terraform
+          apply start times only. Older results without these timestamps are excluded from timing comparisons. Later health changes do not change a result.
         </p>
         <svg
           v-if="points.length"
@@ -175,7 +175,7 @@
                 >
               </p>
               <p v-else>
-                Target reached: {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
+                Terraform apply started: {{ timestamp(item.apply_started_at) }} · Target reached: {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
               </p>
               <p>
                 Terraform run: {{ item.terraform_run_id || "Unknown" }} · Repository:
