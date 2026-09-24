@@ -17,3 +17,14 @@ class CapacityPlan(db.Model):
     cluster_usage_id = db.Column(db.String(36))
     project = db.relationship("Project", backref=db.backref("capacity_plans", cascade="all, delete-orphan"))
     owner = db.relationship("UserORM")
+
+
+class CapacityQuotaCheck(db.Model):
+    __tablename__ = "capacity_quota_check"
+    project_id = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
+    checked_at = db.Column(db.Float, nullable=False)
+    next_check_at = db.Column(db.Float, nullable=False)
+    input_signature = db.Column(db.String(64), nullable=False)
+    notification_signature = db.Column(db.String(64))
+    result = db.Column(db.JSON, nullable=False)
+    project = db.relationship("Project", backref=db.backref("capacity_quota_checks", cascade="all, delete-orphan"))

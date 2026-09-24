@@ -16,6 +16,7 @@ from .capacity import resource_demand, budget
 from ..models.cloud.cloud_manager import CloudManager
 from ..models.cloud.aws_manager import ensure_aws_feasible
 from .worker_logging import configure_worker_logging
+from .capacity_preflight import poll_once as check_upcoming_capacity
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,7 @@ def poll_once():
             start_plan(plan_id)
         finally:
             db.session.remove()
+    check_upcoming_capacity()
 
 
 def main():

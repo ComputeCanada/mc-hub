@@ -350,3 +350,95 @@ def test_gpu_forecast_includes_deployed_legacy_plans_without_gpu_quota(plan, clu
     assert report["segments"][0]["demand"]["gpus"] == 10
     assert report["segments"][0]["shortages"] == {}
     assert "gpus" not in plan.demand  # Read-only enrichment.
+
+
+def test_edit_replaces_plan_and_preserves_owner(plan, app, mocker):
+    from mchub.resources import capacity_api as api
+    mocker.patch.object(api, "MagicCastleConfiguration")
+    mocker.patch.object(MagicCastle, "validate_creation_version")
+    mocker.patch.object(api, "resource_demand", return_value={"vcpus": 8, "gpus": 2})
+    forecast = mocker.patch.object(api, "forecast", return_value={"segments": []})
+    admin = UserORM(scoped_id="admin@example.org")
+    plan.project.admins.append(admin); db.session.commit()
+    owner_id = plan.owner_id
+    payload = {"definition": {"cluster_name": "updated"}, "starts_at": capacity.iso(time.time()+1000),
+               "ends_at": capacity.iso(time.time()+2000), "auto_create": False}
+    user = User(admin, "admin", "example.org", "saml")
+    with app.test_request_context(json=payload):
+        api.CapacityAPI().post(user, plan.project_id, plan.id, preview=True)
+    assert plan.definition["cluster_name"] == "planned"
+    assert forecast.call_args.kwargs["exclude_plan_id"] == plan.id
+    with app.test_request_context(json=payload):
+        result, status = api.CapacityAPI().put(user, plan.project_id, plan.id)
+    assert status == 200 and result["plan"]["id"] == plan.id
+    assert plan.owner_id == owner_id and plan.definition["cluster_name"] == "updated"
+    assert plan.demand == {"vcpus": 8, "gpus": 2} and not plan.auto_create
+    assert db.session.scalar(db.select(db.func.count()).select_from(CapacityPlan)) == 1
+
+
+@pytest.mark.parametrize("status", ["starting", "started", "manual_starting", "cancelled"])
+def test_edit_rejects_plans_already_claimed_or_cancelled(plan, app, status):
+    plan.status = status; db.session.commit()
+    user = User(plan.owner, "owner", "example.org", "saml")
+    with app.test_request_context(json={}), pytest.raises(InvalidUsageException) as err:
+        CapacityAPI().put(user, plan.project_id, plan.id)
+    assert err.value.status_code == 409
+
+
+def test_edit_forbidden_for_other_member(plan, app):
+    other = UserORM(scoped_id="member@example.org", projects=[plan.project])
+    db.session.add(other); db.session.commit()
+    with app.test_request_context(json={}), pytest.raises(InvalidUsageException) as err:
+        CapacityAPI().put(User(other, "member", "example.org", "saml"), plan.project_id, plan.id)
+    assert err.value.status_code == 403
+
+
+def test_edit_forecast_counts_replacement_once(plan, mocker):
+    mocker.patch.object(capacity, "CloudManager")
+    mocker.patch.object(capacity, "planning_budget", return_value={"vcpus": 8})
+    candidate = intention(plan.starts_at, plan.ends_at, 6, None)
+    report = capacity.forecast(plan.project, time.time(), plan.ends_at, candidate, exclude_plan_id=plan.id)
+    assert report["segments"][0]["demand"] == {"vcpus": 6}
+    assert report["segments"][0]["shortages"] == {}
+
+
+@pytest.mark.parametrize("remaining", [3600, 45 * 86400, -1])
+def test_dashboard_forecast_stops_at_latest_plan_end(plan, mocker, remaining):
+    plan.ends_at = time.time() + remaining
+    plan.status = "failed" if remaining < 0 else "planned"
+    db.session.commit()
+    mocker.patch.object(capacity, "CloudManager")
+    mocker.patch.object(capacity, "planning_budget", return_value={"vcpus": 8})
+    result = CapacityAPI().get(User(plan.owner, "owner", "example.org", "saml"), plan.project_id)
+    segments = result["forecast"]["segments"]
+    if remaining > 0:
+        assert segments[-1]["ends_at"] == capacity.iso(plan.ends_at)
+    else:
+        assert segments == []
+
+
+def test_dashboard_has_no_forecast_periods_without_plans(plan, mocker):
+    plan.status = "cancelled"
+    db.session.commit()
+    mocker.patch.object(capacity, "CloudManager")
+    mocker.patch.object(capacity, "planning_budget", return_value={"vcpus": 8})
+    result = CapacityAPI().get(User(plan.owner, "owner", "example.org", "saml"), plan.project_id)
+    assert result["plans"] == []
+    assert result["forecast"]["segments"] == []
+
+
+@pytest.mark.parametrize("start_offset", [-3600, 86400])
+def test_dashboard_forecast_starts_at_earliest_plan(plan, mocker, start_offset):
+    plan.starts_at = time.time() + start_offset
+    plan.ends_at = time.time() + 3 * 86400
+    later = CapacityPlan(project=plan.project, owner=plan.owner, definition=plan.definition,
+                         demand={"vcpus": 2}, starts_at=plan.starts_at + 86400,
+                         ends_at=plan.ends_at + 86400, auto_create=False, status="planned")
+    db.session.add(later)
+    db.session.commit()
+    mocker.patch.object(capacity, "CloudManager")
+    mocker.patch.object(capacity, "planning_budget", return_value={"vcpus": 8})
+    result = CapacityAPI().get(User(plan.owner, "owner", "example.org", "saml"), plan.project_id)
+    segments = result["forecast"]["segments"]
+    assert segments[0]["starts_at"] == capacity.iso(plan.starts_at)
+    assert segments[-1]["ends_at"] == capacity.iso(later.ends_at)

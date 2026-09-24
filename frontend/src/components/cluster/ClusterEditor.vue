@@ -125,14 +125,13 @@
         </div>
         <div v-if="awsError">{{ awsError }} <v-btn text @click="checkAWS">Retry</v-btn></div>
       </v-alert>
-      <p v-if="plannerMode && usedResourcesLoaded">GPUs requested: {{ gpuUsed }} (reported without a GPU quota)</p>
       <v-list v-if="showOpenStackQuotas" class="pt-0">
         <v-list-item>
           <v-col cols="12" sm="3">
             <resource-usage-display :max="instanceCountMax" :used="instanceCountUsed" title="Instances" />
           </v-col>
           <v-col cols="12" sm="3">
-            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GB" />
+            <resource-usage-display :max="ramGbMax" :used="ramGbUsed" title="RAM" suffix="GiB" />
           </v-col>
           <v-col cols="12" sm="3">
             <resource-usage-display :max="vcpuMax" :used="vcpuUsed" title="cores" />
@@ -402,7 +401,8 @@
           creates new resources; deleted data is not restored and connection details may change.
         </p>
         <v-btn
-          :to="plannerMode ? '/capacity' : benchmarkMode ? '/benchmarks' : '/'"
+          :to="plannerMode ? undefined : benchmarkMode ? '/benchmarks' : '/'"
+          @click="plannerMode && $emit('cancel')"
           class="ma-2"
           :disabled="loading"
           large
@@ -417,7 +417,7 @@
 
 <script>
 import { cloneDeep, isEqual } from "lodash";
-import { isGpuTypeName, gpuCount } from "@/models/instanceTypes";
+import { isGpuTypeName } from "@/models/instanceTypes";
 import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
@@ -728,13 +728,6 @@ export default {
     },
     coreRule() {
       return this.plannerMode || this.vcpuUsed <= this.vcpuMax || "Core quota exceeded";
-    },
-    gpuUsed() {
-      if (!this.usedResourcesLoaded) return 0;
-      return this.instances.reduce((total, instance) => {
-        const type = this.resourceDetails.instance_types.find((type) => type.name === instance.type);
-        return total + instance.count * gpuCount(type || { name: instance.type });
-      }, 0);
     },
     ramGbUsed() {
       return this.usedResourcesLoaded

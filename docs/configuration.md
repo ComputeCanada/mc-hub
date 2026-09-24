@@ -356,6 +356,13 @@ no remaining monitored disruptions. Failed polls and unconfirmed RSS incidents d
 not generate recovery events. Notifications describe provider reports, not checks
 of individual clusters.
 
+The capacity planner also emits `capacity.quota_insufficient` to all enabled
+destinations when a live quota check finds shortages for plans starting within
+24 hours. It groups overlapping demand by project, checks hourly, and suppresses
+unchanged alerts across restarts. The event includes plan names/dates, current
+available quota, required resources, shortages, and a plain-text `summary` for Slack.
+No cluster secrets are included. See [capacity planner](capacity-planner.md#quota-checks-24-hours-before-start).
+
 Generic webhooks receive an HTTP POST with `Content-Type: application/json` and
 `X-MC-Hub-Event-ID`. The body has this shape:
 

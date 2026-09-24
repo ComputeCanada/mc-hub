@@ -7,7 +7,7 @@ from marshmallow import ValidationError
 from .api_view import ApiView
 from ..database import db
 from ..exceptions.invalid_usage_exception import InvalidUsageException
-from ..models.capacity_plan import CapacityPlan
+from ..models.capacity_plan import CapacityPlan, CapacityQuotaCheck
 from ..models.cloud.project import Project
 from ..models.magic_castle.magic_castle import MagicCastle
 from ..models.magic_castle.magic_castle_configuration import MagicCastleConfiguration
@@ -31,6 +31,7 @@ def serialize(plan, user, detail=False):
               "name": plan.definition["cluster_name"], "demand": plan.demand,
               "auto_create": plan.auto_create, "status": plan.status,
               "message": plan.message, "can_manage": can_manage(user, plan),
+              "can_edit": can_manage(user, plan) and plan.status == "planned" and plan.cluster_usage_id is None,
               "can_cancel": can_manage(user, plan) and plan.cluster_usage_id is None and plan.status in {"planned", "failed"}}
     if detail and can_manage(user, plan):
         result["definition"] = plan.definition
@@ -55,10 +56,14 @@ class CapacityAPI(ApiView):
             CapacityPlan.project_id == project_id,
             ((CapacityPlan.ends_at > now) | CapacityPlan.status.in_(["starting", "manual_starting", "ending", "cleanup_pending", "cleanup_failed", "failed"])),
             CapacityPlan.status != "cancelled").order_by(CapacityPlan.starts_at)))
-        end = max([p.ends_at for p in plans] + [now + 30 * 86400])
-        result = {"plans": [serialize(p, user) for p in plans]}
+        forecast_plans = [p for p in plans if p.ends_at > now]
+        start = min((p.starts_at for p in forecast_plans), default=now)
+        end = max((p.ends_at for p in forecast_plans), default=now)
+        preflight = db.session.get(CapacityQuotaCheck, project_id)
+        result = {"plans": [serialize(p, user) for p in plans],
+                  "preflight": preflight.result if preflight is not None else None}
         try:
-            result["forecast"] = forecast(project, now, end)
+            result["forecast"] = forecast(project, start, end)
             gpu_counts = result["forecast"].pop("plan_gpu_counts", {})
             for item in result["plans"]:
                 if item["id"] in gpu_counts:
@@ -69,10 +74,20 @@ class CapacityAPI(ApiView):
             result["warning"] = "Unable to check cloud quota. Availability is unknown; retry later."
         return result
 
+    def put(self, user, project_id, plan_id):
+        return self.post(user, project_id, plan_id)
+
     def post(self, user, project_id, plan_id=None, preview=False):
         project = authorize(user, project_id)
         if not hasattr(user, "orm"):
             raise InvalidUsageException("Capacity planning requires a user identity", status_code=403)
+        existing = None
+        if plan_id is not None:
+            existing = db.session.get(CapacityPlan, plan_id)
+            if existing is None or existing.project_id != project_id or not can_manage(user, existing):
+                raise InvalidUsageException("Invalid capacity plan", status_code=403)
+            if existing.status != "planned" or existing.cluster_usage_id is not None:
+                raise InvalidUsageException("Only plans whose creation has not started can be edited.", status_code=409)
         data = request.get_json()
         if not isinstance(data, dict) or not isinstance(data.get("definition"), dict):
             raise InvalidUsageException("Provide a cluster definition and a period.")
@@ -87,16 +102,28 @@ class CapacityAPI(ApiView):
         except (ValidationError, TypeError, ValueError):
             raise InvalidUsageException("Invalid cluster configuration.")
         MagicCastle.validate_creation_version(definition)
-        plan = CapacityPlan(project_id=project.id, owner_id=user.orm.id,
+        plan = CapacityPlan(project_id=project.id, owner_id=existing.owner_id if existing else user.orm.id,
                             definition=definition, starts_at=start, ends_at=end,
                             auto_create=data.get("auto_create", False), status="planned",
                             demand=resource_demand(project, definition))
-        report = forecast(project, start, end, candidate=plan)
+        report = forecast(project, start, end, candidate=plan, exclude_plan_id=plan_id)
         if preview:
             return report
-        db.session.add(plan)
+        if existing is not None:
+            # Atomic with the worker's start claim and plan cancellation.
+            changed = db.session.execute(db.update(CapacityPlan).where(
+                CapacityPlan.id == plan_id, CapacityPlan.status == "planned",
+                CapacityPlan.cluster_usage_id.is_(None),
+            ).values(definition=definition, demand=plan.demand, starts_at=start,
+                     ends_at=end, auto_create=plan.auto_create, message=None))
+            if changed.rowcount != 1:
+                db.session.rollback()
+                raise InvalidUsageException("This plan has started or was cancelled. Refresh before editing.", status_code=409)
+            plan = existing
+        else:
+            db.session.add(plan)
         db.session.commit()
-        return {"plan": serialize(plan, user), "forecast": report}, 201
+        return {"plan": serialize(plan, user), "forecast": report}, 200 if existing else 201
 
     def delete(self, user, project_id, plan_id):
         authorize(user, project_id)

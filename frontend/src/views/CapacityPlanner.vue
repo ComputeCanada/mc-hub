@@ -5,27 +5,50 @@
     <v-alert v-if="error" type="error">{{ error }}</v-alert>
     <v-alert v-if="notice" type="success">{{ notice }}</v-alert>
     <v-alert type="info">
-      Plans help your project coordinate resource usage. They do not reserve cloud capacity. OpenStack plans use the
-      full project quotas; AWS forecasts account for current usage. Linked clusters are automatically torn down at the
-      end of the period, deleting their resources and data.
+      Plans help your project coordinate resource usage. They do not reserve cloud capacity.
     </v-alert>
     <v-btn color="primary" class="mr-2 mb-4" :disabled="!projectId || loading" @click="newPlan"
       >Plan resource usage</v-btn
     >
     <v-btn class="mb-4" :loading="loading" @click="load">Refresh</v-btn>
     <v-alert v-if="report.warning" type="warning">{{ report.warning }}</v-alert>
+    <v-alert
+      v-if="report.preflight && report.preflight.status !== 'no_upcoming_plans'"
+      :type="report.preflight.status === 'sufficient' ? 'success' : 'warning'"
+    >
+      <strong>24-hour quota check</strong> — {{ formatDate(report.preflight.checked_at) }}
+      <div v-if="report.preflight.status === 'insufficient'">
+        Current available quota is insufficient for the upcoming plans.
+      </div>
+      <div v-else-if="report.preflight.status === 'sufficient'">
+        Current available quota covers the plans starting within 24 hours, assuming current usage continues.
+      </div>
+      <div v-else>Could not verify current quota. The worker will retry.</div>
+      <div
+        v-for="check in report.preflight.checks.filter((check) => Object.keys(check.shortages).length)"
+        :key="check.starts_at"
+      >
+        {{ formatDateOnly(check.starts_at) }}: short by {{ resources(check.shortages) }}.
+      </div>
+      <div v-if="report.preflight.status === 'insufficient' && !report.preflight.notifications_enabled">
+        External notifications are not configured. This warning is available in the planner.
+      </div>
+    </v-alert>
     <v-card v-if="specs" max-width="900" class="mx-auto mb-6">
-      <v-card-title>New capacity plan</v-card-title>
+      <v-card-title>{{ editingId === null ? "New capacity plan" : "Edit capacity plan" }}</v-card-title>
       <v-card-text>
         <cluster-editor
+          :key="editingId === null ? 'new' : editingId"
+          :preserve-specs="editingId !== null"
           :specs="specs"
           :existing-cluster="false"
           planner-mode
           :auto-create="autoCreate"
           :project-ids="[projectId]"
-          submit-label="Check planned capacity"
+          :submit-label="checkedPayload ? 'Save plan' : 'Check planned capacity'"
           :submit-disabled="saving"
-          @apply="preview"
+          @apply="checkedPayload ? save() : preview()"
+          @cancel="closeForm"
         >
           <template #benchmark-fields>
             <v-row>
@@ -58,21 +81,15 @@
             {{ resources(segment.shortages) }}
           </div>
         </v-alert>
-        <v-btn v-if="previewReport" color="primary" :loading="saving" @click="save">Save capacity plan</v-btn>
-        <v-btn text @click="specs = null">Close form</v-btn>
       </v-card-text>
     </v-card>
     <h2 class="text-h5 mb-3">Upcoming plans</h2>
-    <v-data-table
-      :headers="headers"
-      :items="report.plans || []"
-      :loading="loading"
-      no-data-text="No upcoming capacity plans."
-    >
+    <v-data-table :headers="headers" :items="planRows" :loading="loading" no-data-text="No upcoming capacity plans.">
       <template v-slot:[`item.starts_at`]="{ item }">{{ formatDateOnly(item.starts_at) }}</template>
       <template v-slot:[`item.ends_at`]="{ item }">{{ formatDateOnly(item.ends_at) }}</template>
-      <template v-slot:[`item.gpus`]="{ item }">{{ item.demand.gpus == null ? "Unknown" : item.demand.gpus }}</template>
-      <template v-slot:[`item.demand`]="{ item }">{{ resources(item.demand) }}</template>
+      <template v-for="column in resourceColumns" v-slot:[`item.${column.value}`]="{ item }">
+        <span :key="column.value">{{ item[column.value] == null ? "Unknown" : item[column.value] }}</span>
+      </template>
       <template v-slot:[`item.auto_create`]="{ item }">{{ item.auto_create ? "Automatic" : "Manual" }}</template>
       <template v-slot:[`item.status`]="{ item }"
         >{{ item.status }}
@@ -80,49 +97,29 @@
       >
       <template v-slot:[`item.actions`]="{ item }">
         <v-btn v-if="item.hostname" text small :to="`/clusters/${item.hostname}`">View cluster</v-btn>
-        <v-btn
-          v-if="item.can_manage && item.status === 'planned' && !item.auto_create"
-          text
-          small
-          :to="creationLink(item)"
-          >Create manually</v-btn
-        >
-        <v-btn v-if="item.can_cancel" text small color="error" @click="cancel(item)">Cancel plan</v-btn>
+        <v-btn v-if="item.can_edit" text small :disabled="saving" @click="editPlan(item)">Edit</v-btn>
+        <v-btn v-if="item.can_cancel" text small color="error" @click="cancel(item)">Cancel</v-btn>
       </template>
     </v-data-table>
     <h2 class="text-h5 my-4">Future resource demand</h2>
-    <p v-if="report.forecast">
-      {{
-        report.forecast.quota_basis === "project_total"
-          ? "Total project capacity"
-          : "Additional capacity available now"
-      }}: {{ resources(report.forecast.available) }}. RAM is in MiB; storage is in GiB; AWS instance pools are in vCPUs.
-      GPU counts are reported even without a GPU quota.
-    </p>
-    <v-simple-table v-if="report.forecast">
-      <thead>
-        <tr>
-          <th>Period (local dates)</th>
-          <th>Planned demand</th>
-          <th>GPUs</th>
-          <th>Quota outlook</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(segment, index) in report.forecast.segments" :key="index">
-          <td>{{ formatDateOnly(segment.starts_at) }} – {{ formatDateOnly(segment.ends_at) }}</td>
-          <td>{{ resources(segment.demand) }}</td>
-          <td>{{ segment.demand.gpus || 0 }}</td>
-          <td :class="Object.keys(segment.shortages).length ? 'error--text' : ''">
-            {{
-              Object.keys(segment.shortages).length
-                ? "Short by " + resources(segment.shortages)
-                : "Within estimated quota"
-            }}
-          </td>
-        </tr>
-      </tbody>
-    </v-simple-table>
+    <v-data-table
+      v-if="report.forecast"
+      :headers="forecastHeaders"
+      :items="forecastRows"
+      item-key="starts_at"
+      :items-per-page="-1"
+      hide-default-footer
+      no-data-text="No future resource demand."
+    >
+      <template v-slot:[`item.starts_at`]="{ item }">
+        {{ formatDateOnly(item.starts_at) }} – {{ formatDateOnly(item.ends_at) }}
+      </template>
+      <template v-slot:[`item.shortages`]="{ item }">
+        <span :class="Object.keys(item.shortages).length ? 'error--text' : ''">
+          {{ Object.keys(item.shortages).length ? "Short by " + resources(item.shortages) : "Within estimated quota" }}
+        </span>
+      </template>
+    </v-data-table>
     <confirm-dialog v-model="cancelDialog" title="Cancel capacity plan" @confirm="confirmCancel">
       {{ cancelMessage }}
     </confirm-dialog>
@@ -141,6 +138,7 @@ export default {
     projectId: null,
     report: {},
     specs: null,
+    editingId: null,
     startsAt: "",
     endsAt: "",
     autoCreate: false,
@@ -153,19 +151,77 @@ export default {
     cancelDialog: false,
     cancelItem: null,
     requestId: 0,
-    headers: [
-      { text: "Cluster", value: "name" },
-      { text: "Owner", value: "owner" },
-      { text: "Start", value: "starts_at" },
-      { text: "End", value: "ends_at" },
-      { text: "Resources", value: "demand", sortable: false },
-      { text: "GPUs", value: "gpus", sortable: false },
-      { text: "Creation", value: "auto_create" },
-      { text: "Status", value: "status" },
-      { text: "Actions", value: "actions", sortable: false },
-    ],
   }),
   computed: {
+    resourceColumns() {
+      const labels = {
+        instance_count: "Instances",
+        vcpus: "vCPUs",
+        ram: "RAM (GiB)",
+        gpus: "GPUs",
+        volume_count: "Volumes",
+        volume_size: "Storage (GiB)",
+        ips: "Public IPs",
+        gp2: "gp2 storage (GiB)",
+        eips: "Elastic IPs",
+      };
+      const keys = new Set(["gpus"]);
+      for (const row of [...(this.report.plans || []), ...(this.report.forecast?.segments || [])]) {
+        Object.keys(row.demand || {}).forEach((key) => keys.add(key));
+      }
+      const ordered = [
+        ...Object.keys(labels).filter((key) => keys.has(key)),
+        ...[...keys].filter((key) => !(key in labels)).sort(),
+      ];
+      return ordered.map((key, index) => ({
+        key,
+        text: labels[key] || `${key} (vCPUs)`,
+        value: `resource_${index}`,
+        sortable: true,
+        align: "end",
+      }));
+    },
+    headers() {
+      return [
+        { text: "Cluster", value: "name" },
+        { text: "Owner", value: "owner" },
+        { text: "Start", value: "starts_at" },
+        { text: "End", value: "ends_at" },
+        ...this.resourceColumns,
+        { text: "Creation", value: "auto_create" },
+        { text: "Status", value: "status" },
+        { text: "Actions", value: "actions", sortable: false },
+      ];
+    },
+    planRows() {
+      return (this.report.plans || []).map((plan) => ({
+        ...plan,
+        ...Object.fromEntries(
+          this.resourceColumns.map((column) => [
+            column.value,
+            this.resourceValue(column.key, plan.demand?.[column.key] ?? (column.key === "gpus" ? null : 0)),
+          ])
+        ),
+      }));
+    },
+    forecastHeaders() {
+      return [
+        { text: "Period (local dates)", value: "starts_at", sort: (a, b) => Date.parse(a) - Date.parse(b) },
+        ...this.resourceColumns,
+        { text: "Quota outlook", value: "shortages", sortable: false },
+      ];
+    },
+    forecastRows() {
+      return (this.report.forecast?.segments || []).map((segment) => ({
+        ...segment,
+        ...Object.fromEntries(
+          this.resourceColumns.map((column) => [
+            column.value,
+            this.resourceValue(column.key, segment.demand?.[column.key] ?? 0),
+          ])
+        ),
+      }));
+    },
     cancelMessage() {
       const plan = this.cancelItem;
       let message = plan?.auto_create ? "Cancel this plan and its automatic start?" : "Cancel this plan?";
@@ -185,7 +241,7 @@ export default {
       return (this.previewReport?.segments || []).filter((s) => Object.keys(s.shortages).length);
     },
     formSnapshot() {
-      return JSON.stringify([this.specs, this.startsAt, this.endsAt, this.autoCreate]);
+      return JSON.stringify([this.editingId, this.specs, this.startsAt, this.endsAt, this.autoCreate]);
     },
   },
   watch: {
@@ -205,6 +261,15 @@ export default {
     }
   },
   methods: {
+    closeForm() {
+      this.specs = null;
+      this.editingId = null;
+      this.startsAt = "";
+      this.endsAt = "";
+      this.autoCreate = false;
+      this.previewReport = null;
+      this.checkedPayload = null;
+    },
     showError(e) {
       this.error = e.response?.data?.message || e.message || "Capacity planner request failed.";
     },
@@ -214,22 +279,57 @@ export default {
     formatDate(value) {
       return new Date(value).toLocaleString();
     },
+    resourceValue(key, value) {
+      return key === "ram" && value != null ? value / 1024 : value;
+    },
     resources(values) {
       return (
         Object.entries(values || {})
           .filter(([key]) => key !== "gpus")
-          .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v === null ? "unlimited" : v}`)
+          .map(
+            ([k, v]) =>
+              `${k === "ram" ? "RAM (GiB)" : k.replace(/_/g, " ")}: ${
+                v === null ? "unlimited" : this.resourceValue(k, v)
+              }`
+          )
           .join(", ") || "None"
       );
     },
     hasShortages(report) {
       return report.segments.some((s) => Object.keys(s.shortages).length);
     },
-    creationLink(item) {
-      return { path: "/create-cluster", query: { capacityProject: this.projectId, capacityPlan: item.id } };
+    localDate(value) {
+      const date = new Date(value);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(
+        2,
+        "0"
+      )}`;
+    },
+    async editPlan(item) {
+      const projectId = this.projectId;
+      const requestId = ++this.requestId;
+      this.specs = null;
+      this.error = "";
+      this.notice = "";
+      this.saving = true;
+      try {
+        const { data: plan } = await Repository.get(`/projects/${projectId}/capacity/${item.id}`);
+        if (requestId !== this.requestId) return;
+        if (!plan.can_edit) throw new Error("This plan can no longer be edited. Refresh the planner.");
+        this.editingId = plan.id;
+        this.startsAt = this.localDate(plan.starts_at);
+        this.endsAt = this.localDate(plan.ends_at);
+        this.autoCreate = plan.auto_create;
+        this.specs = plan.definition;
+      } catch (e) {
+        if (requestId === this.requestId) this.showError(e);
+      } finally {
+        this.saving = false;
+      }
     },
     async load() {
       this.specs = null;
+      this.editingId = null;
       if (!this.projectId) return;
       const id = ++this.requestId;
       this.loading = true;
@@ -245,6 +345,8 @@ export default {
       }
     },
     async newPlan() {
+      this.specs = null;
+      this.editingId = null;
       try {
         this.specs = (await TemplateRepository.get("default")).data;
         this.previewReport = null;
@@ -266,7 +368,10 @@ export default {
             auto_create: this.autoCreate,
           })
         );
-        const response = await Repository.post(`/projects/${this.projectId}/capacity/preview`, payload);
+        const path = `/projects/${this.projectId}/capacity${
+          this.editingId === null ? "" : `/${this.editingId}`
+        }/preview`;
+        const response = await Repository.post(path, payload);
         if (snapshot === this.formSnapshot) {
           this.previewReport = response.data;
           this.checkedPayload = payload;
@@ -282,7 +387,10 @@ export default {
       this.saving = true;
       this.error = "";
       try {
-        const response = await Repository.post(`/projects/${this.projectId}/capacity`, this.checkedPayload);
+        const response =
+          this.editingId === null
+            ? await Repository.post(`/projects/${this.projectId}/capacity`, this.checkedPayload)
+            : await Repository.put(`/projects/${this.projectId}/capacity/${this.editingId}`, this.checkedPayload);
         this.notice = this.hasShortages(response.data.forecast)
           ? "Plan saved with quota conflicts. Review the forecast below."
           : "Capacity plan saved.";

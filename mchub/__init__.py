@@ -51,7 +51,9 @@ def create_app(db_path=None):
     app.add_url_rule("/api/projects/<int:project_id>/capacity/preview", view_func=capacity_view,
                      defaults={"plan_id": None, "preview": True}, methods=["POST"])
     app.add_url_rule("/api/projects/<int:project_id>/capacity/<int:plan_id>", view_func=capacity_view,
-                     methods=["GET", "DELETE"])
+                     methods=["GET", "PUT", "DELETE"])
+    app.add_url_rule("/api/projects/<int:project_id>/capacity/<int:plan_id>/preview", view_func=capacity_view,
+                     defaults={"preview": True}, methods=["POST"])
 
     benchmark_view = BenchmarkAPI.as_view("benchmarks")
     app.add_url_rule("/api/benchmarks", view_func=benchmark_view, defaults={"benchmark_id": None}, methods=["GET", "POST"])

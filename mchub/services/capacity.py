@@ -126,6 +126,8 @@ def planning_budget(project, manager):
 
 def segments(plans, available, start, end):
     """Half-open intervals avoid conflicts between back-to-back plans."""
+    if end <= start:
+        return []
     plans = [p for p in plans if p.starts_at < end and start < p.ends_at]
     points = sorted({start, end} | {max(start, p.starts_at) for p in plans} | {min(end, p.ends_at) for p in plans})
     result = []
@@ -141,12 +143,13 @@ def segments(plans, available, start, end):
     return result
 
 
-def forecast(project, start, end, candidate=None):
+def forecast(project, start, end, candidate=None, exclude_plan_id=None):
     manager = CloudManager(project).manager
     available = planning_budget(project, manager)
     plans = list(db.session.scalars(db.select(CapacityPlan).where(
         CapacityPlan.project_id == project.id, CapacityPlan.status != "cancelled",
         CapacityPlan.starts_at < end, CapacityPlan.ends_at > start)))
+    plans = [p for p in plans if p.id != exclude_plan_id]
     # Older plans predate GPU snapshots; derive their counts without modifying the DB.
     gpu_counts = {p.id: p.demand.get("gpus") if "gpus" in p.demand else gpu_demand(project, p.definition, manager)
                   for p in plans}

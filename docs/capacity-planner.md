@@ -11,14 +11,13 @@ All project members see planned resource demand, owners, dates, and creation sta
 Only a plan's owner and project administrators can access its full configuration or
 cancel it. Full configurations can contain passwords and Puppet configuration;
 they are stored in the application's database and are not included in project-wide
-list responses. Pending plans can be cancelled before creation starts. To change a
-pending plan, cancel it and create a replacement.
+list responses. Pending plans can be cancelled before creation starts. Use **Edit plan** to change a pending plan’s dates, resources, or automatic creation
+setting. Changes replace the original plan and recheck overlapping demand.
 
 With automatic creation enabled, the worker starts creation at or after the start
-time. Provisioning takes additional time. Otherwise, use **Create manually** on the
-plan, then review and apply the normal Terraform plan. Creating through this button
-links the cluster to the plan. Creating an unrelated cluster from the ordinary
-creation page does not link it to a capacity plan.
+time. Provisioning takes additional time. Otherwise, the user is responsible for creating the cluster. The API supports
+linking manual creation through `capacity_plan_id`; the ordinary creation page does
+not link a cluster to a capacity plan.
 
 **At the end time, linked cluster resources and their data are automatically torn
 down.** MC-Hub keeps the undeployed cluster configuration, repository, and Terraform
@@ -44,7 +43,7 @@ and volumes attached by instance tag. Explicit root disk sizes are conservativel
 counted as boot volumes. AWS uses the existing regional On-Demand quota pools,
 gp2 storage (GiB), and Elastic IP accounting. Instance/image availability, external
 usage, concurrent deployments, and quota changes can invalidate an earlier check.
-GPU counts are shown separately in the form, plan list, and forecast, even without
+GPU counts are shown separately in the plan list and forecast, even without
 a GPU quota. Counts multiply each instance group's size by its GPU allocation.
 AWS counts use GPU metadata and account for fractional partitions. OpenStack counts
 use the flavor naming conventions `g<count>[-<VRAM>gb]-...` and `gpu...-<model>x<count>`;
@@ -54,12 +53,39 @@ identified. Previously saved plans have GPU counts derived when the forecast loa
 These plans are coordination records, not provider reservations or guarantees of
 physical capacity. Quota is rechecked when saving and at automatic creation time.
 
+## Quota checks 24 hours before start
+
+The capacity worker checks plans starting in the next 24 hours, including manual
+plans. It reads **currently available** project quota, separately from the full-quota
+OpenStack planning forecast. Checks run hourly; newly due, edited, or cancelled plans
+are picked up on the next worker sweep. Cloud-read failures produce an unknown result
+and retry after 15 minutes rather than claiming that capacity is sufficient.
+
+At each upcoming start, the check sums overlapping planned demand. Plans ending at
+that instant no longer overlap. Linked clusters whose resources are already deployed
+are included in current cloud usage and are not added again. Current external usage
+is conservatively assumed to continue; future cleanup or quota changes may alter the
+outcome. Checks do not guarantee resource availability at launch.
+
+A shortage queues one `capacity.quota_insufficient` event per project to the existing
+configured Slack/webhook destinations. The event includes plan names and dates,
+available quota, required resources, and shortages at each affected start. It excludes
+cluster configuration, passwords, keys, and project credentials. Unchanged shortages
+are not sent again, including after worker restart. Changed shortages or affected
+plans produce an updated warning. Delivery uses the existing durable outbox and retry
+worker. There is no automatic email or direct-message delivery to individual owners.
+
+The planner shows the latest **24-hour quota check** even when no external destinations
+are configured. To enable external delivery, configure `notification_destinations`
+as described in [External notifications](configuration.md#external-notifications).
+These checks and notifications do not block saving plans or change their creation setting.
+
 ## Operations
 
-Apply database migration `0021` using the deployment's normal `flask db upgrade`
+Apply database migrations through `0022` using the deployment's normal `flask db upgrade`
 step and restart the web service and background-worker supervisor. The supervisor
 includes `mchub.services.capacity_worker`; keep one supervisor per database volume.
-No additional credentials or configuration are required.
+Checks use existing project credentials. External alerts require configured notification destinations.
 
 Automatic start claims are durable and are not retried blindly after a failure or
 worker restart. Review the reported failure and any partial cluster before retrying
@@ -75,6 +101,8 @@ API routes (all project-scoped):
 - `POST /api/projects/<id>/capacity`: save `{starts_at, ends_at, definition, auto_create}`.
   Timestamps must include timezone offsets.
 - `GET /api/projects/<id>/capacity/<plan_id>`: owner/admin configuration detail.
+- `PUT /api/projects/<id>/capacity/<plan_id>`: update an unstarted plan.
+- `POST /api/projects/<id>/capacity/<plan_id>/preview`: preview changes without counting the old plan twice.
 - `DELETE /api/projects/<id>/capacity/<plan_id>`: cancel an unstarted plan.
 
 Manual cluster creation accepts `capacity_plan_id` in its existing request body.
