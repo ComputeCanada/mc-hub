@@ -28,6 +28,17 @@ STALE_SECONDS = 180
 # Only retain fingerprints from the latest valid feed. Warnings may recur after
 # a worker restart, but unchanged incidents do not generate one per poll.
 _rss_unclassified = {}
+_statuspage_unclassified = {}
+
+
+def warn_unclassified(provider, unclassified, cache, message):
+    """Log new/changed entries only after the entire feed validates."""
+    key = (provider["id"], provider["feed_url"])
+    previous = cache.get(key, {})
+    for identity, fingerprint in unclassified.items():
+        if previous.get(identity) != fingerprint:
+            logger.warning(message, identity)
+    cache[key] = unclassified
 
 
 def providers():
@@ -57,7 +68,7 @@ def statuspage(payload, provider):
     if any(c["status"] not in valid for c in selected):
         raise ValueError("Unknown component status")
     ids = {c["id"] for c in selected}
-    incidents = []
+    incidents, unclassified = [], {}
     for item in data["incidents"] + data.get("scheduled_maintenances", []):
         status = item["status"]
         if status in {"resolved", "completed", "scheduled"}:
@@ -66,13 +77,16 @@ def statuspage(payload, provider):
             raise ValueError("Unknown incident status")
         affected = item.get("components", [])
         if not affected:
-            logger.warning("Unclassified status incident: %s", item["id"])
+            unclassified[item["id"]] = hashlib.sha256(
+                json.dumps(item, sort_keys=True).encode()
+            ).hexdigest()
         if not any(c["id"] in ids for c in affected):
             continue
         incidents.append(dict(id=item["id"], title=item["name"], status=status,
             url=safe_url(item.get("shortlink"), provider["status_url"]),
             updated_at=item.get("updated_at"), confirmed=True))
     affected = [c["name"] for c in selected if c["status"] != "operational"]
+    warn_unclassified(provider, unclassified, _statuspage_unclassified, "Unclassified status incident: %s")
     return dict(reported_status="disruption" if incidents or affected else "no_incidents",
                 affected_components=affected, incidents=incidents)
 
@@ -133,12 +147,7 @@ def hashicorp_rss(payload, provider):
         incidents.append(dict(id=identity, title=item.findtext("title") or "Service incident",
             status=status, url=safe_url(item.findtext("link"), provider["status_url"]),
             updated_at=item.findtext("pubDate"), confirmed=True))
-    key = (provider["id"], provider["feed_url"])
-    previous = _rss_unclassified.get(key, {})
-    for identity, fingerprint in unclassified.items():
-        if previous.get(identity) != fingerprint:
-            logger.warning("Unclassified HashiCorp incident: %s", identity)
-    _rss_unclassified[key] = unclassified
+    warn_unclassified(provider, unclassified, _rss_unclassified, "Unclassified HashiCorp incident: %s")
     return dict(reported_status="disruption" if incidents else "no_incidents",
                 affected_components=provider["components"] if incidents else [], incidents=incidents,
                 seen_ids=seen)

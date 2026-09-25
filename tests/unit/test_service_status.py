@@ -162,3 +162,48 @@ def test_provider_configuration_validation():
     assert len(schema.load({**config, "service_status_providers": status.DEFAULT_PROVIDERS})["service_status_providers"]) == 2
     with pytest.raises(ValidationError, match="unique"):
         schema.load({**config, "service_status_providers": [status.DEFAULT_PROVIDERS[0]] * 2})
+
+
+def test_statuspage_unclassified_warnings_are_deduplicated(mocker, caplog):
+    mocker.patch.object(status, "_statuspage_unclassified", {})
+    provider = {**status.DEFAULT_PROVIDERS[0], "components": ["Git Operations"]}
+    incident = dict(id="1dk955gg3bvz", name="Incident", status="investigating", components=[])
+    data = dict(components=[dict(id="git", name="Git Operations", status="operational")], incidents=[incident])
+    for _ in range(4):
+        result = status.statuspage(json.dumps(data), provider)
+    assert len(caplog.records) == 1
+    assert result["reported_status"] == "no_incidents"
+    # JSON key order is not an incident update.
+    data["incidents"] = [dict(reversed(list(incident.items())))]
+    status.statuspage(json.dumps(data), provider)
+    assert len(caplog.records) == 1
+    data["incidents"] = [incident]
+    incident["status"] = "monitoring"
+    status.statuspage(json.dumps(data), provider)
+    status.statuspage(json.dumps(data), provider)
+    assert len(caplog.records) == 2
+    # Identical incident IDs from another provider must still be logged.
+    status.statuspage(json.dumps(data), {**provider, "id": "other"})
+    assert len(caplog.records) == 3
+    incident["status"] = "resolved"
+    status.statuspage(json.dumps(data), provider)
+    assert len(caplog.records) == 3
+    assert status._statuspage_unclassified[(provider["id"], provider["feed_url"])] == {}
+
+
+def test_statuspage_invalid_feed_does_not_change_warning_cache(mocker, caplog):
+    mocker.patch.object(status, "_statuspage_unclassified", {})
+    provider = {**status.DEFAULT_PROVIDERS[0], "components": ["Git Operations"]}
+    incident = dict(id="one", name="Incident", status="investigating", components=[])
+    data = dict(components=[dict(id="git", name="Git Operations", status="operational")], incidents=[incident])
+    status.statuspage(json.dumps(data), provider)
+    data["incidents"].append(dict(id="two", status="unknown"))
+    with pytest.raises(ValueError):
+        status.statuspage(json.dumps(data), provider)
+    data["incidents"].pop()
+    status.statuspage(json.dumps(data), provider)
+    assert len(caplog.records) == 1
+    # A valid feed without the incident releases its fingerprint.
+    data["incidents"] = []
+    status.statuspage(json.dumps(data), provider)
+    assert status._statuspage_unclassified[(provider["id"], provider["feed_url"])] == {}
