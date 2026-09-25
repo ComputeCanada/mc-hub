@@ -1,7 +1,7 @@
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import ClusterDisplay from "@/components/cluster/ClusterDisplay";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
-import { shallowMount } from "@vue/test-utils";
 
 jest.mock("@/repositories/MagicCastleRepository", () => ({
   getStatus: jest.fn(),
@@ -14,26 +14,39 @@ describe("ClusterDisplay", () => {
     shallowMount(
       { ...ClusterDisplay, created() {} },
       {
-        propsData: { hostname: "test.example.com" },
+        props: { hostname: "test.example.com" },
         data: () => ({
           status: ClusterStatusCode.CREATED,
           magicCastle: {},
           resourcesChanges: [{ address: "test", change: { actions: ["create"], progress: "queued" } }],
         }),
-        stubs: [
-          "v-container",
-          "v-card",
-          "v-card-title",
-          "v-card-text",
-          "v-list",
-          "v-list-item",
-          "v-list-item-content",
-          "v-list-item-subtitle",
-          "v-list-item-title",
-          "v-divider",
-        ],
+        global: {
+          renderStubDefaultSlot: true,
+          stubs: [
+            "v-container",
+            "v-card",
+            "v-card-title",
+            "v-card-text",
+            "v-list",
+            "v-list-item",
+            "v-list-item-content",
+            "v-list-item-subtitle",
+            "v-list-item-title",
+            "v-divider",
+          ],
+        },
       }
     );
+
+  it("stops status polling when unmounted", () => {
+    jest.useFakeTimers();
+    const wrapper = mountDisplay();
+    jest.spyOn(wrapper.vm, "fetchStatus").mockResolvedValue();
+    wrapper.vm.startStatusPolling();
+    expect(jest.getTimerCount()).toBe(1);
+    wrapper.unmount();
+    expect(jest.getTimerCount()).toBe(0);
+  });
 
   it("closes the plan dialog after an expiration-only update without applying Terraform", async () => {
     MagicCastleRepository.update = jest.fn().mockResolvedValue({ status: 202 });
@@ -58,7 +71,7 @@ describe("ClusterDisplay", () => {
     expect(MagicCastleRepository.apply).not.toHaveBeenCalled();
     expect(MagicCastleRepository.getState).toHaveBeenCalledWith("test.example.com");
     expect(wrapper.vm.$disableUnloadConfirmation).toHaveBeenCalled();
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("waits for update acceptance and still confirms resource changes", async () => {
@@ -83,7 +96,7 @@ describe("ClusterDisplay", () => {
     expect(wrapper.vm.clusterPlanRunningDialog).toBe(false);
     expect(wrapper.vm.clusterModificationDialog).toBe(true);
     expect(wrapper.vm.resourcesChanges).toEqual(changes);
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("keeps the accepted plan visible and polls through delayed apply statuses", async () => {
@@ -118,7 +131,7 @@ describe("ClusterDisplay", () => {
     expect(wrapper.vm.applyRequested).toBe(false);
     expect(wrapper.vm.statusPoller).toBeNull();
     expect(wrapper.vm.provisioningRunningDialog).toBe(true);
-    wrapper.destroy();
+    wrapper.unmount();
     jest.useRealTimers();
   });
 
@@ -137,7 +150,7 @@ describe("ClusterDisplay", () => {
     expect(wrapper.vm.applyRequested).toBe(true);
     expect(wrapper.vm.resourcesChanges).toHaveLength(1);
     expect(wrapper.vm.statusPromise).toBeNull();
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("shows completion when apply finishes between polls", async () => {
@@ -150,7 +163,7 @@ describe("ClusterDisplay", () => {
     await wrapper.vm.fetchStatus();
     expect(wrapper.vm.applyRequested).toBe(false);
     expect(wrapper.vm.provisioningRunningDialog).toBe(true);
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("returns to the editor with an error when apply is rejected", async () => {
@@ -160,7 +173,7 @@ describe("ClusterDisplay", () => {
     expect(wrapper.vm.applyRequested).toBe(false);
     expect(wrapper.vm.errorMessage).toBe("Apply failed");
     expect(wrapper.findComponent({ name: "ClusterEditor" }).exists()).toBe(true);
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("renders completed, active, and pending setup steps", () => {
@@ -168,17 +181,20 @@ describe("ClusterDisplay", () => {
       { ...ClusterDisplay, created() {} },
       {
         data: () => ({ creationStep: "terraform_workspace", clusterPlanRunningDialog: true }),
-        stubs: ["v-container", "v-card", "v-card-title", "v-card-text", "v-progress-circular", "v-icon"],
+        global: {
+          renderStubDefaultSlot: true,
+          stubs: ["v-container", "v-card", "v-card-title", "v-card-text", "v-progress-circular", "v-icon"],
+        },
       }
     );
 
     const rows = wrapper.findAll('[aria-live="polite"] > div');
-    const rowText = (index) => rows.at(index).text().replace(/\s+/g, " ");
+    const rowText = (index) => rows[index].text().replace(/\s+/g, " ");
     expect(rowText(0)).toContain("Create GitHub repository — Done");
     expect(rowText(1)).toContain("Create Terraform workspace — In progress");
     expect(rowText(2)).toContain("Add variable file — Pending");
     expect(rowText(3)).toContain("Generate resource plan — Pending");
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("updates creation progress from each status poll until the plan is ready", async () => {
@@ -369,26 +385,29 @@ it("loads a saved failure on the first visit without needing a status transition
   const wrapper = shallowMount(
     { ...ClusterDisplay, created() {} },
     {
-      propsData: { hostname: "test.example.com" },
-      stubs: [
-        "v-container",
-        "v-card",
-        "v-card-title",
-        "v-card-text",
-        "v-list",
-        "v-list-item",
-        "v-list-item-content",
-        "v-list-item-subtitle",
-        "v-list-item-title",
-        "v-divider",
-      ],
+      props: { hostname: "test.example.com" },
+      global: {
+        renderStubDefaultSlot: true,
+        stubs: [
+          "v-container",
+          "v-card",
+          "v-card-title",
+          "v-card-text",
+          "v-list",
+          "v-list-item",
+          "v-list-item-content",
+          "v-list-item-subtitle",
+          "v-list-item-title",
+          "v-divider",
+        ],
+      },
     }
   );
   await wrapper.vm.fetchStatus();
   expect(wrapper.vm.failure).toEqual(failure);
   expect(wrapper.findComponent({ name: "ClusterFailure" }).props("previous")).toBe(false);
   expect(wrapper.vm.errorDialog).toBe(false);
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("requires confirmation for a retry even when the new plan has no resource changes", async () => {
@@ -397,24 +416,34 @@ it("requires confirmation for a retry even when the new plan has no resource cha
   const wrapper = shallowMount(
     { ...ClusterDisplay, created() {} },
     {
-      propsData: { hostname: "test.example.com" },
-      stubs: [
-        "v-container",
-        "v-card",
-        "v-card-title",
-        "v-card-text",
-        "v-list",
-        "v-list-item",
-        "v-list-item-content",
-        "v-list-item-subtitle",
-        "v-list-item-title",
-        "v-divider",
-      ],
+      props: { hostname: "test.example.com" },
+      global: {
+        renderStubDefaultSlot: true,
+        stubs: [
+          "v-container",
+          "v-card",
+          "v-card-title",
+          "v-card-text",
+          "v-list",
+          "v-list-item",
+          "v-list-item-content",
+          "v-list-item-subtitle",
+          "v-list-item-title",
+          "v-divider",
+        ],
+      },
     }
   );
   const planCreator = jest.fn().mockResolvedValue({ status: 202 });
   await wrapper.vm.showPlanConfirmationDialog({ retry: true, planCreator });
   expect(wrapper.vm.clusterModificationDialog).toBe(true);
   expect(MagicCastleRepository.apply).not.toHaveBeenCalled();
-  wrapper.destroy();
+  wrapper.unmount();
+});
+afterEach(() => {
+  cleanupMounts();
+  // Leave later tests isolated even while the Vue 2 cleanup hook is a blocker.
+  jest.clearAllTimers();
+  jest.useRealTimers();
+  jest.restoreAllMocks();
 });

@@ -6,10 +6,13 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
+    "lint:tests": "vue-cli-service lint --no-fix tests jest.config.js .eslintrc.js",
     "serve:foundation": "vue-cli-service serve --mode vue3-foundation-development",
     "build:foundation": "vue-cli-service build --mode vue3-foundation",
     "test:foundation": "vue-cli-service test:unit --runInBand --runTestsByPath tests/unit/foundation/Foundation.spec.js",
-    "lint:foundation": "vue-cli-service lint --no-fix src/foundation tests/unit/foundation tests/setup.js vue.config.js jest.config.js babel.config.js .eslintrc.js"
+    "lint:foundation": "vue-cli-service lint --no-fix src/foundation tests/unit/foundation tests/setup.js vue.config.js jest.config.js babel.config.js .eslintrc.js",
+    "test:startup": "vue-cli-service test:unit --runInBand tests/unit/startup tests/unit/components/BenchmarkAccess.spec.js tests/unit/components/ui/ServiceStatusBanner.spec.js",
+    "lint:startup": "vue-cli-service lint --no-fix src/main.js src/App.vue src/router src/plugins src/services/benchmarkAccess.js src/components/ui/AccountDropdown.vue src/components/ui/ServiceStatusBanner.vue tests/unit/startup tests/unit/components/BenchmarkAccess.spec.js tests/unit/components/ui/ServiceStatusBanner.spec.js"
   },
   "dependencies": {
     "@vue/cli-service": "~5.0.9",

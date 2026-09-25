@@ -1,10 +1,8 @@
-import Vue from "vue";
-import Vuetify from "vuetify";
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import OpenStackSubnet from "@/components/ui/OpenStackSubnet";
 import ProjectRepository from "@/repositories/ProjectRepository";
 
-Vue.use(Vuetify);
 jest.mock("@/repositories/ProjectRepository", () => ({ openstackSubnets: jest.fn() }));
 
 it("displays subnet names with credentials and emits the selected UUID", async () => {
@@ -12,15 +10,15 @@ it("displays subnet names with credentials and emits the selected UUID", async (
   ProjectRepository.openstackSubnets.mockResolvedValue({
     data: { subnets: [{ id: "subnet-a", name: "Private subnet" }] },
   });
-  const wrapper = shallowMount(OpenStackSubnet, { propsData: { value: env } });
+  const wrapper = shallowMount(OpenStackSubnet, { props: { value: env }, global: { renderStubDefaultSlot: true } });
   await wrapper.vm.loadSubnets();
   expect(ProjectRepository.openstackSubnets).toHaveBeenCalledWith({ env });
   expect(wrapper.vm.subnets).toEqual([{ id: "subnet-a", name: "Private subnet" }]);
-  expect(wrapper.find("v-select-stub").props("itemText")).toBe("name");
-  expect(wrapper.find("v-select-stub").props("itemValue")).toBe("id");
-  wrapper.find("v-select-stub").vm.$emit("change", "subnet-a");
+  expect(wrapper.findComponent("v-select-stub").props("itemTitle")).toBe("name");
+  expect(wrapper.findComponent("v-select-stub").props("itemValue")).toBe("id");
+  await wrapper.findComponent("v-select-stub").setValue("subnet-a");
   expect(wrapper.emitted("input").pop()[0]).toEqual({ ...env, OS_SUBNET_ID: "subnet-a" });
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("clears selection and ignores pending results when credentials change", async () => {
@@ -31,7 +29,8 @@ it("clears selection and ignores pending results when credentials change", async
     })
   );
   const wrapper = shallowMount(OpenStackSubnet, {
-    propsData: { value: { OS_APPLICATION_CREDENTIAL_SECRET: "old", OS_SUBNET_ID: "subnet-old" } },
+    props: { value: { OS_APPLICATION_CREDENTIAL_SECRET: "old", OS_SUBNET_ID: "subnet-old" } },
+    global: { renderStubDefaultSlot: true },
   });
   const request = wrapper.vm.loadSubnets();
   await wrapper.setProps({ value: { OS_APPLICATION_CREDENTIAL_SECRET: "new", OS_SUBNET_ID: "subnet-old" } });
@@ -39,47 +38,52 @@ it("clears selection and ignores pending results when credentials change", async
   await request;
   expect(wrapper.vm.subnets).toEqual([]);
   expect(wrapper.emitted("input").pop()[0]).toEqual({ OS_APPLICATION_CREDENTIAL_SECRET: "new" });
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("shows discovery errors and allows retry", async () => {
   ProjectRepository.openstackSubnets.mockRejectedValue(new Error("failed"));
-  const wrapper = shallowMount(OpenStackSubnet, { propsData: { value: {} } });
+  const wrapper = shallowMount(OpenStackSubnet, { props: { value: {} }, global: { renderStubDefaultSlot: true } });
   await wrapper.vm.loadSubnets();
   expect(wrapper.vm.error).toContain("Unable to load OpenStack subnets");
   expect(wrapper.vm.loading).toBe(false);
   ProjectRepository.openstackSubnets.mockResolvedValue({ data: { subnets: [] } });
   await wrapper.vm.loadSubnets();
   expect(wrapper.vm.error).toBe("");
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("preserves a selected UUID when named subnet options refresh", async () => {
   ProjectRepository.openstackSubnets.mockResolvedValue({ data: { subnets: [{ id: "subnet-a", name: "Renamed" }] } });
-  const wrapper = shallowMount(OpenStackSubnet, { propsData: { value: { OS_SUBNET_ID: "subnet-a" } } });
+  const wrapper = shallowMount(OpenStackSubnet, {
+    props: { value: { OS_SUBNET_ID: "subnet-a" } },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.vm.loadSubnets();
   expect(wrapper.emitted("input")).toBeUndefined();
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("keeps the saved project subnet selected while loading and refreshing options", async () => {
   let resolve;
   ProjectRepository.openstackSubnets.mockReturnValue(new Promise((r) => (resolve = r)));
   const wrapper = shallowMount(OpenStackSubnet, {
-    propsData: { projectId: 1, value: { OS_SUBNET_ID: "saved-subnet" } },
+    props: { projectId: 1, value: { OS_SUBNET_ID: "saved-subnet" } },
+    global: { renderStubDefaultSlot: true },
   });
-  const select = () => wrapper.find("v-select-stub");
-  expect(select().props("value")).toBe("saved-subnet");
+  const select = () => wrapper.findComponent("v-select-stub");
+  expect(select().props("modelValue")).toBe("saved-subnet");
   expect(select().props("items")).toContainEqual({ id: "saved-subnet", name: "saved-subnet" });
   resolve({ data: { subnets: [{ id: "saved-subnet", name: "Private network" }] } });
-  await new Promise((r) => setTimeout(r, 0));
+  await flushPromises();
   expect(select().props("items")).toEqual([{ id: "saved-subnet", name: "Private network" }]);
-  expect(select().props("value")).toBe("saved-subnet");
+  expect(select().props("modelValue")).toBe("saved-subnet");
   ProjectRepository.openstackSubnets.mockResolvedValue({ data: { subnets: [] } });
   await wrapper.vm.loadSubnets();
-  expect(select().props("value")).toBe("saved-subnet");
+  expect(select().props("modelValue")).toBe("saved-subnet");
   expect(wrapper.emitted("input")).toBeUndefined();
   await wrapper.setProps({ value: { OS_SUBNET_ID: "saved-subnet", OS_APPLICATION_CREDENTIAL_SECRET: "updated" } });
   expect(wrapper.emitted("input")).toBeUndefined();
-  wrapper.destroy();
+  wrapper.unmount();
 });
+afterEach(cleanupMounts);

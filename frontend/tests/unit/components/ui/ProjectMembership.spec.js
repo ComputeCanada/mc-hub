@@ -1,11 +1,8 @@
-import Vue from "vue";
-import Vuetify from "vuetify";
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import ProjectMembership from "@/components/ui/ProjectMembership";
 import ProjectEditor from "@/components/ui/ProjectEditor";
 import ProjectRepository from "@/repositories/ProjectRepository";
-
-Vue.use(Vuetify);
 
 jest.mock("@/repositories/ProjectRepository", () => ({
   get: jest.fn(),
@@ -19,7 +16,7 @@ const project = {
   region: "ca-central-1",
   max_instance_hourly_price: "0.25",
 };
-const flush = () => new Promise(jest.requireActual("timers").setImmediate);
+const flush = flushPromises;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -28,7 +25,10 @@ beforeEach(() => {
 });
 
 test("members dialog saves membership and role changes without changing cloud settings", async () => {
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectMembership, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.setData({ dialog: true });
   await flush();
   expect(ProjectRepository.get).toHaveBeenCalledWith(1);
@@ -49,7 +49,10 @@ test("members dialog saves membership and role changes without changing cloud se
 });
 
 test("cancel discards membership edits and reopening reloads members", async () => {
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectMembership, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.setData({ dialog: true });
   await flush();
   wrapper.vm.removeMember("bob");
@@ -63,7 +66,10 @@ test("cancel discards membership edits and reopening reloads members", async () 
 
 test("failed membership saves keep the edits and show the server error", async () => {
   ProjectRepository.patch.mockRejectedValue({ response: { data: { message: "Unable to update members" } } });
-  const wrapper = shallowMount(ProjectMembership, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectMembership, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.setData({ dialog: true });
   await flush();
   wrapper.vm.removeMember("bob");
@@ -74,9 +80,13 @@ test("failed membership saves keep the edits and show the server error", async (
 });
 
 test("project settings save independently of membership", async () => {
-  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectEditor, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.setData({ project, maxInstanceHourlyPrice: "0.50" });
   expect(wrapper.find('[label="Add a member"]').exists()).toBe(false);
   await wrapper.vm.save();
   expect(ProjectRepository.patch).toHaveBeenCalledWith(1, { max_instance_hourly_price: "0.50" });
 });
+afterEach(cleanupMounts);

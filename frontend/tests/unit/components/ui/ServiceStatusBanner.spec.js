@@ -1,13 +1,13 @@
 import { shallowMount } from "@vue/test-utils";
 import axios from "axios";
-import Vue from "vue";
+import { nextTick } from "vue";
 import ServiceStatusBanner from "@/components/ui/ServiceStatusBanner";
 
 jest.mock("axios", () => ({ get: jest.fn() }));
 const flush = async () => {
   await Promise.resolve();
   await Promise.resolve();
-  await Vue.nextTick();
+  await nextTick();
 };
 const provider = (overrides = {}) => ({
   provider: "terraform_cloud",
@@ -20,7 +20,8 @@ const provider = (overrides = {}) => ({
   status_url: "https://status.hashicorp.com/",
   ...overrides,
 });
-const mount = () => shallowMount(ServiceStatusBanner, { stubs: ["v-alert", "v-btn"] });
+const mount = () =>
+  shallowMount(ServiceStatusBanner, { global: { stubs: ["v-alert", "v-btn"], renderStubDefaultSlot: true } });
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -47,7 +48,7 @@ it("hides healthy status, shows multiple providers and clears on recovery", asyn
   axios.get.mockResolvedValue({ data: { providers: [provider()] } });
   await wrapper.vm.refresh();
   expect(wrapper.vm.visible).toBe(false);
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("preserves warnings on fetch failure and renders incident content as text", async () => {
@@ -78,7 +79,7 @@ it("preserves warnings on fetch failure and renders incident content as text", a
   await wrapper.vm.refresh();
   expect(wrapper.text()).toContain("last reported a service disruption");
   expect(wrapper.text()).toContain("Status updates unavailable");
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("handles stale and initial unknown status, pauses hidden polling and cleans up", async () => {
@@ -96,7 +97,7 @@ it("handles stale and initial unknown status, pauses hidden polling and cleans u
   document.dispatchEvent(new Event("visibilitychange"));
   await flush();
   expect(wrapper.vm.unavailable).toBe(true);
-  wrapper.destroy();
+  wrapper.unmount();
   jest.advanceTimersByTime(60000);
   expect(axios.get).toHaveBeenCalledTimes(2);
 });

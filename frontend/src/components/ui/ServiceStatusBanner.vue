@@ -1,12 +1,12 @@
 <template>
   <div v-if="visible" class="service-status mx-3 mt-3" role="status" aria-live="polite">
-    <v-alert :type="disrupted.length ? 'warning' : 'info'" outlined class="mb-0">
+    <v-alert :type="disrupted.length ? 'warning' : 'info'" variant="outlined" class="mb-0">
       <strong>{{ heading }}</strong>
       <div v-if="disrupted.length">MC-Hub operations may be slower or fail.</div>
       <div v-if="unavailable">Status updates unavailable. Previously reported information may be out of date.</div>
       <v-btn
-        text
-        small
+        variant="text"
+        size="small"
         :aria-expanded="String(expanded)"
         aria-controls="service-status-details"
         @click="expanded = !expanded"
@@ -79,7 +79,7 @@ export default {
     this.refresh();
     this.timer = setInterval(this.refresh, 60000);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopped = true;
     clearInterval(this.timer);
     document.removeEventListener("visibilitychange", this.refresh);

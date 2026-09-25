@@ -1,4 +1,5 @@
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import AccountDropdown from "@/components/ui/AccountDropdown";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
 import ProjectEditor from "@/components/ui/ProjectEditor";
@@ -16,15 +17,15 @@ beforeEach(() => jest.clearAllMocks());
 
 test("regular users can reach Projects from their account menu", async () => {
   const wrapper = shallowMount(AccountDropdown, {
-    stubs: { "v-menu": { template: "<div><slot /></div>" } },
+    global: { renderStubDefaultSlot: true, stubs: { "v-menu": { template: "<div><slot /></div>" } } },
   });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   expect(wrapper.text()).toContain("Projects");
 });
 
 test.each(["aws", "openstack"])("agent pool selection is absent on %s registration", async (provider) => {
-  const wrapper = shallowMount(CloudProviderInput);
+  const wrapper = shallowMount(CloudProviderInput, { global: { renderStubDefaultSlot: true } });
   await wrapper.setData({ newProject: { name: "personal", provider, env: {}, agent_pool_name: "private" } });
   expect(wrapper.find('[label="Agent Pool Name (optional)"]').exists()).toBe(false);
   await wrapper.vm.add();
@@ -32,7 +33,10 @@ test.each(["aws", "openstack"])("agent pool selection is absent on %s registrati
 });
 
 test.each(["aws", "openstack"])("agent pool editing is absent for %s", async (provider) => {
-  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectEditor, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.setData({
     project: { provider },
     agentPoolName: "private",
@@ -44,7 +48,10 @@ test.each(["aws", "openstack"])("agent pool editing is absent for %s", async (pr
 });
 
 test("OpenStack credentials can be updated without selecting a cloud", async () => {
-  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectEditor, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   const env = { OS_APPLICATION_CREDENTIAL_ID: "a".repeat(32), OS_APPLICATION_CREDENTIAL_SECRET: "s".repeat(86) };
   await wrapper.setData({ project: { provider: "openstack", members: [], admins: [] }, env });
   await wrapper.vm.save();
@@ -52,7 +59,10 @@ test("OpenStack credentials can be updated without selecting a cloud", async () 
 });
 
 test("OpenStack subnet can be saved with credentials left empty", async () => {
-  const wrapper = shallowMount(ProjectEditor, { propsData: { id: 1, admin: true } });
+  const wrapper = shallowMount(ProjectEditor, {
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true },
+  });
   await wrapper.setData({
     project: { provider: "openstack", members: [], admins: [], subnet_id: "old-subnet" },
     env: { OS_APPLICATION_CREDENTIAL_ID: "", OS_APPLICATION_CREDENTIAL_SECRET: "", OS_SUBNET_ID: "new-subnet" },
@@ -63,3 +73,4 @@ test("OpenStack subnet can be saved with credentials left empty", async () => {
     expect.objectContaining({ env: { OS_SUBNET_ID: "new-subnet" } })
   );
 });
+afterEach(cleanupMounts);

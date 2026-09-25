@@ -4,6 +4,8 @@ module.exports = {
   // Jest 27's resolver needs explicit mappings for Vuetify's subpath exports.
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^vuetify/components$": "<rootDir>/node_modules/vuetify/lib/components/index.js",
+    "^vuetify/styles$": "<rootDir>/node_modules/vuetify/lib/styles/main.css",
     "^vuetify/components/(.*)$": "<rootDir>/node_modules/vuetify/lib/components/$1/index.js",
     "^vuetify/directives/(.*)$": "<rootDir>/node_modules/vuetify/lib/directives/$1/index.js",
     "^vuetify/iconsets/(.*)$": "<rootDir>/node_modules/vuetify/lib/iconsets/$1.js",

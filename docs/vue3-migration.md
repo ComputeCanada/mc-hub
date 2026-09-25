@@ -1,8 +1,10 @@
 # Vue 3 migration foundation
 
-Step 2 provides an isolated Vue 3 demonstration on `migration/vue3-foundation`.
-The MC Hub application itself still needs the startup, component, and test
-migrations in steps 3–6. This branch is not ready for a production release.
+Steps 2–4 are implemented on `migration/vue3-foundation`: the dependency
+foundation, real application startup, router, shared state, plugins, shell, and
+Vue 3 test infrastructure. Shared components and feature screens still need
+steps 5–6; their behavioral tests remain active and expose migration blockers.
+This branch is not ready for a production release.
 
 ## Dependency decisions
 
@@ -109,7 +111,7 @@ See the [Vue Jest version matrix](https://github.com/vuejs/vue-jest#installation
 and [Vue Test Utils migration guide](https://test-utils.vuejs.org/migration/)
 when migrating additional tests.
 
-## Verification and remaining work
+## Step 2 verification
 
 Verified on Node 24.21.0 with npm 11.19.0:
 
@@ -144,11 +146,149 @@ The complete application checks were also run to establish the handoff:
   hooks, `.sync`, and template key placement. The ordinary Docker build and
   existing frontend CI are therefore not expected to pass yet.
 
-Next contributions:
+## Step 3: application startup and shell
 
-- [ ] Step 3: migrate the real entry point, router, unload-confirmation plugin,
-  Vuetify plugin, and benchmark-access state.
-- [ ] Step 4: migrate legacy test mounting, props, mocks, and teardown APIs.
+The real entry now uses `createApp`, installs unload confirmation before the
+router starts its initial navigation, registers a fresh Vuetify instance, and
+mounts after `router.isReady()`. The exported `ready` promise propagates initial
+navigation errors; the bootstrap integration test exercises the real entry.
+
+`createAppRouter(history)` preserves the application URLs, names, access
+metadata, lazy routes, and query-to-prop mappings. It defaults to
+`createWebHistory(process.env.BASE_URL)` and accepts memory history in tests.
+The fallback route is now `/:pathMatch(.*)*`. Benchmark-access state uses
+`reactive`, and its guard returns a boolean or redirect. Concurrent permission
+lookups still share one request, and failures revoke access while allowing retry.
+
+The unload plugin exposes the existing helper names through
+`app.config.globalProperties`. It retains dirty state after cancelled, duplicate,
+or failed navigation and clears it after successful navigation or an explicit
+disable. It removes its router guards on application unmount and restores its
+previous browser handler only if it still owns that handler. The repository can
+still replace `window.onbeforeunload` before its session-expiry reload.
+
+The real Vuetify plugin explicitly registers the shell components, directives,
+MDI icons, and existing light-theme colors. Feature migrations should add their
+required components to this registration as they are converted. `App.vue` uses
+`v-main` and Vuetify 3 navigation props; the account menu uses the new activator
+binding. Projects uses router navigation so unsaved-change guards apply, while
+Logout remains a normal link to Shibboleth. The status banner uses the new props
+and `beforeUnmount` cleanup.
+
+Run the step-3 checks from `frontend`:
+
+```sh
+npm run test:startup
+npm run lint:startup
+npm run test:foundation
+npm run lint:foundation
+npm run build:foundation
+```
+
+Verification on Node 24.21.0:
+
+- Startup checks: 6 suites and 42 tests pass. They cover the real bootstrap,
+  production route definitions, route props/base, all benchmark guards, shared
+  permission state, unload protection, the real Vuetify shell/account menu, and
+  service-status polling and cleanup.
+- The foundation test and both focused lint commands pass.
+- The foundation production build and the production shell build using temporary
+  feature-screen placeholders pass. The known Sass/webpack warnings remain.
+- Headless Chrome exercised the real `main.js`, router, plugins, `App.vue`,
+  account menu, and status banner with temporary feature-screen placeholders
+  and intercepted API responses. Checks passed for theme/layout, status details,
+  Projects and Logout links, repeated navigation cancellation, confirmed
+  navigation, permission denial/grant/API failure, deep links and props, and
+  unknown nested URL reload. No runtime errors or console warnings occurred.
+  The temporary webpack replacement configuration and browser tooling are not
+  part of the application or project dependencies; this does not validate the
+  unfinished feature screens.
+- Full suite: 10 suites pass, 18 fail; 73 tests pass, 16 fail. Remaining failures
+  include legacy `Vue.use`, `vuetify/lib`, `wrapper.destroy`, and unmigrated
+  component behavior. No legacy suites were removed or skipped.
+- The ordinary application build still fails on feature-screen lifecycle hooks,
+  `.sync`, and template key placement. Docker/CI release checks remain deferred
+  until the feature migration; passing shell tests do not imply a release-ready
+  application.
+
+## Step 4: Vue 3 test infrastructure
+
+The remaining component suites now use Vue Test Utils 2: `props`, per-mount
+`global` plugins/mocks/stubs, component wrappers, wrapper arrays, and `unmount`.
+They no longer use `Vue.use`, `createLocalVue`, prototype mutation, `propsData`,
+`wrapper.destroy`, or private Vuetify 2 imports. Async checks use `nextTick` and
+`flushPromises`; polling tests use fake timers with teardown on assertion failure.
+
+`frontend/tests/helpers/mount.js` provides fresh Vuetify instances, optional
+memory routers, attached DOM hosts, and cleanup. It preserves caller plugins,
+mocks, components, and stubs. Its three tests verify isolation, slot behavior,
+navigation, and cleanup. For example, from a component test:
+
+```js
+import { mountWithVuetify, cleanupMounts } from "../../helpers/mount";
+
+afterEach(cleanupMounts);
+
+const wrapper = mountWithVuetify(MyComponent, {
+  props: { value: initialValue },
+  global: { mocks: { $enableUnloadConfirmation: jest.fn() } },
+});
+```
+
+Use `shallowMountWithVuetify` for isolated logic and opt into
+`global.renderStubDefaultSlot: true` only when assertions need slot content.
+Use real controls for input, validation, and interaction checks. The helper
+registers feature Vuetify components for isolated tests; production registration
+still belongs to each feature migration. A passing isolated test therefore does
+not prove that the production application registers the component.
+
+Tests drive Vuetify 3 controls through their current model events. Custom
+components retain their existing `value`/`input` assertions until those public
+contracts are migrated in steps 5–6. The notifications suite uses actual async
+form validation and now checks that an invalid URL cannot be submitted.
+New unmount checks expose outstanding polling and late-response cleanup defects.
+No failing tests are skipped or Vue warnings suppressed.
+
+Run from `frontend` with Node 24:
+
+```sh
+npm run lint:tests
+npm run test:unit -- --runInBand
+```
+
+Verification: test/configuration lint passes. All 29 suites execute: **18 pass
+and 11 fail; 147 of 193 tests pass and 46 fail**. Startup and foundation tests
+remain green. More tests execute than at step 3 because legacy mounting errors
+previously prevented whole suites from loading. The remaining failures are
+tracked below; the full suite is intentionally still red until component work
+is complete.
+
+| Suite | Failing tests | Component migration follow-up |
+| --- | ---: | --- |
+| `ClusterEditor` | 16 | Step 6: replace removed `$set` calls, then verify editor flows |
+| `AWSClusterEditor` | 3 | Step 6: replace `$set`, repair storage updates and zone selection |
+| `DefaultProject` | 8 | Step 6: editor `$set` dependency and table selection events |
+| `MigProfilesEditor` | 7 | Steps 5–6: Vuetify model bindings, emitted updates, validation |
+| `InstanceSettings` | 3 | Step 6: size/volume controls and nested MIG bindings |
+| `ProjectNotifications` | 1 | Step 5: await form validation and inspect its `valid` result before saving |
+| `AWSProjectPrice` | 1 | Step 5: nested credentials model contract |
+| `OpenStackSubnet` | 2 | Step 5: select `itemTitle` and model binding |
+| `OpenStackCloud` | 2 | Step 5: select `itemTitle` and nested credentials model contract |
+| `Benchmarks` | 2 | Step 6: unmount cleanup for polling and pending responses |
+| `ClusterDisplay` | 1 | Step 6: unmount cleanup for status polling |
+
+Fix production behavior alongside the affected tests in the next steps. In
+particular, do not restore legacy Vuetify events in tests or stub validation as
+always successful to make these checks pass. Additional defects may become
+visible after the current blocking failures are fixed. The ordinary production
+build and browser feature workflows still require the remaining migration.
+
+## Next contributions
+
+- [x] Step 3: migrate the real entry point, router, unload-confirmation plugin,
+  Vuetify plugin, benchmark-access state, and shell.
+- [x] Step 4: migrate legacy test mounting, props, mocks, and teardown APIs;
+  document active component failures for steps 5–6.
 - [ ] Steps 5–6: migrate shared components and feature screens with their tests.
 - [ ] Replace the demonstration with checks of real application workflows once
   the application boots; then remove its entry, modes, scripts, and temporary

@@ -1,24 +1,10 @@
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import TypeSelect from "@/components/cluster/TypeSelect";
-import { shallowMount, createLocalVue } from "@vue/test-utils";
-import UnloadConfirmation from "@/plugins/UnloadConfirmation";
-import Vuetify from "vuetify";
-import Vue from "vue";
-import router from "@/router";
-
-Vue.use(Vuetify);
-
-const localVue = createLocalVue();
-const vuetify = new Vuetify();
-localVue.use(Vuetify);
-localVue.use(UnloadConfirmation, { router });
 
 describe("TypeSelect", () => {
   it("includes high availability types", () => {
     const wrapper = shallowMount(TypeSelect, {
-      localVue,
-      router,
-      vuetify,
-      propsData: {
+      props: {
         value: "",
         types: [
           { name: "ha1-2gb", vcpus: 1, ram: 2048 },
@@ -27,6 +13,7 @@ describe("TypeSelect", () => {
           { name: "x4-8gb", vcpus: 4, ram: 8192 },
         ],
       },
+      global: { renderStubDefaultSlot: true },
     });
 
     expect(wrapper.vm.items).toEqual([
@@ -42,13 +29,11 @@ describe("TypeSelect", () => {
 
   it("getTypeDescription", () => {
     const wrapper = shallowMount(TypeSelect, {
-      localVue,
-      router,
-      vuetify,
-      propsData: {
+      props: {
         value: "",
         types: [],
       },
+      global: { renderStubDefaultSlot: true },
     });
     // Regular types
     expect(wrapper.vm.getTypeDescription({ name: "p1-0.5gb", vcpus: 1, ram: 512 })).toBe("1 vCPU, 0.5 GB RAM");
@@ -85,9 +70,7 @@ describe("TypeSelect", () => {
 describe("AWS instance details", () => {
   it("shows GPU model and per-GPU memory, prices, and unavailable selections", () => {
     const wrapper = shallowMount(TypeSelect, {
-      localVue,
-      vuetify,
-      propsData: {
+      props: {
         types: [
           {
             name: "g5.xlarge",
@@ -102,6 +85,7 @@ describe("AWS instance details", () => {
           { name: "unknown", quota_pool: "Standard", vcpus: 2, ram: 8192, hourly_price_usd: null },
         ],
       },
+      global: { renderStubDefaultSlot: true },
     });
     expect(wrapper.vm.items.map((item) => item.value)).toEqual(["m6i.large", "g5.xlarge", "unknown"]);
     expect(wrapper.vm.items[0].description).toBe("2 vCPU · 8 GiB RAM · $0.1/hour");
@@ -113,7 +97,7 @@ describe("AWS instance details", () => {
 });
 
 it("shows fractional AWS GPUs without reporting zero GPUs", () => {
-  const wrapper = shallowMount(TypeSelect, { localVue, vuetify, propsData: { types: [] } });
+  const wrapper = shallowMount(TypeSelect, { props: { types: [] }, global: { renderStubDefaultSlot: true } });
   const type = {
     name: "g6f.xlarge",
     quota_pool: "G",
@@ -126,3 +110,4 @@ it("shows fractional AWS GPUs without reporting zero GPUs", () => {
   expect(wrapper.vm.getTypeDescription(type)).toContain("1/8 of NVIDIA L4 GPU");
   expect(wrapper.vm.getTypeDescription(type)).not.toContain("0 ×");
 });
+afterEach(cleanupMounts);

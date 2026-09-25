@@ -1,24 +1,25 @@
-import Vue from "vue";
-import Vuetify from "vuetify";
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { mountWithVuetify as mount, cleanupMounts } from "../../../helpers/mount";
 import ProjectNotifications from "@/components/ui/ProjectNotifications";
 import Repository from "@/repositories/Repository";
 
-Vue.use(Vuetify);
 jest.mock("@/repositories/Repository", () => ({ get: jest.fn(), put: jest.fn(), delete: jest.fn() }));
-const flush = () => new Promise(jest.requireActual("timers").setImmediate);
+const flush = flushPromises;
 let wrapper;
 beforeEach(() => {
   jest.clearAllMocks();
   Repository.get.mockResolvedValue({ data: { configured: true, type: "webhook", enabled: true, has_token: true } });
   Repository.put.mockResolvedValue({ data: { configured: true } });
   Repository.delete.mockResolvedValue({ data: { configured: false } });
-  wrapper = shallowMount(ProjectNotifications, {
-    propsData: { id: 12 },
-    stubs: { "v-form": { template: "<div><slot /></div>", methods: { validate: () => true } } },
+  wrapper = mount(ProjectNotifications, {
+    props: { id: 12 },
+    global: {
+      // Keep the dialog open for these form tests; validate with real inputs.
+      stubs: { VDialog: { template: "<div><slot /></div>" }, ConfirmDialog: true },
+    },
   });
 });
-afterEach(() => wrapper.destroy());
+afterEach(() => wrapper.unmount());
 
 async function open() {
   await wrapper.setData({ dialog: true });
@@ -76,3 +77,14 @@ test("removal only affects the selected project", async () => {
   expect(Repository.delete).toHaveBeenCalledWith("/projects/12/notification-destination");
   expect(wrapper.vm.dialog).toBe(false);
 });
+
+test("invalid webhook URLs cannot be submitted", async () => {
+  await open();
+  await wrapper.setData({ url: "http://insecure.example.org" });
+  await wrapper.vm.save();
+  await flushPromises();
+  expect(Repository.put).not.toHaveBeenCalled();
+  expect(wrapper.vm.dialog).toBe(true);
+  expect(wrapper.text()).toContain("Enter an HTTPS webhook URL");
+});
+afterEach(cleanupMounts);

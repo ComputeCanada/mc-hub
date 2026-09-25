@@ -1,6 +1,5 @@
-import { mount, createLocalVue } from "@vue/test-utils";
-import Vuetify from "vuetify";
-import Vue from "vue";
+import { flushPromises } from "@vue/test-utils";
+import { mountWithVuetify as mount, cleanupMounts } from "../../../helpers/mount";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import Projects from "@/views/Projects";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
@@ -16,11 +15,7 @@ jest.mock("@/repositories/AvailableResourcesRepository", () => ({
   checkHost: jest.fn(),
 }));
 
-Vue.use(Vuetify);
-const localVue = createLocalVue();
-localVue.prototype.$disableUnloadConfirmation = jest.fn();
-localVue.prototype.$enableUnloadConfirmation = jest.fn();
-const flush = () => new Promise(jest.requireActual("timers").setImmediate);
+const flush = flushPromises;
 const projects = [
   { id: 1, name: "First project" },
   { id: 2, name: "Preferred project" },
@@ -28,9 +23,7 @@ const projects = [
 
 function editor(existingCluster = false) {
   return mount(ClusterEditor, {
-    localVue,
-    vuetify: new Vuetify(),
-    propsData: {
+    props: {
       existingCluster,
       stateful: false,
       specs: {
@@ -46,15 +39,19 @@ function editor(existingCluster = false) {
         nb_users: 1,
       },
     },
-    stubs: ["HieradataEditor", "TypeSelect", "ResourceUsageDisplay", "router-link"],
+    global: {
+      stubs: ["HieradataEditor", "TypeSelect", "ResourceUsageDisplay", "router-link"],
+      mocks: { $enableUnloadConfirmation: jest.fn(), $disableUnloadConfirmation: jest.fn() },
+    },
   });
 }
 
 function projectMenu() {
   return mount(Projects, {
-    localVue,
-    vuetify: new Vuetify(),
-    stubs: ["CloudProviderInput", "ProjectMembership", "ProjectEditor"],
+    global: {
+      stubs: ["CloudProviderInput", "ProjectMembership", "ProjectEditor"],
+      mocks: { $enableUnloadConfirmation: jest.fn(), $disableUnloadConfirmation: jest.fn() },
+    },
   });
 }
 
@@ -93,7 +90,7 @@ it("waits for the preference and loads only the default project, even when it is
   await flush();
   expect(AvailableResourcesRepository.getCloud.mock.calls).toEqual([[2], [1]]);
   expect(UserRepository.setDefaultProject).not.toHaveBeenCalled();
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("preserves the project when editing an existing cluster", async () => {
@@ -102,7 +99,7 @@ it("preserves the project when editing an existing cluster", async () => {
   expect(wrapper.vm.localSpecs.cloud.id).toBe(1);
   expect(AvailableResourcesRepository.getHost).toHaveBeenCalledWith("existing.example.org");
   expect(AvailableResourcesRepository.getCloud).not.toHaveBeenCalled();
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("makes no cloud requests when the user has no projects", async () => {
@@ -111,7 +108,7 @@ it("makes no cloud requests when the user has no projects", async () => {
   const wrapper = editor();
   await flush();
   expect(AvailableResourcesRepository.getCloud).not.toHaveBeenCalled();
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("never shows OpenStack quotas while opening an AWS default project", async () => {
@@ -137,7 +134,7 @@ it("never shows OpenStack quotas while opening an AWS default project", async ()
   await flush();
   expect(wrapper.vm.isAWS).toBe(true);
   expect(quotaIndicators().length).toBe(0);
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("hides OpenStack quotas immediately when switching projects, including failed loads", async () => {
@@ -182,7 +179,7 @@ it("hides OpenStack quotas immediately when switching projects, including failed
   await flush();
   expect(wrapper.vm.isAWS).toBe(true);
   expect(quotaIndicators().length).toBe(0);
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it.each([false, true])("clears the AWS banner while switching to OpenStack (load fails: %s)", async (fails) => {
@@ -219,7 +216,7 @@ it.each([false, true])("clears the AWS banner while switching to OpenStack (load
   expect(wrapper.text()).not.toContain("cluster feasibility");
   expect(wrapper.text()).not.toContain("Within quotas");
   if (fails) expect(wrapper.text()).toContain("Unable to load cloud resources");
-  wrapper.destroy();
+  wrapper.unmount();
 });
 
 it("lets a project member select exactly one default checkbox", async () => {
@@ -232,18 +229,18 @@ it("lets a project member select exactly one default checkbox", async () => {
   const wrapper = projectMenu();
   await flush();
   const checkboxes = wrapper.findAll('[role="checkbox"]');
-  expect(checkboxes.wrappers.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["false", "true"]);
-  await checkboxes.at(0).trigger("click");
+  expect(checkboxes.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["false", "true"]);
+  await checkboxes[0].trigger("click");
   expect(UserRepository.setDefaultProject).toHaveBeenCalledWith(1);
   expect(wrapper.vm.defaultProjectId).toBe(2);
-  expect(checkboxes.wrappers.every((checkbox) => checkbox.classes("v-simple-checkbox--disabled"))).toBe(true);
+  expect(checkboxes.every((checkbox) => checkbox.classes("v-simple-checkbox--disabled"))).toBe(true);
   resolveSave({ data: { default_project_id: 1 } });
   await flush();
-  expect(checkboxes.wrappers.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["true", "false"]);
-  await checkboxes.at(0).trigger("click");
+  expect(checkboxes.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["true", "false"]);
+  await checkboxes[0].trigger("click");
   expect(UserRepository.setDefaultProject).toHaveBeenCalledTimes(1);
-  expect(checkboxes.at(0).attributes("aria-checked")).toBe("true");
-  wrapper.destroy();
+  expect(checkboxes[0].attributes("aria-checked")).toBe("true");
+  wrapper.unmount();
 });
 
 it("keeps the previous default and shows an error when saving fails", async () => {
@@ -254,5 +251,6 @@ it("keeps the previous default and shows an error when saving fails", async () =
   expect(wrapper.vm.defaultProjectId).toBe(2);
   expect(wrapper.text()).toContain("Unable to save your default project");
   expect(wrapper.vm.savingDefault).toBeNull();
-  wrapper.destroy();
+  wrapper.unmount();
 });
+afterEach(cleanupMounts);
