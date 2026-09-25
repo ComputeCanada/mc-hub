@@ -156,7 +156,7 @@
           }}</template>
           <template #expanded-item="{ headers, item }"
             ><td :colspan="headers.length" class="pa-4">
-              <v-alert v-if="item.error" :type="item.phase === 'queued' ? 'warning' : 'error'" outlined>{{
+              <v-alert v-if="item.error" class="benchmark-error" :type="item.phase === 'queued' ? 'warning' : 'error'" outlined>{{
                 item.error
               }}</v-alert>
               <p v-if="item.phase === 'queued' && item.error">
@@ -382,7 +382,8 @@ export default {
 };
 </script>
 <style scoped>
-.benchmark-specs {
+.benchmark-specs,
+.benchmark-error {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

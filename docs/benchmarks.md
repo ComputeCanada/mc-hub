@@ -171,9 +171,14 @@ operations, and operation processes exit if their scheduler parent dies. Interru
 creation transitions into cleanup. Older runs queued before this change can still
 resume incomplete setup using integrations already recorded in the database.
 Unknown apply acceptance is never
-replayed. Infrastructure errors are logged in `docker compose logs background-worker`;
-the dashboard displays generic errors to avoid copying credentials from provider
-responses into results.
+replayed. Failed Terraform plans and applies retain the stage, failure timestamp,
+and extracted error diagnostics in the run's error message, using the same diagnostic
+extractor as manual cluster creation. Expand a run in the dashboard to read the
+details, which remain available after cleanup and cluster reuse. If diagnostics
+cannot be retrieved, the run records that fact and still proceeds to cleanup.
+Existing historical errors are not backfilled. Other infrastructure exceptions are
+logged in `docker compose logs background-worker`; the dashboard displays generic
+errors to avoid copying credentials from exception messages into results.
 
 ## Deployment
 

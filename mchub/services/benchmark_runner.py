@@ -10,6 +10,7 @@ import sys
 import time
 from threading import Event, Thread
 
+import requests
 from sqlalchemy import case
 
 from .. import create_app
@@ -22,6 +23,7 @@ from ..models.magic_castle.cluster_status_code import ClusterStatusCode as Statu
 from ..models.usage import UsageApply, utcnow
 from ..models.user import UserORM
 from ..exceptions.invalid_usage_exception import InvalidUsageException
+from ..exceptions.server_exception import TerraformCloudException
 from .benchmarks import schedule_due, reusable_cluster, benchmark_lock
 from . import cluster_lifecycle as lifecycle
 from .terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable, TFCloudStatusCode
@@ -68,6 +70,33 @@ def refresh_measurement(run, orm):
 def perform(orm, target, *args):
     lifecycle.claim_background_task(orm, owner="benchmark")
     return lifecycle.execute_claimed_task(orm.hostname, target, *args)
+
+
+def deployment_error(run, orm, status):
+    """Snapshot the deployment diagnostic before cleanup replaces its Terraform run."""
+    failure = orm.terraform_failure
+    if not failure or failure.get("run_id") != run.terraform_run_id or not failure.get("diagnostic_available"):
+        failure = None
+        if run.terraform_run_id:
+            try:
+                failure = get_terraform_cloud().get_run_failure(run.terraform_run_id)
+            except (TerraformCloudException, requests.RequestException):
+                pass
+    if failure and failure.get("phase") == "apply":
+        status = Status.BUILD_ERROR
+    parts = [f"Deployment reported {status.value}."]
+    if failure:
+        if failure.get("phase"):
+            parts.append(f"Terraform stage: {failure['phase']}")
+        if failure.get("failed_at"):
+            parts.append(f"Failed: {failure['failed_at']}")
+    if failure and failure.get("diagnostic"):
+        parts.append(failure["diagnostic"])
+    elif failure and failure.get("diagnostic_available"):
+        parts.append("Terraform did not provide additional error details.")
+    else:
+        parts.append("Terraform diagnostic details could not be retrieved.")
+    return "\n\n".join(parts)
 
 
 def verify_empty(cluster):
@@ -241,7 +270,7 @@ def advance_run(run_id):
         # limit, not a Terraform failure. Benchmarks have their own deadline and
         # must keep checking readiness until that deadline expires.
         if status in (Status.PLAN_ERROR, Status.BUILD_ERROR):
-            finish(run, "failed", f"Deployment reported {status.value}.")
+            finish(run, "failed", deployment_error(run, orm, status))
             return
         if run.phase == "ready":
             lifecycle.validate_apply(orm)

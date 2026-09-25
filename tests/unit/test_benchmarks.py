@@ -688,6 +688,7 @@ def test_build_target_uses_completed_deployment_without_health_checks(benchmark,
         db.session.commit()
     tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
     tf.get_run_status.return_value = (remote, is_destroy)
+    tf.get_run_failure.return_value = None
     tf.get_apply_timestamps.return_value = (datetime(2027, 1, 1, 0, 1), datetime(2027, 1, 1, 0, 3))
     # Even a failed or stalled health probe must not block this criterion.
     health = mocker.patch.object(MagicCastle, "status", new_callable=PropertyMock, side_effect=AssertionError("Probed health"))
@@ -711,6 +712,67 @@ def test_build_target_uses_completed_deployment_without_health_checks(benchmark,
         else:
             assert run.target_reached_at is None
             tf.get_apply_timestamps.assert_not_called()
+
+
+@pytest.mark.parametrize("criterion", ["healthy", "build_completed"])
+@pytest.mark.parametrize("phase", ["plan", "apply"])
+@pytest.mark.parametrize("cached", [True, False])
+def test_deployment_failure_preserves_diagnostics(benchmark, cluster, mocker, criterion, phase, cached):
+    benchmark.success_criterion = criterion
+    run = benchmarks.enqueue(benchmark)
+    cluster.benchmark_run_id = run.id
+    run.phase, run.started_at = "waiting", utcnow()
+    diagnostic = "Error: Quota exceeded\nwith compute_instance.worker\non main.tf line 12"
+    failure = {"run_id": "run-1", "phase": phase, "diagnostic": diagnostic,
+               "diagnostic_available": True, "failed_at": "2026-09-25T12:00:00Z"}
+    cluster.terraform_failure = failure if cached else {**failure, "run_id": "old-run", "diagnostic": "Old failure"}
+    db.session.commit()
+    mocker.patch.object(MagicCastle, "status", new_callable=PropertyMock, return_value=Status.PLAN_ERROR)
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_run_status.return_value = (TFStatus.ERRORED, False)
+    tf.get_run_failure.return_value = failure
+
+    runner.advance_run(run.id)
+    assert run.outcome == "failed"
+    assert run.phase == "cleanup"
+    assert f"Deployment reported {'build_error' if phase == 'apply' else 'plan_error'}." in run.error
+    assert f"Terraform stage: {phase}" in run.error
+    assert failure["failed_at"] in run.error
+    assert diagnostic in run.error
+    assert "Old failure" not in run.error
+    if cached:
+        tf.get_run_failure.assert_not_called()
+    else:
+        tf.get_run_failure.assert_called_once_with("run-1")
+    # Cleanup/reuse can replace the cluster's run and clear its failure details.
+    cluster.tfcloud_run.run_id = "cleanup-run"
+    cluster.terraform_failure = None
+    runner.cleanup(run, None)
+    db.session.expire_all()
+    assert run.phase == "complete"
+    assert diagnostic in run_result(run)["error"]
+
+
+@pytest.mark.parametrize("result", [None, "empty", "unavailable", "api_error", "network_error"])
+def test_deployment_diagnostic_unavailable_still_cleans_up(benchmark, cluster, mocker, result):
+    run = benchmarks.enqueue(benchmark)
+    cluster.benchmark_run_id = run.id
+    run.phase, run.started_at = "waiting", utcnow()
+    db.session.commit()
+    mocker.patch.object(MagicCastle, "status", new_callable=PropertyMock, return_value=Status.BUILD_ERROR)
+    tf = mocker.patch.object(runner, "get_terraform_cloud").return_value
+    tf.get_run_failure.return_value = None if result is None else {
+        "phase": "apply", "diagnostic": "", "diagnostic_available": result == "empty"}
+    if result == "api_error":
+        tf.get_run_failure.side_effect = runner.TerraformCloudException("secret API details")
+    elif result == "network_error":
+        tf.get_run_failure.side_effect = runner.requests.RequestException("secret signed URL")
+    runner.advance_run(run.id)
+    assert run.outcome == "failed"
+    assert run.phase == "cleanup"
+    assert "Deployment reported build_error." in run.error
+    assert "secret" not in run.error
+    assert ("did not provide additional error details" if result == "empty" else "could not be retrieved") in run.error
 
 
 def test_healthy_target_waits_after_build_completion(benchmark, cluster, mocker):
