@@ -90,7 +90,8 @@
         </p>
         <p v-else class="text-caption">
           Terraform Cloud apply start to first observation of healthy services. Successful runs with known Terraform
-          apply start times only. Older results without these timestamps are excluded from timing comparisons. Later health changes do not change a result.
+          apply start times only. Older results without these timestamps are excluded from timing comparisons. Later
+          health changes do not change a result.
         </p>
         <svg
           v-if="points.length"
@@ -156,9 +157,13 @@
           }}</template>
           <template #expanded-item="{ headers, item }"
             ><td :colspan="headers.length" class="pa-4">
-              <v-alert v-if="item.error" class="benchmark-error" :type="item.phase === 'queued' ? 'warning' : 'error'" outlined>{{
-                item.error
-              }}</v-alert>
+              <v-alert
+                v-if="item.error"
+                class="benchmark-error"
+                :type="item.phase === 'queued' ? 'warning' : 'error'"
+                outlined
+                >{{ item.error }}</v-alert
+              >
               <p v-if="item.phase === 'queued' && item.error">
                 Next status check: {{ timestamp(item.next_attempt_at) }}
               </p>
@@ -175,7 +180,8 @@
                 >
               </p>
               <p v-else>
-                Terraform apply started: {{ timestamp(item.apply_started_at) }} · Target reached: {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
+                Terraform apply started: {{ timestamp(item.apply_started_at) }} · Target reached:
+                {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
               </p>
               <p>
                 Terraform run: {{ item.terraform_run_id || "Unknown" }} · Repository:

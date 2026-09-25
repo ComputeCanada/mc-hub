@@ -9,7 +9,8 @@
             aria-label="Notifications"
             v-bind="{ ...dialogAttrs, ...tooltipAttrs }"
             v-on="{ ...tooltipOn, ...dialogOn }"
-          ><v-icon>mdi-bell-outline</v-icon></v-btn>
+            ><v-icon>mdi-bell-outline</v-icon></v-btn
+          >
         </template>
         <span>Notifications</span>
       </v-tooltip>

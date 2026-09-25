@@ -1,4 +1,4 @@
 module.exports = {
   preset: "@vue/cli-plugin-unit-jest",
-  transformIgnorePatterns: ["/node_modules/(?!(?:monaco-editor)|(?:vuetify)).+\\.js$"]
+  transformIgnorePatterns: ["/node_modules/(?!(?:monaco-editor)|(?:vuetify)).+\\.js$"],
 };
