@@ -113,6 +113,7 @@ test("planning does not let current quota block submission", () => {
 
 test("a prefilled manual cluster can be submitted without changing its resources", () => {
   const enabled = ClusterEditor.computed.applyButtonEnabled.call({
+    instanceSettingsErrors: {},
     loading: false,
     validForm: true,
     plannerMode: false,
@@ -136,22 +137,22 @@ test("upcoming resource columns sort numeric totals, including GPUs and AWS pool
       ],
     },
   });
-  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.key === key);
-  expect(wrapper.vm.headers.some((h) => h.value === "demand")).toBe(false);
+  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.resourceKey === key);
+  expect(wrapper.vm.headers.some((h) => h.key === "demand")).toBe(false);
   const table = mount(VDataTable, {
     props: {
       headers: wrapper.vm.headers,
       items: wrapper.vm.planRows,
-      sortBy: [{ key: column("gpus").value, order: "asc" }],
+      sortBy: [{ key: column("gpus").key, order: "asc" }],
       itemsPerPage: -1,
     },
   });
   try {
     const names = () => table.findAll("tbody tr").map((row) => row.find("td").text());
     expect(names()).toEqual(["Two GPUs", "Ten GPUs"]);
-    await table.setProps({ sortBy: [{ key: column("vcpus").value, order: "asc" }] });
+    await table.setProps({ sortBy: [{ key: column("vcpus").key, order: "asc" }] });
     expect(names()).toEqual(["Ten GPUs", "Two GPUs"]);
-    await table.setProps({ sortBy: [{ key: column("Standard (A, C, D, H, I, M, R, T, Z)").value, order: "asc" }] });
+    await table.setProps({ sortBy: [{ key: column("Standard (A, C, D, H, I, M, R, T, Z)").key, order: "asc" }] });
     expect(names()).toEqual(["Two GPUs", "Ten GPUs"]);
     await table.setProps({ sortBy: [{ ...table.props("sortBy")[0], order: "desc" }] });
     expect(names()).toEqual(["Ten GPUs", "Two GPUs"]);
@@ -175,23 +176,23 @@ test("future demand columns sort GPU and RAM totals numerically, including empty
       },
     },
   });
-  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.key === key);
-  expect(column("ram").text).toBe("RAM (GiB)");
-  expect(wrapper.vm.forecastRows.map((row) => row[column("ram").value])).toEqual([2, 10, 0]);
+  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.resourceKey === key);
+  expect(column("ram").title).toBe("RAM (GiB)");
+  expect(wrapper.vm.forecastRows.map((row) => row[column("ram").key])).toEqual([2, 10, 0]);
   expect(wrapper.vm.resources({ ram: 1536 })).toBe("RAM (GiB): 1.5");
   const table = mount(VDataTable, {
     props: {
       headers: wrapper.vm.forecastHeaders,
       items: wrapper.vm.forecastRows,
       itemValue: "starts_at",
-      sortBy: [{ key: column("gpus").value, order: "asc" }],
+      sortBy: [{ key: column("gpus").key, order: "asc" }],
       itemsPerPage: -1,
     },
   });
   try {
     const days = () => table.findAll("tbody tr").map((row) => row.find("td").text().slice(8, 10));
     expect(days()).toEqual(["03", "02", "01"]);
-    await table.setProps({ sortBy: [{ key: column("ram").value, order: "asc" }] });
+    await table.setProps({ sortBy: [{ key: column("ram").key, order: "asc" }] });
     expect(days()).toEqual(["03", "01", "02"]);
     await table.setProps({ sortBy: [{ ...table.props("sortBy")[0], order: "desc" }] });
     expect(days()).toEqual(["02", "01", "03"]);

@@ -6,7 +6,7 @@
       <v-alert v-if="saving" type="info"
         >Saving the benchmark and preparing its repository and Terraform workspace…</v-alert
       >
-      <v-alert type="info" outlined>
+      <v-alert type="info" variant="outlined">
         The first save creates the Git repository, Terraform files, and workspace. Each run creates fresh resources
         using the benchmark's cluster name, Git repository, and Terraform workspace. Resources are torn down after
         success, failure, or timeout. Cleanup retries block the next run. Times and schedules use UTC. Deployment
@@ -74,6 +74,7 @@ export default {
   props: { id: String },
   data: () => ({
     loading: true,
+    disposed: false,
     saving: false,
     savedId: null,
     error: "",
@@ -85,8 +86,8 @@ export default {
     frequency: "daily",
     successCriterion: "healthy",
     successCriteria: [
-      { text: "Build completed", value: "build_completed" },
-      { text: "Provisioning completed (healthy)", value: "healthy" },
+      { title: "Build completed", value: "build_completed" },
+      { title: "Provisioning completed (healthy)", value: "healthy" },
     ],
     timeout: 120,
     enabled: true,
@@ -103,9 +104,13 @@ export default {
   },
   async created() {
     try {
-      this.projects = (await Repository.get("/benchmarks")).data.projects;
+      const { data } = await Repository.get("/benchmarks");
+      if (this.disposed) return;
+      this.projects = data.projects;
+      if (!this.projects.length) return;
       if (this.id) {
         const { benchmark } = (await Repository.get(`/benchmarks/${this.id}`)).data;
+        if (this.disposed) return;
         if (benchmark.archived) throw new Error("Archived benchmarks cannot be edited.");
         this.specs = benchmark.configuration;
         this.projectId = benchmark.project_id;
@@ -116,16 +121,24 @@ export default {
         this.successCriterion = benchmark.success_criterion;
         this.timeout = benchmark.timeout_minutes;
         this.enabled = benchmark.enabled;
-        this.nextRun = benchmark.next_run_at.slice(0, 16);
-      } else this.specs = (await TemplateRepository.get("default")).data;
+        this.nextRun = benchmark.next_run_at?.slice(0, 16) || "";
+      } else {
+        const { data } = await TemplateRepository.get("default");
+        if (!this.disposed) this.specs = data;
+      }
     } catch (error) {
+      if (this.disposed) return;
       this.error = error.response?.data?.message || error.message || "Unable to load the benchmark form.";
     } finally {
-      this.loading = false;
+      if (!this.disposed) this.loading = false;
     }
+  },
+  beforeUnmount() {
+    this.disposed = true;
   },
   methods: {
     async save() {
+      if (this.saving || this.disposed || !this.specs) return;
       this.saving = true;
       this.error = "";
       try {
@@ -142,9 +155,11 @@ export default {
         const response = this.benchmarkId
           ? await Repository.put(`/benchmarks/${this.benchmarkId}`, payload)
           : await Repository.post("/benchmarks", payload);
+        if (this.disposed) return;
         this.$disableUnloadConfirmation();
         this.$router.push({ path: "/benchmarks", query: { benchmark: response.data.id } });
       } catch (error) {
+        if (this.disposed) return;
         const saved = error.response?.data?.benchmark;
         if (saved) {
           this.savedId = saved.id;
@@ -153,7 +168,7 @@ export default {
         }
         this.error = error.response?.data?.message || "Unable to save benchmark.";
       } finally {
-        this.saving = false;
+        if (!this.disposed) this.saving = false;
       }
     },
   },

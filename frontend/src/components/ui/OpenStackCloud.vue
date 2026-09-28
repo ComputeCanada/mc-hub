@@ -1,21 +1,21 @@
 <template>
   <div>
     <v-select
-      :value="selectedValue"
+      :model-value="selectedValue"
       :items="clouds"
-      item-text="name"
+      item-title="name"
       item-value="auth_url"
       label="OpenStack cloud"
       :loading="loading"
       :disabled="loading || clouds.length === 0"
       no-data-text="No approved OpenStack clouds configured"
-      @change="$emit('input', $event)"
+      @update:model-value="$emit('update:modelValue', $event)"
     />
-    <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
-    <v-alert v-else-if="!loading && clouds.length === 0" type="info" dense>
+    <v-alert v-if="error" type="error" density="compact">{{ error }}</v-alert>
+    <v-alert v-else-if="!loading && clouds.length === 0" type="info" density="compact">
       No OpenStack clouds are available. Ask the operator to configure an approved cloud.
     </v-alert>
-    <v-btn v-if="error" text @click="loadClouds">Retry</v-btn>
+    <v-btn v-if="error" variant="text" @click="loadClouds">Retry</v-btn>
   </div>
 </template>
 
@@ -24,29 +24,36 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 
 export default {
   name: "OpenStackCloud",
-  props: { value: { type: String, default: "" } },
+  emits: ["update:modelValue"],
+  props: { modelValue: { type: String, default: "" } },
   data() {
-    return { clouds: [], loading: false, error: "" };
+    return { clouds: [], loading: false, error: "", requestId: 0 };
   },
   computed: {
     selectedValue() {
-      return this.clouds.some((cloud) => cloud.auth_url === this.value) ? this.value : null;
+      return this.clouds.some((cloud) => cloud.auth_url === this.modelValue) ? this.modelValue : null;
     },
   },
   created() {
     this.loadClouds();
   },
+  beforeUnmount() {
+    this.requestId++;
+  },
   methods: {
     async loadClouds() {
+      const id = ++this.requestId;
       this.loading = true;
       this.error = "";
       try {
-        this.clouds = (await ProjectRepository.openstackClouds()).data.clouds;
+        const { data } = await ProjectRepository.openstackClouds();
+        if (id === this.requestId) this.clouds = data.clouds;
       } catch (error) {
+        if (id !== this.requestId) return;
         this.clouds = [];
         this.error = "Unable to load approved OpenStack clouds.";
       } finally {
-        this.loading = false;
+        if (id === this.requestId) this.loading = false;
       }
     },
   },

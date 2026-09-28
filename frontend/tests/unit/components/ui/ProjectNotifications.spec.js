@@ -88,3 +88,21 @@ test("invalid webhook URLs cannot be submitted", async () => {
   expect(wrapper.text()).toContain("Enter an HTTPS webhook URL");
 });
 afterEach(cleanupMounts);
+
+test("duplicate saves are blocked while validation or submission is pending", async () => {
+  await open();
+  let resolve;
+  Repository.put.mockReturnValue(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const save = wrapper.vm.save();
+  await wrapper.vm.save();
+  await flushPromises();
+  expect(Repository.put).toHaveBeenCalledTimes(1);
+  expect(wrapper.vm.saving).toBe(true);
+  resolve({ data: {} });
+  await save;
+  expect(wrapper.vm.saving).toBe(false);
+});

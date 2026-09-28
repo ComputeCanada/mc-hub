@@ -1,14 +1,13 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
-    <template #activator="{ on: dialogOn, attrs: dialogAttrs }">
-      <v-tooltip bottom>
-        <template #activator="{ on: tooltipOn, attrs: tooltipAttrs }">
+    <template #activator="{ props: dialogProps }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
           <v-btn
             color="secondary"
-            text
+            variant="text"
             aria-label="Edit"
-            v-bind="{ ...dialogAttrs, ...tooltipAttrs }"
-            v-on="{ ...tooltipOn, ...dialogOn }"
+            v-bind="mergeProps(tooltipProps, dialogProps)"
             :disabled="!admin"
           >
             <v-icon>mdi-pencil</v-icon>
@@ -26,7 +25,7 @@
         <v-container>
           <v-list>
             <template v-if="admin && project.provider === 'openstack'">
-              <v-subheader>Cloud Credentials</v-subheader>
+              <v-list-subheader>Cloud Credentials</v-list-subheader>
               <v-list-item>
                 <open-stack-credentials v-model="env" :project-id="id" :cloud-name="project.cloud_name" />
               </v-list-item>
@@ -53,14 +52,15 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text @click="close"> Cancel </v-btn>
-        <v-btn color="blue darken-1" text @click="save"> Save </v-btn>
+        <v-btn color="blue-darken-1" variant="text" @click="close"> Cancel </v-btn>
+        <v-btn color="blue-darken-1" variant="text" @click="save"> Save </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
+import { mergeProps } from "vue";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
 import AwsCredentials from "@/components/ui/AWSCredentials";
@@ -68,6 +68,7 @@ import OpenStackCredentials from "@/components/ui/OpenStackCredentials";
 
 export default {
   name: "ProjectEditor",
+  emits: ["saved"],
   components: { MessageDialog, AwsCredentials, OpenStackCredentials },
   props: {
     id: { type: Number, required: true },
@@ -103,6 +104,7 @@ export default {
     },
   },
   methods: {
+    mergeProps,
     async save() {
       const payload = {};
       if (this.admin && this.project.provider === "aws") {
@@ -143,6 +145,7 @@ export default {
         this.errorDialog = true;
         return;
       }
+      this.$emit("saved");
       this.close();
     },
     close() {

@@ -5,9 +5,9 @@
         <b class="ma-auto">No resource to change.</b>
       </v-list-item>
     </v-list>
-    <v-list v-else two-line>
+    <v-list v-else lines="two">
       <v-list-item v-for="resource in relevantResourcesChanges" :key="resource.address">
-        <v-list-item-avatar>
+        <template #prepend>
           <!-- https://www.terraform.io/docs/internals/json-format.html#change-representation -->
           <v-icon v-if="isEqual(resource.change.actions, ['no-op'])">mdi-checkbox-blank-circle-outline</v-icon>
           <v-icon v-else-if="isEqual(resource.change.actions, ['create'])" color="green">mdi-plus</v-icon>
@@ -22,25 +22,27 @@
             <v-icon color="red">mdi-minus</v-icon>
           </div>
           <v-icon v-else-if="isEqual(resource.change.actions, ['delete'])" color="red">mdi-close</v-icon>
-        </v-list-item-avatar>
-        <v-list-item-content>
-          <v-list-item-title>{{ resource.type }}</v-list-item-title>
-          <v-list-item-subtitle>{{ resource.address }}</v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action v-if="showProgress">
-          <template v-if="resource.change.progress === 'done'">
-            <v-icon color="green">mdi-check</v-icon>
-            <div class="green--text mt-1">done</div>
-          </template>
-          <template v-else-if="resource.change.progress === 'running'">
-            <v-progress-circular color="blue" indeterminate width="2" size="20" />
-            <div class="blue--text mt-1">running</div>
-          </template>
-          <template v-else-if="resource.change.progress === 'queued'">
-            <v-icon color="grey">mdi-cloud-upload</v-icon>
-            <div class="grey--text mt-1">queued</div>
-          </template>
-        </v-list-item-action>
+        </template>
+
+        <v-list-item-title>{{ resource.type }}</v-list-item-title>
+        <v-list-item-subtitle>{{ resource.address }}</v-list-item-subtitle>
+
+        <template v-if="showProgress" #append
+          ><div class="text-center">
+            <template v-if="resource.change.progress === 'done'">
+              <v-icon color="green">mdi-check</v-icon>
+              <div class="text-green mt-1">done</div>
+            </template>
+            <template v-else-if="resource.change.progress === 'running'">
+              <v-progress-circular color="blue" indeterminate width="2" size="20" />
+              <div class="text-blue mt-1">running</div>
+            </template>
+            <template v-else-if="resource.change.progress === 'queued'">
+              <v-icon color="grey">mdi-cloud-upload</v-icon>
+              <div class="text-grey mt-1">queued</div>
+            </template>
+          </div></template
+        >
       </v-list-item>
     </v-list>
   </div>
@@ -49,6 +51,7 @@
 import { isEqual } from "lodash";
 export default {
   name: "ClusterResources",
+  emits: ["updateProgress"],
   props: {
     resourcesChanges: {
       type: Array,
@@ -60,20 +63,24 @@ export default {
     },
   },
   watch: {
-    relevantResourcesChanges(relevantResourcesChanges) {
-      /**
-       * Computes the percentage (from  0 to 100) of resource changes
-       * labelled as "done" or "running" (counts for half a resource).
-       * The result is emitted to be consumed by other components.
-       */
-      const total = relevantResourcesChanges.length === 0 ? 1 : relevantResourcesChanges.length;
-      const doneResourceChanges = relevantResourcesChanges.filter(
-        (resource) => resource.change.progress === "done"
-      ).length;
-      const runningResourceChanges = relevantResourcesChanges.filter(
-        (resource) => resource.change.progress === "running"
-      ).length;
-      this.$emit("updateProgress", (100 * (doneResourceChanges + 0.5 * runningResourceChanges)) / total);
+    relevantResourcesChanges: {
+      immediate: true,
+      deep: true,
+      handler(relevantResourcesChanges) {
+        /**
+         * Computes the percentage (from  0 to 100) of resource changes
+         * labelled as "done" or "running" (counts for half a resource).
+         * The result is emitted to be consumed by other components.
+         */
+        const total = relevantResourcesChanges.length === 0 ? 1 : relevantResourcesChanges.length;
+        const doneResourceChanges = relevantResourcesChanges.filter(
+          (resource) => resource.change.progress === "done"
+        ).length;
+        const runningResourceChanges = relevantResourcesChanges.filter(
+          (resource) => resource.change.progress === "running"
+        ).length;
+        this.$emit("updateProgress", (100 * (doneResourceChanges + 0.5 * runningResourceChanges)) / total);
+      },
     },
   },
   computed: {

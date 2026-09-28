@@ -1,14 +1,13 @@
 <template>
   <v-dialog v-model="dialog" max-width="600">
-    <template #activator="{ on: dialogOn, attrs: dialogAttrs }">
-      <v-tooltip bottom>
-        <template #activator="{ on: tooltipOn, attrs: tooltipAttrs }">
+    <template #activator="{ props: dialogProps }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
           <v-btn
-            text
+            variant="text"
             color="secondary"
             aria-label="Notifications"
-            v-bind="{ ...dialogAttrs, ...tooltipAttrs }"
-            v-on="{ ...tooltipOn, ...dialogOn }"
+            v-bind="mergeProps(tooltipProps, dialogProps)"
             ><v-icon>mdi-bell-outline</v-icon></v-btn
           >
         </template>
@@ -61,12 +60,14 @@
         <p v-else-if="configured">No deliveries to this destination yet.</p>
       </v-card-text>
       <v-card-actions>
-        <v-btn v-if="configured" text color="error" :disabled="busy" @click="removeDialog = true"
+        <v-btn v-if="configured" variant="text" color="error" :disabled="busy" @click="removeDialog = true"
           >Remove destination</v-btn
         >
         <v-spacer />
-        <v-btn text :disabled="busy" @click="dialog = false">Cancel</v-btn>
-        <v-btn text color="primary" :disabled="busy || !valid" :loading="saving" @click="save">Save</v-btn>
+        <v-btn variant="text" :disabled="busy" @click="dialog = false">Cancel</v-btn>
+        <v-btn variant="text" color="primary" :disabled="busy || valid === false" :loading="saving" @click="save"
+          >Save</v-btn
+        >
       </v-card-actions>
     </v-card>
     <confirm-dialog v-model="removeDialog" title="Remove notification destination" @confirm="remove">
@@ -75,6 +76,7 @@
   </v-dialog>
 </template>
 <script>
+import { mergeProps } from "vue";
 import Repository from "@/repositories/Repository";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 export default {
@@ -86,7 +88,7 @@ export default {
     removeDialog: false,
     loading: false,
     saving: false,
-    valid: false,
+    valid: null,
     error: "",
     configured: false,
     kind: "webhook",
@@ -97,8 +99,8 @@ export default {
     enabled: true,
     lastDelivery: null,
     types: [
-      { text: "Generic webhook", value: "webhook" },
-      { text: "Slack", value: "slack" },
+      { title: "Generic webhook", value: "webhook" },
+      { title: "Slack", value: "slack" },
     ],
   }),
   computed: {
@@ -135,18 +137,21 @@ export default {
     },
   },
   methods: {
+    mergeProps,
     showError(e) {
       this.error = e.response?.data?.message || "Could not update project notifications.";
     },
     async save() {
-      if (!this.$refs.form.validate()) return;
+      if (this.busy) return;
       this.saving = true;
       this.error = "";
-      const payload = { type: this.kind, enabled: this.enabled };
-      if (this.url) payload.url = this.url;
-      if (this.clearToken) payload.token = "";
-      else if (this.token) payload.token = this.token;
       try {
+        const { valid } = await this.$refs.form.validate();
+        if (!valid) return;
+        const payload = { type: this.kind, enabled: this.enabled };
+        if (this.url) payload.url = this.url;
+        if (this.clearToken) payload.token = "";
+        else if (this.token) payload.token = this.token;
         await Repository.put(this.path, payload);
         this.dialog = false;
       } catch (e) {
@@ -156,6 +161,7 @@ export default {
       }
     },
     async remove() {
+      if (this.busy) return;
       this.saving = true;
       this.error = "";
       try {

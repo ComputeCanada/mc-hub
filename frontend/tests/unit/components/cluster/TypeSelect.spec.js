@@ -5,7 +5,7 @@ describe("TypeSelect", () => {
   it("includes high availability types", () => {
     const wrapper = shallowMount(TypeSelect, {
       props: {
-        value: "",
+        modelValue: "",
         types: [
           { name: "ha1-2gb", vcpus: 1, ram: 2048 },
           { name: "ha1-1.25gb", vcpus: 1, ram: 1280 },
@@ -18,19 +18,19 @@ describe("TypeSelect", () => {
 
     expect(wrapper.vm.items).toEqual([
       { header: "High availability types" },
-      { text: "ha1-2gb", description: "1 vCPU, 2 GB RAM" },
-      { text: "ha1-1.25gb", description: "1 vCPU, 1.25 GB RAM" },
-      { text: "ha2-2.5gb", description: "2 vCPU, 2.5 GB RAM" },
+      { text: "ha1-2gb", value: "ha1-2gb", description: "1 vCPU, 2 GB RAM" },
+      { text: "ha1-1.25gb", value: "ha1-1.25gb", description: "1 vCPU, 1.25 GB RAM" },
+      { text: "ha2-2.5gb", value: "ha2-2.5gb", description: "2 vCPU, 2.5 GB RAM" },
       { divider: true },
       { header: "Other types" },
-      { text: "x4-8gb", description: "4 vCPU, 8 GB RAM" },
+      { text: "x4-8gb", value: "x4-8gb", description: "4 vCPU, 8 GB RAM" },
     ]);
   });
 
   it("getTypeDescription", () => {
     const wrapper = shallowMount(TypeSelect, {
       props: {
-        value: "",
+        modelValue: "",
         types: [],
       },
       global: { renderStubDefaultSlot: true },

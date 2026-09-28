@@ -1,6 +1,6 @@
 <template>
-  <v-btn title="Copy to clipboard" icon small @click="copy"
-    ><v-icon small :color="color">mdi-content-copy</v-icon></v-btn
+  <v-btn title="Copy to clipboard" icon size="small" @click="copy"
+    ><v-icon size="small" :color="color">mdi-content-copy</v-icon></v-btn
   >
 </template>
 

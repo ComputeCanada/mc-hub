@@ -16,24 +16,24 @@ beforeEach(() => {
 });
 
 test("shows cloud names and emits the approved URL", async () => {
-  const wrapper = shallowMount(OpenStackCloud, { global: { renderStubDefaultSlot: true, stubs: ["v-select"] } });
+  const wrapper = shallowMount(OpenStackCloud, { global: { renderStubDefaultSlot: true } });
   await settle();
   const select = wrapper.findComponent("v-select-stub");
   expect(select.props("itemTitle")).toBe("name");
   expect(select.props("itemValue")).toBe("auth_url");
   expect(wrapper.vm.clouds).toEqual(clouds);
   await select.setValue(clouds[0].auth_url);
-  expect(wrapper.emitted("input")[0]).toEqual([clouds[0].auth_url]);
+  expect(wrapper.emitted("update:modelValue")[0]).toEqual([clouds[0].auth_url]);
 });
 
 test("does not display an arbitrary URL as the selected cloud", async () => {
   const wrapper = shallowMount(OpenStackCloud, {
-    props: { value: "https://unapproved.example.org" },
+    props: { modelValue: "https://unapproved.example.org" },
     global: { renderStubDefaultSlot: true },
   });
   await settle();
   expect(wrapper.vm.selectedValue).toBeNull();
-  await wrapper.setProps({ value: clouds[0].auth_url });
+  await wrapper.setProps({ modelValue: clouds[0].auth_url });
   expect(wrapper.vm.selectedValue).toBe(clouds[0].auth_url);
 });
 
@@ -67,8 +67,8 @@ test("creation selects a cloud while editing displays its name read-only", async
   await edit.setData({ project: { provider: "openstack", cloud_name: "Research Cloud" } });
   expect(edit.findComponent(OpenStackCloud).exists()).toBe(false);
   expect(edit.findComponent(OpenStackCredentials).props("cloudName")).toBe("Research Cloud");
-  const cloud = edit.find('[label="OpenStack cloud"]');
-  expect(cloud.attributes("value")).toBe("Research Cloud");
+  const cloud = edit.findComponent('[label="OpenStack cloud"]');
+  expect(cloud.props("modelValue")).toBe("Research Cloud");
   expect(cloud.attributes("readonly")).toBeDefined();
   expect(edit.find('[label="OS_AUTH_URL"]').exists()).toBe(false);
 });

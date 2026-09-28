@@ -1,7 +1,14 @@
 <template>
   <v-container>
     <h1 class="text-h4 mb-4">Project capacity planner</h1>
-    <v-select v-model="projectId" :items="projects" item-text="name" item-value="id" label="Project" @change="load" />
+    <v-select
+      v-model="projectId"
+      :items="projects"
+      item-title="name"
+      item-value="id"
+      label="Project"
+      @update:model-value="load"
+    />
     <v-alert v-if="error" type="error">{{ error }}</v-alert>
     <v-alert v-if="notice" type="success">{{ notice }}</v-alert>
     <v-alert type="info">
@@ -53,10 +60,10 @@
           <template #benchmark-fields>
             <v-row>
               <v-col cols="6">
-                <v-text-field v-model="startsAt" type="date" label="Start date" :rules="[periodRule]" />
+                <v-text-field ref="startDate" v-model="startsAt" type="date" label="Start date" :rules="[periodRule]" />
               </v-col>
               <v-col cols="6">
-                <v-text-field v-model="endsAt" type="date" label="End date" :rules="[periodRule]" />
+                <v-text-field ref="endDate" v-model="endsAt" type="date" label="End date" :rules="[periodRule]" />
               </v-col>
             </v-row>
             <p>
@@ -84,11 +91,17 @@
       </v-card-text>
     </v-card>
     <h2 class="text-h5 mb-3">Upcoming plans</h2>
-    <v-data-table :headers="headers" :items="planRows" :loading="loading" no-data-text="No upcoming capacity plans.">
+    <v-data-table
+      :headers="headers"
+      :items="planRows"
+      item-value="id"
+      :loading="loading"
+      no-data-text="No upcoming capacity plans."
+    >
       <template v-slot:[`item.starts_at`]="{ item }">{{ formatDateOnly(item.starts_at) }}</template>
       <template v-slot:[`item.ends_at`]="{ item }">{{ formatDateOnly(item.ends_at) }}</template>
-      <template v-for="column in resourceColumns" v-slot:[`item.${column.value}`]="{ item }">
-        <span :key="column.value">{{ item[column.value] == null ? "Unknown" : item[column.value] }}</span>
+      <template v-for="column in resourceColumns" :key="column.key" v-slot:[`item.${column.key}`]="{ item }">
+        <span>{{ item[column.key] == null ? "Unknown" : item[column.key] }}</span>
       </template>
       <template v-slot:[`item.auto_create`]="{ item }">{{ item.auto_create ? "Automatic" : "Manual" }}</template>
       <template v-slot:[`item.status`]="{ item }"
@@ -96,9 +109,11 @@
         <div class="text-caption">{{ item.message }}</div></template
       >
       <template v-slot:[`item.actions`]="{ item }">
-        <v-btn v-if="item.hostname" text small :to="`/clusters/${item.hostname}`">View cluster</v-btn>
-        <v-btn v-if="item.can_edit" text small :disabled="saving" @click="editPlan(item)">Edit</v-btn>
-        <v-btn v-if="item.can_cancel" text small color="error" @click="cancel(item)">Cancel</v-btn>
+        <v-btn v-if="item.hostname" variant="text" size="small" :to="`/clusters/${item.hostname}`">View cluster</v-btn>
+        <v-btn v-if="item.can_edit" variant="text" size="small" :disabled="saving" @click="editPlan(item)">Edit</v-btn>
+        <v-btn v-if="item.can_cancel" :disabled="saving" variant="text" size="small" color="error" @click="cancel(item)"
+          >Cancel</v-btn
+        >
       </template>
     </v-data-table>
     <h2 class="text-h5 my-4">Future resource demand</h2>
@@ -106,7 +121,7 @@
       v-if="report.forecast"
       :headers="forecastHeaders"
       :items="forecastRows"
-      item-key="starts_at"
+      item-value="starts_at"
       :items-per-page="-1"
       hide-default-footer
       no-data-text="No future resource demand."
@@ -115,7 +130,7 @@
         {{ formatDateOnly(item.starts_at) }} – {{ formatDateOnly(item.ends_at) }}
       </template>
       <template v-slot:[`item.shortages`]="{ item }">
-        <span :class="Object.keys(item.shortages).length ? 'error--text' : ''">
+        <span :class="Object.keys(item.shortages).length ? 'text-error' : ''">
           {{ Object.keys(item.shortages).length ? "Short by " + resources(item.shortages) : "Within estimated quota" }}
         </span>
       </template>
@@ -151,6 +166,7 @@ export default {
     cancelDialog: false,
     cancelItem: null,
     requestId: 0,
+    disposed: false,
   }),
   computed: {
     resourceColumns() {
@@ -174,23 +190,23 @@ export default {
         ...[...keys].filter((key) => !(key in labels)).sort(),
       ];
       return ordered.map((key, index) => ({
-        key,
-        text: labels[key] || `${key} (vCPUs)`,
-        value: `resource_${index}`,
+        resourceKey: key,
+        title: labels[key] || `${key} (vCPUs)`,
+        key: `resource_${index}`,
         sortable: true,
         align: "end",
       }));
     },
     headers() {
       return [
-        { text: "Cluster", value: "name" },
-        { text: "Owner", value: "owner" },
-        { text: "Start", value: "starts_at" },
-        { text: "End", value: "ends_at" },
+        { title: "Cluster", key: "name" },
+        { title: "Owner", key: "owner" },
+        { title: "Start", key: "starts_at" },
+        { title: "End", key: "ends_at" },
         ...this.resourceColumns,
-        { text: "Creation", value: "auto_create" },
-        { text: "Status", value: "status" },
-        { text: "Actions", value: "actions", sortable: false },
+        { title: "Creation", key: "auto_create" },
+        { title: "Status", key: "status" },
+        { title: "Actions", key: "actions", sortable: false },
       ];
     },
     planRows() {
@@ -198,17 +214,20 @@ export default {
         ...plan,
         ...Object.fromEntries(
           this.resourceColumns.map((column) => [
-            column.value,
-            this.resourceValue(column.key, plan.demand?.[column.key] ?? (column.key === "gpus" ? null : 0)),
+            column.key,
+            this.resourceValue(
+              column.resourceKey,
+              plan.demand?.[column.resourceKey] ?? (column.resourceKey === "gpus" ? null : 0)
+            ),
           ])
         ),
       }));
     },
     forecastHeaders() {
       return [
-        { text: "Period (local dates)", value: "starts_at", sort: (a, b) => Date.parse(a) - Date.parse(b) },
+        { title: "Period (local dates)", key: "starts_at", sort: (a, b) => Date.parse(a) - Date.parse(b) },
         ...this.resourceColumns,
-        { text: "Quota outlook", value: "shortages", sortable: false },
+        { title: "Quota outlook", key: "shortages", sortable: false },
       ];
     },
     forecastRows() {
@@ -216,8 +235,8 @@ export default {
         ...segment,
         ...Object.fromEntries(
           this.resourceColumns.map((column) => [
-            column.value,
-            this.resourceValue(column.key, segment.demand?.[column.key] ?? 0),
+            column.key,
+            this.resourceValue(column.resourceKey, segment.demand?.[column.resourceKey] ?? 0),
           ])
         ),
       }));
@@ -241,10 +260,16 @@ export default {
       return (this.previewReport?.segments || []).filter((s) => Object.keys(s.shortages).length);
     },
     formSnapshot() {
-      return JSON.stringify([this.editingId, this.specs, this.startsAt, this.endsAt, this.autoCreate]);
+      return JSON.stringify([this.projectId, this.editingId, this.specs, this.startsAt, this.endsAt, this.autoCreate]);
     },
   },
   watch: {
+    async periodRule() {
+      // Both fields depend on the full period, so either date must revalidate both.
+      await this.$nextTick();
+      this.$refs.startDate?.validate();
+      this.$refs.endDate?.validate();
+    },
     formSnapshot() {
       this.previewReport = null;
       this.checkedPayload = null;
@@ -252,7 +277,9 @@ export default {
   },
   async created() {
     try {
-      this.projects = (await ProjectRepository.getAll()).data;
+      const { data } = await ProjectRepository.getAll();
+      if (this.disposed) return;
+      this.projects = data;
       this.projectId =
         this.projects.find((p) => p.id === Number(this.$route.query.project))?.id || this.projects[0]?.id;
       await this.load();
@@ -260,8 +287,14 @@ export default {
       this.showError(e);
     }
   },
+  beforeUnmount() {
+    this.disposed = true;
+    this.requestId++;
+  },
   methods: {
     closeForm() {
+      this.requestId++;
+      this.saving = false;
       this.specs = null;
       this.editingId = null;
       this.startsAt = "";
@@ -271,6 +304,7 @@ export default {
       this.checkedPayload = null;
     },
     showError(e) {
+      if (this.disposed) return;
       this.error = e.response?.data?.message || e.message || "Capacity planner request failed.";
     },
     formatDateOnly(value) {
@@ -307,8 +341,8 @@ export default {
     },
     async editPlan(item) {
       const projectId = this.projectId;
-      const requestId = ++this.requestId;
-      this.specs = null;
+      this.closeForm();
+      const requestId = this.requestId;
       this.error = "";
       this.notice = "";
       this.saving = true;
@@ -324,17 +358,19 @@ export default {
       } catch (e) {
         if (requestId === this.requestId) this.showError(e);
       } finally {
-        this.saving = false;
+        if (requestId === this.requestId) this.saving = false;
       }
     },
     async load() {
-      this.specs = null;
-      this.editingId = null;
-      if (!this.projectId) return;
-      const id = ++this.requestId;
+      this.closeForm();
+      this.cancelDialog = false;
+      this.cancelItem = null;
+      this.report = {};
+      this.loading = false;
+      if (!this.projectId || this.disposed) return;
+      const id = this.requestId;
       this.loading = true;
       this.error = "";
-      this.report = {};
       try {
         const response = await Repository.get(`/projects/${this.projectId}/capacity`);
         if (id === this.requestId) this.report = response.data;
@@ -345,17 +381,20 @@ export default {
       }
     },
     async newPlan() {
-      this.specs = null;
-      this.editingId = null;
+      this.closeForm();
+      const requestId = this.requestId;
       try {
-        this.specs = (await TemplateRepository.get("default")).data;
+        const { data } = await TemplateRepository.get("default");
+        if (requestId !== this.requestId) return;
+        this.specs = data;
         this.previewReport = null;
         this.notice = "";
       } catch (e) {
-        this.showError(e);
+        if (requestId === this.requestId) this.showError(e);
       }
     },
     async preview() {
+      const requestId = ++this.requestId;
       this.saving = true;
       this.error = "";
       const snapshot = this.formSnapshot;
@@ -372,18 +411,19 @@ export default {
           this.editingId === null ? "" : `/${this.editingId}`
         }/preview`;
         const response = await Repository.post(path, payload);
-        if (snapshot === this.formSnapshot) {
+        if (requestId === this.requestId && snapshot === this.formSnapshot) {
           this.previewReport = response.data;
           this.checkedPayload = payload;
         }
       } catch (e) {
-        this.showError(e);
+        if (requestId === this.requestId) this.showError(e);
       } finally {
-        this.saving = false;
+        if (requestId === this.requestId) this.saving = false;
       }
     },
     async save() {
-      if (!this.checkedPayload) return;
+      if (!this.checkedPayload || this.saving) return;
+      const requestId = ++this.requestId;
       this.saving = true;
       this.error = "";
       try {
@@ -391,14 +431,15 @@ export default {
           this.editingId === null
             ? await Repository.post(`/projects/${this.projectId}/capacity`, this.checkedPayload)
             : await Repository.put(`/projects/${this.projectId}/capacity/${this.editingId}`, this.checkedPayload);
+        if (requestId !== this.requestId) return;
         this.notice = this.hasShortages(response.data.forecast)
           ? "Plan saved with quota conflicts. Review the forecast below."
           : "Capacity plan saved.";
         await this.load();
       } catch (e) {
-        this.showError(e);
+        if (requestId === this.requestId) this.showError(e);
       } finally {
-        this.saving = false;
+        if (requestId === this.requestId) this.saving = false;
       }
     },
     cancel(item) {
@@ -406,11 +447,16 @@ export default {
       this.cancelDialog = true;
     },
     async confirmCancel() {
+      if (!this.cancelItem || this.saving) return;
+      const requestId = ++this.requestId;
+      this.saving = true;
       try {
         await Repository.delete(`/projects/${this.projectId}/capacity/${this.cancelItem.id}`);
-        await this.load();
+        if (requestId === this.requestId) await this.load();
       } catch (e) {
-        this.showError(e);
+        if (requestId === this.requestId) this.showError(e);
+      } finally {
+        if (requestId === this.requestId) this.saving = false;
       }
     },
   },

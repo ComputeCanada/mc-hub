@@ -11,19 +11,24 @@
     <div class="d-flex align-start">
       <v-select
         class="flex-grow-1"
-        :value="value.AWS_DEFAULT_REGION"
+        :model-value="modelValue.AWS_DEFAULT_REGION"
         :items="regions"
         label="AWS region"
         :disabled="locked || loading"
         :hint="locked ? 'Projects with clusters cannot change region' : 'All clusters in this project use this region'"
         persistent-hint
-        @change="setRegion"
+        @update:model-value="setRegion"
       />
-      <v-btn class="ml-2 mt-4 flex-shrink-0" text :loading="loading" :disabled="loading || locked" @click="loadRegions"
+      <v-btn
+        class="ml-2 mt-4 flex-shrink-0"
+        variant="text"
+        :loading="loading"
+        :disabled="loading || locked"
+        @click="loadRegions"
         >refresh</v-btn
       >
     </div>
-    <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
+    <v-alert v-if="error" type="error" density="compact">{{ error }}</v-alert>
   </div>
 </template>
 
@@ -32,13 +37,14 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 
 export default {
   name: "AWSCredentials",
-  props: { value: { type: Object, required: true }, projectId: Number, locked: Boolean },
+  emits: ["update:modelValue"],
+  props: { modelValue: { type: Object, required: true }, projectId: Number, locked: Boolean },
   data() {
     return {
       accessKey: "",
       secretKey: "",
       sessionToken: "",
-      regions: this.value.AWS_DEFAULT_REGION ? [this.value.AWS_DEFAULT_REGION] : [],
+      regions: this.modelValue.AWS_DEFAULT_REGION ? [this.modelValue.AWS_DEFAULT_REGION] : [],
       loading: false,
       error: "",
       requestId: 0,
@@ -55,11 +61,14 @@ export default {
       this.credentialsChanged();
     },
   },
+  beforeUnmount() {
+    this.requestId++;
+  },
   methods: {
     credentialsChanged() {
       this.requestId++;
       this.loading = false;
-      this.regions = this.locked ? [this.value.AWS_DEFAULT_REGION] : [];
+      this.regions = this.locked ? [this.modelValue.AWS_DEFAULT_REGION] : [];
       const env = {};
       if (this.accessKey || this.secretKey || this.sessionToken) {
         Object.assign(env, {
@@ -68,18 +77,18 @@ export default {
           AWS_SESSION_TOKEN: this.sessionToken,
         });
       }
-      if (this.locked) env.AWS_DEFAULT_REGION = this.value.AWS_DEFAULT_REGION;
-      this.$emit("input", env);
+      if (this.locked) env.AWS_DEFAULT_REGION = this.modelValue.AWS_DEFAULT_REGION;
+      this.$emit("update:modelValue", env);
     },
     setRegion(region) {
-      this.$emit("input", { ...this.value, AWS_DEFAULT_REGION: region });
+      this.$emit("update:modelValue", { ...this.modelValue, AWS_DEFAULT_REGION: region });
     },
     async loadRegions() {
       const id = ++this.requestId;
       this.loading = true;
       this.error = "";
       try {
-        const response = await ProjectRepository.awsRegions({ env: this.value, project_id: this.projectId });
+        const response = await ProjectRepository.awsRegions({ env: this.modelValue, project_id: this.projectId });
         if (id === this.requestId) this.regions = response.data.regions;
       } catch (error) {
         if (id === this.requestId) this.error = error.response?.data?.message || "Unable to load AWS regions. Retry.";

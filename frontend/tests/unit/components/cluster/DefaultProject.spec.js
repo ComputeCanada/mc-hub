@@ -228,18 +228,21 @@ it("lets a project member select exactly one default checkbox", async () => {
   );
   const wrapper = projectMenu();
   await flush();
-  const checkboxes = wrapper.findAll('[role="checkbox"]');
-  expect(checkboxes.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["false", "true"]);
-  await checkboxes[0].trigger("click");
+  const checkboxes = wrapper.findAll('input[type="checkbox"]');
+  expect(checkboxes.map((checkbox) => checkbox.element.checked)).toEqual([false, true]);
+  checkboxes[0].element.click();
+  await wrapper.vm.$nextTick();
   expect(UserRepository.setDefaultProject).toHaveBeenCalledWith(1);
   expect(wrapper.vm.defaultProjectId).toBe(2);
-  expect(checkboxes.every((checkbox) => checkbox.classes("v-simple-checkbox--disabled"))).toBe(true);
+  expect(checkboxes.map((checkbox) => checkbox.element.checked)).toEqual([false, true]);
+  expect(checkboxes.every((checkbox) => checkbox.element.disabled)).toBe(true);
   resolveSave({ data: { default_project_id: 1 } });
   await flush();
-  expect(checkboxes.map((checkbox) => checkbox.attributes("aria-checked"))).toEqual(["true", "false"]);
-  await checkboxes[0].trigger("click");
+  expect(checkboxes.map((checkbox) => checkbox.element.checked)).toEqual([true, false]);
+  checkboxes[0].element.click();
+  await wrapper.vm.$nextTick();
   expect(UserRepository.setDefaultProject).toHaveBeenCalledTimes(1);
-  expect(checkboxes[0].attributes("aria-checked")).toBe("true");
+  expect(checkboxes[0].element.checked).toBe(true);
   wrapper.unmount();
 });
 

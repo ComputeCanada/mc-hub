@@ -337,3 +337,91 @@ test("no project admin access means no benchmark form", async () => {
   expect(wrapper.text()).toContain("project administrator role");
 });
 afterEach(cleanupMounts);
+
+test("leaving during the initial list request does not restart polling", async () => {
+  let resolve;
+  Repository.get.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const wrapper = mount(Benchmarks);
+  wrapper.unmount();
+  resolve({ data: { projects: [{ id: 1 }], benchmarks: [benchmark] } });
+  await flush();
+  jest.advanceTimersByTime(60000);
+  expect(Repository.get).toHaveBeenCalledTimes(1);
+  expect(jest.getTimerCount()).toBe(0);
+});
+
+test("slow polls do not overlap and polling recovers after a failed request", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  const calls = Repository.get.mock.calls.length;
+  let reject;
+  Repository.get.mockReturnValueOnce(
+    new Promise((resolve, fail) => {
+      reject = fail;
+    })
+  );
+  jest.advanceTimersByTime(45000);
+  expect(Repository.get).toHaveBeenCalledTimes(calls + 1);
+  reject(new Error("offline"));
+  await flush();
+  expect(wrapper.text()).toContain("Unable to load benchmarks");
+  jest.advanceTimersByTime(15000);
+  await flush();
+  expect(wrapper.vm.report.benchmark.id).toBe("bench-1");
+  expect(wrapper.vm.error).toBe("");
+});
+
+test("an older report failure cannot clear a newer benchmark selection", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  let reject;
+  Repository.get.mockReturnValueOnce(
+    new Promise((resolve, fail) => {
+      reject = fail;
+    })
+  );
+  const pending = wrapper.vm.loadReport();
+  await wrapper.setData({ selected: "bench-2" });
+  Repository.get.mockResolvedValueOnce({ data: { ...result, benchmark: { ...benchmark, id: "bench-2" } } });
+  await wrapper.vm.loadReport();
+  reject(new Error("old failure"));
+  await pending;
+  expect(wrapper.vm.report.benchmark.id).toBe("bench-2");
+  expect(wrapper.vm.error).toBe("");
+});
+
+test("an action completing after unmount does not refresh or resume polling", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  let resolve;
+  Repository.post.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const calls = Repository.get.mock.calls.length;
+  const pending = wrapper.vm.runNow();
+  wrapper.unmount();
+  resolve({});
+  await pending;
+  expect(Repository.get).toHaveBeenCalledTimes(calls);
+  expect(jest.getTimerCount()).toBe(0);
+});
+
+test("leaving an editor during access lookup does not load its template", async () => {
+  let resolve;
+  Repository.get.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const wrapper = mount(BenchmarkEditor);
+  wrapper.unmount();
+  resolve({ data: { projects: [{ id: 1 }], benchmarks: [] } });
+  await flush();
+  expect(TemplateRepository.get).not.toHaveBeenCalled();
+});

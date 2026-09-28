@@ -96,7 +96,7 @@ describe("AWS cluster feasibility", () => {
   it("preserves home, project and scratch and supports adding AWS volume rows", async () => {
     const wrapper = editor();
     const nfs = { home: { size: 100 }, project: { size: 100 }, scratch: { size: 100 } };
-    await wrapper.setData({ localSpecs: { ...wrapper.vm.localSpecs, volumes: { nfs } } });
+    await wrapper.setProps({ specs: { ...wrapper.vm.localSpecs, volumes: { nfs } } });
     AvailableResourcesRepository.getCloud.mockResolvedValue({
       data: {
         provider: "aws",
@@ -219,7 +219,7 @@ describe("AWS cluster feasibility", () => {
       awsFeasibility: { status: "ready", issues: [] },
     });
     const selectors = wrapper.findAllComponents({ name: "TypeSelect" });
-    selectors[0].vm.$emit("input", "m6i.large");
+    selectors[0].vm.$emit("update:modelValue", "m6i.large");
     await wrapper.vm.$nextTick();
     expect(wrapper.vm.awsChecking).toBe(true);
     expect(wrapper.vm.awsChoices).toEqual(choices);
@@ -318,6 +318,24 @@ describe("AWS cluster feasibility", () => {
     expect(wrapper.vm.awsDefinition.availability_zone).toBeNull();
     expect(wrapper.vm.awsFeasibility).toBeNull();
     wrapper.unmount();
+  });
+  it("cancels scheduled checks and ignores an in-flight result after unmount", async () => {
+    const wrapper = editor();
+    let resolve;
+    AvailableResourcesRepository.checkCloud.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      })
+    );
+    const vm = wrapper.vm;
+    const request = vm.checkAWS();
+    wrapper.unmount();
+    resolve({ data: { feasibility: { status: "ready", issues: [] }, instance_choices: {} } });
+    await request;
+    jest.advanceTimersByTime(1000);
+    expect(vm.awsFeasibility).toBeNull();
+    expect(AvailableResourcesRepository.checkCloud).toHaveBeenCalledTimes(1);
+    expect(jest.getTimerCount()).toBe(0);
   });
 });
 afterEach(cleanupMounts);

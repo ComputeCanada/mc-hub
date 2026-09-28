@@ -1,33 +1,33 @@
 <template>
   <div>
-    <div v-if="localEntries.length === 0" class="text-body-2 grey--text mb-2">
+    <div v-if="localEntries.length === 0" class="text-body-2 text-grey mb-2">
       No entries. Click "Add entry" to add puppet configuration variables.
     </div>
     <div v-for="(entry, index) in localEntries" :key="index" class="d-flex align-center mb-2">
       <v-text-field
         v-model="entry.key"
         label="Key"
-        dense
-        outlined
+        density="compact"
+        variant="outlined"
         hide-details
         class="mr-2"
         style="max-width: 260px; flex-shrink: 0"
-        @input="emit"
+        @update:model-value="emit"
       />
       <template v-if="isWriteOnly(entry)">
         <v-text-field
           placeholder="Encrypted (write-only)"
           label="Value"
-          dense
-          outlined
+          density="compact"
+          variant="outlined"
           hide-details
           disabled
           class="mr-2 flex-grow-1"
         />
-        <v-tooltip bottom>
-          <template #activator="{ on, attrs }">
-            <v-btn icon small class="mr-2" v-bind="attrs" v-on="on" @click="enableEdit(index)">
-              <v-icon small>mdi-pencil</v-icon>
+        <v-tooltip location="bottom">
+          <template #activator="{ props }">
+            <v-btn icon size="small" class="mr-2" v-bind="props" @click="enableEdit(index)">
+              <v-icon size="small">mdi-pencil</v-icon>
             </v-btn>
           </template>
           <span>Set new value</span>
@@ -37,26 +37,26 @@
         v-else
         v-model="entry.value"
         label="Value"
-        dense
-        outlined
+        density="compact"
+        variant="outlined"
         hide-details
         class="mr-2 flex-grow-1"
-        @input="emit"
+        @update:model-value="emit"
       />
       <v-checkbox
         v-model="entry.encrypt"
         label="Encrypt"
-        dense
+        density="compact"
         hide-details
         class="mt-0 mr-3 flex-shrink-0"
-        @change="onEncryptChange(index)"
+        @update:model-value="onEncryptChange(index)"
       />
-      <v-btn icon small color="error" @click="removeEntry(index)">
-        <v-icon small>mdi-delete</v-icon>
+      <v-btn icon size="small" color="error" @click="removeEntry(index)">
+        <v-icon size="small">mdi-delete</v-icon>
       </v-btn>
     </div>
-    <v-btn small text color="primary" class="mt-1 pl-0" @click="addEntry">
-      <v-icon left small>mdi-plus</v-icon>
+    <v-btn size="small" variant="text" color="primary" class="mt-1 pl-0" @click="addEntry">
+      <v-icon start size="small">mdi-plus</v-icon>
       Add entry
     </v-btn>
   </div>
@@ -67,8 +67,9 @@ import { cloneDeep } from "lodash";
 
 export default {
   name: "HieradataEditor",
+  emits: ["update:modelValue"],
   props: {
-    value: {
+    modelValue: {
       type: Array,
       default: () => [],
     },
@@ -79,7 +80,7 @@ export default {
     };
   },
   watch: {
-    value: {
+    modelValue: {
       handler(val) {
         this.localEntries = cloneDeep(val || []);
       },
@@ -111,7 +112,7 @@ export default {
       this.emit();
     },
     emit() {
-      this.$emit("input", cloneDeep(this.localEntries));
+      this.$emit("update:modelValue", cloneDeep(this.localEntries));
     },
   },
 };

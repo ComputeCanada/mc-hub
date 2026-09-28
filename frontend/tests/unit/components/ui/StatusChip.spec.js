@@ -25,7 +25,7 @@ describe("StatusChip", () => {
 
     expect(wrapper.vm.formattedStatus).toEqual({
       text: "Degraded",
-      color: "amber darken-2",
+      color: "amber-darken-2",
     });
   });
 

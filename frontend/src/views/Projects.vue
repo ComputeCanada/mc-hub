@@ -2,7 +2,7 @@
   <v-container>
     <v-card :max-width="800" class="mx-auto">
       <v-alert v-if="error" type="error">{{ error }}</v-alert>
-      <v-data-table :headers="headers" :items="projects">
+      <v-data-table :headers="headers" :items="projects" item-value="id">
         <template #top>
           <v-toolbar flat>
             <v-toolbar-title>Your Projects</v-toolbar-title>
@@ -12,24 +12,29 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.default`]="{ item }">
-          <v-simple-checkbox
-            role="checkbox"
-            :tabindex="savingDefault !== null ? -1 : 0"
-            :aria-checked="item.id === defaultProjectId ? 'true' : 'false'"
-            :value="item.id === defaultProjectId"
+          <!-- Keep the confirmed selection while the preference is being saved. -->
+          <v-checkbox-btn
+            :model-value="item.id === defaultProjectId"
             :disabled="savingDefault !== null"
             :aria-label="'Set ' + item.name + ' as default project'"
-            @input="setDefaultProject(item)"
+            @click.prevent="setDefaultProject(item)"
             @keydown.space.prevent="setDefaultProject(item)"
             @keydown.enter.prevent="setDefaultProject(item)"
           />
         </template>
         <template v-slot:[`item.actions`]="{ item }">
           <div class="d-flex flex-nowrap align-center justify-end text-no-wrap">
-            <project-editor :id="item.id" :admin="item.admin" />
+            <project-editor :id="item.id" :admin="item.admin" @saved="updateProjectList" />
             <project-membership :id="item.id" :admin="item.admin" @saved="updateProjectList" />
             <project-notifications v-if="item.can_manage_notifications" :id="item.id" />
-            <v-btn color="secondary" text v-if="item.admin" @click="deleteItem(item)" :disabled="item.nb_clusters > 0">
+            <v-btn
+              color="secondary"
+              variant="text"
+              :aria-label="'Delete ' + item.name"
+              v-if="item.admin"
+              @click="deleteItem(item)"
+              :disabled="item.nb_clusters > 0"
+            >
               <v-icon>mdi-delete</v-icon>
             </v-btn>
             <div v-else>not owner</div>
@@ -63,11 +68,11 @@ export default {
       savingDefault: null,
       error: "",
       headers: [
-        { text: "Default", value: "default", sortable: false, align: "center" },
-        { text: "Name", value: "name" },
-        { text: "Provider", value: "provider" },
-        { text: "# Clusters", value: "nb_clusters", align: "end" },
-        { text: "", value: "actions", sortable: false, width: "1%" },
+        { title: "Default", key: "default", sortable: false, align: "center" },
+        { title: "Name", key: "name" },
+        { title: "Provider", key: "provider" },
+        { title: "# Clusters", key: "nb_clusters", align: "end" },
+        { title: "", key: "actions", sortable: false, width: "1%" },
       ],
     };
   },
@@ -98,8 +103,14 @@ export default {
         this.savingDefault = null;
       }
     },
-    deleteItem(item) {
-      ProjectRepository.delete(item.id).then(this.updateProjectList);
+    async deleteItem(item) {
+      if (!item.admin || item.nb_clusters > 0) return;
+      try {
+        await ProjectRepository.delete(item.id);
+        await this.updateProjectList();
+      } catch (error) {
+        this.error = error.response?.data?.message || "Unable to delete the project. Please try again.";
+      }
     },
   },
 };

@@ -11,7 +11,7 @@
             ><v-select
               v-model="project"
               :items="report ? report.projects : []"
-              item-text="name"
+              item-title="name"
               item-value="id"
               clearable
               label="All projects"
@@ -21,13 +21,13 @@
       </v-card>
       <v-progress-linear v-if="loading" indeterminate aria-label="Loading usage" />
       <template v-if="report">
-        <v-alert type="info" outlined>
+        <v-alert type="info" variant="outlined">
           History begins {{ timestamp(report.tracking_started_at) }}. First-time creators means their first observed
           successful deployment since tracking began, across all projects. Existing deployments have unknown earlier
           history ({{ report.legacy_lifetimes }} retained lifetimes predate tracking). Creators are MC Hub users, not
           users of the resulting clusters.
         </v-alert>
-        <v-alert v-if="stale" type="warning" outlined
+        <v-alert v-if="stale" type="warning" variant="outlined"
           >Background observations are overdue. Deployment outcomes and timing may be incomplete.</v-alert
         >
         <p class="text-caption">
@@ -35,10 +35,10 @@
           {{ report.poll_interval_seconds }} seconds plus processing time. Healthy timestamps reflect first observation.
         </p>
         <v-row>
-          <v-col v-for="metric in metrics" :key="metric.value" cols="6" md="4" lg="2">
+          <v-col v-for="metric in metrics" :key="metric.key" cols="6" md="4" lg="2">
             <v-card class="pa-4 fill-height"
-              ><div class="text-h4">{{ report.summary[metric.value] }}</div>
-              <div>{{ metric.text }}</div></v-card
+              ><div class="text-h4">{{ report.summary[metric.key] }}</div>
+              <div>{{ metric.title }}</div></v-card
             >
           </v-col>
         </v-row>
@@ -50,16 +50,15 @@
           <v-data-table
             :headers="monthlyHeaders"
             :items="report.months"
-            item-key="month"
+            item-value="month"
             :items-per-page="12"
-            :sort-by="['month']"
-            :sort-desc="[true]"
+            :sort-by="[{ key: 'month', order: 'desc' }]"
           >
             <template v-slot:[`item.successful_deployments`]="{ item }">
               <div class="d-flex align-center">
                 <span class="mr-3">{{ item.successful_deployments }}</span
                 ><v-progress-linear
-                  :value="(100 * item.successful_deployments) / maxDeployments"
+                  :model-value="(100 * item.successful_deployments) / maxDeployments"
                   height="8"
                   aria-hidden="true"
                 />
@@ -113,7 +112,13 @@
         <v-card class="my-4">
           <v-card-title>Apply history</v-card-title>
           <v-card-subtitle>Attempts requested in the selected period. All timestamps are UTC.</v-card-subtitle>
-          <v-data-table :headers="attemptHeaders" :items="report.attempts" hide-default-footer :items-per-page="25">
+          <v-data-table
+            :headers="attemptHeaders"
+            :items="report.attempts"
+            item-value="id"
+            hide-default-footer
+            :items-per-page="25"
+          >
             <template v-slot:[`item.duration_seconds`]="{ item }">{{ duration(item.duration_seconds) }}</template>
             <template v-slot:[`item.applied_at`]="{ item }">{{ timestamp(item.applied_at) }}</template>
             <template v-slot:[`item.healthy_at`]="{ item }">{{ timestamp(item.healthy_at) }}</template>
@@ -124,10 +129,10 @@
           </v-data-table>
           <v-pagination
             v-if="report.attempt_count > 25"
-            :value="report.page"
+            :model-value="report.page"
             :length="Math.ceil(report.attempt_count / 25)"
             :disabled="loading"
-            @input="load"
+            @update:model-value="load"
           />
           <v-card-text>{{ report.attempt_count }} apply attempts</v-card-text>
         </v-card>
@@ -140,17 +145,19 @@
 import Repository from "@/repositories/Repository";
 import UserRepository from "@/repositories/UserRepository";
 const metrics = [
-  { text: "Unique creators", value: "unique_creators" },
-  { text: "First-time creators", value: "first_time_creators" },
-  { text: "Returning creators", value: "returning_creators" },
-  { text: "Successful deployments", value: "successful_deployments" },
-  { text: "Distinct clusters", value: "distinct_clusters" },
-  { text: "Active projects", value: "active_projects" },
+  { title: "Unique creators", key: "unique_creators" },
+  { title: "First-time creators", key: "first_time_creators" },
+  { title: "Returning creators", key: "returning_creators" },
+  { title: "Successful deployments", key: "successful_deployments" },
+  { title: "Distinct clusters", key: "distinct_clusters" },
+  { title: "Active projects", key: "active_projects" },
 ];
 export default {
   data() {
     const now = new Date();
     return {
+      disposed: false,
+      requestId: 0,
       authorized: false,
       loading: false,
       error: "",
@@ -159,20 +166,20 @@ export default {
       start: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1)).toISOString().slice(0, 10),
       end: now.toISOString().slice(0, 10),
       metrics,
-      monthlyHeaders: [{ text: "Month", value: "month" }, ...metrics],
+      monthlyHeaders: [{ title: "Month", key: "month" }, ...metrics],
       attemptHeaders: [
-        { text: "Cluster", value: "hostname" },
-        { text: "Project", value: "project" },
-        { text: "Creator", value: "creator" },
-        { text: "Initiated by", value: "initiated_by" },
-        { text: "Kind", value: "kind" },
-        { text: "Outcome", value: "outcome" },
-        { text: "Apply accepted", value: "applied_at" },
-        { text: "First healthy", value: "healthy_at" },
-        { text: "Duration", value: "duration_seconds" },
-        { text: "Terraform run", value: "run_id" },
-        { text: "Repository", value: "repository" },
-        { text: "Applied commit", value: "commit_sha" },
+        { title: "Cluster", key: "hostname" },
+        { title: "Project", key: "project" },
+        { title: "Creator", key: "creator" },
+        { title: "Initiated by", key: "initiated_by" },
+        { title: "Kind", key: "kind" },
+        { title: "Outcome", key: "outcome" },
+        { title: "Apply accepted", key: "applied_at" },
+        { title: "First healthy", key: "healthy_at" },
+        { title: "Duration", key: "duration_seconds" },
+        { title: "Terraform run", key: "run_id" },
+        { title: "Repository", key: "repository" },
+        { title: "Applied commit", key: "commit_sha" },
       ],
     };
   },
@@ -186,28 +193,38 @@ export default {
   },
   async created() {
     try {
-      this.authorized = (await UserRepository.getCurrent()).data.is_admin === true;
+      const { data } = await UserRepository.getCurrent();
+      if (this.disposed) return;
+      this.authorized = data.is_admin === true;
       if (this.authorized) await this.load(1);
       else this.error = "Only hub admins can view usage statistics.";
     } catch (error) {
-      this.error = "Unable to verify dashboard access.";
+      if (!this.disposed) this.error = "Unable to verify dashboard access.";
     }
+  },
+  beforeUnmount() {
+    this.disposed = true;
+    this.requestId++;
   },
   methods: {
     async load(page = 1) {
+      if (!this.authorized || this.disposed) return;
+      const requestId = ++this.requestId;
       this.loading = true;
       this.error = "";
       try {
-        this.report = (
+        const report = (
           await Repository.get("/usage", {
             params: { start: this.start, end: this.end, project: this.project || undefined, page },
           })
         ).data;
+        if (requestId === this.requestId) this.report = report;
       } catch (error) {
+        if (requestId !== this.requestId) return;
         this.report = null;
         this.error = error.response?.data?.message || "Unable to load usage statistics.";
       } finally {
-        this.loading = false;
+        if (requestId === this.requestId) this.loading = false;
       }
     },
     timestamp(value) {

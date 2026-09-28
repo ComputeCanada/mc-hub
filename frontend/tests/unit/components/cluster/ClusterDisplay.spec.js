@@ -1,3 +1,4 @@
+import { flushPromises } from "@vue/test-utils";
 import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import ClusterDisplay from "@/components/cluster/ClusterDisplay";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
@@ -442,8 +443,42 @@ it("requires confirmation for a retry even when the new plan has no resource cha
 });
 afterEach(() => {
   cleanupMounts();
-  // Leave later tests isolated even while the Vue 2 cleanup hook is a blocker.
+  // Keep fake timers and spies isolated even when an assertion fails.
   jest.clearAllTimers();
   jest.useRealTimers();
   jest.restoreAllMocks();
+});
+
+it("ignores a status response after unmount without loading state or navigating", async () => {
+  let resolve;
+  MagicCastleRepository.getStatus.mockReturnValue(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const wrapper = shallowMount({ ...ClusterDisplay, created() {} }, { props: { hostname: "late.example" } });
+  const vm = wrapper.vm;
+  const load = jest.spyOn(vm, "loadCluster");
+  const navigate = jest.spyOn(vm, "goHome");
+  const request = vm.fetchStatus();
+  wrapper.unmount();
+  resolve({ data: { status: "destroy_success" } });
+  await request;
+  expect(vm.status).toBeNull();
+  expect(load).not.toHaveBeenCalled();
+  expect(navigate).not.toHaveBeenCalled();
+});
+
+it("unmount cancels plan-wait timers and prevents another poll", async () => {
+  jest.useFakeTimers();
+  MagicCastleRepository.getStatus.mockReset().mockResolvedValue({ data: { status: "plan_running" } });
+  const wrapper = shallowMount({ ...ClusterDisplay, created() {} }, { props: { hostname: "waiting.example" } });
+  const request = wrapper.vm.waitForPlanCompletion("waiting.example");
+  const cancelled = expect(request).rejects.toThrow("cancelled");
+  await flushPromises();
+  expect(jest.getTimerCount()).toBe(1);
+  wrapper.unmount();
+  await cancelled;
+  expect(jest.getTimerCount()).toBe(0);
+  expect(MagicCastleRepository.getStatus).toHaveBeenCalledTimes(1);
 });

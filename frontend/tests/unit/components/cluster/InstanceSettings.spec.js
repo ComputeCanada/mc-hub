@@ -2,10 +2,18 @@ import { nextTick } from "vue";
 import { mountWithVuetify as mount, cleanupMounts } from "../../../helpers/mount";
 import InstanceSettings from "@/components/cluster/InstanceSettings";
 
-const editor = (instance = {}, provider = "openstack") =>
-  mount(InstanceSettings, {
-    props: { instance: { count: 4, tags: ["node"], ...instance }, name: "node", provider, hasGpu: true },
+const editor = (instance = {}, provider = "openstack") => {
+  const wrapper = mount(InstanceSettings, {
+    props: {
+      instance: { count: 4, tags: ["node"], ...instance },
+      name: "node",
+      provider,
+      hasGpu: true,
+      "onUpdate:instance": (value) => wrapper.setProps({ instance: value }),
+    },
   });
+  return wrapper;
+};
 
 describe("InstanceSettings", () => {
   it("shows MIG only for GPU instances while keeping Slurm features available", async () => {
@@ -35,7 +43,9 @@ describe("InstanceSettings", () => {
   it("keeps invalid MIG input out of the configuration and reports errors", async () => {
     const wrapper = editor({ mig: { "1g.5gb": 2 } });
     const mig = wrapper.findComponent({ name: "MigProfilesEditor" });
-    const quantity = mig.findComponent({ name: "v-text-field" });
+    const quantity = mig
+      .findAllComponents({ name: "v-text-field" })
+      .find((field) => field.props("label") === "Quantity");
     await quantity.setValue("-1");
     await nextTick();
     expect(wrapper.props("instance").mig).toEqual({ "1g.5gb": 2 });

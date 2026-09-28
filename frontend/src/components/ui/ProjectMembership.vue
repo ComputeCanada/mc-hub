@@ -1,14 +1,13 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
-    <template #activator="{ on: dialogOn, attrs: dialogAttrs }">
-      <v-tooltip bottom>
-        <template #activator="{ on: tooltipOn, attrs: tooltipAttrs }">
+    <template #activator="{ props: dialogProps }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
           <v-btn
             color="secondary"
-            text
+            variant="text"
             aria-label="Members"
-            v-bind="{ ...dialogAttrs, ...tooltipAttrs }"
-            v-on="{ ...tooltipOn, ...dialogOn }"
+            v-bind="mergeProps(tooltipProps, dialogProps)"
             :disabled="!admin"
           >
             <v-icon>mdi-account-group</v-icon>
@@ -25,38 +24,42 @@
       <v-card-text>
         <v-container>
           <v-list>
-            <v-subheader>Members</v-subheader>
-            <v-list-item v-for="entry in entries" :key="entry.username" dense>
-              <v-list-item-content>{{ entry.username }}</v-list-item-content>
-              <v-list-item-action>
-                <v-tooltip bottom>
-                  <template #activator="{ on, attrs }">
-                    <v-simple-checkbox v-model="entry.isAdmin" v-bind="attrs" v-on="on" />
+            <v-list-subheader>Members</v-list-subheader>
+            <v-list-item v-for="entry in entries" :key="entry.username" density="compact">
+              <v-list-item-title>{{ entry.username }}</v-list-item-title>
+              <template #append>
+                <v-tooltip location="bottom">
+                  <template #activator="{ props }">
+                    <v-checkbox-btn aria-label="Admin" v-model="entry.isAdmin" v-bind="props" />
                   </template>
                   <span>Admin</span>
                 </v-tooltip>
-              </v-list-item-action>
-              <v-list-item-action>
-                <v-btn icon small @click="removeMember(entry.username)">
-                  <v-icon small>mdi-delete</v-icon>
+
+                <v-btn icon size="small" @click="removeMember(entry.username)">
+                  <v-icon size="small">mdi-delete</v-icon>
                 </v-btn>
-              </v-list-item-action>
+              </template>
             </v-list-item>
             <v-list-item>
               <v-text-field
-                :append-outer-icon="'mdi-plus'"
+                :append-icon="'mdi-plus'"
                 v-model="newMember"
                 type="text"
                 clearable
-                filled
+                variant="filled"
                 label="Add a member"
                 hint="Check the box to make them admin"
-                @click:append-outer="addMember"
+                @click:append="addMember"
                 v-on:keyup.enter="addMember"
               />
-              <v-tooltip bottom>
-                <template #activator="{ on, attrs }">
-                  <v-simple-checkbox v-model="newMemberIsAdmin" class="ml-2" v-bind="attrs" v-on="on" />
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-checkbox-btn
+                    aria-label="New member admin"
+                    v-model="newMemberIsAdmin"
+                    class="ml-2"
+                    v-bind="props"
+                  />
                 </template>
                 <span>Admin</span>
               </v-tooltip>
@@ -66,19 +69,21 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text @click="close"> Cancel </v-btn>
-        <v-btn color="blue darken-1" text @click="save"> Save </v-btn>
+        <v-btn color="blue-darken-1" variant="text" @click="close"> Cancel </v-btn>
+        <v-btn color="blue-darken-1" variant="text" @click="save"> Save </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
+import { mergeProps } from "vue";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import MessageDialog from "@/components/ui/MessageDialog";
 
 export default {
   name: "ProjectMembership",
+  emits: ["saved"],
   components: { MessageDialog },
   props: {
     id: { type: Number, required: true },
@@ -110,6 +115,7 @@ export default {
     },
   },
   methods: {
+    mergeProps,
     addMember() {
       if (this.newMember && !this.entries.find((e) => e.username === this.newMember)) {
         this.entries.push({ username: this.newMember, isAdmin: this.newMemberIsAdmin });

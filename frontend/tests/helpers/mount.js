@@ -1,8 +1,9 @@
 import { mount, shallowMount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import * as components from "vuetify/components";
-import { createAppVuetify } from "@/plugins/vuetify";
+import { appComponents, createAppVuetify } from "@/plugins/vuetify";
 
+const featureComponents = Object.fromEntries(Object.entries(components).filter(([name]) => !(name in appComponents)));
 const wrappers = new Set();
 const hosts = new Set();
 
@@ -14,7 +15,7 @@ function mountComponent(mountFn, component, options) {
       ...global,
       // Feature components are registered here for isolated tests. Production
       // registration remains part of each feature's migration in steps 5–6.
-      components: { ...components, ...global.components },
+      components: { ...featureComponents, ...global.components },
       plugins: [createAppVuetify(), ...(global.plugins || [])],
     },
   });

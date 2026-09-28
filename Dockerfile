@@ -3,9 +3,11 @@
 FROM node:24 as frontend-build-stage
 
 WORKDIR /frontend
-ADD frontend .
-ENV UV_USE_IO_URING 0
-RUN npm install && npm run build
+ENV UV_USE_IO_URING=0
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend .
+RUN npm run build
 
 # BACKEND BUILD STAGE
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS backend-build-stage

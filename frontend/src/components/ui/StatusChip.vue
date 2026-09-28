@@ -1,6 +1,8 @@
 <template>
   <div>
-    <v-chip label :color="formattedStatus.color" dark v-if="status !== null">{{ formattedStatus.text }}</v-chip>
+    <v-chip label variant="flat" :color="formattedStatus.color" v-if="status !== null">{{
+      formattedStatus.text
+    }}</v-chip>
   </div>
 </template>
 
@@ -19,7 +21,7 @@ const ClusterFormattedStatus = Object.freeze({
   destroy_success: { text: "Destroyed", color: "green" },
   not_deployed: { text: "Not deployed", color: "blue-grey" },
   not_found: { text: "Not found", color: "purple" },
-  degraded: { text: "Degraded", color: "amber darken-2" },
+  degraded: { text: "Degraded", color: "amber-darken-2" },
 });
 
 export default {

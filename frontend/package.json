@@ -6,15 +6,15 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
+    "test:shared": "vue-cli-service test:unit --runInBand tests/unit/components/ui",
+    "lint:shared": "vue-cli-service lint --no-fix src/components/ui src/plugins/vuetify.js tests/helpers tests/unit/components/ui tests/unit/helpers",
     "lint:tests": "vue-cli-service lint --no-fix tests jest.config.js .eslintrc.js",
-    "serve:foundation": "vue-cli-service serve --mode vue3-foundation-development",
-    "build:foundation": "vue-cli-service build --mode vue3-foundation",
-    "test:foundation": "vue-cli-service test:unit --runInBand --runTestsByPath tests/unit/foundation/Foundation.spec.js",
-    "lint:foundation": "vue-cli-service lint --no-fix src/foundation tests/unit/foundation tests/setup.js vue.config.js jest.config.js babel.config.js .eslintrc.js",
     "test:startup": "vue-cli-service test:unit --runInBand tests/unit/startup tests/unit/components/BenchmarkAccess.spec.js tests/unit/components/ui/ServiceStatusBanner.spec.js",
-    "lint:startup": "vue-cli-service lint --no-fix src/main.js src/App.vue src/router src/plugins src/services/benchmarkAccess.js src/components/ui/AccountDropdown.vue src/components/ui/ServiceStatusBanner.vue tests/unit/startup tests/unit/components/BenchmarkAccess.spec.js tests/unit/components/ui/ServiceStatusBanner.spec.js"
+    "lint:startup": "vue-cli-service lint --no-fix src/main.js src/App.vue src/router src/plugins src/services/benchmarkAccess.js src/components/ui/AccountDropdown.vue src/components/ui/ServiceStatusBanner.vue tests/unit/startup tests/unit/components/BenchmarkAccess.spec.js tests/unit/components/ui/ServiceStatusBanner.spec.js",
+    "test:browser": "node tests/browser/smoke.cjs"
   },
   "dependencies": {
+    "@monaco-editor/loader": "^1.7.0",
     "@vue/cli-service": "~5.0.9",
     "axios": "^0.33.0",
     "core-js": "^3.50.0",
@@ -22,29 +22,29 @@
     "lodash": "^4.18.1",
     "monaco-editor": "^0.56.0",
     "monaco-editor-webpack-plugin": "^7.1.1",
-    "@monaco-editor/loader": "^1.7.0",
     "vue": "3.5.43",
     "vue-router": "4.6.4",
     "vuetify": "3.13.5"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.29.7",
+    "@rushstack/eslint-patch": "^1.16.1",
     "@vue/cli-plugin-babel": "~5.0.9",
     "@vue/cli-plugin-eslint": "~5.0.9",
     "@vue/cli-plugin-router": "~5.0.9",
     "@vue/cli-plugin-unit-jest": "~5.0.9",
+    "@vue/compiler-sfc": "3.5.43",
     "@vue/eslint-config-prettier": "^7.1.0",
-    "@rushstack/eslint-patch": "^1.16.1",
     "@vue/test-utils": "2.5.1",
+    "@vue/vue3-jest": "27.0.0",
     "eslint": "^8.57.1",
     "eslint-plugin-vue": "^8.7.1",
     "moxios": "^0.4.0",
+    "playwright": "1.63.0",
     "prettier": "^2.8.8",
     "sass": "^1.103.1",
     "sass-loader": "^8.0.2",
-    "vue-eslint-parser": "^8.3.0",
-    "@vue/compiler-sfc": "3.5.43",
-    "@vue/vue3-jest": "27.0.0"
+    "vue-eslint-parser": "^8.3.0"
   },
   "browserslist": [
     "defaults"
