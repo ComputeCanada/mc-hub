@@ -3,11 +3,13 @@
 Steps 2–6 are implemented on `migration/vue3-foundation`: Vue 3 startup,
 routing, shared components, feature screens, and component/browser checks now
 use the real application. The temporary foundation demo has been removed.
-Local container and scoped backend checks are recorded below. Remote CI, user
-visual inspection, and the outstanding dependency-risk decisions remain before merge.
+The subsequent [Vite migration](vite-migration.md) replaces Vue CLI, updates the
+lint/test tools, and reduces the current npm audit to zero findings. Its validation
+supersedes the historical tooling/audit results below. Remote CI and user visual
+inspection remain before merge.
 This branch is not yet ready for a production release.
 
-## Dependency decisions
+## Original Vue 3 dependency decisions (before Vite)
 
 | Package/tool | Selected version | Reason |
 | --- | --- | --- |
@@ -986,7 +988,9 @@ Handoff limits:
   remaining risks and the Vuetify support window.
 - [x] Step 7.6: complete local review, commit packaging, and handoff; GitHub
   operations are delegated to the user.
-- [ ] Resolve or explicitly accept the remaining dependency risks before release.
+- [x] Resolve the previously recorded npm findings through the Vite tooling migration
+  (zero findings at its validation date).
 - [ ] Validate the full build, suite, Docker image, CI, and Vuetify support target
   before merging the migration into the release branch.
-- [ ] Migrate from Vue CLI to Vite as a separate tooling contribution.
+- [x] Migrate from Vue CLI to Vite as a separate tooling contribution; see
+  [implementation and validation](vite-migration.md).

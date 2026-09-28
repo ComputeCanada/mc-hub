@@ -2,7 +2,7 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { createAppVuetify } from "@/plugins/vuetify";
 import CodeEditor from "@/components/ui/CodeEditor";
 import loader from "@monaco-editor/loader";
-import { version as monacoVersion } from "monaco-editor/package.json";
+import { dependencies } from "../../../../package.json";
 
 jest.mock("@monaco-editor/loader", () => ({ init: jest.fn(), config: jest.fn() }));
 let wrappers, monaco, editors, warn;
@@ -65,7 +65,7 @@ test("uses the latest parent value after initialization and distinct editor host
   );
   const first = render({ modelValue: "old" });
   expect(loader.config).toHaveBeenCalledWith({
-    paths: { vs: `https://cdn.jsdelivr.net/npm/monaco-editor@${monacoVersion}/min/vs` },
+    paths: { vs: `https://cdn.jsdelivr.net/npm/monaco-editor@${dependencies["monaco-editor"]}/min/vs` },
   });
   await first.setProps({ modelValue: "latest" });
   const second = render();

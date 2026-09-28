@@ -16,9 +16,11 @@
 <script>
 import { markRaw } from "vue";
 import loader from "@monaco-editor/loader";
-import { version as monacoVersion } from "monaco-editor/package.json";
+import { dependencies } from "../../../package.json";
 import jsYaml from "js-yaml";
 import { capitalize } from "lodash";
+
+const monacoVersion = dependencies["monaco-editor"];
 
 export default {
   name: "CodeEditor",

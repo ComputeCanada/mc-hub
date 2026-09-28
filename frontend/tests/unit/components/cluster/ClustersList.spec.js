@@ -1,3 +1,4 @@
+import { cloneDeep } from "lodash";
 import { mount, flushPromises } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 import { createAppVuetify } from "@/plugins/vuetify";
@@ -55,7 +56,7 @@ test("expands one hostname, retains it across refresh, and navigates the teardow
   await rows()[0].trigger("click");
   expect(wrapper.vm.expandedRows).toEqual(["alpha.example.org"]);
   expect(wrapper.findAll("tr.cluster-overview")).toHaveLength(1);
-  Repository.getAll.mockResolvedValue({ data: structuredClone(clusters) });
+  Repository.getAll.mockResolvedValue({ data: cloneDeep(clusters) });
   await wrapper.vm.loadMagicCastlesStatus();
   expect(wrapper.vm.expandedRows).toEqual(["alpha.example.org"]);
   await rows()[1].trigger("click");
