@@ -109,7 +109,6 @@
 
         <!-- Instances -->
         <v-progress-linear v-if="loading" indeterminate aria-label="Loading cloud resources" />
-        <p v-if="loading">Loading cloud resources…</p>
         <v-alert v-if="resourceError" type="error"
           >{{ resourceError }} <v-btn variant="text" @click="loadCloudResources">Retry</v-btn></v-alert
         >

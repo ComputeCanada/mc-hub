@@ -11,7 +11,7 @@
     />
     <v-alert v-if="error" type="error">{{ error }}</v-alert>
     <v-alert v-if="notice" type="success">{{ notice }}</v-alert>
-    <v-alert type="info">
+    <v-alert type="info" class="mb-4">
       Plans help your project coordinate resource usage. They do not reserve cloud capacity.
     </v-alert>
     <v-btn color="primary" class="mr-2 mb-4" :disabled="!projectId || loading" @click="newPlan"

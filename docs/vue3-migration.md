@@ -795,6 +795,51 @@ or cloud integrations. Browser workflow checks remain recorded in steps 6.8 and
 7.2; this container check used HTTP requests, not browser interaction. Live-backend
 workflow validation remains step 7.4, and remote CI verification remains pending.
 
+## Step 7.4: local backend integration checks
+
+Completed the agreed non-browser scope on September 28, 2026. At the user's
+request, live cluster builds, Chromium/browser tests, and SAML testing were
+excluded. Visual inspection is assigned to the user and is not recorded as passed.
+
+Built the production image from commit `9fd320b` as
+`mc-hub:vue3-production-step74`, image ID
+`sha256:1a622618870b12a44fa58cad870f321b3d98d754c33c1d87d6ce8bbc073f1004`.
+Started the default production command with a disposable database and synthetic
+configuration, exposed only at `127.0.0.1:51874`. The existing `run` configuration
+and database were not used. No background worker ran and no external project,
+cluster, or notification delivery was created.
+
+Seeded two local-only project records and a local user directly in the disposable
+database. Their cloud endpoint was the intentionally unavailable
+`http://127.0.0.1:9/v3`. Python HTTP requests exercised real Gunicorn/Flask routes
+and SQLite persistence without mocked API responses:
+
+- Switched the default project repeatedly and read it back; an invalid project
+  was rejected without altering the saved preference. A direct SQLite query
+  confirmed persistence.
+- Added a project member, promoted that member to administrator, and removed
+  them; subsequent GET requests confirmed each change.
+- Saved, read, validated, and deleted a disabled notification destination.
+  An invalid URL was rejected without replacing the saved configuration.
+- Loaded Usage, including date-range and page-two queries against empty history;
+  invalid dates were rejected. Loaded the empty Benchmarks and cluster lists,
+  the cluster template, and service status.
+- Loaded Capacity Planner data against the unavailable cloud. The response
+  retained the empty plan list and a quota-unavailable warning. Unauthorized
+  project IDs for capacity and notifications returned HTTP 403.
+- SQLite integrity check returned `ok`.
+
+**Result:** the tested backend API contracts and persistence pass. This is not
+end-to-end validation of Vue interactions: browser rendering, font/icon loading,
+dialog interactions, and visual checks were deliberately left to the user.
+SAML/session behavior, successful cloud discovery, populated benchmark/history
+workflows, and live cluster lifecycle operations were not validated here.
+
+The disposable container and its database were removed. The unpublished local
+image and scripts under `/private/tmp/mchub-step74` are retained as local
+artifacts. No application changes were needed for these checks. Later local
+component edits are not covered by this image's results.
+
 ## Next contributions
 
 - [x] Step 3: migrate the real entry point, router, unload-confirmation plugin,
@@ -818,6 +863,9 @@ workflow validation remains step 7.4, and remote CI verification remains pending
 - [x] Step 7.2: configure CI completion checks and validate them locally.
 - [ ] Step 7.2: verify a successful remote CI run on the migration commit.
 - [x] Step 7.3: validate production-container startup, migrations, and HTTP serving.
+- [x] Step 7.4: complete local backend API checks within the agreed scope
+  (no browser, SAML, or live cluster build tests).
+- [ ] User visual inspection of the migrated frontend.
 - [ ] Validate the full build, suite, Docker image, CI, and Vuetify support target
   before merging the migration into the release branch.
 - [ ] Migrate from Vue CLI to Vite as a separate tooling contribution.

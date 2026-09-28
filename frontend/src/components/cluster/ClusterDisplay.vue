@@ -5,8 +5,8 @@
         <template #loader="{ isActive }">
           <v-progress-linear :active="isActive" :indeterminate="progress === 0" :model-value="progress" />
         </template>
-        <v-card-title v-if="stateful" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
-        <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
+        <v-card-title v-if="stateful" class="mx-auto">Magic Castle Modification</v-card-title>
+        <v-card-title v-else class="mx-auto">Magic Castle Creation</v-card-title>
         <v-card-text>
           <cluster-failure
             v-if="failure || failureStatus"
