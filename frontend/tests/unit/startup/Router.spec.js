@@ -65,8 +65,13 @@ test.each(["/benchmarks", "/benchmarks/new", "/benchmarks/example/edit"])(
   }
 );
 
-test("ordinary routes do not invoke the permission guard's API request", async () => {
-  const router = createAppRouter(createMemoryHistory());
-  await router.push("/projects");
-  expect(ProjectRepository.getAll).not.toHaveBeenCalled();
-});
+test.each(["/projects", "/create-cluster", "/clusters/example.org"])(
+  "loads the lazy route %s without invoking the permission guard's API request",
+  async (path) => {
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(path);
+    expect(router.currentRoute.value.path).toBe(path);
+    expect(router.currentRoute.value.matched[0].components.default).toHaveProperty("render");
+    expect(ProjectRepository.getAll).not.toHaveBeenCalled();
+  }
+);

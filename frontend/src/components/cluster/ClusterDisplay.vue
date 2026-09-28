@@ -140,7 +140,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import ClusterFailure from "@/components/cluster/ClusterFailure";
-import { isEqual } from "lodash";
+import isEqual from "lodash/isEqual";
 
 const POLL_STATUS_INTERVAL = 1000;
 const PLAN_START_TIMEOUT_MS = 1500;

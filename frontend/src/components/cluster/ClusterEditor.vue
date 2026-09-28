@@ -423,7 +423,8 @@
 </template>
 
 <script>
-import { cloneDeep, isEqual } from "lodash";
+import cloneDeep from "lodash/cloneDeep";
+import isEqual from "lodash/isEqual";
 import { isGpuTypeName } from "@/models/instanceTypes";
 import { generatePassword, generatePetName } from "@/models/utils";
 import ClusterStatusCode from "@/models/ClusterStatusCode";
