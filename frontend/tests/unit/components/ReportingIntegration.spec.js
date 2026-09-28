@@ -359,12 +359,12 @@ test.each([false, true])(
     expect(Resources.getCloud).toHaveBeenCalledWith(11);
     const loader = wrapper.get(".v-card__loader .v-progress-linear");
     expect(loader.attributes("aria-hidden")).toBe("false");
-    expect(wrapper.text()).toContain("Loading cloud resources…");
+    expect(wrapper.find('[aria-label="Loading cloud resources"]').exists()).toBe(true);
     if (fails) reject(new Error("offline"));
     else resolve(resources);
     await flushPromises();
     expect(loader.attributes("aria-hidden")).toBe("true");
-    expect(wrapper.text()).not.toContain("Loading cloud resources…");
+    expect(wrapper.find('[aria-label="Loading cloud resources"]').exists()).toBe(false);
     if (fails) expect(wrapper.text()).toContain("Unable to load cloud resources");
   }
 );

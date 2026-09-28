@@ -3,7 +3,8 @@
 Steps 2–6 are implemented on `migration/vue3-foundation`: Vue 3 startup,
 routing, shared components, feature screens, and component/browser checks now
 use the real application. The temporary foundation demo has been removed.
-Container, CI, live-backend, and release-support validation remain before merge.
+Local container and scoped backend checks are recorded below. Remote CI, user
+visual inspection, and the outstanding dependency-risk decisions remain before merge.
 This branch is not yet ready for a production release.
 
 ## Dependency decisions
@@ -840,6 +841,121 @@ image and scripts under `/private/tmp/mchub-step74` are retained as local
 artifacts. No application changes were needed for these checks. Later local
 component edits are not covered by this image's results.
 
+## Step 7.5: warnings, dependency advisories, and support review
+
+Reviewed September 28, 2026. This completes the review and targeted remediation;
+it does **not** declare the dependency tree vulnerability-free or approve release.
+
+### Changes and validation
+
+- Upgraded and pinned `monaco-editor` from 0.56.0 to **0.57.0**, bringing its
+  exact DOMPurify dependency from 3.4.8 to **3.4.15**. Only these two resolved
+  package versions changed. See the [Monaco release](https://github.com/microsoft/monaco-editor/releases/tag/v0.57.0).
+- Configured `CodeEditor`'s CDN loader from the installed Monaco package version.
+  Previously `@monaco-editor/loader` defaulted independently to CDN version
+  0.55.1, so updating the installed package alone did not update that runtime
+  source. The configured 0.57.0 loader URL responds successfully; browser execution
+  remains unverified at the user's request. Unit tests cover the configuration.
+- Removed eight diagnostic `console.log` calls without changing their existing
+  recovery paths or user-facing error messages. Production ESLint warnings are
+  now absent; the lint rules remain enabled.
+- Updated the theme-isolation test to use Vuetify's `theme.change()` API, removing
+  its deprecation warning. Updated two resource-loading checks to assert the
+  current progress bar's accessible label instead of removed visible text,
+  retaining success/failure and loading-state assertions.
+- Full suite: **262 tests pass across 38 suites**. Production build and full lint
+  pass. No Chromium, SAML, or live cluster build tests were run.
+
+### Audit disposition
+
+`npm audit` decreased from **29 findings (10 low, 13 moderate, 6 high)** to
+**27 (9 low, 12 moderate, 6 high)**. Monaco/DOMPurify findings are gone. Remaining
+findings belong to retained build, development-server, and test dependency chains.
+Counts include affected parent packages, not just independent vulnerabilities.
+
+| Remaining chain | Exposure and follow-up |
+| --- | --- |
+| CLI ESLint → Yorkie → Execa → cross-spawn 5.1.0 | Four high entries share the process-spawning ReDoS dependency. Remove Yorkie through replacement of CLI lint orchestration; do not override Execa's incompatible dependency blindly. |
+| CLI → component compiler utilities → PostCSS 7.0.39 | High finding in legacy Vue 2 compilation tooling retained by CLI. Vue 3 uses loader 17 and PostCSS 8.5.28; remove the obsolete chain with CLI replacement. Presence alone does not establish reachability in the active build. |
+| CLI → copy/CSS minimizer plugins → serialize-javascript 6.0.2 | High serialization finding in active build tooling. Replace/update the owning build plugins as part of the tooling migration and validate generated assets. |
+| CLI → webpack-dev-server → SockJS/uuid | Moderate development-server findings. Replace the old development server; keep it local and out of production serving. |
+| Jest 27 → jsdom → http-proxy-agent → @tootallnate/once | Low test-environment findings. Upgrade the test runner/environment alongside removal of the CLI Jest plugin. |
+
+The ordinary compatible-fix dry run did not resolve these chains. npm proposes
+Vue CLI plugin **3.12.1 downgrades** with `--force`; these were not applied.
+No audit suppression, dependency overrides, or severity downgrades were added.
+The remaining six highs still need remediation or an explicit, documented
+release-risk decision. Functional test success is not a security sign-off.
+
+`@vue/cli-service` is declared in `dependencies`, despite being build tooling,
+so `npm audit --omit=dev` is not a reliable browser-runtime-only assessment here.
+The production Docker stage copies built assets, not frontend `node_modules`;
+this narrows production exposure but does not eliminate build/CI risks.
+
+### Remaining warnings and support constraints
+
+- Webpack still reports its three asset/entrypoint/performance advisories; the
+  initial entry remains approximately **1.11 MiB uncompressed**. Bundle splitting
+  and measurements belong to the tooling/performance follow-up; thresholds were
+  not raised to hide the warnings.
+- Shallow tests still emit readonly DOM `prefix` warnings from generated Vuetify
+  stubs and missing `$route` warnings in isolated mounts. These are test-harness
+  debt; use explicit input stubs/router mocks when revising those suites.
+  Warnings are not globally suppressed, and browser behavior was not revalidated.
+- The lockfile still marks 16 package entries deprecated, including ESLint 8,
+  webpack-chain, older glob/rimraf, and jsdom-era helpers. Plan CLI replacement
+  with Vite and modernization of lint/test orchestration as a separate change,
+  rather than mixing another framework/tooling migration into this branch.
+- npm reports install-script policy notices for `@parcel/watcher`, `core-js`,
+  `fsevents`, and `yorkie`. These are distinct from audit advisories; this step
+  does not blanket-approve dependency scripts. Current build/tests pass.
+- [Vue CLI is in maintenance mode](https://cli.vuejs.org/).
+  [Vuetify's published support table](https://vuetifyjs.com/introduction/long-term-support/)
+  lists Vuetify 3 as maintained, with LTS from **July 27, 2026 through July 27,
+  2027**; Vuetify 4 is active. Keep Vue 3/Vuetify 3 for this migration, recheck
+  supported patch releases before deployment, and complete a separately tested
+  Vuetify 4 upgrade before that end date. This is a release-planning constraint,
+  not approval to deploy an unreviewed major upgrade.
+
+Before release, also finish remote CI verification and user visual inspection,
+including CodeEditor loading/editing after the Monaco update. Earlier container
+image results predate the changed lockfile and do not validate this new snapshot.
+
+## Step 7.6: local review and handoff
+
+Completed the local review on September 28, 2026. The user is handling all
+GitHub operations; this step performs no push, pull-request creation, Actions
+run, merge, or deployment.
+
+Reviewed the migration scope against pre-migration commit `4b72abe`, with a
+targeted review of startup, routing, unload confirmation, dependency manifests,
+Docker packaging, and the remaining step-7.5 diff. The change set is confined to
+frontend code/tests, migration documentation, and the previously recorded build
+configuration. Backend application code and database migration files are unchanged.
+The targeted legacy-API scan and whole-migration whitespace check pass. No
+generated frontend output, local environment overrides, or foundation demo files
+are tracked. This review is not a substitute for independent review or visual QA.
+
+The earlier migration and visual adjustments are already committed through
+`8eb2c11`. The remaining step-7.5 fixes and this handoff are packaged in a local
+follow-up commit without rewriting those existing commits. Validation evidence
+is unchanged from step 7.5: 262 tests across 38 suites, the focused five-test
+CodeEditor run after its final assertion, lint, and production build all pass.
+No application changes were added during this packaging step, so those checks
+were not rerun unnecessarily.
+
+Handoff limits:
+
+- User visual inspection remains outstanding. Include the create/edit form,
+  planner spacing, copy/password controls, and CodeEditor load/edit behavior.
+- Browser/Chromium, SAML, and live cluster build tests remain excluded as requested.
+- The audit still has 27 findings, including six high tooling findings. Their
+  remediation/release-risk disposition and Vuetify's support deadline are in 7.5.
+- Existing container evidence predates the Monaco lockfile update. It must not
+  be presented as validation of the final dependency snapshot.
+- Remote CI status is unverified and delegated to the user. Local packaging
+  completion does not constitute merge or production-release approval.
+
 ## Next contributions
 
 - [x] Step 3: migrate the real entry point, router, unload-confirmation plugin,
@@ -866,6 +982,11 @@ component edits are not covered by this image's results.
 - [x] Step 7.4: complete local backend API checks within the agreed scope
   (no browser, SAML, or live cluster build tests).
 - [ ] User visual inspection of the migrated frontend.
+- [x] Step 7.5: review warnings, apply targeted advisory remediation, and document
+  remaining risks and the Vuetify support window.
+- [x] Step 7.6: complete local review, commit packaging, and handoff; GitHub
+  operations are delegated to the user.
+- [ ] Resolve or explicitly accept the remaining dependency risks before release.
 - [ ] Validate the full build, suite, Docker image, CI, and Vuetify support target
   before merging the migration into the release branch.
 - [ ] Migrate from Vue CLI to Vite as a separate tooling contribution.

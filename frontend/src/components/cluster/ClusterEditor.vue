@@ -543,7 +543,7 @@ export default {
           this.localSpecs.domain = possibleResources.domain[0];
           this.initialSpecs.domain = possibleResources.domain[0];
         } catch (err) {
-          console.log("No domain available");
+          // Leave the selection unset when resource discovery has no domain.
         }
       }
 
@@ -553,7 +553,7 @@ export default {
           this.localSpecs.image = possibleResources.image[0];
           this.initialSpecs.image = possibleResources.image[0];
         } catch (err) {
-          console.log("No image available");
+          // Leave the selection unset when resource discovery has no image.
         }
       }
 
@@ -563,7 +563,7 @@ export default {
           this.localSpecs.mc_version = possibleResources.mc_version[0];
           this.initialSpecs.mc_version = possibleResources.mc_version[0];
         } catch (err) {
-          console.log("No Magic Castle version available");
+          // Leave the selection unset when resource discovery has no version.
         }
       }
 
@@ -579,8 +579,7 @@ export default {
               this.initialSpecs.instances[key].type = type?.name;
             }
           } catch (err) {
-            console.log("No instance type available for " + key);
-            console.log(err);
+            // Leave the selection unset when no compatible type is available.
           }
         }
       }

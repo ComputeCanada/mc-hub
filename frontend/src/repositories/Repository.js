@@ -15,7 +15,6 @@ axiosInstance.interceptors.response.use(
         // error in the redirection to the identity provider's login portal.
         // Note: Other network problems, such as disconnects, may cause the same behaviour.
         sessionExpired = true;
-        console.log(error);
         alert("Your session expired. Please refresh the page.");
 
         // Remove any page reload confirmation dialog

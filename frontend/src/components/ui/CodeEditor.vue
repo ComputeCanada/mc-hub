@@ -16,6 +16,7 @@
 <script>
 import { markRaw } from "vue";
 import loader from "@monaco-editor/loader";
+import { version as monacoVersion } from "monaco-editor/package.json";
 import jsYaml from "js-yaml";
 import { capitalize } from "lodash";
 
@@ -44,6 +45,8 @@ export default {
   },
   async mounted() {
     try {
+      // The loader otherwise uses its own, older CDN default independently of our lockfile.
+      loader.config({ paths: { vs: `https://cdn.jsdelivr.net/npm/monaco-editor@${monacoVersion}/min/vs` } });
       const monaco = await loader.init();
       if (this.disposed) return;
       this.monaco = markRaw(monaco);

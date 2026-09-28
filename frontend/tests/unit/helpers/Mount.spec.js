@@ -34,7 +34,7 @@ test("fresh Vuetify mounts retain caller plugins, mocks, components and stubs wi
   expect(first.text()).toContain("Felix plugin mock");
   expect(first.text()).toContain("replacement");
   expect(second.get("input").element.value).toBe("");
-  first.vm.$vuetify.theme.global.name = "dark";
+  first.vm.$vuetify.theme.change("dark");
   expect(second.vm.$vuetify.theme.global.name).toBe("light");
   expect(options.global.plugins).toEqual([extra]);
 });

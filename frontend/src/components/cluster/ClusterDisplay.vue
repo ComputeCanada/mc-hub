@@ -415,12 +415,10 @@ export default {
           this.showError(error.response.data.message);
           isCommited = true;
         } else if (error.request) {
-          console.log(error.request);
           // The request may have been accepted but the response timed out.
           isCommited = true;
           showPlan = "1";
         } else {
-          console.log(error.message);
           this.showError("Plan creation request setting up triggered an error.");
         }
       } finally {
