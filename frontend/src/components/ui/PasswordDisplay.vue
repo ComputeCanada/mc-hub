@@ -1,7 +1,7 @@
 <template>
   <span>
     <code>{{ visible ? password : "**********" }}</code>
-    <v-btn icon size="small" style="margin: -6px 0" @click="visible = !visible">
+    <v-btn icon variant="text" size="small" style="margin: -6px 0" @click="visible = !visible">
       <v-icon size="small" :color="color">{{ visible ? "mdi-eye-off" : "mdi-eye" }}</v-icon>
     </v-btn>
   </span>
