@@ -742,6 +742,59 @@ GitHub authentication and committing/pushing the migration, verify that the
 workflow for that exact commit passes both frontend and backend jobs before
 marking remote CI complete. A successful run of an older commit is insufficient.
 
+## Step 7.3: production container startup and HTTP validation
+
+Validated the current working-tree Dockerfile on September 28, 2026, using the
+`production-server` target (local ARM64 Docker; existing build layers reused):
+
+```sh
+DOCKER_BUILDKIT=1 docker build --progress=plain --target production-server \
+  --tag mc-hub:vue3-production-step73 .
+```
+
+Image ID:
+`sha256:80b2d88b56e5230d8defd3a8b8b8d67318fd752d693998cafdb8abca403f98aa`.
+The image was not published. No application or Dockerfile changes were required.
+
+The test container used its default command, a fresh database in its disposable
+writable layer, and a read-only temporary `configuration.json`. Configuration
+used `auth_type: ["NONE"]`, empty domains/DNS providers/CORS origins, empty
+status-provider and notification lists, `debug: false`, and the version range
+`>= 14.0.0, < 15.0.0`. It contained no external service credentials. The container
+ran with `--network none`, without host ports, production volumes, or background
+workers. HTTP checks ran inside the container against `127.0.0.1:5000`.
+
+Results:
+
+- Default startup applied migrations **0001 through 0023**, reaching the sole
+  current head, and started **five gevent Gunicorn workers** as non-root `mcu`.
+- SQLite `PRAGMA integrity_check` returned `ok`.
+- Ten URLs returned the exact image `index.html`, HTML content type, and
+  `no-store` cache headers: `/`, `/create-cluster`, `/projects`, `/capacity`,
+  `/usage`, `/benchmarks`, `/benchmarks/new`, `/benchmarks/test/edit`,
+  `/clusters/smoke.example.org`, and `/unknown-route`. This verifies server-side
+  history fallback, including hostname dots and nested routes. The unknown route
+  deliberately returns the SPA; Vue Router renders its not-found screen.
+- All **nine JavaScript/CSS files**, including lazy chunks, returned HTTP 200,
+  the correct content types, and bytes identical to the files inside the image.
+  Missing JavaScript/CSS URLs returned HTTP 404.
+- Real `/api/users/me`, `/api/projects`, `/api/magic-castles`, and
+  `/api/service-status` requests returned HTTP 200 and valid JSON.
+- Restarting the same container reran `flask db upgrade` successfully without
+  applying further migrations. All HTTP and database checks passed again.
+
+The disposable container/database was removed after validation; the local image
+is retained. Test configuration and the HTTP checker are local artifacts under
+`/private/tmp/mchub-step73`.
+
+**Result:** step 7.3 passes for production-image startup, fresh-database
+migrations, repeated startup, asset delivery, and server-side deep links. This
+does not validate migration of a populated production database, Compose's
+separate initializer/worker services, AMD64 images, external fonts/icons, SAML,
+or cloud integrations. Browser workflow checks remain recorded in steps 6.8 and
+7.2; this container check used HTTP requests, not browser interaction. Live-backend
+workflow validation remains step 7.4, and remote CI verification remains pending.
+
 ## Next contributions
 
 - [x] Step 3: migrate the real entry point, router, unload-confirmation plugin,
@@ -764,6 +817,7 @@ marking remote CI complete. A successful run of an older commit is insufficient.
 - [x] Step 7.1: verify clean dependency installation and frontend builds.
 - [x] Step 7.2: configure CI completion checks and validate them locally.
 - [ ] Step 7.2: verify a successful remote CI run on the migration commit.
+- [x] Step 7.3: validate production-container startup, migrations, and HTTP serving.
 - [ ] Validate the full build, suite, Docker image, CI, and Vuetify support target
   before merging the migration into the release branch.
 - [ ] Migrate from Vue CLI to Vite as a separate tooling contribution.

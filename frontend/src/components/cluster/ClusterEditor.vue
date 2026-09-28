@@ -190,6 +190,7 @@
                   >
                   <v-btn
                     icon
+                    variant="text"
                     size="small"
                     :aria-label="`Optional settings for ${id}`"
                     :aria-expanded="expandedInstance === id ? 'true' : 'false'"
@@ -341,7 +342,7 @@
               <v-text-field v-model="localSpecs.guest_passwd" label="Guest password" :rules="[passwordLengthRule]" />
               <v-tooltip location="bottom">
                 <template #activator="{ props }">
-                  <v-btn icon v-bind="props" @click="generateGuestPassword()">
+                  <v-btn icon variant="text" v-bind="props" @click="generateGuestPassword()">
                     <v-icon>mdi-refresh</v-icon>
                   </v-btn>
                 </template>
