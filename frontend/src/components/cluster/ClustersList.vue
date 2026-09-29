@@ -13,11 +13,8 @@
         @click:row="rowClicked"
       >
         <template #top>
-          <v-toolbar flat>
-            <v-toolbar-title>Your Magic Castles</v-toolbar-title>
-            <v-divider vertical class="mx-4" inset />
-            <v-spacer />
-            <v-btn color="primary" to="/create-cluster">Create cluster</v-btn>
+          <v-toolbar title="Your Magic Castles">
+            <v-btn class="mr-3" color="primary" variant="elevated" to="/create-cluster">Create cluster</v-btn>
           </v-toolbar>
         </template>
         <template v-slot:[`item.status`]="{ item }">
