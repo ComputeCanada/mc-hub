@@ -86,9 +86,8 @@ The production image is local-only `mc-hub:vite-validation`, ID
 It used a disposable database/configuration, no network, and no background
 worker. The test container/database was removed afterward.
 
-One build warning remains: the main JavaScript chunk is approximately **647 kB**
-minified (**211 kB gzip**), above Vite's default 500 kB warning threshold. The
-threshold is unchanged. Existing shallow-test `prefix` and missing `$route`
+The initial migration's 647 kB main-chunk warning was resolved by the bundle
+optimization below. Existing shallow-test `prefix` and missing `$route`
 warnings remain test-harness debt. Optional native-package install-script notices
 are distinct from security audit findings; no blanket script approval was added.
 
@@ -101,3 +100,35 @@ References: [Vite guide](https://vite.dev/guide/),
 [Vite build configuration](https://vite.dev/config/build-options.html),
 [Vue Jest compatibility](https://github.com/vuejs/vue-jest), and
 [Vue ESLint flat configuration](https://eslint.vuejs.org/user-guide/).
+
+## Initial bundle optimization
+
+CreateCluster, ModifyCluster, and Projects now use lazy route imports. Their
+screen code and shared editor dependencies load when those routes are visited.
+Application Lodash imports now select individual functions (`cloneDeep`,
+`isEqual`, and `capitalize`) instead of importing from the full package entry.
+No dependency changes or manual vendor chunks were needed.
+
+Production builds with `--manifest` were compared before and after. Initial
+JavaScript includes the entry and its recursively resolved static imports;
+deferred dynamic imports are excluded. Both builds have one initial JS file.
+Sizes below use decimal kB; initial gzip values are Vite's reported values.
+
+| Measurement | Before | After |
+| --- | ---: | ---: |
+| Initial JavaScript, minified | 647.13 kB | 467.45 kB |
+| Initial JavaScript, gzip | 211.06 kB | 154.30 kB |
+| All route JavaScript combined, minified | 689.18 kB | 639.57 kB |
+| Largest JavaScript chunk | 647.13 kB | 467.45 kB |
+
+Initial JavaScript decreased by **27.8%**; total JavaScript decreased by **7.2%**.
+The production build no longer emits a chunk-size warning, with Vite's default
+500 kB threshold unchanged. CSS/global Vuetify registration was not optimized
+in this change. Loading another screen now requires its deferred chunks; these
+measurements do not establish browser navigation latency or rendering speed.
+
+Validation: production build, lint, whitespace checks, and **264 tests across
+38 suites** pass. Route tests now await navigation to all three newly lazy
+screens and verify their components resolve without invoking the benchmark
+permission API. Browser/Chromium testing remains excluded at the user's request.
+The earlier container image predates this bundle optimization.
