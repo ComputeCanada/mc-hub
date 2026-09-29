@@ -269,17 +269,16 @@
                   <v-col cols="12" sm="2" class="pt-0">
                     <v-text-field
                       v-model.number="localSpecs.volumes[tag][id].size"
+                      class="volume-size"
                       type="number"
                       label="size"
-                      prefix="GB"
+                      suffix="GB"
                       :rules="
                         isAWS
                           ? [greaterThanZeroRule, awsVolumeSizeRule]
                           : [volumeCountRule, volumeSizeRule, greaterThanZeroRule]
                       "
                       min="0"
-                      dir="rtl"
-                      reverse
                       :readonly="stateful && id in (initialSpecs.volumes.nfs || {})"
                     />
                   </v-col>
@@ -1214,6 +1213,14 @@ export default {
 </script>
 
 <style scoped>
+.volume-size :deep(input) {
+  text-align: right;
+}
+.volume-size :deep(.v-field-label) {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  text-align: right;
+}
 .instance-row-scroll {
   container-type: inline-size;
 }
