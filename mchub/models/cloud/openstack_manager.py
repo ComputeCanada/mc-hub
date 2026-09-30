@@ -19,7 +19,7 @@ VALID_IMAGES_REGEX_ARRAY = [
 MINIMUM_ROOT_DISK_SIZE = 10
 
 TAG_MINIMUM_REQUIREMENTS = {
-    "mgmt": {"ram": 6144, "vcpus": 2},
+    "mgmt": {"ram": 8000, "vcpus": 2},
     "login": {"ram": 2048, "vcpus": 2},
     "node": {"ram": 2048, "vcpus": 1},
 }
