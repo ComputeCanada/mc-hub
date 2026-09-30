@@ -1,4 +1,5 @@
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import OpenStackCloud from "@/components/ui/OpenStackCloud";
 import OpenStackCredentials from "@/components/ui/OpenStackCredentials";
 import CloudProviderInput from "@/components/ui/CloudProviderInput";
@@ -7,7 +8,7 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 
 jest.mock("@/repositories/ProjectRepository", () => ({ openstackClouds: jest.fn() }));
 const clouds = [{ name: "Research Cloud", auth_url: "https://cloud.example.org/v3" }];
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const settle = flushPromises;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -15,34 +16,37 @@ beforeEach(() => {
 });
 
 test("shows cloud names and emits the approved URL", async () => {
-  const wrapper = shallowMount(OpenStackCloud, { stubs: ["v-select"] });
+  const wrapper = shallowMount(OpenStackCloud, { global: { renderStubDefaultSlot: true } });
   await settle();
-  const select = wrapper.find("v-select-stub");
-  expect(select.attributes("item-text")).toBe("name");
-  expect(select.attributes("item-value")).toBe("auth_url");
+  const select = wrapper.findComponent("v-select-stub");
+  expect(select.props("itemTitle")).toBe("name");
+  expect(select.props("itemValue")).toBe("auth_url");
   expect(wrapper.vm.clouds).toEqual(clouds);
-  select.vm.$emit("change", clouds[0].auth_url);
-  expect(wrapper.emitted("input")[0]).toEqual([clouds[0].auth_url]);
+  await select.setValue(clouds[0].auth_url);
+  expect(wrapper.emitted("update:modelValue")[0]).toEqual([clouds[0].auth_url]);
 });
 
 test("does not display an arbitrary URL as the selected cloud", async () => {
-  const wrapper = shallowMount(OpenStackCloud, { propsData: { value: "https://unapproved.example.org" } });
+  const wrapper = shallowMount(OpenStackCloud, {
+    props: { modelValue: "https://unapproved.example.org" },
+    global: { renderStubDefaultSlot: true },
+  });
   await settle();
   expect(wrapper.vm.selectedValue).toBeNull();
-  await wrapper.setProps({ value: clouds[0].auth_url });
+  await wrapper.setProps({ modelValue: clouds[0].auth_url });
   expect(wrapper.vm.selectedValue).toBe(clouds[0].auth_url);
 });
 
 test("explains an empty operator list", async () => {
   ProjectRepository.openstackClouds.mockResolvedValue({ data: { clouds: [] } });
-  const wrapper = shallowMount(OpenStackCloud);
+  const wrapper = shallowMount(OpenStackCloud, { global: { renderStubDefaultSlot: true } });
   await settle();
   expect(wrapper.text()).toContain("No OpenStack clouds are available");
 });
 
 test("can retry after a list-loading failure", async () => {
   ProjectRepository.openstackClouds.mockRejectedValueOnce(new Error("offline"));
-  const wrapper = shallowMount(OpenStackCloud);
+  const wrapper = shallowMount(OpenStackCloud, { global: { renderStubDefaultSlot: true } });
   await settle();
   expect(wrapper.text()).toContain("Unable to load approved OpenStack clouds");
   await wrapper.vm.loadClouds();
@@ -51,18 +55,21 @@ test("can retry after a list-loading failure", async () => {
 });
 
 test("creation selects a cloud while editing displays its name read-only", async () => {
-  const create = shallowMount(CloudProviderInput, { stubs: { OpenStackCredentials } });
+  const create = shallowMount(CloudProviderInput, {
+    global: { renderStubDefaultSlot: true, stubs: { OpenStackCredentials } },
+  });
   expect(create.findComponent(OpenStackCloud).exists()).toBe(true);
   expect(create.find('[label="OS_AUTH_URL"]').exists()).toBe(false);
   const edit = shallowMount(ProjectEditor, {
-    propsData: { id: 1, admin: true },
-    stubs: { OpenStackCredentials },
+    props: { id: 1, admin: true },
+    global: { renderStubDefaultSlot: true, stubs: { OpenStackCredentials } },
   });
   await edit.setData({ project: { provider: "openstack", cloud_name: "Research Cloud" } });
   expect(edit.findComponent(OpenStackCloud).exists()).toBe(false);
   expect(edit.findComponent(OpenStackCredentials).props("cloudName")).toBe("Research Cloud");
-  const cloud = edit.find('[label="OpenStack cloud"]');
-  expect(cloud.attributes("value")).toBe("Research Cloud");
+  const cloud = edit.findComponent('[label="OpenStack cloud"]');
+  expect(cloud.props("modelValue")).toBe("Research Cloud");
   expect(cloud.attributes("readonly")).toBeDefined();
   expect(edit.find('[label="OS_AUTH_URL"]').exists()).toBe(false);
 });
+afterEach(cleanupMounts);

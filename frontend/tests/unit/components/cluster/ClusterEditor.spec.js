@@ -1,19 +1,8 @@
+import { mountWithVuetify as mount, cleanupMounts } from "../../../helpers/mount";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
-import { mount, createLocalVue } from "@vue/test-utils";
-import UnloadConfirmation from "@/plugins/UnloadConfirmation";
-import Vuetify from "vuetify";
-import Vue from "vue";
-import router from "@/router";
 import { cloneDeep } from "lodash";
 import moxios from "moxios";
 import Repository from "@/repositories/Repository";
-
-Vue.use(Vuetify);
-
-const localVue = createLocalVue();
-const vuetify = new Vuetify();
-localVue.use(Vuetify);
-localVue.use(UnloadConfirmation, { router });
 
 const DEFAULT_USER = Object.freeze({
   public_keys: [],
@@ -83,15 +72,13 @@ const DEFAULT_RESOURCE_DETAILS = Object.freeze({
 
 async function getDefaultClusterEditorWrapper(existingCluster = true, hostname = "test1.magic-castle.cloud") {
   let wrapper = mount(ClusterEditor, {
-    localVue,
-    router,
-    vuetify,
-    propsData: {
+    props: {
       specs: cloneDeep(DEFAULT_MAGIC_CASTLE),
       existingCluster: existingCluster,
       hostname: hostname,
       stateful: true,
     },
+    global: { mocks: { $enableUnloadConfirmation: jest.fn(), $disableUnloadConfirmation: jest.fn() } },
   });
   await wrapper.vm.promise;
   return wrapper;
@@ -147,7 +134,7 @@ describe("ClusterEditor", () => {
       expect(errors).not.toHaveBeenCalled();
     } finally {
       errors.mockRestore();
-      wrapper.destroy();
+      wrapper.unmount();
     }
   });
 
@@ -160,11 +147,11 @@ describe("ClusterEditor", () => {
     expect(mgmt.attributes("aria-expanded")).toBe("true");
     const settings = wrapper
       .findAllComponents({ name: "InstanceSettings" })
-      .wrappers.find((component) => component.props("name") === "mgmt");
+      .find((component) => component.props("name") === "mgmt");
     const disk = settings
       .findAllComponents({ name: "v-text-field" })
-      .wrappers.find((component) => component.props("label") === "Root disk size");
-    disk.vm.$emit("input", "100");
+      .find((component) => component.props("label") === "Root disk size");
+    await disk.setValue("100");
     await login.trigger("click");
     expect(mgmt.attributes("aria-expanded")).toBe("false");
     expect(login.attributes("aria-expanded")).toBe("true");
@@ -172,7 +159,7 @@ describe("ClusterEditor", () => {
     expect(wrapper.text()).toContain("1 set");
     await login.trigger("click");
     expect(login.attributes("aria-expanded")).toBe("false");
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("detects GPU types using cloud metadata or the OpenStack flavor name", () => {
@@ -219,10 +206,8 @@ describe("ClusterEditor", () => {
     await wrapper.setProps({ benchmarkMode: true, identityLocked: true });
     const name = wrapper
       .findAllComponents({ name: "v-text-field" })
-      .wrappers.find((field) => field.props("label") === "Cluster name");
-    const domain = wrapper
-      .findAllComponents({ name: "v-select" })
-      .wrappers.find((field) => field.props("label") === "Domain");
+      .find((field) => field.props("label") === "Cluster name");
+    const domain = wrapper.findAllComponents({ name: "v-select" }).find((field) => field.props("label") === "Domain");
     expect(name.props("readonly")).toBe(true);
     expect(domain.props("readonly")).toBe(true);
     const remaining = 63 - `.int.${wrapper.vm.specs.domain}`.length;
@@ -236,21 +221,19 @@ describe("ClusterEditor", () => {
     wrapper.vm.specs.cluster_name += "b";
     await wrapper.vm.$nextTick();
     expect(name.props("rules")).toContain("Cluster name + .int. + domain must be at most 63 characters.");
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("defaults to the first vetted Magic Castle version", async () => {
     const specs = cloneDeep(DEFAULT_MAGIC_CASTLE);
     specs.mc_version = null;
     const wrapper = mount(ClusterEditor, {
-      localVue,
-      router,
-      vuetify,
-      propsData: {
+      props: {
         specs,
         existingCluster: false,
         stateful: true,
       },
+      global: { mocks: { $enableUnloadConfirmation: jest.fn(), $disableUnloadConfirmation: jest.fn() } },
     });
 
     await wrapper.vm.promise;
@@ -268,9 +251,9 @@ describe("ClusterEditor", () => {
 
     const versionSelect = wrapper
       .findAllComponents({ name: "v-select" })
-      .wrappers.find((select) => select.props("label") === "Magic Castle Version");
+      .find((select) => select.props("label") === "Magic Castle Version");
     expect(versionSelect).toBeDefined();
-    versionSelect.vm.$emit("input", "14.0.0");
+    await versionSelect.setValue("14.0.0");
     await wrapper.vm.$nextTick();
 
     expect(wrapper.vm.specs.mc_version).toBe("14.0.0");
@@ -282,7 +265,7 @@ describe("ClusterEditor", () => {
 
     const versionSelect = wrapper
       .findAllComponents({ name: "v-select" })
-      .wrappers.find((select) => select.props("label") === "Magic Castle Version");
+      .find((select) => select.props("label") === "Magic Castle Version");
     expect(versionSelect).toBeUndefined();
     expect(wrapper.text()).toContain(DEFAULT_MAGIC_CASTLE.mc_version);
   });
@@ -341,3 +324,4 @@ describe("ClusterEditor", () => {
     expect(clusterEditorWrapper.vm.volumeSizeMax).toBe(490);
   });
 });
+afterEach(cleanupMounts);

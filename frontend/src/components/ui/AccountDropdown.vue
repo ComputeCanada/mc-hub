@@ -1,7 +1,7 @@
 <template>
-  <v-menu offset-y v-if="currentUser.username">
-    <template #activator="{ on, attrs }">
-      <v-btn v-bind="attrs" v-on="on" text>
+  <v-menu location="bottom" v-if="currentUser.username">
+    <template #activator="{ props }">
+      <v-btn v-bind="props" variant="text">
         <v-icon class="mr-4">mdi-account</v-icon>
         {{ currentUser.username }}
       </v-btn>
@@ -18,10 +18,10 @@
       <v-list-item v-if="currentUser.is_admin" to="/usage">
         <v-list-item-title><v-icon class="mr-4">mdi-chart-bar</v-icon>Service adoption</v-list-item-title>
       </v-list-item>
-      <v-list-item @click="projects">
+      <v-list-item to="/projects">
         <v-list-item-title> <v-icon class="mr-4">mdi-cloud-braces</v-icon>Projects </v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="currentUser.usertype == 'saml'" @click="logout">
+      <v-list-item v-if="currentUser.usertype == 'saml'" href="/Shibboleth.sso/Logout">
         <v-list-item-title> <v-icon class="mr-4">mdi-logout</v-icon>Logout </v-list-item-title>
       </v-list-item>
     </v-list>
@@ -40,14 +40,6 @@ export default {
   },
   async created() {
     this.currentUser = (await UserRepository.getCurrent()).data;
-  },
-  methods: {
-    projects() {
-      location.href = "/projects";
-    },
-    logout() {
-      location.href = "/Shibboleth.sso/Logout";
-    },
   },
 };
 </script>

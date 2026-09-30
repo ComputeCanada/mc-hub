@@ -3,21 +3,21 @@
     <div class="d-flex align-start">
       <v-select
         class="flex-grow-1"
-        :value="value.OS_SUBNET_ID"
+        :model-value="modelValue.OS_SUBNET_ID"
         :items="subnetItems"
-        item-text="name"
+        item-title="name"
         item-value="id"
         label="OpenStack subnet"
         :disabled="loading"
         hint="All clusters in this project use this subnet"
         persistent-hint
-        @change="setSubnet"
+        @update:model-value="setSubnet"
       />
-      <v-btn class="ml-2 mt-4 flex-shrink-0" text :loading="loading" :disabled="loading" @click="loadSubnets"
+      <v-btn class="ml-2 mt-4 flex-shrink-0" variant="text" :loading="loading" :disabled="loading" @click="loadSubnets"
         >refresh</v-btn
       >
     </div>
-    <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
+    <v-alert v-if="error" type="error" density="compact">{{ error }}</v-alert>
   </div>
 </template>
 
@@ -26,7 +26,8 @@ import ProjectRepository from "@/repositories/ProjectRepository";
 
 export default {
   name: "OpenStackSubnet",
-  props: { value: { type: Object, required: true }, projectId: Number },
+  emits: ["update:modelValue"],
+  props: { modelValue: { type: Object, required: true }, projectId: Number },
   data() {
     return { subnets: [], loading: false, error: "", requestId: 0 };
   },
@@ -35,7 +36,7 @@ export default {
   },
   computed: {
     subnetItems() {
-      const selected = this.value.OS_SUBNET_ID;
+      const selected = this.modelValue.OS_SUBNET_ID;
       if (this.projectId && selected && !this.subnets.some((subnet) => subnet.id === selected)) {
         return [{ id: selected, name: selected }, ...this.subnets];
       }
@@ -43,9 +44,9 @@ export default {
     },
     credentials() {
       return JSON.stringify([
-        this.value.OS_AUTH_URL,
-        this.value.OS_APPLICATION_CREDENTIAL_ID,
-        this.value.OS_APPLICATION_CREDENTIAL_SECRET,
+        this.modelValue.OS_AUTH_URL,
+        this.modelValue.OS_APPLICATION_CREDENTIAL_ID,
+        this.modelValue.OS_APPLICATION_CREDENTIAL_SECRET,
       ]);
     },
   },
@@ -56,26 +57,29 @@ export default {
       this.subnets = [];
       this.error = "";
       if (this.projectId) return;
-      const env = { ...this.value };
+      const env = { ...this.modelValue };
       delete env.OS_SUBNET_ID;
-      this.$emit("input", env);
+      this.$emit("update:modelValue", env);
     },
+  },
+  beforeUnmount() {
+    this.requestId++;
   },
   methods: {
     setSubnet(subnet) {
-      this.$emit("input", { ...this.value, OS_SUBNET_ID: subnet });
+      this.$emit("update:modelValue", { ...this.modelValue, OS_SUBNET_ID: subnet });
     },
     async loadSubnets() {
       const id = ++this.requestId;
       this.loading = true;
       this.error = "";
       try {
-        const payload = { env: this.value };
+        const payload = { env: this.modelValue };
         if (this.projectId) payload.project_id = this.projectId;
         const response = await ProjectRepository.openstackSubnets(payload);
         if (id === this.requestId) {
           this.subnets = response.data.subnets;
-          if (!this.projectId && !this.subnets.some((subnet) => subnet.id === this.value.OS_SUBNET_ID)) {
+          if (!this.projectId && !this.subnets.some((subnet) => subnet.id === this.modelValue.OS_SUBNET_ID)) {
             this.setSubnet(undefined);
           }
         }

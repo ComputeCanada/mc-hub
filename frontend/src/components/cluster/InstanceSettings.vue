@@ -1,10 +1,10 @@
 <template>
-  <v-sheet outlined rounded class="pa-4 mb-4">
+  <v-sheet border rounded class="pa-4 mb-4">
     <h3>Optional settings for {{ name }}</h3>
-    <p class="text--secondary">
+    <p class="text-medium-emphasis">
       Applies to all {{ instance.count }} instances. Clear a field to use its inherited or automatic value.
     </p>
-    <v-alert v-if="provider === 'aws'" type="info" dense>
+    <v-alert v-if="provider === 'aws'" type="info" density="compact">
       AWS feasibility checks currently reject instance overrides. Clear optional settings before saving an AWS cluster.
     </v-alert>
     <section v-for="section in sections" :key="section.title">
@@ -13,33 +13,33 @@
         <v-col v-for="field in section.fields" :key="field.key" cols="12" :sm="field.fullWidth ? 12 : 6">
           <v-combobox
             v-if="field.kind === 'list'"
-            :value="instance[field.key] || []"
+            :model-value="instance[field.key] || []"
             :label="field.label"
             multiple
             chips
-            deletable-chips
+            closable-chips
             clearable
-            @input="set(field.key, $event)"
+            @update:model-value="set(field.key, $event)"
           />
           <v-select
             v-else-if="field.options"
-            :value="instance[field.key]"
+            :model-value="instance[field.key]"
             :items="field.options"
             :label="field.label"
             clearable
             :placeholder="field.key === 'image' ? 'Use global image' : 'Automatic'"
-            @change="set(field.key, $event)"
+            @update:model-value="set(field.key, $event)"
           />
           <mig-profiles-editor
             v-else-if="field.kind === 'mig'"
-            :value="instance.mig"
+            :model-value="instance.mig"
             :additional-profiles="additionalMigProfiles"
-            @input="set('mig', Object.keys($event).length ? $event : null)"
+            @update:model-value="set('mig', Object.keys($event).length ? $event : null)"
             @invalid="migInvalid = $event"
           />
           <v-text-field
             v-else
-            :value="instance[field.key]"
+            :model-value="instance[field.key]"
             :label="field.label"
             :suffix="field.unit"
             :type="field.kind === 'number' ? 'number' : 'text'"
@@ -49,7 +49,7 @@
             persistent-hint
             clearable
             :rules="field.kind === 'number' ? [numberRule(field)] : []"
-            @input="set(field.key, $event, field.kind)"
+            @update:model-value="set(field.key, $event, field.kind)"
           />
         </v-col>
       </v-row>
@@ -63,6 +63,7 @@ import MigProfilesEditor from "./MigProfilesEditor";
 const number = (key, label, unit, min = 0) => ({ key, label, unit, min, kind: "number" });
 export default {
   name: "InstanceSettings",
+  emits: ["update:instance", "invalid"],
   components: { MigProfilesEditor },
   props: {
     instance: { type: Object, required: true },
@@ -132,8 +133,8 @@ export default {
             key: "wait_for_fulfillment",
             label: "Wait for fulfillment",
             options: [
-              { text: "Yes", value: true },
-              { text: "No", value: false },
+              { title: "Yes", value: true },
+              { title: "No", value: false },
             ],
           },
           { key: "spot_type", label: "Spot request type", options: ["one-time", "persistent"] },
@@ -157,8 +158,10 @@ export default {
   },
   methods: {
     set(key, value, kind) {
-      if (value === "" || value == null || (Array.isArray(value) && !value.length)) this.$delete(this.instance, key);
-      else this.$set(this.instance, key, kind === "number" ? Number(value) : value);
+      const instance = { ...this.instance };
+      if (value === "" || value == null || (Array.isArray(value) && !value.length)) delete instance[key];
+      else instance[key] = kind === "number" ? Number(value) : value;
+      this.$emit("update:instance", instance);
     },
     numberRule(field) {
       return (value) =>

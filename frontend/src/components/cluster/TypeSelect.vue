@@ -1,18 +1,21 @@
 <template>
   <v-select
     :items="items"
-    v-model="selected"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+    item-title="text"
+    item-value="value"
+    :item-props="itemProps"
     :label="types.some((type) => type.quota_pool) ? 'Instance type' : 'type'"
     :rules="rules"
     :loading="loading"
     :disabled="loading"
     :no-data-text="loading ? 'Loading instance types…' : 'No instance types available for this definition'"
   >
-    <template #item="{ item }">
-      <v-list-item-content v-if="typeof item !== 'undefined'">
-        <v-list-item-title>{{ item.text }}</v-list-item-title>
-        <v-list-item-subtitle>{{ item.description }}</v-list-item-subtitle>
-      </v-list-item-content>
+    <template #item="{ item, props }">
+      <v-divider v-if="item.raw.divider" />
+      <v-list-subheader v-else-if="item.raw.header">{{ item.raw.header }}</v-list-subheader>
+      <v-list-item v-else v-bind="props" :subtitle="item.raw.description" />
     </template>
   </v-select>
 </template>
@@ -42,9 +45,10 @@ const TYPE_CATEGORIES = [
 ];
 export default {
   name: "TypeSelect",
+  emits: ["update:modelValue"],
   props: {
     loading: { type: Boolean, default: false },
-    value: {
+    modelValue: {
       type: String,
     },
     types: {
@@ -54,19 +58,6 @@ export default {
     rules: {
       type: Array,
       default: () => [],
-    },
-  },
-  data() {
-    return {
-      selected: this.value,
-    };
-  },
-  watch: {
-    selected: function (newValue) {
-      this.$emit("input", newValue);
-    },
-    value: function (newValue) {
-      this.selected = newValue;
     },
   },
   computed: {
@@ -97,6 +88,7 @@ export default {
             types.map((type) => {
               return {
                 text: type.name,
+                value: type.name,
                 description: this.getTypeDescription(type),
               };
             })
@@ -116,6 +108,7 @@ export default {
           otherTypes.map((type) => {
             return {
               text: type.name,
+              value: type.name,
               description: this.getTypeDescription(type),
             };
           })
@@ -125,6 +118,9 @@ export default {
     },
   },
   methods: {
+    itemProps(item) {
+      return { disabled: !!(item.disabled || item.header || item.divider) };
+    },
     getTypeDescription(typeObj) {
       if (typeObj.quota_pool) {
         const details = [`${typeObj.vcpus} vCPU`, `${typeObj.ram / 1024} GiB RAM`];

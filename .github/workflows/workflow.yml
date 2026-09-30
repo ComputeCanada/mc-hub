@@ -2,6 +2,7 @@ name: Build, test and deploy
 
 on:
   push:
+  pull_request:
 
 env:
   IMAGE_NAME: "cmdntrf/mc-hub"
@@ -9,13 +10,33 @@ env:
 jobs:
   frontend:
     runs-on: ubuntu-24.04
-    name: Test frontend
+    name: Validate frontend
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Install NPM dependencies
-        run: (cd frontend && npm ci)
+        run: npm ci
+      - name: Lint frontend and browser checks
+        run: |
+          npm run lint -- --no-fix
+          npx eslint tests/browser/smoke.cjs
       - name: Run frontend unit tests
-        run: (cd frontend && npm run test:unit)
+        run: npm run test:unit -- --runInBand
+      - name: Build production frontend
+        run: npm run build
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run production browser checks
+        run: npm run test:browser
   backend:
     runs-on: ubuntu-24.04
     name: Test backend
@@ -36,6 +57,7 @@ jobs:
           export MAGIC_CASTLE_PATH=$PWD/magic_castle
           uv run pytest ../
   container:
+    needs: [frontend, backend]
     runs-on: ubuntu-24.04
     name: Build container
     steps:

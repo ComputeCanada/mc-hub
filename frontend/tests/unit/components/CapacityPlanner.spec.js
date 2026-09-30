@@ -1,27 +1,27 @@
-import Vue from "vue";
-import Vuetify from "vuetify";
-import { VDataTable } from "vuetify/lib";
-import { mount, shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { mountWithVuetify as mount, shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../helpers/mount";
+import { VDataTable } from "vuetify/components/VDataTable";
 import CapacityPlanner from "@/views/CapacityPlanner";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import Repository from "@/repositories/Repository";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import TemplateRepository from "@/repositories/TemplateRepository";
 
-Vue.use(Vuetify);
 jest.mock("@/repositories/Repository", () => ({ get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() }));
 jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn() }));
 jest.mock("@/repositories/TemplateRepository", () => ({ get: jest.fn() }));
-const flush = () => new Promise(jest.requireActual("timers").setImmediate);
+const flush = flushPromises;
 let wrapper;
 beforeEach(() => {
   jest.clearAllMocks();
   ProjectRepository.getAll.mockResolvedValue({ data: [{ id: 1, name: "Project" }] });
   Repository.get.mockResolvedValue({ data: { plans: [], forecast: null } });
   TemplateRepository.get.mockResolvedValue({ data: { cloud: { id: 1 }, cluster_name: "example" } });
-  wrapper = shallowMount(CapacityPlanner, { mocks: { $route: { query: {} } } });
+  wrapper = shallowMount(CapacityPlanner, {
+    global: { renderStubDefaultSlot: true, mocks: { $route: { query: {} } } },
+  });
 });
-afterEach(() => wrapper.destroy());
+afterEach(() => wrapper.unmount());
 
 async function fillForm() {
   await flush();
@@ -113,6 +113,7 @@ test("planning does not let current quota block submission", () => {
 
 test("a prefilled manual cluster can be submitted without changing its resources", () => {
   const enabled = ClusterEditor.computed.applyButtonEnabled.call({
+    instanceSettingsErrors: {},
     loading: false,
     validForm: true,
     plannerMode: false,
@@ -136,28 +137,27 @@ test("upcoming resource columns sort numeric totals, including GPUs and AWS pool
       ],
     },
   });
-  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.key === key);
-  expect(wrapper.vm.headers.some((h) => h.value === "demand")).toBe(false);
+  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.resourceKey === key);
+  expect(wrapper.vm.headers.some((h) => h.key === "demand")).toBe(false);
   const table = mount(VDataTable, {
-    vuetify: new Vuetify(),
-    propsData: {
+    props: {
       headers: wrapper.vm.headers,
       items: wrapper.vm.planRows,
-      sortBy: column("gpus").value,
+      sortBy: [{ key: column("gpus").key, order: "asc" }],
       itemsPerPage: -1,
     },
   });
   try {
-    const names = () => table.findAll("tbody tr").wrappers.map((row) => row.find("td").text());
+    const names = () => table.findAll("tbody tr").map((row) => row.find("td").text());
     expect(names()).toEqual(["Two GPUs", "Ten GPUs"]);
-    await table.setProps({ sortBy: column("vcpus").value });
+    await table.setProps({ sortBy: [{ key: column("vcpus").key, order: "asc" }] });
     expect(names()).toEqual(["Ten GPUs", "Two GPUs"]);
-    await table.setProps({ sortBy: column("Standard (A, C, D, H, I, M, R, T, Z)").value });
+    await table.setProps({ sortBy: [{ key: column("Standard (A, C, D, H, I, M, R, T, Z)").key, order: "asc" }] });
     expect(names()).toEqual(["Two GPUs", "Ten GPUs"]);
-    await table.setProps({ sortDesc: true });
+    await table.setProps({ sortBy: [{ ...table.props("sortBy")[0], order: "desc" }] });
     expect(names()).toEqual(["Ten GPUs", "Two GPUs"]);
   } finally {
-    table.destroy();
+    table.unmount();
   }
 });
 
@@ -176,31 +176,30 @@ test("future demand columns sort GPU and RAM totals numerically, including empty
       },
     },
   });
-  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.key === key);
-  expect(column("ram").text).toBe("RAM (GiB)");
-  expect(wrapper.vm.forecastRows.map((row) => row[column("ram").value])).toEqual([2, 10, 0]);
+  const column = (key) => wrapper.vm.resourceColumns.find((c) => c.resourceKey === key);
+  expect(column("ram").title).toBe("RAM (GiB)");
+  expect(wrapper.vm.forecastRows.map((row) => row[column("ram").key])).toEqual([2, 10, 0]);
   expect(wrapper.vm.resources({ ram: 1536 })).toBe("RAM (GiB): 1.5");
   const table = mount(VDataTable, {
-    vuetify: new Vuetify(),
-    propsData: {
+    props: {
       headers: wrapper.vm.forecastHeaders,
       items: wrapper.vm.forecastRows,
-      itemKey: "starts_at",
-      sortBy: column("gpus").value,
+      itemValue: "starts_at",
+      sortBy: [{ key: column("gpus").key, order: "asc" }],
       itemsPerPage: -1,
     },
   });
   try {
-    const days = () => table.findAll("tbody tr").wrappers.map((row) => row.find("td").text().slice(8, 10));
+    const days = () => table.findAll("tbody tr").map((row) => row.find("td").text().slice(8, 10));
     expect(days()).toEqual(["03", "02", "01"]);
-    await table.setProps({ sortBy: column("ram").value });
+    await table.setProps({ sortBy: [{ key: column("ram").key, order: "asc" }] });
     expect(days()).toEqual(["03", "01", "02"]);
-    await table.setProps({ sortDesc: true });
+    await table.setProps({ sortBy: [{ ...table.props("sortBy")[0], order: "desc" }] });
     expect(days()).toEqual(["02", "01", "03"]);
-    await table.setProps({ sortBy: "starts_at", sortDesc: false });
+    await table.setProps({ sortBy: [{ key: "starts_at", order: "asc" }] });
     expect(days()).toEqual(["01", "02", "03"]);
   } finally {
-    table.destroy();
+    table.unmount();
   }
 });
 
@@ -254,3 +253,4 @@ test("planner displays the day-before shortage in GiB and explains when external
   expect(wrapper.text()).toContain("RAM (GiB): 2");
   expect(wrapper.text()).toContain("No notification destination is enabled for this project");
 });
+afterEach(cleanupMounts);

@@ -1,61 +1,57 @@
-import Vue from "vue";
-import Vuetify from "vuetify";
-import { shallowMount } from "@vue/test-utils";
-import App from "@/App";
 import ProjectRepository from "@/repositories/ProjectRepository";
 import { benchmarkAccess, refreshBenchmarkAccess, guardBenchmarkAccess } from "@/services/benchmarkAccess";
 
-Vue.use(Vuetify);
 jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn() }));
-const flush = () => new Promise(jest.requireActual("timers").setImmediate);
 const route = { matched: [{ meta: { requiresProjectAdmin: true } }] };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  ProjectRepository.getAll.mockReset();
   benchmarkAccess.allowed = false;
 });
 
 test.each([[], [{ admin: false }], [{ admin: false }, { admin: false }]].map((projects) => [projects]))(
-  "users without an administered project cannot navigate to benchmarks or see its button: %j",
+  "users without an administered project cannot navigate to benchmarks: %j",
   async (projects) => {
     ProjectRepository.getAll.mockResolvedValue({ data: projects });
-    const wrapper = shallowMount(App, { mocks: { $route: {} }, stubs: ["router-view"] });
-    await flush();
-    expect(wrapper.find('[to="/benchmarks"]').exists()).toBe(false);
-    const next = jest.fn();
-    await guardBenchmarkAccess(route, {}, next);
-    expect(next).toHaveBeenCalledWith({ path: "/", replace: true });
-    wrapper.destroy();
+    await expect(guardBenchmarkAccess(route)).resolves.toEqual({ path: "/", replace: true });
+    expect(benchmarkAccess.allowed).toBe(false);
   }
 );
 
-test("one administered project enables navigation and the top-bar button", async () => {
+test("one administered project enables access, and revocation clears it", async () => {
   ProjectRepository.getAll.mockResolvedValue({ data: [{ admin: false }, { admin: true }] });
-  const wrapper = shallowMount(App, { mocks: { $route: {} }, stubs: ["router-view"] });
-  await flush();
-  expect(wrapper.find('[to="/benchmarks"]').exists()).toBe(true);
-  const next = jest.fn();
-  await guardBenchmarkAccess(route, {}, next);
-  expect(next).toHaveBeenCalledWith();
+  await expect(guardBenchmarkAccess(route)).resolves.toBe(true);
+  expect(benchmarkAccess.allowed).toBe(true);
   ProjectRepository.getAll.mockResolvedValue({ data: [{ admin: false }] });
   await refreshBenchmarkAccess();
-  await wrapper.vm.$nextTick();
-  expect(wrapper.find('[to="/benchmarks"]').exists()).toBe(false);
-  wrapper.destroy();
+  expect(benchmarkAccess.allowed).toBe(false);
 });
 
-test("permission lookup failures deny access and clear previously granted navigation", async () => {
+test("permission failures deny access and allow a later retry", async () => {
   benchmarkAccess.allowed = true;
-  ProjectRepository.getAll.mockRejectedValue(new Error("Unavailable"));
-  const next = jest.fn();
-  await guardBenchmarkAccess(route, {}, next);
+  ProjectRepository.getAll.mockRejectedValueOnce(new Error("Unavailable"));
+  await expect(guardBenchmarkAccess(route)).resolves.toEqual({ path: "/", replace: true });
   expect(benchmarkAccess.allowed).toBe(false);
-  expect(next).toHaveBeenCalledWith({ path: "/", replace: true });
+  ProjectRepository.getAll.mockResolvedValue({ data: [{ admin: true }] });
+  await expect(refreshBenchmarkAccess()).resolves.toBe(true);
+  expect(ProjectRepository.getAll).toHaveBeenCalledTimes(2);
 });
 
 test("ordinary routes do not require a project administrator role", async () => {
-  const next = jest.fn();
-  await guardBenchmarkAccess({ matched: [{ meta: {} }] }, {}, next);
-  expect(next).toHaveBeenCalledWith();
+  await expect(guardBenchmarkAccess({ matched: [{ meta: {} }] })).resolves.toBe(true);
   expect(ProjectRepository.getAll).not.toHaveBeenCalled();
+});
+
+test("guard and shell refreshes share an in-flight request, then permit another refresh", async () => {
+  let resolve;
+  ProjectRepository.getAll.mockReturnValue(new Promise((done) => (resolve = done)));
+  const navigation = guardBenchmarkAccess(route);
+  const refresh = refreshBenchmarkAccess();
+  expect(ProjectRepository.getAll).toHaveBeenCalledTimes(1);
+  resolve({ data: [{ admin: true }] });
+  await expect(navigation).resolves.toBe(true);
+  await expect(refresh).resolves.toBe(true);
+  ProjectRepository.getAll.mockResolvedValue({ data: [] });
+  await expect(refreshBenchmarkAccess()).resolves.toBe(false);
+  expect(ProjectRepository.getAll).toHaveBeenCalledTimes(2);
 });

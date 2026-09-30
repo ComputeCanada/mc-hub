@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialog" max-width="500px">
-    <template v-slot:activator="{ on, attrs }">
-      <v-btn color="primary" dark class="mb-2" v-bind="attrs" v-on="on"> Add Project </v-btn>
+    <template v-slot:activator="{ props }">
+      <v-btn color="primary" class="mb-2" v-bind="props"> Add Project </v-btn>
     </template>
     <message-dialog v-model="errorDialog" type="error">{{ errorMessage }}</message-dialog>
     <v-card>
@@ -34,10 +34,10 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="blue darken-1" text @click="close"> Cancel </v-btn>
+        <v-btn color="blue-darken-1" variant="text" @click="close"> Cancel </v-btn>
         <v-btn
-          color="blue darken-1"
-          text
+          color="blue-darken-1"
+          variant="text"
           @click="add"
           :loading="saving"
           :disabled="

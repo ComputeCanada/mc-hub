@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :value="value" @input="input" max-width="400" :persistent="persistent">
+  <v-dialog :model-value="modelValue" @update:model-value="input" max-width="400" :persistent="persistent">
     <v-card :loading="loading">
       <v-card-title v-if="type === 'success'">Success</v-card-title>
       <v-card-title v-else-if="type === 'loading'">Loading</v-card-title>
@@ -10,7 +10,7 @@
       <v-divider></v-divider>
       <v-card-actions v-if="!noClose">
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="close">Close</v-btn>
+        <v-btn color="primary" variant="text" @click="close">Close</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -19,8 +19,9 @@
 <script>
 export default {
   name: "MessageDialog",
+  emits: ["update:modelValue"],
   props: {
-    value: {
+    modelValue: {
       type: Boolean,
       required: true,
     },
@@ -46,13 +47,13 @@ export default {
   },
   methods: {
     close() {
-      this.$emit("input", false);
+      this.$emit("update:modelValue", false);
       if (this.callback != null) {
         this.callback();
       }
     },
     input(value) {
-      this.$emit("input", value);
+      this.$emit("update:modelValue", value);
     },
   },
 };

@@ -1,10 +1,10 @@
-import { shallowMount } from "@vue/test-utils";
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../../helpers/mount";
 import ClusterFailure from "@/components/cluster/ClusterFailure";
 
 const mountFailure = (props = {}) =>
   shallowMount(ClusterFailure, {
-    propsData: { hostname: "cluster.example", status: "build_error", ...props },
-    stubs: ["v-alert", "v-btn"],
+    props: { hostname: "cluster.example", status: "build_error", ...props },
+    global: { renderStubDefaultSlot: true, stubs: ["v-alert", "v-btn"] },
   });
 
 describe("ClusterFailure", () => {
@@ -15,9 +15,9 @@ describe("ClusterFailure", () => {
     expect(wrapper.text()).toContain("Some changes may already have completed");
     expect(wrapper.text()).toContain("Review a new plan");
     expect(wrapper.find("script").exists()).toBe(false);
-    wrapper.find("v-btn-stub").vm.$emit("click");
+    wrapper.findComponent("v-btn-stub").vm.$emit("click");
     expect(wrapper.emitted("retry")).toHaveLength(1);
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it("does not recommend retry for other failures or previous attempts", () => {
@@ -26,8 +26,8 @@ describe("ClusterFailure", () => {
     const previous = mountFailure({ previous: true, failure: { diagnostic: "Error: timeout", timeout: true } });
     expect(previous.text()).toContain("Previous attempt failed");
     expect(previous.text()).not.toContain("Review a new plan");
-    generic.destroy();
-    previous.destroy();
+    generic.unmount();
+    previous.unmount();
   });
 
   it("provides a fallback and copies the run reference with diagnostics", async () => {
@@ -38,6 +38,7 @@ describe("ClusterFailure", () => {
     await wrapper.vm.copy();
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("run-123"));
     expect(wrapper.text()).toContain("Details copied");
-    wrapper.destroy();
+    wrapper.unmount();
   });
 });
+afterEach(cleanupMounts);

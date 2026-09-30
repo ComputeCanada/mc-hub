@@ -1,10 +1,10 @@
 <template>
   <div class="text-center d-flex flex-column align-center">
     {{ title }}
-    <v-progress-circular :color="usageColor" :value="usagePercentage" :size="60" :width="5"
+    <v-progress-circular :color="usageColor" :model-value="usagePercentage" :size="60" :width="5"
       >{{ usagePercentage }} %
     </v-progress-circular>
-    <span class="grey--text mt-2">{{ formattedUsed }} {{ suffix }} / {{ formattedMax }} {{ suffix }}</span>
+    <span class="text-grey mt-2">{{ formattedUsed }} {{ suffix }} / {{ formattedMax }} {{ suffix }}</span>
   </div>
 </template>
 

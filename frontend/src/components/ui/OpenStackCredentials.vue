@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-text-field v-if="projectId" :value="cloudName || 'Unknown cloud'" label="OpenStack cloud" readonly />
+    <v-text-field v-if="projectId" :model-value="cloudName || 'Unknown cloud'" label="OpenStack cloud" readonly />
     <open-stack-cloud v-else v-model="authUrl" />
     <v-text-field
       v-model="credentialId"
@@ -9,7 +9,11 @@
       persistent-hint
     />
     <v-text-field v-model="credentialSecret" label="OpenStack application credential secret" type="password" />
-    <open-stack-subnet :value="value" :project-id="projectId" @input="$emit('input', $event)" />
+    <open-stack-subnet
+      :model-value="modelValue"
+      :project-id="projectId"
+      @update:model-value="$emit('update:modelValue', $event)"
+    />
   </div>
 </template>
 
@@ -19,31 +23,32 @@ import OpenStackSubnet from "@/components/ui/OpenStackSubnet";
 
 export default {
   name: "OpenStackCredentials",
+  emits: ["update:modelValue"],
   components: { OpenStackCloud, OpenStackSubnet },
-  props: { value: { type: Object, required: true }, projectId: Number, cloudName: String },
+  props: { modelValue: { type: Object, required: true }, projectId: Number, cloudName: String },
   computed: {
     authUrl: {
       get() {
-        return this.value.OS_AUTH_URL || "";
+        return this.modelValue.OS_AUTH_URL || "";
       },
       set(value) {
-        this.$emit("input", { ...this.value, OS_AUTH_URL: value });
+        this.$emit("update:modelValue", { ...this.modelValue, OS_AUTH_URL: value });
       },
     },
     credentialId: {
       get() {
-        return this.value.OS_APPLICATION_CREDENTIAL_ID || "";
+        return this.modelValue.OS_APPLICATION_CREDENTIAL_ID || "";
       },
       set(value) {
-        this.$emit("input", { ...this.value, OS_APPLICATION_CREDENTIAL_ID: value });
+        this.$emit("update:modelValue", { ...this.modelValue, OS_APPLICATION_CREDENTIAL_ID: value });
       },
     },
     credentialSecret: {
       get() {
-        return this.value.OS_APPLICATION_CREDENTIAL_SECRET || "";
+        return this.modelValue.OS_APPLICATION_CREDENTIAL_SECRET || "";
       },
       set(value) {
-        this.$emit("input", { ...this.value, OS_APPLICATION_CREDENTIAL_SECRET: value });
+        this.$emit("update:modelValue", { ...this.modelValue, OS_APPLICATION_CREDENTIAL_SECRET: value });
       },
     },
   },

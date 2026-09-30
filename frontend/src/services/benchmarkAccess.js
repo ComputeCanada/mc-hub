@@ -1,7 +1,7 @@
-import Vue from "vue";
+import { reactive } from "vue";
 import ProjectRepository from "@/repositories/ProjectRepository";
 
-export const benchmarkAccess = Vue.observable({ allowed: false });
+export const benchmarkAccess = reactive({ allowed: false });
 let pending = null;
 
 export function refreshBenchmarkAccess() {
@@ -22,8 +22,8 @@ export function refreshBenchmarkAccess() {
   return pending;
 }
 
-export async function guardBenchmarkAccess(to, from, next) {
-  if (!to.matched.some((route) => route.meta.requiresProjectAdmin)) return next();
-  if (await refreshBenchmarkAccess()) return next();
-  next({ path: "/", replace: true });
+export async function guardBenchmarkAccess(to) {
+  if (!to.matched.some((route) => route.meta.requiresProjectAdmin)) return true;
+  if (await refreshBenchmarkAccess()) return true;
+  return { path: "/", replace: true };
 }

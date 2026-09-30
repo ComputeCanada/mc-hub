@@ -12,16 +12,16 @@
     <v-card v-if="projects.length" class="pa-4 mb-4">
       <v-row
         ><v-col cols="12" sm="4"
-          ><v-select v-model="project" :items="projects" item-text="name" item-value="id" label="Project" clearable
+          ><v-select v-model="project" :items="projects" item-title="name" item-value="id" label="Project" clearable
         /></v-col>
         <v-col cols="12" sm="6"
           ><v-select
             v-model="selected"
             :items="visibleBenchmarks"
-            item-text="name"
+            item-title="name"
             item-value="id"
             label="Benchmark"
-            @change="loadReport"
+            @update:model-value="loadReport"
         /></v-col>
         <v-col cols="12" sm="2"><v-switch v-model="archived" label="Show archived" /></v-col
       ></v-row>
@@ -36,11 +36,11 @@
           {{ report.benchmark.timeout_minutes }} minutes
         </p>
         <p>Success criterion: {{ criterionLabel(report.benchmark.success_criterion) }}</p>
-        <v-alert v-if="report.benchmark.active_run" type="info" outlined
+        <v-alert v-if="report.benchmark.active_run" type="info" variant="outlined"
           >Current run: {{ report.benchmark.active_run }}. The next run is blocked until cleanup finishes.</v-alert
         >
         <template v-if="!report.benchmark.archived">
-          <v-alert v-if="report.benchmark.setup_status !== 'ready'" type="warning" outlined>
+          <v-alert v-if="report.benchmark.setup_status !== 'ready'" type="warning" variant="outlined">
             {{ report.benchmark.setup_error || "Repository and workspace setup is incomplete." }}
             Edit and save this benchmark to finish setup before running it.
           </v-alert>
@@ -51,11 +51,11 @@
             @click="runNow"
             >Run now</v-btn
           >
-          <v-btn class="mr-2" outlined :to="`/benchmarks/${selected}/edit`">Edit</v-btn>
-          <v-btn class="mr-2" outlined :disabled="busy" @click="toggleEnabled">{{
+          <v-btn class="mr-2" variant="outlined" :to="`/benchmarks/${selected}/edit`">Edit</v-btn>
+          <v-btn class="mr-2" variant="outlined" :disabled="busy" @click="toggleEnabled">{{
             report.benchmark.enabled ? "Pause schedule" : "Enable schedule"
           }}</v-btn>
-          <v-btn text color="error" :disabled="busy" @click="archive">Archive</v-btn>
+          <v-btn variant="text" color="error" :disabled="busy" @click="archive">Archive</v-btn>
         </template>
       </v-card>
       <v-select
@@ -130,10 +130,9 @@
         <v-data-table
           :headers="headers"
           :items="report.runs"
-          item-key="id"
+          item-value="id"
           show-expand
-          :sort-by="['requested_at']"
-          :sort-desc="[true]"
+          :sort-by="[{ key: 'requested_at', order: 'desc' }]"
         >
           <template v-slot:[`item.requested_at`]="{ item }">{{ timestamp(item.requested_at) }}</template>
           <template v-slot:[`item.duration_seconds`]="{ item }">{{ duration(item.duration_seconds) }}</template>
@@ -142,9 +141,13 @@
             <span :title="item.commit_sha">{{ item.commit_sha ? item.commit_sha.slice(0, 12) : "Unknown" }}</span>
           </template>
           <template v-slot:[`item.outcome`]="{ item }"
-            ><v-chip small :color="item.outcome === 'successful' ? 'success' : item.outcome ? 'error' : undefined">{{
-              item.outcome || (item.phase === "queued" ? (item.error ? "Postponed" : "Queued") : "In progress")
-            }}</v-chip></template
+            ><v-chip
+              size="small"
+              :color="item.outcome === 'successful' ? 'success' : item.outcome ? 'error' : undefined"
+              >{{
+                item.outcome || (item.phase === "queued" ? (item.error ? "Postponed" : "Queued") : "In progress")
+              }}</v-chip
+            ></template
           >
           <template v-slot:[`item.cleanup_at`]="{ item }">{{
             item.cleanup_at
@@ -155,40 +158,42 @@
               ? "Pending"
               : "Not started"
           }}</template>
-          <template #expanded-item="{ headers, item }"
-            ><td :colspan="headers.length" class="pa-4">
-              <v-alert
-                v-if="item.error"
-                class="benchmark-error"
-                :type="item.phase === 'queued' ? 'warning' : 'error'"
-                outlined
-                >{{ item.error }}</v-alert
-              >
-              <p v-if="item.phase === 'queued' && item.error">
-                Next status check: {{ timestamp(item.next_attempt_at) }}
-              </p>
-              <v-alert v-if="item.cleanup_error" type="warning" outlined>{{ item.cleanup_error }}</v-alert>
-              <p>Cluster: {{ item.hostname }} · Apply accepted: {{ timestamp(item.applied_at) }}</p>
-              <p v-if="item.success_criterion === 'build_completed' && item.apply_started_at">
-                Terraform apply started: {{ timestamp(item.apply_started_at) }} · Terraform apply finished:
-                {{ timestamp(item.target_reached_at) }} (Build completed)
-              </p>
-              <p v-else-if="item.success_criterion === 'build_completed'">
-                Terraform apply timestamps unavailable; excluded from timing comparisons.
-                <span v-if="item.target_reached_at"
-                  >Previously observed target: {{ timestamp(item.target_reached_at) }}.</span
+          <template #expanded-row="{ columns, item }"
+            ><tr>
+              <td :colspan="columns.length" class="pa-4">
+                <v-alert
+                  v-if="item.error"
+                  class="benchmark-error"
+                  :type="item.phase === 'queued' ? 'warning' : 'error'"
+                  variant="outlined"
+                  >{{ item.error }}</v-alert
                 >
-              </p>
-              <p v-else>
-                Terraform apply started: {{ timestamp(item.apply_started_at) }} · Target reached:
-                {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
-              </p>
-              <p>
-                Terraform run: {{ item.terraform_run_id || "Unknown" }} · Repository:
-                {{ item.repository || "Unknown" }} · Commit: {{ item.commit_sha || "Unknown" }}
-              </p>
-              <pre class="benchmark-specs">{{ JSON.stringify(item.configuration, null, 2) }}</pre>
-            </td></template
+                <p v-if="item.phase === 'queued' && item.error">
+                  Next status check: {{ timestamp(item.next_attempt_at) }}
+                </p>
+                <v-alert v-if="item.cleanup_error" type="warning" variant="outlined">{{ item.cleanup_error }}</v-alert>
+                <p>Cluster: {{ item.hostname }} · Apply accepted: {{ timestamp(item.applied_at) }}</p>
+                <p v-if="item.success_criterion === 'build_completed' && item.apply_started_at">
+                  Terraform apply started: {{ timestamp(item.apply_started_at) }} · Terraform apply finished:
+                  {{ timestamp(item.target_reached_at) }} (Build completed)
+                </p>
+                <p v-else-if="item.success_criterion === 'build_completed'">
+                  Terraform apply timestamps unavailable; excluded from timing comparisons.
+                  <span v-if="item.target_reached_at"
+                    >Previously observed target: {{ timestamp(item.target_reached_at) }}.</span
+                  >
+                </p>
+                <p v-else>
+                  Terraform apply started: {{ timestamp(item.apply_started_at) }} · Target reached:
+                  {{ timestamp(item.target_reached_at) }} ({{ criterionLabel(item.success_criterion) }})
+                </p>
+                <p>
+                  Terraform run: {{ item.terraform_run_id || "Unknown" }} · Repository:
+                  {{ item.repository || "Unknown" }} · Commit: {{ item.commit_sha || "Unknown" }}
+                </p>
+                <pre class="benchmark-specs">{{ JSON.stringify(item.configuration, null, 2) }}</pre>
+              </td>
+            </tr></template
           >
         </v-data-table>
       </v-card>
@@ -211,22 +216,25 @@ export default {
     error: "",
     timer: null,
     disposed: false,
+    refreshing: false,
+    refreshPromise: null,
+    reportRequest: 0,
     headers: [
-      { text: "Requested", value: "requested_at" },
-      { text: "Revision", value: "revision" },
-      { text: "Commit", value: "commit_sha" },
-      { text: "Outcome", value: "outcome" },
-      { text: "Success criterion", value: "success_criterion" },
-      { text: "Duration", value: "duration_seconds" },
-      { text: "Phase", value: "phase" },
-      { text: "Cleanup", value: "cleanup_at" },
+      { title: "Requested", key: "requested_at" },
+      { title: "Revision", key: "revision" },
+      { title: "Commit", key: "commit_sha" },
+      { title: "Outcome", key: "outcome" },
+      { title: "Success criterion", key: "success_criterion" },
+      { title: "Duration", key: "duration_seconds" },
+      { title: "Phase", key: "phase" },
+      { title: "Cleanup", key: "cleanup_at" },
     ],
   }),
   computed: {
     comparisonOptions() {
       return this.report.comparison_groups.map((group) => ({
         value: group.id,
-        text: `${group.commit_sha.slice(0, 12)} · ${this.criterionLabel(group.success_criterion)} · ${
+        title: `${group.commit_sha.slice(0, 12)} · ${this.criterionLabel(group.success_criterion)} · ${
           group.total_runs
         } runs`,
       }));
@@ -291,19 +299,22 @@ export default {
     visibleBenchmarks(values) {
       if (!values.some((b) => b.id === this.selected)) {
         this.selected = values[0]?.id || null;
-        this.loadReport();
+        this.report = null;
+        if (!this.refreshing) this.loadReport();
       }
     },
   },
   async created() {
     this.selected = this.$route.query.benchmark || null;
     await this.refresh();
+    if (this.disposed) return;
     this.timer = setInterval(() => {
-      if (!this.busy) this.refresh();
+      if (!this.busy && !this.refreshing) this.refresh();
     }, 15000);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.disposed = true;
+    this.reportRequest++;
     clearInterval(this.timer);
   },
   methods: {
@@ -311,29 +322,49 @@ export default {
       return value === "build_completed" ? "Build completed" : "Provisioning completed (healthy)";
     },
     async refresh() {
+      if (this.disposed) return;
+      if (this.refreshPromise) return this.refreshPromise;
+      this.refreshPromise = this.fetchBenchmarks();
+      try {
+        await this.refreshPromise;
+      } finally {
+        this.refreshPromise = null;
+      }
+    },
+    async fetchBenchmarks() {
+      this.refreshing = true;
       try {
         this.error = "";
         const { data } = await Repository.get("/benchmarks");
         if (this.disposed) return;
         this.projects = data.projects;
         this.benchmarks = data.benchmarks;
+        await this.$nextTick();
         await this.loadReport();
       } catch (error) {
+        if (this.disposed) return;
         this.report = null;
         this.error = error.response?.data?.message || "Unable to load benchmarks.";
       } finally {
-        this.loading = false;
+        if (!this.disposed) {
+          this.loading = false;
+          this.refreshing = false;
+        }
       }
     },
     async loadReport() {
+      if (this.disposed) return;
+      const request = ++this.reportRequest;
+      this.error = "";
       const selected = this.selected;
+      if (this.report?.benchmark.id !== selected) this.report = null;
       if (!selected) {
         this.report = null;
         return;
       }
       try {
         const { data } = await Repository.get(`/benchmarks/${selected}`);
-        if (!this.disposed && selected === this.selected) {
+        if (!this.disposed && request === this.reportRequest && selected === this.selected) {
           const sameBenchmark = this.report?.benchmark.id === data.benchmark.id;
           if (!sameBenchmark || !data.comparison_groups.some((group) => group.id === this.comparisonGroup)) {
             this.comparisonGroup = data.default_comparison_group;
@@ -341,19 +372,26 @@ export default {
           this.report = data;
         }
       } catch (error) {
+        if (this.disposed || request !== this.reportRequest || selected !== this.selected) return;
         this.report = null;
         this.error = error.response?.data?.message || "Unable to load results.";
       }
     },
     async action(callback) {
+      if (this.busy || this.disposed) return;
+      const selected = this.selected;
       this.busy = true;
       try {
         await callback();
-        await this.refresh();
+        // Finish any poll already in flight before fetching the action result.
+        if (this.refreshPromise) await this.refreshPromise;
+        if (!this.disposed) await this.refresh();
       } catch (error) {
-        this.error = error.response?.data?.message || "Unable to update benchmark.";
+        if (!this.disposed && selected === this.selected) {
+          this.error = error.response?.data?.message || "Unable to update benchmark.";
+        }
       } finally {
-        this.busy = false;
+        if (!this.disposed) this.busy = false;
       }
     },
     runNow() {
