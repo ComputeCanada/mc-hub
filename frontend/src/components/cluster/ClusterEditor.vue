@@ -248,14 +248,16 @@
                 <div class="editor-row d-flex flex-wrap">
                   <v-spacer></v-spacer>
                   <v-col cols="12" sm="2" class="pt-0">
+                    <!-- Keep the combobox's local draft until commit; moving groups remounts this row. -->
                     <v-combobox
                       :items="Object.keys(localSpecs.volumes)"
                       :model-value="tag"
-                      @update:model-value="changeVolumeTag(tag, id, $event)"
+                      @change="changeVolumeTag(tag, id, $event.target.value)"
+                      @keydown.enter.prevent="changeVolumeTag(tag, id, $event.target.value)"
+                      @item:added="changeVolumeTag(tag, id, $event.value)"
                       label="tag"
                       :readonly="stateful && id in (initialSpecs.volumes.nfs || {})"
                     ></v-combobox>
-                    <!-- <v-text-field :model-value="tag" label="tag" readonly /> -->
                   </v-col>
                   <v-col cols="12" sm="3" class="pt-0">
                     <v-text-field
@@ -522,6 +524,15 @@ export default {
     };
   },
   watch: {
+    async quotaValidation() {
+      // Vuetify revalidates a field when its value changes, but quota rules
+      // also depend on other rows and AWS choices returned by feasibility checks.
+      // Revalidate stale errors when those dependencies change.
+      await this.$nextTick();
+      if (!this.awsDisposed && !this.loading && this.validForm === false) {
+        await this.$refs.form?.validate();
+      }
+    },
     awsDefinition: {
       deep: true,
       handler() {
@@ -740,6 +751,20 @@ export default {
         "Invalid Magic Castle version provided"
       );
     },
+    quotaValidation() {
+      if (this.loading) return null;
+      if (this.isAWS) return this.awsChoices;
+      if (this.provider !== "openstack") return null;
+      return [
+        this.ramRule,
+        this.coreRule,
+        this.volumeCountRule,
+        this.volumeSizeRule,
+        ...Object.keys(this.localSpecs.instances).map((id) =>
+          this.publicTagRule(id)(this.localSpecs.instances[id].tags)
+        ),
+      ];
+    },
     volumeCountRule() {
       return this.plannerMode || this.volumeCountUsed <= this.volumeCountMax || "Volume number quota exceeded";
     },
@@ -783,12 +808,26 @@ export default {
     vcpuMax() {
       return this.quotas?.vcpus?.max ?? 0;
     },
+    taggedVolumeUsage() {
+      const usage = { count: 0, size: 0 };
+      for (const [tag, volumes] of Object.entries(this.localSpecs.volumes)) {
+        const instances = this.instances.reduce(
+          (total, instance) => total + (instance.tags.includes(tag) ? Number(instance.count) : 0),
+          0
+        );
+        for (const volume of Object.values(volumes)) {
+          usage.count += instances;
+          usage.size += instances * Number(volume.size);
+        }
+      }
+      return usage;
+    },
     volumeCountUsed() {
       return this.usedResourcesLoaded
         ? this.instances.reduce(
             (acc, instance) => acc + instance.count * this.getInstanceDetail(instance.type, "required_volume_count"),
             0
-          ) + Object.keys(this.localSpecs.volumes["nfs"]).length
+          ) + this.taggedVolumeUsage.count
         : 0;
     },
     volumeCountMax() {
@@ -796,8 +835,7 @@ export default {
     },
     volumeSizeUsed() {
       return this.usedResourcesLoaded
-        ? this.instancesVolumeSizeUsed +
-            Object.values(this.localSpecs.volumes.nfs).reduce((acc, volume) => acc + volume.size, 0)
+        ? this.instancesVolumeSizeUsed + this.taggedVolumeUsage.size
         : 0;
     },
     volumeSizeMax() {

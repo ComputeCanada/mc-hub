@@ -96,6 +96,171 @@ test("date picker preserves local calendar dates and supports clearing", async (
   expect(wrapper.vm.expirationRule("2000-01-01")).not.toBe(true);
 });
 
+test.each(["change", "keydown.enter"])("volume tags keep their input while typing and commit on %s", async (event) => {
+  await render({ stateful: false, preserveSpecs: true });
+  const tagField = () => wrapper.findAllComponents({ name: "VCombobox" }).find((field) => field.props("label") === "tag");
+  const input = tagField().get("input");
+  for (const value of ["n", "no", "nod", "node"]) {
+    input.element.value = value;
+    await input.trigger("input");
+    await flushPromises();
+    expect(tagField().get("input").element).toBe(input.element);
+    expect(input.element.value).toBe(value);
+    expect(wrapper.vm.specs.volumes.nfs.home.size).toBe(50);
+    expect(wrapper.vm.specs.volumes.node).toBeUndefined();
+  }
+  await input.trigger(event);
+  await flushPromises();
+  expect(wrapper.vm.specs.volumes.node.home.size).toBe(50);
+  expect(wrapper.vm.specs.volumes.nfs.home).toBeUndefined();
+});
+
+test("selecting an existing volume tag commits the selected group", async () => {
+  const configuration = specs();
+  configuration.volumes.node = { scratch: { size: 100 } };
+  await render({ specs: configuration, stateful: false, preserveSpecs: true });
+  const tag = wrapper.findAllComponents({ name: "VCombobox" }).find((field) => field.props("label") === "tag");
+  await tag.get(".v-field").trigger("mousedown");
+  await flushPromises();
+  const option = [...document.querySelectorAll('[role="option"]')].find((item) => item.textContent === "node");
+  expect(option).toBeDefined();
+  option.click();
+  await flushPromises();
+  expect(wrapper.vm.specs.volumes.node).toEqual({ home: { size: 50 }, scratch: { size: 100 } });
+  expect(wrapper.vm.specs.volumes.nfs.home).toBeUndefined();
+});
+
+test("correcting instance counts clears quota errors on unchanged type fields and enables Apply", async () => {
+  await render({ stateful: false, preserveSpecs: true });
+  await field("count").get("input").setValue("10001");
+  await wrapper.vm.apply();
+  await flushPromises();
+  const apply = () => wrapper.findAllComponents({ name: "VBtn" }).find((button) => button.text() === "Apply");
+  expect(apply().props("disabled")).toBe(true);
+  expect(wrapper.text()).toContain("Ram quota exceeded");
+  expect(wrapper.emitted("apply")).toBeUndefined();
+
+  await field("count").get("input").setValue("2");
+  await flushPromises();
+  expect(wrapper.text()).not.toContain("Ram quota exceeded");
+  expect(wrapper.text()).not.toContain("Core quota exceeded");
+  expect(apply().props("disabled")).toBe(false);
+  await apply().trigger("click");
+  await flushPromises();
+  expect(wrapper.emitted("apply")).toHaveLength(1);
+});
+
+test.each([false, true])("AWS rechecks clear stale type errors while preserving other errors (%s)", async (invalidPassword) => {
+  const configuration = specs();
+  configuration.instances.node.count = 3;
+  Resources.getHost.mockResolvedValue({ data: { ...resources, provider: "aws" } });
+  Resources.checkHost.mockResolvedValueOnce({
+    data: { feasibility: { status: "blocked", issues: [] }, instance_choices: { node: [] } },
+  });
+  await render({ specs: configuration, stateful: false, preserveSpecs: true });
+  await wrapper.vm.checkAWS();
+  const type = wrapper.findComponent({ name: "TypeSelect" }).findComponent({ name: "VSelect" });
+  await type.vm.validate();
+  if (invalidPassword) await field("Guest password").get("input").setValue("short");
+  await flushPromises();
+  expect(wrapper.text()).toContain("This type is unavailable");
+  const apply = () => wrapper.findAllComponents({ name: "VBtn" }).find((button) => button.text() === "Apply");
+  expect(apply().props("disabled")).toBe(true);
+
+  Resources.checkHost.mockResolvedValueOnce({
+    data: { feasibility: { status: "ready", issues: [] }, instance_choices: { node: ["p1"] } },
+  });
+  await field("count").get("input").setValue("2");
+  await wrapper.vm.checkAWS();
+  await flushPromises();
+  expect(wrapper.vm.awsStatus).toBe("ready");
+  expect(configuration.instances.node.type).toBe("p1");
+  expect(wrapper.text()).not.toContain("This type is unavailable");
+  expect(apply().props("disabled")).toBe(invalidPassword);
+  if (invalidPassword) {
+    expect(wrapper.text()).toContain("The password must be at least");
+    await field("Guest password").get("input").setValue("password");
+    await flushPromises();
+  }
+  expect(apply().props("disabled")).toBe(false);
+  await apply().trigger("click");
+  await flushPromises();
+  expect(wrapper.emitted("apply")).toHaveLength(1);
+});
+
+test("removing an oversized volume clears quota errors on the remaining volume", async () => {
+  const configuration = specs();
+  configuration.instances.node.tags.push("nfs");
+  configuration.volumes.nfs.extra = { size: 10001 };
+  await render({ specs: configuration, stateful: false, preserveSpecs: true });
+  await wrapper.vm.apply();
+  await flushPromises();
+  expect(wrapper.text()).toContain("Volume size quota exceeded");
+
+  wrapper.vm.rmVolumeRow("extra");
+  await flushPromises();
+  expect(wrapper.text()).not.toContain("Volume size quota exceeded");
+  expect(wrapper.vm.applyButtonEnabled).toBe(true);
+});
+
+test("volume totals include every matching instance group, fractional sizes, and boot volumes", async () => {
+  const configuration = specs();
+  configuration.instances = {
+    mgmt: { count: 1, type: "p1", tags: ["nfs"] },
+    node: { count: 3, type: "p1", tags: ["node"] },
+    worker: { count: 2, type: "p1", tags: ["node"] },
+    disabled: { count: 0, type: "p1", tags: ["node", "unused"] },
+  };
+  configuration.volumes.node = { scratch: { size: 20.5 } };
+  configuration.volumes.unused = { data: { size: 1000 } };
+  configuration.volumes.unmatched = { data: { size: 1000 } };
+  Resources.getHost.mockResolvedValue({
+    data: {
+      ...resources,
+      resource_details: {
+        instance_types: [{ name: "p1", ram: 1024, vcpus: 1, required_volume_count: 1, required_volume_size: 10 }],
+      },
+    },
+  });
+  await render({ specs: configuration });
+  expect(wrapper.vm.volumeCountUsed).toBe(12);
+  expect(wrapper.vm.volumeSizeUsed).toBe(212.5);
+  const displays = wrapper.findAllComponents({ name: "ResourceUsageDisplay" });
+  expect(displays.find((display) => display.props("title") === "volumes").props("used")).toBe(12);
+  expect(displays.find((display) => display.props("title") === "volume storage").props("used")).toBe(212.5);
+});
+
+test.each([
+  ["volume_count", 2, "Volume number quota exceeded"],
+  ["volume_size", 120, "Volume size quota exceeded"],
+])("retagging preserves %s validation and correcting instance counts clears the error", async (quota, max, error) => {
+  const configuration = specs();
+  configuration.instances.mgmt = { count: 1, type: "p1", tags: ["nfs"] };
+  configuration.instances.node.count = 3;
+  Resources.getHost.mockResolvedValue({ data: { ...resources, quotas: { ...resources.quotas, [quota]: { max } } } });
+  await render({ specs: configuration, stateful: false, preserveSpecs: true });
+  expect(wrapper.vm.volumeCountUsed).toBe(1);
+  expect(wrapper.vm.volumeSizeUsed).toBe(50);
+  const tag = wrapper.findAllComponents({ name: "VCombobox" }).find((field) => field.props("label") === "tag");
+  await tag.get("input").setValue("node");
+  await flushPromises();
+  expect(wrapper.vm.volumeCountUsed).toBe(3);
+  expect(wrapper.vm.volumeSizeUsed).toBe(150);
+  await wrapper.vm.apply();
+  await flushPromises();
+  expect(wrapper.text()).toContain(error);
+  expect(wrapper.emitted("apply")).toBeUndefined();
+
+  await field("count").get("input").setValue("1");
+  await flushPromises();
+  expect(wrapper.vm.volumeCountUsed).toBe(1);
+  expect(wrapper.vm.volumeSizeUsed).toBe(50);
+  expect(wrapper.text()).not.toContain(error);
+  expect(wrapper.vm.applyButtonEnabled).toBe(true);
+  await wrapper.vm.apply();
+  expect(wrapper.emitted("apply")).toHaveLength(1);
+});
+
 test("project selection refreshes resources and ignores an older request", async () => {
   await render({ existingCluster: false, stateful: false, preserveSpecs: true });
   let resolve;
