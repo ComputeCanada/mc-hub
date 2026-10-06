@@ -6,3 +6,14 @@ docs
 venv
 clusters_backup
 frontend/dist
+
+# Local tooling and generated artifacts are not build inputs.
+.git
+.venv
+.pytest_cache
+**/__pycache__
+frontend/coverage
+frontend/test-results
+frontend/playwright-report
+frontend/.env.local
+frontend/.env.*.local

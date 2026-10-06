@@ -1,13 +1,11 @@
-import Vue from "vue";
-import Vuetify from "vuetify";
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises } from "@vue/test-utils";
+import { shallowMountWithVuetify as shallowMount, cleanupMounts } from "../../helpers/mount";
 import Benchmarks from "@/views/Benchmarks";
 import BenchmarkEditor from "@/views/BenchmarkEditor";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import Repository from "@/repositories/Repository";
 import TemplateRepository from "@/repositories/TemplateRepository";
 
-Vue.use(Vuetify);
 jest.mock("@/repositories/Repository", () => ({
   get: jest.fn(),
   post: jest.fn(),
@@ -16,7 +14,7 @@ jest.mock("@/repositories/Repository", () => ({
   delete: jest.fn(),
 }));
 jest.mock("@/repositories/TemplateRepository", () => ({ get: jest.fn() }));
-const flush = () => new Promise(jest.requireActual("timers").setImmediate);
+const flush = flushPromises;
 const benchmark = {
   id: "bench-1",
   project_id: 1,
@@ -45,17 +43,21 @@ const result = {
 const mounts = [];
 function mount(component, options = {}) {
   const wrapper = shallowMount(component, {
-    mocks: {
-      $route: { query: { benchmark: "bench-1" } },
-      $router: { push: jest.fn() },
-      $disableUnloadConfirmation: jest.fn(),
-    },
     ...options,
+    global: {
+      renderStubDefaultSlot: true,
+      mocks: {
+        $route: { query: { benchmark: "bench-1" } },
+        $router: { push: jest.fn() },
+        $disableUnloadConfirmation: jest.fn(),
+      },
+    },
   });
   mounts.push(wrapper);
   return wrapper;
 }
 beforeEach(() => {
+  jest.useFakeTimers();
   jest.clearAllMocks();
   Repository.get.mockImplementation((path) =>
     Promise.resolve({
@@ -68,7 +70,40 @@ beforeEach(() => {
   );
   TemplateRepository.get.mockResolvedValue({ data: { cloud: {}, cluster_name: "" } });
 });
-afterEach(() => mounts.splice(0).forEach((w) => w.destroy()));
+afterEach(() => {
+  mounts.splice(0).forEach((w) => {
+    if (w.exists()) w.unmount();
+  });
+  // Clear leftovers even when the lifecycle regression test fails.
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
+
+test("dashboard stops polling when unmounted", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  expect(jest.getTimerCount()).toBeGreaterThan(0);
+  wrapper.unmount();
+  expect(jest.getTimerCount()).toBe(0);
+});
+
+test("a late report response cannot replace state after unmount", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  const vm = wrapper.vm;
+  const previous = vm.report;
+  let resolve;
+  Repository.get.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const pending = vm.loadReport();
+  wrapper.unmount();
+  resolve({ data: { ...result, total_runs: 99 } });
+  await pending;
+  expect(vm.report).toBe(previous);
+});
 
 test("dashboard compares one commit and criterion at a time and retains all history", async () => {
   const wrapper = mount(Benchmarks);
@@ -93,6 +128,7 @@ test("dashboard compares one commit and criterion at a time and retains all hist
         group("old-healthy", "old-sha", "healthy", 600),
         group("new-build", "new-sha", "build_completed", 60),
       ],
+
       unassigned_runs: 1,
       runs: [
         {
@@ -160,7 +196,7 @@ test("dashboard compares one commit and criterion at a time and retains all hist
   expect(wrapper.vm.points.map((p) => p.id)).toEqual(["good"]);
   expect(wrapper.vm.cards[0].value).toBe("2.0 min");
   expect(wrapper.text()).toContain("1 runs have no recorded commit");
-  expect(wrapper.find("v-data-table-stub").attributes("items")).toBeDefined();
+  expect(wrapper.findComponent("v-data-table-stub").attributes("items")).toBeDefined();
   expect(wrapper.find('svg[aria-label="Benchmark deployment duration trend"]').exists()).toBe(true);
   expect(wrapper.text()).toContain("Apply to healthy over time");
   await wrapper.setData({ comparisonGroup: "old-healthy" });
@@ -220,7 +256,7 @@ test("incomplete setup explains the retry and disables Run now", async () => {
     report: { ...result, benchmark: { ...benchmark, setup_status: "failed", setup_error: "Setup failed" } },
   });
   expect(wrapper.text()).toContain("Edit and save this benchmark to finish setup");
-  const runNow = wrapper.findAll("v-btn-stub").wrappers.find((button) => button.text() === "Run now");
+  const runNow = wrapper.findAll("v-btn-stub").find((button) => button.text() === "Run now");
   expect(runNow.attributes("disabled")).toBe("true");
 });
 
@@ -246,7 +282,7 @@ test("failed first save retries the same benchmark and preserves its identity", 
 });
 
 test("editor reuses cluster form with project restriction and preserves saved specs", async () => {
-  const wrapper = mount(BenchmarkEditor, { propsData: { id: "bench-1" } });
+  const wrapper = mount(BenchmarkEditor, { props: { id: "bench-1" } });
   await flush();
   const editor = wrapper.findComponent(ClusterEditor);
   expect(editor.props("benchmarkMode")).toBe(true);
@@ -276,7 +312,7 @@ test("editor loads and saves the selected success criterion", async () => {
           : { ...result, benchmark: { ...benchmark, success_criterion: "build_completed" } },
     })
   );
-  const wrapper = mount(BenchmarkEditor, { propsData: { id: "bench-1" } });
+  const wrapper = mount(BenchmarkEditor, { props: { id: "bench-1" } });
   await flush();
   expect(wrapper.vm.successCriterion).toBe("build_completed");
   Repository.put.mockResolvedValue({ data: benchmark });
@@ -299,4 +335,93 @@ test("no project admin access means no benchmark form", async () => {
   await flush();
   expect(wrapper.findComponent(ClusterEditor).exists()).toBe(false);
   expect(wrapper.text()).toContain("project administrator role");
+});
+afterEach(cleanupMounts);
+
+test("leaving during the initial list request does not restart polling", async () => {
+  let resolve;
+  Repository.get.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const wrapper = mount(Benchmarks);
+  wrapper.unmount();
+  resolve({ data: { projects: [{ id: 1 }], benchmarks: [benchmark] } });
+  await flush();
+  jest.advanceTimersByTime(60000);
+  expect(Repository.get).toHaveBeenCalledTimes(1);
+  expect(jest.getTimerCount()).toBe(0);
+});
+
+test("slow polls do not overlap and polling recovers after a failed request", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  const calls = Repository.get.mock.calls.length;
+  let reject;
+  Repository.get.mockReturnValueOnce(
+    new Promise((resolve, fail) => {
+      reject = fail;
+    })
+  );
+  jest.advanceTimersByTime(45000);
+  expect(Repository.get).toHaveBeenCalledTimes(calls + 1);
+  reject(new Error("offline"));
+  await flush();
+  expect(wrapper.text()).toContain("Unable to load benchmarks");
+  jest.advanceTimersByTime(15000);
+  await flush();
+  expect(wrapper.vm.report.benchmark.id).toBe("bench-1");
+  expect(wrapper.vm.error).toBe("");
+});
+
+test("an older report failure cannot clear a newer benchmark selection", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  let reject;
+  Repository.get.mockReturnValueOnce(
+    new Promise((resolve, fail) => {
+      reject = fail;
+    })
+  );
+  const pending = wrapper.vm.loadReport();
+  await wrapper.setData({ selected: "bench-2" });
+  Repository.get.mockResolvedValueOnce({ data: { ...result, benchmark: { ...benchmark, id: "bench-2" } } });
+  await wrapper.vm.loadReport();
+  reject(new Error("old failure"));
+  await pending;
+  expect(wrapper.vm.report.benchmark.id).toBe("bench-2");
+  expect(wrapper.vm.error).toBe("");
+});
+
+test("an action completing after unmount does not refresh or resume polling", async () => {
+  const wrapper = mount(Benchmarks);
+  await flush();
+  let resolve;
+  Repository.post.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const calls = Repository.get.mock.calls.length;
+  const pending = wrapper.vm.runNow();
+  wrapper.unmount();
+  resolve({});
+  await pending;
+  expect(Repository.get).toHaveBeenCalledTimes(calls);
+  expect(jest.getTimerCount()).toBe(0);
+});
+
+test("leaving an editor during access lookup does not load its template", async () => {
+  let resolve;
+  Repository.get.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  const wrapper = mount(BenchmarkEditor);
+  wrapper.unmount();
+  resolve({ data: { projects: [{ id: 1 }], benchmarks: [] } });
+  await flush();
+  expect(TemplateRepository.get).not.toHaveBeenCalled();
 });

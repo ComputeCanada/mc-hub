@@ -1,13 +1,7 @@
-import Vue from "vue";
-import VueRouter from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import { guardBenchmarkAccess } from "@/services/benchmarkAccess";
 import Home from "@/views/Home";
-import CreateCluster from "@/views/CreateCluster";
-import Projects from "@/views/Projects";
 import NotFound from "@/views/NotFound";
-import ModifyCluster from "@/views/ModifyCluster";
-
-Vue.use(VueRouter);
 
 const routes = [
   { path: "/capacity", name: "Capacity planner", component: () => import("@/views/CapacityPlanner") },
@@ -39,12 +33,12 @@ const routes = [
   {
     path: "/create-cluster",
     name: "Create a Magic Castle",
-    component: CreateCluster,
+    component: () => import("@/views/CreateCluster"),
   },
   {
     path: "/clusters/:hostname",
     name: "Edit an existing Magic Castle",
-    component: ModifyCluster,
+    component: () => import("@/views/ModifyCluster"),
     props: (route) => ({
       showPlanConfirmation: route.query.showPlanConfirmation === "1",
       destroy: route.query.destroy === "1",
@@ -54,21 +48,17 @@ const routes = [
   {
     path: "/projects",
     name: "Projects",
-    component: Projects,
+    component: () => import("@/views/Projects"),
   },
   {
-    path: "*",
+    path: "/:pathMatch(.*)*",
     name: "Not Found",
     component: NotFound,
   },
 ];
 
-const router = new VueRouter({
-  mode: "history",
-  base: process.env.BASE_URL,
-  routes,
-});
-
-router.beforeEach(guardBenchmarkAccess);
-
-export default router;
+export function createAppRouter(history = createWebHistory(process.env.BASE_URL)) {
+  const router = createRouter({ history, routes });
+  router.beforeEach(guardBenchmarkAccess);
+  return router;
+}

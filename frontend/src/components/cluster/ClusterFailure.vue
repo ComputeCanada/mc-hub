@@ -1,5 +1,5 @@
 <template>
-  <v-alert :type="previous ? 'info' : 'error'" outlined class="mb-5" role="status" aria-live="polite">
+  <v-alert :type="previous ? 'info' : 'error'" variant="outlined" class="mb-5" role="status" aria-live="polite">
     <h3>{{ previous ? "Previous attempt failed" : title }}</h3>
     <p v-if="!previous && (!failure || failure.phase !== 'plan')">Some changes may already have completed.</p>
     <p v-if="failure && (failure.failed_at || failure.observed_at)" class="text-caption">
@@ -19,7 +19,7 @@
     <v-btn v-if="!previous && failure && failure.timeout" :disabled="busy" color="primary" @click="$emit('retry')">
       Review a new plan
     </v-btn>
-    <v-btn text @click="copy">Copy error details</v-btn>
+    <v-btn variant="text" @click="copy">Copy error details</v-btn>
     <span aria-live="polite">{{ copyMessage }}</span>
   </v-alert>
 </template>
@@ -27,6 +27,7 @@
 <script>
 export default {
   name: "ClusterFailure",
+  emits: ["retry"],
   props: {
     failure: { type: Object, default: null },
     hostname: String,

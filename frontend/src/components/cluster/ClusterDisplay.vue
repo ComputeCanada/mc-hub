@@ -2,11 +2,11 @@
   <div>
     <v-container>
       <v-card max-width="800" class="mx-auto" :loading="loading">
-        <template #progress>
-          <v-progress-linear :indeterminate="progress === 0" :value="progress" />
+        <template #loader="{ isActive }">
+          <v-progress-linear :active="isActive" :indeterminate="progress === 0" :model-value="progress" />
         </template>
-        <v-card-title v-if="stateful" class="mx-auto pl-8">Magic Castle Modification</v-card-title>
-        <v-card-title v-else class="mx-auto pl-8">Magic Castle Creation</v-card-title>
+        <v-card-title v-if="stateful" class="mx-auto">Magic Castle Modification</v-card-title>
+        <v-card-title v-else class="mx-auto">Magic Castle Creation</v-card-title>
         <v-card-text>
           <cluster-failure
             v-if="failure || failureStatus"
@@ -19,11 +19,11 @@
           />
           <v-list v-if="existingCluster">
             <v-list-item>
-              <v-list-item-content>
+              <div>
                 <v-list-item-subtitle>Hostname</v-list-item-subtitle>
                 <v-list-item-title>{{ hostname }}</v-list-item-title>
-              </v-list-item-content>
-              <status-chip :status="status" :health="health" :undeployed="undeployed" />
+              </div>
+              <template #append><status-chip :status="status" :health="health" :undeployed="undeployed" /></template>
             </v-list-item>
             <v-divider class="mt-2" v-if="resourcesChanges.length > 0 || magicCastle" />
           </v-list>
@@ -140,7 +140,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import ClusterFailure from "@/components/cluster/ClusterFailure";
-import { isEqual } from "lodash";
+import isEqual from "lodash/isEqual";
 
 const POLL_STATUS_INTERVAL = 1000;
 const PLAN_START_TIMEOUT_MS = 1500;
@@ -170,6 +170,8 @@ export default {
   data: function () {
     return {
       progress: 0,
+      disposed: false,
+      sleepTimers: new Map(),
       successDialog: false,
       provisioningRunningDialog: false,
       errorDialog: false,
@@ -201,36 +203,52 @@ export default {
     };
   },
   async created() {
-    if (this.existingCluster) {
-      if (this.showPlanConfirmation) {
-        await this.showPlanConfirmationDialog();
-      } else if (this.destroy) {
-        const cluster = (await MagicCastleRepository.getStatus(this.hostname)).data;
-        if (canDestroyCluster(cluster)) {
-          this.permanentDestructionDialog = true;
-        } else {
-          await this.planDestruction();
+    try {
+      if (this.existingCluster) {
+        if (this.showPlanConfirmation) {
+          await this.showPlanConfirmationDialog();
+        } else if (this.destroy) {
+          const cluster = (await MagicCastleRepository.getStatus(this.hostname)).data;
+          if (this.disposed) return;
+          if (canDestroyCluster(cluster)) {
+            this.permanentDestructionDialog = true;
+          } else {
+            await this.planDestruction();
+          }
+        }
+        this.startStatusPolling();
+      } else {
+        try {
+          if (this.capacityPlanId) {
+            const plan = (
+              await Repository.get(
+                `/projects/${Number(this.capacityProjectId)}/capacity/${Number(this.capacityPlanId)}`
+              )
+            ).data;
+            if (this.disposed) return;
+            this.magicCastle = plan.definition;
+            this.magicCastle.capacity_plan_id = plan.id;
+            this.magicCastle.capacity_ends_at = plan.ends_at;
+          } else {
+            const { data } = await TemplateRepository.get("default");
+            if (this.disposed) return;
+            this.magicCastle = data;
+          }
+        } catch (e) {
+          this.showError(e.response?.data?.message || e.message);
         }
       }
-      this.startStatusPolling();
-    } else {
-      try {
-        if (this.capacityPlanId) {
-          const plan = (
-            await Repository.get(`/projects/${Number(this.capacityProjectId)}/capacity/${Number(this.capacityPlanId)}`)
-          ).data;
-          this.magicCastle = plan.definition;
-          this.magicCastle.capacity_plan_id = plan.id;
-          this.$set(this.magicCastle, "capacity_ends_at", plan.ends_at);
-        } else {
-          this.magicCastle = (await TemplateRepository.get("default")).data;
-        }
-      } catch (e) {
-        this.showError(e.response?.data?.message || e.message);
-      }
+    } catch (error) {
+      if (!this.disposed) this.showError(error.response?.data?.message || error.message);
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
+    this.disposed = true;
+    for (const [timer, resolve] of this.sleepTimers) {
+      clearTimeout(timer);
+      resolve();
+    }
+    this.sleepTimers.clear();
     this.stopStatusPolling();
   },
   computed: {
@@ -268,6 +286,7 @@ export default {
   },
   methods: {
     goHome() {
+      if (this.disposed) return;
       this.unloadCluster();
       this.$router.push("/");
     },
@@ -275,7 +294,7 @@ export default {
       this.progress = progress;
     },
     async fetchStatus() {
-      if (this.statusPromise !== null) {
+      if (this.disposed || this.statusPromise !== null) {
         return;
       }
       const statusAlreadyInitialized = this.status !== null;
@@ -286,9 +305,14 @@ export default {
       let response;
       try {
         response = await this.statusPromise;
+      } catch (error) {
+        if (!this.disposed)
+          this.showError(error.response?.data?.message || "Unable to fetch cluster status. Retrying automatically.");
+        return;
       } finally {
-        this.statusPromise = null;
+        if (!this.disposed) this.statusPromise = null;
       }
+      if (this.disposed) return;
       // A poll started before confirmation must not overwrite the accepted plan.
       if (!applyWasRequested && this.applyRequested) {
         return;
@@ -329,6 +353,7 @@ export default {
       }
     },
     startStatusPolling() {
+      if (this.disposed) return;
       this.stopStatusPolling();
       this.statusPoller = setInterval(this.fetchStatus, POLL_STATUS_INTERVAL);
       this.fetchStatus();
@@ -356,18 +381,23 @@ export default {
       }
     },
     showError(message) {
+      if (this.disposed) return;
       this.errorDialog = true;
       this.errorMessage = message;
     },
     async loadCluster() {
+      if (this.disposed) return;
       try {
-        this.magicCastle = (await MagicCastleRepository.getState(this.hostname)).data;
+        const { data } = await MagicCastleRepository.getState(this.hostname);
+        if (this.disposed) return;
+        this.magicCastle = data;
       } catch (e) {
         // Terraform state file and main.tf.json could not be parsed.
-        this.showError(e.response.data.message);
+        this.showError(e.response?.data?.message || e.message);
       }
     },
     async planCreation() {
+      if (this.disposed) return;
       let isCommited = false;
       let showPlan = "0";
       this.creationStep = null;
@@ -377,6 +407,7 @@ export default {
       createPromise.catch(() => {});
       try {
         await Promise.race([createPromise, this.sleep(PLAN_START_TIMEOUT_MS)]);
+        if (this.disposed) return;
         isCommited = true;
         showPlan = "1";
       } catch (error) {
@@ -384,30 +415,32 @@ export default {
           this.showError(error.response.data.message);
           isCommited = true;
         } else if (error.request) {
-          console.log(error.request);
           // The request may have been accepted but the response timed out.
           isCommited = true;
           showPlan = "1";
         } else {
-          console.log(error.message);
           this.showError("Plan creation request setting up triggered an error.");
         }
       } finally {
-        this.$disableUnloadConfirmation();
-        if (isCommited) {
-          await this.$router.push({
-            path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
-            query: { showPlanConfirmation: showPlan },
-          });
-          this.unloadCluster();
+        if (!this.disposed) {
+          this.$disableUnloadConfirmation();
+          if (isCommited) {
+            await this.$router.push({
+              path: `/clusters/${this.magicCastle.cluster_name}.${this.magicCastle.domain}`,
+              query: { showPlanConfirmation: showPlan },
+            });
+            if (!this.disposed) this.unloadCluster();
+          }
+          this.clusterPlanRunningDialog = false;
         }
-        this.clusterPlanRunningDialog = false;
       }
     },
     async planModification() {
+      if (this.disposed) return;
       if (this.magicCastle.undeployed) {
         try {
           await MagicCastleRepository.update(this.hostname, this.magicCastle);
+          if (this.disposed) return;
           this.$disableUnloadConfirmation();
           this.startStatusPolling();
         } catch (e) {
@@ -419,6 +452,7 @@ export default {
       await this.showPlanConfirmationDialog({ planCreator, modification: true });
     },
     async rebuildCluster() {
+      if (this.disposed) return;
       if (this.status === ClusterStatusCode.CREATED) {
         await this.showPlanConfirmationDialog();
         return;
@@ -427,38 +461,47 @@ export default {
       await this.showPlanConfirmationDialog({ planCreator });
     },
     async planDestruction() {
+      if (this.disposed) return;
       let planCreator = async () => MagicCastleRepository.teardown(this.hostname);
       await this.showPlanConfirmationDialog({ planCreator, destroy: true });
     },
     async discardTeardown() {
+      if (this.disposed) return;
       this.stopStatusPolling();
       this.loading = true;
       try {
         await MagicCastleRepository.discardTeardown(this.hostname);
+        if (this.disposed) return;
         this.resourcesChanges = [];
         await this.goToClustersList();
       } catch (e) {
+        if (this.disposed) return;
         this.showError(e.response?.data?.message || e.message);
         this.clusterDestructionDialog = true;
       } finally {
-        this.loading = false;
+        if (!this.disposed) this.loading = false;
       }
     },
     async forceDestruction() {
+      if (this.disposed) return;
       try {
         this.unloadCluster();
         await MagicCastleRepository.delete(this.hostname);
+        if (this.disposed) return;
         this.goHome();
       } catch (e) {
-        this.showError(e.response.data.message);
+        this.showError(e.response?.data?.message || e.message);
       }
     },
     async applyCluster() {
+      if (this.disposed) return;
       this.applyRequested = true;
       try {
         await MagicCastleRepository.apply(this.hostname);
+        if (this.disposed) return;
         this.startStatusPolling();
       } catch (e) {
+        if (this.disposed) return;
         this.applyRequested = false;
         this.showError(
           e.response?.data?.message ||
@@ -467,6 +510,7 @@ export default {
       }
     },
     async retryPlan() {
+      if (this.disposed) return;
       await this.showPlanConfirmationDialog({
         planCreator: () => MagicCastleRepository.retryPlan(this.hostname),
         destroy: this.failure?.is_destroy === true,
@@ -475,6 +519,7 @@ export default {
       this.startStatusPolling();
     },
     async goToClustersList() {
+      if (this.disposed) return;
       await this.$router.push("/");
     },
     async showPlanConfirmationDialog(
@@ -511,6 +556,7 @@ export default {
 
         // Fetch plan
         const { status, message, progress } = await this.waitForPlanCompletion(hostname, options.modification);
+        if (this.disposed) return;
         if ([ClusterStatusCode.PLAN_ERROR, ClusterStatusCode.DESTROY_ERROR].includes(status)) {
           this.showError(message || "An error occurred while generating the plan.");
           this.clusterPlanRunningDialog = false;
@@ -542,9 +588,10 @@ export default {
           this.applyCluster();
         }
       } catch (e) {
+        if (this.disposed) return;
         this.clusterPlanRunningDialog = false;
         if (e.response) {
-          this.showError(e.response.data.message);
+          this.showError(e.response?.data?.message || e.message);
         } else if (e.request) {
           this.showError("Plan creation request was made but no response was received.");
         } else if (e.message) {
@@ -569,7 +616,9 @@ export default {
       }
       const start = Date.now();
       for (;;) {
+        if (this.disposed) throw new Error("Plan observation cancelled.");
         const { status, message, progress, creation_step } = (await MagicCastleRepository.getStatus(hostname)).data;
+        if (this.disposed) throw new Error("Plan observation cancelled.");
         this.creationStep = creation_step || null;
         this.clusterPlanMessage =
           status === ClusterStatusCode.NOT_FOUND
@@ -599,7 +648,14 @@ export default {
       }
     },
     sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
+      if (this.disposed) return Promise.resolve();
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          this.sleepTimers.delete(timer);
+          resolve();
+        }, ms);
+        this.sleepTimers.set(timer, resolve);
+      });
     },
     unloadCluster() {
       this.applyRequested = false;

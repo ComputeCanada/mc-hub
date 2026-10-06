@@ -1,5 +1,10 @@
 <template>
-  <cluster-display :hostname="hostname" :show-plan-confirmation="showPlanConfirmation" :destroy="destroy" />
+  <cluster-display
+    :key="hostname"
+    :hostname="hostname"
+    :show-plan-confirmation="showPlanConfirmation"
+    :destroy="destroy"
+  />
 </template>
 
 <script>
