@@ -557,7 +557,7 @@ wheels = [
 
 [[package]]
 name = "mchub"
-version = "15.5.9"
+version = "16.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
