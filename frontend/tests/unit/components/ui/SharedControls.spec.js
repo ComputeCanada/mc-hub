@@ -7,9 +7,14 @@ import HieradataEditor from "@/components/ui/HieradataEditor";
 import ResourceUsageDisplay from "@/components/ui/ResourceUsageDisplay";
 import PasswordDisplay from "@/components/ui/PasswordDisplay";
 import CopyButton from "@/components/ui/CopyButton";
+import { getPuppetConfigurationKeys } from "@/services/puppetConfigurationKeys";
+
+jest.mock("@/services/puppetConfigurationKeys");
 
 let wrappers, hosts, warn;
 beforeEach(() => {
+  getPuppetConfigurationKeys.mockReset();
+  getPuppetConfigurationKeys.mockResolvedValue(["profile::slurm::base::os_reserved_memory"]);
   wrappers = [];
   hosts = [];
   warn = jest.spyOn(console, "warn");
@@ -96,6 +101,54 @@ test("hieradata edits preserve encrypted values and never mutate the supplied en
   const fields = wrapper.findAll('input[type="text"]');
   await fields[1].setValue("plain");
   expect(wrapper.emitted("update:modelValue").pop()[0][0].value).toBe("plain");
+});
+
+test("hieradata keys filter README suggestions while accepting custom keys", async () => {
+  const wrapper = render({
+    components: { HieradataEditor },
+    data: () => ({ entries: [{ key: "", value: "512", encrypt: false }] }),
+    template: '<hieradata-editor v-model="entries" version="14.1.2"/>',
+  });
+  await flushPromises();
+  const input = wrapper.get('input[role="combobox"]');
+  await input.trigger("focus");
+  await input.setValue("os_reserved_memory");
+  await flushPromises();
+  const options = [...document.querySelectorAll('[role="option"]')];
+  expect(options.map((option) => option.textContent)).toEqual(["profile::slurm::base::os_reserved_memory"]);
+  options[0].click();
+  await flushPromises();
+  expect(wrapper.vm.entries).toEqual([
+    { key: "profile::slurm::base::os_reserved_memory", value: "512", encrypt: false },
+  ]);
+  await input.setValue("custom::module::setting");
+  await input.trigger("blur");
+  await flushPromises();
+  expect(wrapper.vm.entries[0].key).toBe("custom::module::setting");
+});
+
+test("hieradata version changes discard stale suggestions and preserve entries", async () => {
+  let resolveOldVersion;
+  getPuppetConfigurationKeys.mockImplementationOnce(() => new Promise((resolve) => { resolveOldVersion = resolve; }));
+  getPuppetConfigurationKeys.mockResolvedValueOnce(["profile::new::setting"]);
+  const entries = [{ key: "custom::key", value: null, encrypt: true }];
+  const wrapper = render(HieradataEditor, { version: "old", modelValue: entries });
+  await wrapper.setProps({ version: "new" });
+  await flushPromises();
+  resolveOldVersion(["profile::old::setting"]);
+  await flushPromises();
+  expect(getPuppetConfigurationKeys).toHaveBeenLastCalledWith("new");
+  expect(wrapper.findComponent({ name: "VCombobox" }).props("items")).toEqual(["profile::new::setting"]);
+  expect(wrapper.vm.localEntries).toEqual(entries);
+  expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+
+  getPuppetConfigurationKeys.mockRejectedValueOnce(new Error("Unavailable"));
+  await wrapper.setProps({ version: "missing" });
+  await flushPromises();
+  expect(wrapper.findComponent({ name: "VCombobox" }).props("items")).toEqual([]);
+  expect(wrapper.get('[role="status"]').text()).toContain("You can still enter a key");
+  await wrapper.get('input[role="combobox"]').setValue("custom::replacement");
+  expect(wrapper.emitted("update:modelValue").pop()[0][0].key).toBe("custom::replacement");
 });
 
 test("usage, password visibility and copy controls work with the production plugin", async () => {
