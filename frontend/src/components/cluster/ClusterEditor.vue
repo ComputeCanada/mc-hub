@@ -385,7 +385,7 @@
 
         <!-- Apply and cancel -->
         <div class="text-center">
-          <p v-if="!validForm" class="text-error">Some form fields are invalid.</p>
+          <p v-if="validForm === false" class="text-error">Some form fields are invalid.</p>
           <v-btn
             @click="apply"
             color="primary"
@@ -398,7 +398,7 @@
             v-if="specs.undeployed"
             color="primary"
             class="ma-2"
-            :disabled="loading || validating || dirtyForm || validForm === false || (isAWS && awsStatus !== 'ready')"
+            :disabled="loading || validating || dirtyForm || validForm !== true || (isAWS && awsStatus !== 'ready')"
             size="large"
             @click="apply('rebuild')"
             >{{ status === "created" ? "Review build plan" : "Rebuild" }}</v-btn
@@ -524,6 +524,13 @@ export default {
     };
   },
   watch: {
+    async loading(loading) {
+      if (loading) return;
+      // Initial rules run before resource discovery finishes. Validate again
+      // with the loaded choices, quotas, and defaults, including untouched fields.
+      await this.$nextTick();
+      if (!this.awsDisposed) await this.$refs.form?.validate();
+    },
     async quotaValidation() {
       // Vuetify revalidates a field when its value changes, but quota rules
       // also depend on other rows and AWS choices returned by feasibility checks.
@@ -856,7 +863,7 @@ export default {
     applyButtonEnabled() {
       return (
         !this.loading &&
-        this.validForm !== false &&
+        this.validForm === true &&
         !Object.values(this.instanceSettingsErrors).some(Boolean) &&
         (this.plannerMode || this.benchmarkMode || (!this.existingCluster && this.preserveSpecs) || this.dirtyForm) &&
         !this.resourceError &&

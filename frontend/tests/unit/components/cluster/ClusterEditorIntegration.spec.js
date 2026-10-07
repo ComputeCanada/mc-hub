@@ -67,6 +67,58 @@ function field(label) {
   return wrapper.findAllComponents({ name: "VTextField" }).find((component) => component.props("label") === label);
 }
 
+test.each([false, true])("a fully populated editor starts valid (existing cluster: %s)", async (existingCluster) => {
+  await render({ existingCluster, stateful: false, preserveSpecs: true, status: "created" });
+  const apply = wrapper.findAllComponents({ name: "VBtn" }).find((button) => button.text() === "Apply");
+  expect(wrapper.vm.validForm).toBe(true);
+  expect(wrapper.text()).not.toContain("Some form fields are invalid.");
+  expect(apply.props("disabled")).toBe(false);
+  await apply.trigger("click");
+  await flushPromises();
+  expect(wrapper.emitted("apply")).toHaveLength(1);
+});
+
+test("pending resource validation keeps Apply disabled without claiming fields are invalid", async () => {
+  let resolve;
+  Resources.getCloud.mockReturnValueOnce(
+    new Promise((done) => {
+      resolve = done;
+    })
+  );
+  await render({ existingCluster: false, stateful: false, preserveSpecs: true });
+  const apply = wrapper.findAllComponents({ name: "VBtn" }).find((button) => button.text() === "Apply");
+  expect(wrapper.vm.validForm).toBeNull();
+  expect(wrapper.text()).not.toContain("Some form fields are invalid.");
+  expect(apply.props("disabled")).toBe(true);
+  resolve({ data: resources });
+  await flushPromises();
+  expect(wrapper.vm.validForm).toBe(true);
+  expect(apply.props("disabled")).toBe(false);
+});
+
+test("missing SSH keys disable Apply on load and correcting them clears the error", async () => {
+  const configuration = specs();
+  configuration.public_keys = [];
+  await render({ specs: configuration, existingCluster: false, stateful: false, preserveSpecs: true });
+  const apply = wrapper.findAllComponents({ name: "VBtn" }).find((button) => button.text() === "Apply");
+  expect(wrapper.vm.validForm).toBe(false);
+  expect(wrapper.text()).toContain("Some form fields are invalid.");
+  expect(apply.props("disabled")).toBe(true);
+  const keys = wrapper
+    .findAllComponents({ name: "VCombobox" })
+    .find((component) => component.props("label") === "SSH Keys");
+  await keys.setValue(specs().public_keys);
+  await flushPromises();
+  expect(wrapper.vm.validForm).toBe(true);
+  expect(wrapper.text()).not.toContain("Some form fields are invalid.");
+  expect(apply.props("disabled")).toBe(false);
+  await keys.setValue([]);
+  await flushPromises();
+  expect(wrapper.vm.validForm).toBe(false);
+  expect(wrapper.text()).toContain("Some form fields are invalid.");
+  expect(apply.props("disabled")).toBe(true);
+});
+
 test("real controls rename rows, edit volumes and emit apply only after validation", async () => {
   await render({ stateful: false, preserveSpecs: true });
   await field("hostname prefix").get("input").setValue("worker");
