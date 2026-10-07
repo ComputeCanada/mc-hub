@@ -936,3 +936,46 @@ def test_progress_failure_respects_cluster_access(app):
     orm.terraform_failure = {'diagnostic': 'private diagnostic'}
     result = ProgressAPI().get(SimpleNamespace(projects=[orm.project], can_access_cluster=lambda cluster: False), orm.hostname)
     assert result == {'status': 'not_found'}
+
+
+@pytest.mark.parametrize("project_access,cluster_access", [(False, True), (True, False), (False, False)])
+def test_duplicate_source_requires_project_and_cluster_access(app, project_access, cluster_access):
+    from types import SimpleNamespace
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+    from mchub.exceptions.invalid_usage_exception import ClusterNotFoundException
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    user = SimpleNamespace(
+        projects=[orm.project] if project_access else [],
+        can_access_cluster=lambda cluster: cluster_access,
+    )
+    with app.test_request_context("/?duplicate=1"), pytest.raises(ClusterNotFoundException):
+        MagicCastleAPI().get(user, orm.hostname)
+
+
+@pytest.mark.parametrize("status", ["not_deployed", "created", "plan_running", "plan_error", "build_error", "destroy_running", "provisioning_success"])
+def test_duplicate_source_requires_not_deployed_status(app, mocker, status):
+    from types import SimpleNamespace
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    user = SimpleNamespace(projects=[orm.project], can_access_cluster=lambda cluster: True)
+    from mchub.models.magic_castle.magic_castle import MagicCastle
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+
+    orm.undeployed = True
+    mocker.patch.object(MagicCastle, "status", new=property(lambda self: ClusterStatusCode(status)))
+    with app.test_request_context("/?duplicate=1"):
+        if status == "not_deployed":
+            assert MagicCastleAPI().get(user, orm.hostname)["hostname"] == orm.hostname
+        else:
+            with pytest.raises(InvalidUsageException, match="Only not deployed"):
+                MagicCastleAPI().get(user, orm.hostname)
+    # Reading a cluster for normal editing is unaffected.
+    with app.test_request_context("/"):
+        assert MagicCastleAPI().get(user, orm.hostname)["hostname"] == orm.hostname

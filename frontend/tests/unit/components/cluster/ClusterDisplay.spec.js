@@ -8,9 +8,52 @@ jest.mock("@/repositories/MagicCastleRepository", () => ({
   getStatus: jest.fn(),
   apply: jest.fn(),
   getState: jest.fn(),
+  getDuplicateSource: jest.fn(),
 }));
 
 describe("ClusterDisplay", () => {
+  it("loads duplicate configuration through the authorized source endpoint", async () => {
+    MagicCastleRepository.getDuplicateSource.mockResolvedValue({
+      data: {
+        cluster_name: "source",
+        domain: "example.com",
+        cloud: { id: 2 },
+        public_keys: ["source-key"],
+        guest_passwd: "old-password",
+        undeployed: true,
+      },
+    });
+    const wrapper = shallowMount(ClusterDisplay, {
+      global: { renderStubDefaultSlot: true, mocks: { $route: { query: { from: "source.example.com" } } } },
+    });
+    await flushPromises();
+    expect(MagicCastleRepository.getDuplicateSource).toHaveBeenCalledWith("source.example.com");
+    expect(wrapper.vm.existingCluster).toBe(false);
+    expect(wrapper.vm.magicCastle.domain).toBe("example.com");
+    expect(wrapper.vm.magicCastle.cluster_name).not.toBe("source");
+    expect(wrapper.vm.magicCastle.undeployed).toBeUndefined();
+    const editor = wrapper.findComponent({ name: "ClusterEditor" });
+    expect(editor.props("preserveSpecs")).toBe(true);
+    expect(editor.props("requireEncryptedValues")).toBe(true);
+    wrapper.unmount();
+  });
+
+  it.each(["Cluster not found", "Only not deployed clusters can be duplicated."])(
+    "does not initialize a duplicate when the source is rejected: %s",
+    async (message) => {
+      MagicCastleRepository.getDuplicateSource.mockRejectedValue({ response: { data: { message } } });
+      const wrapper = shallowMount(ClusterDisplay, {
+        global: { renderStubDefaultSlot: true, mocks: { $route: { query: { from: "private.example.com" } } } },
+      });
+      await flushPromises();
+      expect(wrapper.vm.magicCastle).toBeFalsy();
+      expect(wrapper.vm.errorMessage).toBe(message);
+      expect(wrapper.findComponent({ name: "ClusterEditor" }).exists()).toBe(false);
+      wrapper.unmount();
+      MagicCastleRepository.getDuplicateSource.mockReset();
+    }
+  );
+
   const mountDisplay = () =>
     shallowMount(
       { ...ClusterDisplay, created() {} },

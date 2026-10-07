@@ -115,6 +115,45 @@ describe("ClusterEditor", () => {
     moxios.uninstall(Repository);
   });
 
+  it("preserves duplicate settings through creation initialization and requires replacement secrets", async () => {
+    moxios.stubRequest("/users/me", { status: 200, response: { public_keys: [], default_project_id: 99 } });
+    moxios.stubRequest("/projects", { status: 200, response: [{ id: 99 }, { id: 1 }] });
+    moxios.stubRequest("/available-resources/cloud/1", {
+      status: 200,
+      response: {
+        possible_resources: DEFAULT_POSSIBLE_RESOURCES,
+        quotas: DEFAULT_QUOTAS,
+        resource_details: DEFAULT_RESOURCE_DETAILS,
+      },
+    });
+    const specs = {
+      ...cloneDeep(DEFAULT_MAGIC_CASTLE),
+      cluster_name: "new-name",
+      domain: "mc.ca",
+      guest_passwd: "fresh-password",
+      public_keys: ["copied-key"],
+      hieradata_entries: [{ key: "secret", value: "", encrypt: true }],
+    };
+    const wrapper = mount(ClusterEditor, {
+      props: { specs, existingCluster: false, preserveSpecs: true, requireEncryptedValues: true },
+      global: { mocks: { $enableUnloadConfirmation: jest.fn(), $disableUnloadConfirmation: jest.fn() } },
+    });
+    await wrapper.vm.promise;
+    await wrapper.vm.$nextTick();
+    expect(specs.cloud.id).toBe(1);
+    expect(specs.public_keys).toEqual(["copied-key"]);
+    expect(specs.cluster_name).toBe("new-name");
+    expect(specs.domain).toBe("mc.ca");
+    expect(specs.guest_passwd).toBe("fresh-password");
+    const validation = await wrapper.vm.$refs.form.validate();
+    expect(
+      validation.errors.some((error) =>
+        error.errorMessages.includes("Re-enter the encrypted value or remove this entry.")
+      )
+    ).toBe(true);
+    wrapper.unmount();
+  });
+
   it("renders partial quota data without losing the editor", async () => {
     const wrapper = await getDefaultClusterEditorWrapper();
     const errors = jest.spyOn(console, "error").mockImplementation(() => {});

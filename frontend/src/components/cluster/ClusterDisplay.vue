@@ -34,7 +34,8 @@
           <cluster-editor
             v-if="magicCastle && !busy && !clusterDestructionDialog"
             :existing-cluster="existingCluster"
-            :preserve-specs="!!capacityPlanId"
+            :preserve-specs="!!capacityPlanId || !!duplicateSource"
+            :require-encrypted-values="!!duplicateSource"
             :project-ids="capacityProjectId ? [Number(capacityProjectId)] : undefined"
             :specs="magicCastle"
             :status="status"
@@ -133,6 +134,7 @@
 import Repository from "@/repositories/Repository";
 import MagicCastleRepository from "@/repositories/MagicCastleRepository";
 import TemplateRepository from "@/repositories/TemplateRepository";
+import { duplicateConfiguration } from "@/models/duplicateConfiguration";
 import ClusterStatusCode, { canDestroyCluster } from "@/models/ClusterStatusCode";
 import MessageDialog from "@/components/ui/MessageDialog";
 import StatusChip from "@/components/ui/StatusChip";
@@ -219,7 +221,11 @@ export default {
         this.startStatusPolling();
       } else {
         try {
-          if (this.capacityPlanId) {
+          if (this.duplicateSource) {
+            const { data } = await MagicCastleRepository.getDuplicateSource(this.duplicateSource);
+            if (this.disposed) return;
+            this.magicCastle = duplicateConfiguration(data);
+          } else if (this.capacityPlanId) {
             const plan = (
               await Repository.get(
                 `/projects/${Number(this.capacityProjectId)}/capacity/${Number(this.capacityPlanId)}`
@@ -252,6 +258,10 @@ export default {
     this.stopStatusPolling();
   },
   computed: {
+    duplicateSource() {
+      const source = this.$route?.query?.from;
+      return typeof source === "string" ? source : null;
+    },
     capacityPlanId() {
       return this.$route?.query?.capacityPlan;
     },

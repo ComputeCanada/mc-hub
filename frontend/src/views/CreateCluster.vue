@@ -1,5 +1,5 @@
 <template>
-  <cluster-display />
+  <cluster-display :key="$route.fullPath" />
 </template>
 
 <script>

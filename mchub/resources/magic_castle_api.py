@@ -14,6 +14,7 @@ from ..models.cloud.aws_manager import ensure_aws_feasible
 from ..services.terraform_cloud_api import get_terraform_cloud
 from ..models.user import User
 from ..models.magic_castle.magic_castle import MagicCastleORM, MagicCastle
+from ..models.magic_castle.cluster_status_code import ClusterStatusCode
 from ..database import db
 from ..services import cluster_lifecycle
 
@@ -62,7 +63,10 @@ class MagicCastleAPI(ApiView):
             if orm and orm.project in user.projects and user.can_access_cluster(orm):
                 from ..models.capacity_plan import CapacityPlan
                 from ..services.capacity import iso
-                state = MagicCastle(orm).state
+                cluster = MagicCastle(orm)
+                if request.args.get("duplicate") == "1" and cluster.status != ClusterStatusCode.NOT_DEPLOYED:
+                    raise InvalidUsageException("Only not deployed clusters can be duplicated.", status_code=409)
+                state = cluster.state
                 plan = db.session.scalar(db.select(CapacityPlan).where(CapacityPlan.cluster_usage_id == orm.usage_id))
                 if plan is not None:
                     state["capacity_ends_at"] = iso(plan.ends_at)
