@@ -9,7 +9,7 @@
     </v-app-bar>
     <v-main>
       <service-status-banner />
-      <v-container style="height: 100%">
+      <v-container>
         <router-view />
       </v-container>
     </v-main>
