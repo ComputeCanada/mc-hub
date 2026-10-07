@@ -377,7 +377,17 @@
                   >.
                 </span>
 
-                <hieradata-editor v-model="localSpecs.hieradata_entries" />
+                <v-alert
+                  v-if="requireEncryptedValues && localSpecs.hieradata_entries.some((entry) => entry.encrypt)"
+                  type="info"
+                  class="mb-3"
+                >
+                  Re-enter encrypted Puppet values for this new cluster, or remove entries you no longer need.
+                </v-alert>
+                <hieradata-editor
+                  v-model="localSpecs.hieradata_entries"
+                  :require-encrypted-values="requireEncryptedValues"
+                />
               </div>
             </div>
           </v-list-group>
@@ -460,6 +470,7 @@ export default {
     autoCreate: Boolean,
     identityLocked: Boolean,
     preserveSpecs: Boolean,
+    requireEncryptedValues: Boolean,
     submitDisabled: Boolean,
     submitLabel: String,
     projectIds: Array,

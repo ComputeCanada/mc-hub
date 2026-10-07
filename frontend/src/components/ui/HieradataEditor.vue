@@ -36,6 +36,7 @@
       <v-text-field
         v-else
         v-model="entry.value"
+        :rules="requireEncryptedValues && entry.encrypt ? [requiredValue] : []"
         label="Value"
         density="compact"
         variant="outlined"
@@ -69,6 +70,7 @@ export default {
   name: "HieradataEditor",
   emits: ["update:modelValue"],
   props: {
+    requireEncryptedValues: Boolean,
     modelValue: {
       type: Array,
       default: () => [],
@@ -80,6 +82,7 @@ export default {
     };
   },
   watch: {
+    requireEncryptedValues: Boolean,
     modelValue: {
       handler(val) {
         this.localEntries = cloneDeep(val || []);
@@ -89,6 +92,9 @@ export default {
     },
   },
   methods: {
+    requiredValue(value) {
+      return (value != null && String(value).trim().length > 0) || "Re-enter the encrypted value or remove this entry.";
+    },
     isWriteOnly(entry) {
       return entry.encrypt && entry.value === null;
     },

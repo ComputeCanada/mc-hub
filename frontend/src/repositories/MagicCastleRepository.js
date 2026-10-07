@@ -9,6 +9,9 @@ export default {
   getState(hostname) {
     return Repository.get(`${resource}/${hostname}`);
   },
+  getDuplicateSource(hostname) {
+    return Repository.get(`${resource}/${hostname}`, { params: { duplicate: "1" } });
+  },
   getStatus(hostname) {
     return Repository.get(`${resource}/${hostname}/status`);
   },

@@ -147,3 +147,28 @@ describe("ClustersList service health", () => {
     expect(methods.serviceStatusLabel(freeipa)).toBe("FreeIPA is unhealthy");
   });
 });
+
+test("Duplicate opens creation with the selected source", async () => {
+  Repository.getAll.mockResolvedValue({ data: [{ ...clusters[0], status: "not_deployed", undeployed: true }] });
+  const router = await render();
+  await rows()[0].trigger("click");
+  await wrapper
+    .findAll("a")
+    .find((link) => link.text().includes("Duplicate"))
+    .trigger("click");
+  await flushPromises();
+  jest.advanceTimersByTime(1);
+  await flushPromises();
+  expect(router.currentRoute.value.path).toBe("/create-cluster");
+  expect(router.currentRoute.value.query).toEqual({ from: "alpha.example.org" });
+});
+
+test.each(["provisioning_success", "created", "plan_running", "plan_error", "build_error", "destroy_running"])(
+  "hides Duplicate for %s, even with the undeployed flag",
+  async (status) => {
+    Repository.getAll.mockResolvedValue({ data: [{ ...clusters[0], status, undeployed: true }] });
+    await render();
+    await rows()[0].trigger("click");
+    expect(wrapper.text()).not.toContain("Duplicate");
+  }
+);
