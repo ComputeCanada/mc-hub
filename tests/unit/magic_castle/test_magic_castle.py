@@ -956,7 +956,8 @@ def test_duplicate_source_requires_project_and_cluster_access(app, project_acces
 
 
 @pytest.mark.parametrize("status", ["not_deployed", "created", "plan_running", "plan_error", "build_error", "destroy_running", "provisioning_success"])
-def test_duplicate_source_requires_not_deployed_status(app, mocker, status):
+@pytest.mark.parametrize("undeployed", [True, False])
+def test_duplicate_source_requires_not_deployed_status(app, mocker, status, undeployed):
     from types import SimpleNamespace
     from mchub.database import db
     from mchub.models.magic_castle.magic_castle import MagicCastleORM
@@ -968,10 +969,10 @@ def test_duplicate_source_requires_not_deployed_status(app, mocker, status):
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.exceptions.invalid_usage_exception import InvalidUsageException
 
-    orm.undeployed = True
+    orm.undeployed = undeployed
     mocker.patch.object(MagicCastle, "status", new=property(lambda self: ClusterStatusCode(status)))
     with app.test_request_context("/?duplicate=1"):
-        if status == "not_deployed":
+        if status == "not_deployed" or (status == "created" and undeployed):
             assert MagicCastleAPI().get(user, orm.hostname)["hostname"] == orm.hostname
         else:
             with pytest.raises(InvalidUsageException, match="Only not deployed"):

@@ -64,8 +64,12 @@ class MagicCastleAPI(ApiView):
                 from ..models.capacity_plan import CapacityPlan
                 from ..services.capacity import iso
                 cluster = MagicCastle(orm)
-                if request.args.get("duplicate") == "1" and cluster.status != ClusterStatusCode.NOT_DEPLOYED:
-                    raise InvalidUsageException("Only not deployed clusters can be duplicated.", status_code=409)
+                if request.args.get("duplicate") == "1":
+                    status = cluster.status
+                    if not (status == ClusterStatusCode.NOT_DEPLOYED or (
+                        status == ClusterStatusCode.CREATED and orm.undeployed
+                    )):
+                        raise InvalidUsageException("Only not deployed clusters can be duplicated.", status_code=409)
                 state = cluster.state
                 plan = db.session.scalar(db.select(CapacityPlan).where(CapacityPlan.cluster_usage_id == orm.usage_id))
                 if plan is not None:

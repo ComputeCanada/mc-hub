@@ -94,7 +94,7 @@
                   <v-btn
                     color="secondary"
                     variant="text"
-                    v-if="item.status === 'not_deployed'"
+                    v-if="item.status === 'not_deployed' || (item.status === 'created' && item.undeployed)"
                     :to="{ path: '/create-cluster', query: { from: item.hostname } }"
                   >
                     <v-icon class="mr-2">mdi-content-copy</v-icon>

@@ -148,8 +148,8 @@ describe("ClustersList service health", () => {
   });
 });
 
-test("Duplicate opens creation with the selected source", async () => {
-  Repository.getAll.mockResolvedValue({ data: [{ ...clusters[0], status: "not_deployed", undeployed: true }] });
+test.each(["not_deployed", "created"])("Duplicate opens creation with the selected %s source", async (status) => {
+  Repository.getAll.mockResolvedValue({ data: [{ ...clusters[0], status, undeployed: true }] });
   const router = await render();
   await rows()[0].trigger("click");
   await wrapper
@@ -163,7 +163,7 @@ test("Duplicate opens creation with the selected source", async () => {
   expect(router.currentRoute.value.query).toEqual({ from: "alpha.example.org" });
 });
 
-test.each(["provisioning_success", "created", "plan_running", "plan_error", "build_error", "destroy_running"])(
+test.each(["provisioning_success", "plan_running", "plan_error", "build_error", "destroy_running"])(
   "hides Duplicate for %s, even with the undeployed flag",
   async (status) => {
     Repository.getAll.mockResolvedValue({ data: [{ ...clusters[0], status, undeployed: true }] });
@@ -172,3 +172,10 @@ test.each(["provisioning_success", "created", "plan_running", "plan_error", "bui
     expect(wrapper.text()).not.toContain("Duplicate");
   }
 );
+
+test("hides Duplicate for a deployed cluster with a ready modification plan", async () => {
+  Repository.getAll.mockResolvedValue({ data: [{ ...clusters[0], status: "created", undeployed: false }] });
+  await render();
+  await rows()[0].trigger("click");
+  expect(wrapper.text()).not.toContain("Duplicate");
+});
