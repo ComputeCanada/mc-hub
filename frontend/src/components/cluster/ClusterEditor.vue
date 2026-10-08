@@ -361,11 +361,11 @@
               <v-list-item v-bind="props" title="Additional puppet configuration (optional)" />
             </template>
             <div class="editor-row d-flex flex-wrap">
-              <div>
+              <div class="w-100">
                 <span class="mb-4" style="line-height: 18pt"
                   >Configuration variables are documented in
                   <a
-                    href="https://github.com/ComputeCanada/puppet-magic_castle/blob/master/README.md#puppet-magic-castle"
+                    :href="`https://github.com/ComputeCanada/puppet-magic_castle/blob/${encodeURIComponent(localSpecs.mc_version || 'master')}/README.md#puppet-magic-castle`"
                     target="_blank"
                     >puppet-magic_castle</a
                   >
@@ -386,6 +386,7 @@
                 </v-alert>
                 <hieradata-editor
                   v-model="localSpecs.hieradata_entries"
+                  :version="localSpecs.mc_version"
                   :require-encrypted-values="requireEncryptedValues"
                 />
               </div>

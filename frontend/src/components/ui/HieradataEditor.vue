@@ -1,12 +1,19 @@
 <template>
   <div>
+    <div v-if="suggestionsUnavailable" class="text-body-2 text-grey mb-2" role="status">
+      Key suggestions are unavailable for this version. You can still enter a key.
+    </div>
     <div v-if="localEntries.length === 0" class="text-body-2 text-grey mb-2">
       No entries. Click "Add entry" to add puppet configuration variables.
     </div>
     <div v-for="(entry, index) in localEntries" :key="index" class="d-flex align-center mb-2">
-      <v-text-field
+      <v-combobox
         v-model="entry.key"
+        :items="puppetConfigurationKeys"
+        :loading="loadingSuggestions"
+        :return-object="false"
         label="Key"
+        placeholder="Select or enter a key"
         density="compact"
         variant="outlined"
         hide-details
@@ -52,8 +59,8 @@
         class="mt-0 mr-3 flex-shrink-0"
         @update:model-value="onEncryptChange(index)"
       />
-      <v-btn icon size="small" color="error" @click="removeEntry(index)">
-        <v-icon size="small">mdi-delete</v-icon>
+      <v-btn icon size="small" variant="text" color="error" @click="removeEntry(index)">
+        <v-icon>mdi-delete</v-icon>
       </v-btn>
     </div>
     <v-btn size="small" variant="text" color="primary" class="mt-1 pl-0" @click="addEntry">
@@ -65,11 +72,13 @@
 
 <script>
 import cloneDeep from "lodash/cloneDeep";
+import { getPuppetConfigurationKeys } from "@/services/puppetConfigurationKeys";
 
 export default {
   name: "HieradataEditor",
   emits: ["update:modelValue"],
   props: {
+    version: { type: String, default: null },
     requireEncryptedValues: Boolean,
     modelValue: {
       type: Array,
@@ -79,9 +88,31 @@ export default {
   data() {
     return {
       localEntries: [],
+      puppetConfigurationKeys: [],
+      loadingSuggestions: false,
+      suggestionsUnavailable: false,
+      suggestionsRequest: 0,
     };
   },
   watch: {
+    version: {
+      immediate: true,
+      async handler(version) {
+        const request = ++this.suggestionsRequest;
+        this.puppetConfigurationKeys = [];
+        this.suggestionsUnavailable = false;
+        this.loadingSuggestions = !!version;
+        if (!version) return;
+        try {
+          const keys = await getPuppetConfigurationKeys(version);
+          if (request === this.suggestionsRequest) this.puppetConfigurationKeys = keys;
+        } catch {
+          if (request === this.suggestionsRequest) this.suggestionsUnavailable = true;
+        } finally {
+          if (request === this.suggestionsRequest) this.loadingSuggestions = false;
+        }
+      },
+    },
     requireEncryptedValues: Boolean,
     modelValue: {
       handler(val) {
