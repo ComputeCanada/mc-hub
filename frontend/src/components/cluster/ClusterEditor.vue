@@ -362,21 +362,6 @@
             </template>
             <div class="editor-row d-flex flex-wrap">
               <div class="w-100">
-                <span class="mb-4" style="line-height: 18pt"
-                  >Configuration variables are documented in
-                  <a
-                    :href="`https://github.com/ComputeCanada/puppet-magic_castle/blob/${encodeURIComponent(localSpecs.mc_version || 'master')}/README.md#puppet-magic-castle`"
-                    target="_blank"
-                    >puppet-magic_castle</a
-                  >
-                  and
-                  <a
-                    href="https://github.com/ComputeCanada/puppet-jupyterhub/blob/master/README.md#hieradata-configuration"
-                    target="_blank"
-                    >puppet-jupyterhub</a
-                  >.
-                </span>
-
                 <v-alert
                   v-if="requireEncryptedValues && localSpecs.hieradata_entries.some((entry) => entry.encrypt)"
                   type="info"
@@ -853,9 +838,7 @@ export default {
       return this.quotas?.volume_count?.max ?? 0;
     },
     volumeSizeUsed() {
-      return this.usedResourcesLoaded
-        ? this.instancesVolumeSizeUsed + this.taggedVolumeUsage.size
-        : 0;
+      return this.usedResourcesLoaded ? this.instancesVolumeSizeUsed + this.taggedVolumeUsage.size : 0;
     },
     volumeSizeMax() {
       return this.quotas?.volume_size?.max ?? 0;
