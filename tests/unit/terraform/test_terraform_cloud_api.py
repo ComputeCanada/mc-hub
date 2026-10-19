@@ -742,3 +742,62 @@ def test_failure_without_diagnostic(tf_cloud_client, mock_request, mocker, downl
     assert failure['diagnostic'] == ''
     assert failure['diagnostic_available'] is (download_status == 200)
     assert failure['timeout'] is False
+
+
+def recovery_run(run_id, status="pending", created="2026-10-16T17:35:07Z", discardable=False, destroy=False):
+    return {"id": run_id, "attributes": {"status": status, "created-at": created,
+            "is-destroy": destroy, "actions": {"is-discardable": discardable}},
+            "relationships": {"configuration-version": {"data": {"id": "cv-" + run_id}}}}
+
+
+@pytest.mark.parametrize("ambiguous", [False, True])
+def test_recovery_matches_full_sha_and_rejects_ambiguity(tf_cloud_client, mocker, ambiguous):
+    runs = [recovery_run("older", "planned"), recovery_run("intended"), recovery_run("destroy", destroy=True)]
+    if ambiguous:
+        runs.append(recovery_run("duplicate"))
+    mocker.patch.object(tf_cloud_client, "_workspace_runs", return_value=runs)
+    responses = [mock_response(200, {"data": {"attributes": {"commit-sha": sha}}})
+                 for sha in (["old-sha", "exact-sha", "exact-sha"] if ambiguous else ["old-sha", "exact-sha"])]
+    mocker.patch.object(tf_cloud_client, "_request", side_effect=responses)
+    if ambiguous:
+        with pytest.raises(TerraformCloudException, match="Multiple runs"):
+            tf_cloud_client.find_recovery_run("workspace", "exact-sha")
+    else:
+        assert tf_cloud_client.find_recovery_run("workspace", "exact-sha") == "intended"
+
+
+def test_recovery_unblocks_only_older_discardable_plans(tf_cloud_client, mocker):
+    mocker.patch.object(tf_cloud_client, "_workspace_runs", return_value=[
+        recovery_run("intended"),
+        recovery_run("older", "planned", "2026-10-15T18:52:08Z", discardable=True),
+        recovery_run("failed", "errored", "2026-10-15T18:52:01Z"),
+    ])
+    discard = mocker.patch.object(tf_cloud_client, "discard_run")
+    tf_cloud_client.unblock_recovery_run("workspace", "intended")
+    discard.assert_called_once_with("older")
+
+
+@pytest.mark.parametrize("blocker", [
+    recovery_run("active", "applying", "2026-10-15T00:00:00Z"),
+    recovery_run("newer", "planned", "2026-10-17T00:00:00Z", discardable=True),
+    recovery_run("queued", "pending", "2026-10-15T00:00:00Z"),
+])
+def test_recovery_preflights_all_runs_before_discard(tf_cloud_client, mocker, blocker):
+    mocker.patch.object(tf_cloud_client, "_workspace_runs", return_value=[
+        recovery_run("intended"), recovery_run("older", "planned", "2026-10-14T00:00:00Z", discardable=True), blocker,
+    ])
+    discard = mocker.patch.object(tf_cloud_client, "discard_run")
+    with pytest.raises(TerraformCloudException, match="Active or newer"):
+        tf_cloud_client.unblock_recovery_run("workspace", "intended")
+    discard.assert_not_called()
+
+
+@pytest.mark.parametrize("has_live", [False, True])
+def test_recovery_observes_failure_when_no_live_run_remains(tf_cloud_client, mocker, has_live):
+    runs = [recovery_run("failed", "errored")]
+    if has_live:
+        runs.append(recovery_run("live"))
+    mocker.patch.object(tf_cloud_client, "_workspace_runs", return_value=runs)
+    mocker.patch.object(tf_cloud_client, "_request", return_value=mock_response(
+        200, {"data": {"attributes": {"commit-sha": "intended"}}}))
+    assert tf_cloud_client.find_recovery_run("workspace", "intended") == ("live" if has_live else "failed")

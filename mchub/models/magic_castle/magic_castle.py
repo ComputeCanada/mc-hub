@@ -60,6 +60,7 @@ from ...exceptions.server_exception import (
 from ...database import db
 from ..usage import new_id
 from ...services import usage
+from ...services.plan_recovery import PlanOwnershipLost
 
 from ...configuration import get_config
 from ...services.terraform_cloud_api import get_terraform_cloud, TerraformCloudVariable
@@ -231,10 +232,11 @@ class MagicCastle:
     to avoid using the same connection in multiple threads (which doesn't work with sqlite).
     """
 
-    __slots__ = ["orm", "_service_statuses"]
+    __slots__ = ["orm", "_service_statuses", "_plan_owner"]
 
     def __init__(self, orm=None):
         self._service_statuses = None
+        self._plan_owner = None
         if orm:
             self.orm = orm
         else:
@@ -420,6 +422,14 @@ class MagicCastle:
 
     @property
     def status(self) -> ClusterStatusCode:
+        from ...services import plan_recovery
+        plan_recovery.recover(self)
+        if (self.tfcloud_run.lease_until is not None
+                and self.tfcloud_run.lease_until >= plan_recovery.now()
+                and self.orm.status in {ClusterStatusCode.BACKGROUND_TASK_RUNNING,
+                                        ClusterStatusCode.PLAN_RUNNING, ClusterStatusCode.PLAN_ERROR}
+                and self.plan is None):
+            return ClusterStatusCode.PLAN_RUNNING
         if self.orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING:
             # A planning worker may have died after persisting its run ID.
             # Recover that run through normal polling. Keep the claim when no
@@ -618,6 +628,31 @@ class MagicCastle:
             var_tf["hieradata"] = f"{existing}\n{proxy_hieradata}" if existing else proxy_hieradata
         return var_tf
 
+    def _write_plan_configuration(self, variables):
+        """Persist the intended inputs before GitHub or Terraform can run."""
+        from ...services import plan_recovery
+        self.tfcloud_run = TerraformCloudRunORM(intent_hash=plan_recovery.fingerprint(variables))
+        self.orm.status = ClusterStatusCode.PLAN_RUNNING
+        self._plan_owner = plan_recovery.start(self.tfcloud_run)
+        run_pk = self.tfcloud_run.id
+
+        def save_commit(sha):
+            if not plan_recovery.renew(run_pk, self._plan_owner):
+                raise PlanOwnershipLost("Planning ownership expired")
+            self.tfcloud_run.commit_sha = sha
+            db.session.commit()
+
+        try:
+            sha = get_github_storage().write(variables, self.hostname, on_commit=save_commit)
+            save_commit(sha)
+            return sha
+        except Exception:
+            owned = plan_recovery.renew(run_pk, self._plan_owner)
+            plan_recovery.release(run_pk, self._plan_owner)
+            if not owned:
+                raise PlanOwnershipLost("Planning ownership expired") from None
+            raise
+
     @staticmethod
     def validate_creation_version(data):
         if data.get("mc_version") not in get_github_storage().get_magic_castle_versions():
@@ -729,9 +764,11 @@ class MagicCastle:
             if initialize_only:
                 github_commit = get_github_storage().write(var_tf, self.hostname, trigger_run=False)
             else:
-                github_commit = get_github_storage().write(var_tf, self.hostname)
+                github_commit = self._write_plan_configuration(var_tf)
+        except PlanOwnershipLost:
+            raise
         except Exception as error:
-            if benchmark_run_id is None and owner_id is None:
+            if benchmark_run_id is None and owner_id is None and not self.tfcloud_run.intent_hash:
                 self.delete()
             raise PlanException(
                 "Could not write variables.tf on the storage backend.",
@@ -789,7 +826,9 @@ class MagicCastle:
         if config_changed or (previous_status or self.status) == ClusterStatusCode.DESTROY_ERROR:
             try:
                 var_tf = self._get_var_tf()
-                sha = get_github_storage().write(var_tf, self.hostname)
+                sha = self._write_plan_configuration(var_tf)
+            except PlanOwnershipLost:
+                raise
             except Exception as error:
                 raise PlanException(
                     "Could not write variables.tf on the storage backend.",
@@ -857,19 +896,30 @@ class MagicCastle:
 
     def create_plan(self, github_sha=None, run_id=None, timeout=None):
         logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
-
-        self.tfcloud_run = TerraformCloudRunORM()
+        from ...services import plan_recovery
+        if github_sha is None and run_id is None:
+            raise InvalidPlanParameters
+        prepared = (self._plan_owner
+                    and self.tfcloud_run.lease_owner == self._plan_owner
+                    and self.tfcloud_run.commit_sha == github_sha)
+        if not prepared:
+            self.tfcloud_run = TerraformCloudRunORM(
+                commit_sha=github_sha, run_id=run_id,
+                intent_hash="commit" if github_sha and run_id is None else None,
+            )
+            self.orm.status = ClusterStatusCode.PLAN_RUNNING
+            self._plan_owner = plan_recovery.start(self.tfcloud_run)
+        run_pk, owner = self.tfcloud_run.id, self._plan_owner
         # An offline agent must not hold a background task indefinitely. The
         # persisted run remains observable and status polling can recover its
         # plan when the agent becomes available again.
         deadline = time.monotonic() + (timeout if timeout is not None else 300)
 
         try:
-            if github_sha is None and run_id is None:
-                raise InvalidPlanParameters
-
             tf = get_terraform_cloud()
             while run_id is None:
+                if not plan_recovery.renew(run_pk, owner):
+                    raise PlanOwnershipLost("Planning ownership expired")
                 if deadline is not None and time.monotonic() >= deadline:
                     raise TimeoutError("Timed out waiting for the Terraform run")
                 run_id = tf.get_run_by_commit(self.tfcloud_workspace, github_sha)
@@ -877,6 +927,8 @@ class MagicCastle:
                     time.sleep(10)
             logger.debug(f"{github_sha=} match {run_id=}")
 
+            if not plan_recovery.renew(run_pk, owner):
+                raise PlanOwnershipLost("Planning ownership expired")
             self.orm.tfcloud_run.run_id = run_id
             self.orm.tfcloud_run.commit_sha = github_sha
             db.session.commit()
@@ -884,14 +936,24 @@ class MagicCastle:
             # A previous planned/pending runs can block the current run from running.
             # Force excecute the current run
             tf.force_execute(run_id)
+            if not plan_recovery.renew(run_pk, owner):
+                raise PlanOwnershipLost("Planning ownership expired")
+            self.tfcloud_run.intent_hash = None
+            db.session.commit()
 
             # Fetch lastest plan if currently empty
             while not self.plan:
+                if not plan_recovery.renew(run_pk, owner):
+                    raise PlanOwnershipLost("Planning ownership expired")
                 if deadline is not None and time.monotonic() >= deadline:
                     raise TimeoutError("Timed out waiting for the Terraform plan")
                 plan = tf.get_run_plan_log_json(run_id)
+                if not plan_recovery.renew(run_pk, owner):
+                    raise PlanOwnershipLost("Planning ownership expired")
                 if plan is not None:
-                    self.plan = plan
+                    # Publish the plan with CREATED below in one transaction;
+                    # a crash must not leave a cached plan behind a task claim.
+                    self.orm.tfcloud_run.plan = plan
                     logger.info(f"Plan Updated for {run_id=}")
                 else:
                     logger.debug("wait for plan")
@@ -900,8 +962,13 @@ class MagicCastle:
             self.status = ClusterStatusCode.CREATED
         except Exception:
             db.session.rollback()
-            self.status = ClusterStatusCode.PLAN_ERROR
+            if plan_recovery.renew(run_pk, owner):
+                self.status = ClusterStatusCode.PLAN_ERROR
+            else:
+                raise PlanOwnershipLost("Planning ownership expired") from None
             raise
+        finally:
+            plan_recovery.release(run_pk, owner)
 
     def complete_teardown(self):
         """Retain the definition and integrations after resources are removed."""
@@ -926,7 +993,7 @@ class MagicCastle:
     def plan_rebuild(self, timeout=None):
         self.validate_rebuild()
         # Writing the saved variables creates a fresh commit/run even when unchanged.
-        sha = get_github_storage().write(self._get_var_tf(), self.hostname)
+        sha = self._write_plan_configuration(self._get_var_tf())
         self.create_plan(github_sha=sha, timeout=timeout)
 
     def validate_retry_plan(self):

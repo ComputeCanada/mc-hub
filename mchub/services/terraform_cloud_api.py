@@ -57,7 +57,52 @@ class TerraformCloud:
         self.runs_url = f"{self.BASE_URL}/runs"
 
     def _request(self, method, url, **kwargs):
+        kwargs.setdefault("timeout", 20)
         return requests.request(method, url, headers=self.headers, **kwargs)
+
+    def find_recovery_run(self, workspace_id, github_sha):
+        """Require an exact SHA; prefer a live deployment over historical runs."""
+        matches, finished = [], []
+        for run in self._workspace_runs(workspace_id):
+            attrs = run["attributes"]
+            if attrs.get("is-destroy") is not False or attrs.get("plan-only") is True:
+                continue
+            version = run["relationships"]["configuration-version"]["data"]["id"]
+            response = self._request("GET", f"{self.BASE_URL}/configuration-versions/{version}/ingress-attributes")
+            if response.status_code != 200:
+                raise TerraformCloudException("Could not verify recovery configuration")
+            if response.json()["data"]["attributes"].get("commit-sha") == github_sha:
+                destination = finished if attrs["status"] in self.TERMINAL_RUN_STATES else matches
+                destination.append(run["id"])
+        # A run that failed before its ID was saved still needs to surface its
+        # error instead of leaving the cluster in an endless discovery loop.
+        matches = matches or finished
+        if len(matches) > 1:
+            raise TerraformCloudException("Multiple runs match the saved planning intent; recovery requires review")
+        return matches[0] if matches else None
+
+    def unblock_recovery_run(self, workspace_id, run_id):
+        """Only discard older paused plans, never an active or newer run."""
+        runs = list(self._workspace_runs(workspace_id))
+        target = next((run for run in runs if run["id"] == run_id), None)
+        if target is None:
+            raise TerraformCloudException("Recovery run is missing from its workspace")
+        if target["attributes"]["status"] != "pending":
+            return
+        created = target["attributes"].get("created-at")
+        if not created:
+            raise TerraformCloudException("Cannot verify recovery run ordering")
+        blockers = []
+        for run in runs:
+            attrs = run["attributes"]
+            if run["id"] == run_id or attrs["status"] in self.TERMINAL_RUN_STATES:
+                continue
+            if (not attrs.get("created-at") or attrs["created-at"] >= created
+                    or attrs.get("actions", {}).get("is-discardable") is not True):
+                raise TerraformCloudException("Active or newer Terraform runs prevent automatic plan recovery")
+            blockers.append(run["id"])
+        for blocker in blockers:
+            self.discard_run(blocker)
 
     def destroy_plan(self, workspace_id):
         destroy_payload = {

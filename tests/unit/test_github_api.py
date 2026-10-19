@@ -66,3 +66,37 @@ def test_benchmark_trigger_rejects_a_tag_for_another_commit():
     with pytest.raises(GithubStorageException, match="different commit"):
         storage.trigger_run("test.example.org", "0123456789abcdef")
     repository.create_git_ref.assert_not_called()
+
+
+def test_write_saves_commit_before_creating_trigger_tag():
+    storage = GithubStorage.__new__(GithubStorage)
+    storage.organization = "test-org"
+    storage.github = Mock()
+    repo = storage.github.get_organization.return_value.get_repo.return_value
+    repo.update_file.return_value = {"commit": Mock(sha="intended-sha")}
+    def persist(sha):
+        assert sha == "intended-sha"
+        repo.create_git_ref.assert_not_called()
+        raise RuntimeError("database unavailable")
+    with pytest.raises(RuntimeError):
+        storage.write({"count": 2}, "cluster.example", on_commit=persist)
+    repo.create_git_ref.assert_not_called()
+
+
+@pytest.mark.parametrize("tagged", [True, False])
+def test_legacy_recovery_requires_tagged_head_and_immutable_content(tagged):
+    storage = GithubStorage.__new__(GithubStorage)
+    storage.organization = "test-org"
+    storage.github = Mock()
+    repo = storage.github.get_organization.return_value.get_repo.return_value
+    repo.default_branch = "main"
+    repo.get_branch.return_value.commit.sha = "head-sha"
+    repo.get_git_ref.return_value.object.sha = "head-sha" if tagged else "other-sha"
+    repo.get_contents.return_value.decoded_content = b'{"count": 2}'
+    result = storage.get_plan_configuration("cluster.example")
+    if tagged:
+        assert result == ("head-sha", {"count": 2})
+        repo.get_contents.assert_called_once_with("terraform.tfvars.json", ref="head-sha")
+    else:
+        assert result is None
+        repo.get_contents.assert_not_called()

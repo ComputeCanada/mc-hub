@@ -3,6 +3,9 @@
 Callers authorize the operation before claiming it. These functions enforce
 mutual exclusion and plan validation, not user permissions.
 """
+from datetime import timedelta
+import secrets
+
 from ..database import db
 from ..exceptions.invalid_usage_exception import (
     BusyClusterException, ClusterNotFoundException, InvalidUsageException,
@@ -21,6 +24,7 @@ def get_cluster(hostname):
 
 
 def claim_background_task(orm, owner=None):
+    from . import plan_recovery
     if (orm.benchmark_id or orm.benchmark_run_id) and owner != "benchmark":
         raise InvalidUsageException("This cluster is managed by its benchmark.", status_code=403)
     if orm.status == Status.BACKGROUND_TASK_RUNNING or MagicCastle(orm).is_busy:
@@ -36,6 +40,11 @@ def claim_background_task(orm, owner=None):
     if result.rowcount != 1:
         db.session.rollback()
         raise BusyClusterException
+    # Fence new claims before any external work. Legacy rows without a lease
+    # are recoverable immediately after upgrading stopped workers.
+    if orm.tfcloud_run is not None:
+        orm.tfcloud_run.lease_owner = secrets.token_hex(16)
+        orm.tfcloud_run.lease_until = plan_recovery.now() + timedelta(seconds=360)
     db.session.commit()
 
 
@@ -55,8 +64,16 @@ def validate_apply(orm):
 
 def execute_claimed_task(hostname, target, *args):
     """Execute an already-claimed operation and persist its terminal status."""
+    from . import plan_recovery
+    claimed = get_cluster(hostname).tfcloud_run if hostname is not None else None
+    claim = (claimed.id, claimed.lease_owner) if claimed is not None else None
+    ownership_lost = False
     try:
         return target(*args)
+    except plan_recovery.PlanOwnershipLost:
+        ownership_lost = True
+        db.session.rollback()
+        return
     except Exception:
         db.session.rollback()
         if hostname is not None:
@@ -66,10 +83,17 @@ def execute_claimed_task(hostname, target, *args):
                 db.session.commit()
         raise
     finally:
-        if hostname is not None:
+        owns_claim = False
+        if claim is not None:
+            from ..models.terraform_cloud import TerraformCloudRunORM
+            owns_claim = db.session.scalar(db.select(TerraformCloudRunORM.id).where(
+                TerraformCloudRunORM.id == claim[0], TerraformCloudRunORM.lease_owner == claim[1],
+            )) is not None
+            plan_recovery.release(*claim)
+        if not ownership_lost and hostname is not None:
             orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=hostname))
             if orm is not None:
-                if orm.status == Status.BACKGROUND_TASK_RUNNING:
+                if owns_claim and orm.status == Status.BACKGROUND_TASK_RUNNING:
                     orm.status = Status.PLAN_RUNNING
                 if orm.creation_step in {"expiration", "capacity"}:
                     orm.creation_step = None

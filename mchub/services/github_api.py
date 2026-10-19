@@ -165,7 +165,7 @@ class GithubStorage:
 
         return f"{self.organization}/{repo_name}"
 
-    def write(self, tf_data, hostname, filename="terraform.tfvars.json", *, trigger_run=True):
+    def write(self, tf_data, hostname, filename="terraform.tfvars.json", *, trigger_run=True, on_commit=None):
         # Check if the file exists in the repository
         repo_name = self._get_repo_name(hostname)
         org = self.github.get_organization(self.organization)
@@ -191,9 +191,28 @@ class GithubStorage:
             )
 
         sha = commit["commit"].sha
+        if on_commit is not None:
+            on_commit(sha)
         if trigger_run:
             repo.create_git_ref(ref=f"refs/tags/apply-{sha[:10]}", sha=sha)
         return sha
+
+    def get_plan_configuration(self, hostname, sha=None, *, require_tag=True):
+        """Read one immutable commit; legacy recovery requires its deployment tag."""
+        repo = self.github.get_organization(self.organization).get_repo(self._get_repo_name(hostname))
+        if sha is None:
+            sha = repo.get_branch(repo.default_branch).commit.sha
+        if require_tag:
+            try:
+                tagged = repo.get_git_ref(f"tags/apply-{sha[:10]}").object.sha
+            except GithubException as error:
+                if error.status == 404:
+                    return None
+                raise
+            if tagged != sha:
+                return None
+        content = repo.get_contents("terraform.tfvars.json", ref=sha)
+        return sha, json.loads(content.decoded_content)
 
     def trigger_run(self, hostname, sha):
         """Import a saved benchmark commit; retries reuse its existing tag."""
