@@ -312,10 +312,19 @@ def test_expiration_only_update_finishes_without_a_plan(client, mocker, expirati
     create_plan.assert_not_called()
 
 
-def test_planned_status_waits_for_local_plan(app):
+@pytest.mark.parametrize("unavailable", [None, "request_error"])
+@pytest.mark.parametrize("stored_status", ["plan_running", "background_task_running"])
+def test_planned_status_recovers_local_plan(app, mocker, unavailable, stored_status):
     from mchub.database import db
     from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
     from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+    import requests
+
+    fetch_plan = mocker.patch.object(
+        get_terraform_cloud(), "get_run_plan_log_json",
+        side_effect=[requests.ConnectionError() if unavailable else None, {"MOCK": "PLAN_LOG"}],
+    )
 
     orm = db.session.scalar(
         db.select(MagicCastleORM).filter_by(
@@ -325,14 +334,63 @@ def test_planned_status_waits_for_local_plan(app):
     cluster = MagicCastle(orm)
     cluster.tfcloud_run.run_id = "RUN_WITH_DELAYED_PLAN"
     cluster.tfcloud_run.plan = None
-    orm.status = ClusterStatusCode.PLAN_RUNNING
+    orm.status = ClusterStatusCode(stored_status)
     db.session.commit()
 
     assert cluster.status == ClusterStatusCode.PLAN_RUNNING
 
-    cluster.tfcloud_run.plan = {"MOCK": "PLAN_LOG"}
-    db.session.commit()
+    # A new observer recovers the output without the original planning task.
+    db.session.expire_all()
+    cluster = MagicCastle(orm)
     assert cluster.status == ClusterStatusCode.CREATED
+    assert cluster.plan == {"MOCK": "PLAN_LOG"}
+    assert fetch_plan.call_count == 2
+    assert cluster.status == ClusterStatusCode.CREATED
+    assert fetch_plan.call_count == 2
+
+
+@pytest.mark.parametrize("run_id, plan", [(None, None), ("previous-run", {"MOCK": "PLAN_LOG"})])
+def test_background_claim_does_not_poll_previous_plan(app, mocker, run_id, plan):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    orm.status = Status.BACKGROUND_TASK_RUNNING
+    orm.tfcloud_run.run_id = run_id
+    orm.tfcloud_run.plan = plan
+    db.session.commit()
+    remote = mocker.patch("mchub.models.magic_castle.magic_castle.get_tf_status_cache")
+    assert MagicCastle(orm).status == Status.PLAN_RUNNING
+    assert orm.status == Status.BACKGROUND_TASK_RUNNING
+    remote.assert_not_called()
+
+
+def test_offline_agent_bounds_default_plan_wait_and_recovers(app, mocker):
+    from mchub.database import db
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode as TFStatus
+    from mchub.models.magic_castle.magic_castle import MagicCastle, MagicCastleORM
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname="valid1.magic-castle.cloud"))
+    cluster = MagicCastle(orm)
+    orm.status = Status.BACKGROUND_TASK_RUNNING
+    fetch_plan = mocker.patch.object(get_terraform_cloud(), "get_run_plan_log_json", return_value=None)
+    mocker.patch("mchub.models.magic_castle.magic_castle.time.monotonic", side_effect=[0, 0, 301])
+    mocker.patch("mchub.models.magic_castle.magic_castle.time.sleep")
+
+    with pytest.raises(TimeoutError, match="waiting for the Terraform plan"):
+        cluster.create_plan(run_id="offline-agent-run")
+    assert orm.status == Status.PLAN_ERROR
+    assert cluster.tfcloud_run.run_id == "offline-agent-run"
+
+    remote = mocker.patch("mchub.models.magic_castle.magic_castle.get_tf_status_cache", return_value=(TFStatus.PLAN_QUEUED, False))
+    assert cluster.status == Status.PLAN_RUNNING
+    fetch_plan.return_value = {"MOCK": "RECOVERED_PLAN"}
+    remote.return_value = (TFStatus.PLANNED, False)
+    assert cluster.status == Status.CREATED
+    assert cluster.plan == {"MOCK": "RECOVERED_PLAN"}
 
 
 def test_create_magic_castle_twice(app):

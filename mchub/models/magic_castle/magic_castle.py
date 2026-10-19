@@ -381,7 +381,14 @@ class MagicCastle:
                 # JSON is available. Keep clients polling until the plan has
                 # actually been persisted locally.
                 if status == ClusterStatusCode.CREATED and self.plan is None:
-                    status = ClusterStatusCode.PLAN_RUNNING
+                    try:
+                        plan = get_terraform_cloud().get_run_plan_log_json(self.tfcloud_run.run_id)
+                    except (TerraformCloudException, requests.RequestException):
+                        plan = None
+                    if plan is not None:
+                        self.plan = plan
+                    else:
+                        status = ClusterStatusCode.PLAN_RUNNING
                 provisioning_is_complete = (
                     self.orm.status == ClusterStatusCode.PROVISIONING_SUCCESS
                 )
@@ -414,7 +421,12 @@ class MagicCastle:
     @property
     def status(self) -> ClusterStatusCode:
         if self.orm.status == ClusterStatusCode.BACKGROUND_TASK_RUNNING:
-            return ClusterStatusCode.PLAN_RUNNING
+            # A planning worker may have died after persisting its run ID.
+            # Recover that run through normal polling. Keep the claim when no
+            # run has been recorded yet, or when a cached plan belongs to the
+            # operation preceding the current background task (e.g. apply).
+            if not self.tfcloud_run.run_id or self.plan is not None:
+                return ClusterStatusCode.PLAN_RUNNING
 
         self._update_status_from_tf_cloud()
 
@@ -847,7 +859,10 @@ class MagicCastle:
         logger.debug(f"Call <{self.__class__.__name__}:create_plan>")
 
         self.tfcloud_run = TerraformCloudRunORM()
-        deadline = time.monotonic() + timeout if timeout is not None else None
+        # An offline agent must not hold a background task indefinitely. The
+        # persisted run remains observable and status polling can recover its
+        # plan when the agent becomes available again.
+        deadline = time.monotonic() + (timeout if timeout is not None else 300)
 
         try:
             if github_sha is None and run_id is None:
