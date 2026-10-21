@@ -48,7 +48,7 @@ starts scheduled tasks. The old Gunicorn configuration module remains importable
 for compatibility but does not start workers. `MCHUB_HOST`, `MCHUB_PORT`, and the
 service token are no longer used by cleanup.
 
-Expiration sweeps run hourly. They share the API's atomic task claims, validation,
+Expiration sweeps wait five minutes between passes. They share the API's atomic task claims, validation,
 teardown and apply functions, skip busy/undeployed clusters, and verify the exact
 destroy run before applying. Interrupted expiration claims are reconciled when the
 expiration process restarts; claims owned by HTTP workers are left untouched.

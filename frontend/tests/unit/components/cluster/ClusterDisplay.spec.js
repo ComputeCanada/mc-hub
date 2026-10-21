@@ -60,8 +60,9 @@ describe("ClusterDisplay", () => {
       {
         props: { hostname: "test.example.com" },
         data: () => ({
+          agentAvailable: true,
           status: ClusterStatusCode.CREATED,
-          magicCastle: {},
+          magicCastle: { cloud: { id: 1 } },
           resourcesChanges: [{ address: "test", change: { actions: ["create"], progress: "queued" } }],
         }),
         global: {
@@ -82,6 +83,24 @@ describe("ClusterDisplay", () => {
       }
     );
 
+  it.each(["clusterModificationDialog", "clusterDestructionDialog"])(
+    "keeps %s confirmation disabled until the agent check succeeds",
+    async (dialog) => {
+      MagicCastleRepository.apply.mockClear();
+      const wrapper = mountDisplay();
+      await wrapper.setData({ [dialog]: true, agentAvailable: false });
+      const confirmation = wrapper.findAllComponents({ name: "ConfirmDialog" })
+        .find((component) => component.props("modelValue"));
+      expect(confirmation.props("confirmDisabled")).toBe(true);
+      await wrapper.vm.applyCluster();
+      expect(MagicCastleRepository.apply).not.toHaveBeenCalled();
+      wrapper.findComponent({ name: "AgentAvailability" }).vm.$emit("availability", true);
+      await wrapper.vm.$nextTick();
+      expect(confirmation.props("confirmDisabled")).toBe(false);
+      wrapper.unmount();
+    }
+  );
+
   it("stops status polling when unmounted", () => {
     jest.useFakeTimers();
     const wrapper = mountDisplay();
@@ -99,7 +118,7 @@ describe("ClusterDisplay", () => {
     MagicCastleRepository.getStatus
       .mockResolvedValueOnce({ data: { status: ClusterStatusCode.PLAN_RUNNING } })
       .mockResolvedValue({ data: { status: ClusterStatusCode.PROVISIONING_SUCCESS } });
-    const saved = { expiration_date: "2027-01-01" };
+    const saved = { cloud: { id: 1 }, expiration_date: "2027-01-01" };
     MagicCastleRepository.getState.mockResolvedValue({ data: saved });
     const wrapper = mountDisplay();
     wrapper.vm.$disableUnloadConfirmation = jest.fn();

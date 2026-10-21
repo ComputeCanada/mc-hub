@@ -380,13 +380,18 @@
         </v-list>
 
         <!-- Apply and cancel -->
+        <agent-availability
+          v-if="!plannerMode && !benchmarkMode"
+          :project-id="localSpecs.cloud && localSpecs.cloud.id"
+          @availability="agentAvailable = $event"
+        />
         <div class="text-center">
           <p v-if="validForm === false" class="text-error">Some form fields are invalid.</p>
           <v-btn
             @click="apply"
             color="primary"
             class="ma-2"
-            :disabled="!applyButtonEnabled || submitDisabled || validating"
+            :disabled="!applyButtonEnabled || submitDisabled || validating || agentBlocked"
             size="large"
             >{{ submitLabel || (specs.undeployed ? "Save configuration" : "Apply") }}</v-btn
           >
@@ -394,7 +399,7 @@
             v-if="specs.undeployed"
             color="primary"
             class="ma-2"
-            :disabled="loading || validating || dirtyForm || validForm !== true || (isAWS && awsStatus !== 'ready')"
+            :disabled="loading || validating || dirtyForm || validForm !== true || (isAWS && awsStatus !== 'ready') || agentBlocked"
             size="large"
             @click="apply('rebuild')"
             >{{ status === "created" ? "Review build plan" : "Rebuild" }}</v-btn
@@ -432,6 +437,7 @@ import { VDefaultsProvider } from "vuetify/components/VDefaultsProvider";
 import HieradataEditor from "@/components/ui/HieradataEditor";
 import AvailableResourcesRepository from "@/repositories/AvailableResourcesRepository";
 import ProjectRepository from "@/repositories/ProjectRepository";
+import AgentAvailability from "./AgentAvailability";
 import UserRepository from "@/repositories/UserRepository";
 
 const MB_PER_GB = 1024;
@@ -444,6 +450,7 @@ export default {
   name: "ClusterEditor",
   emits: ["input", "apply", "rebuild", "cancel", "loading"],
   components: {
+    AgentAvailability,
     HieradataEditor,
     VDefaultsProvider,
     TypeSelect,
@@ -477,6 +484,7 @@ export default {
   },
   data: function () {
     return {
+      agentAvailable: false,
       DEFAULT_VOLUMES: ["home", "project", "scratch"],
       VOLUME_STUB: { size: 50 },
       TAGS: ["mgmt", "puppet", "nfs", "login", "proxy", "public", "node", "pool", "dtn"],
@@ -855,6 +863,9 @@ export default {
     usedResourcesLoaded() {
       return this.localSpecs !== null && this.resourceDetails !== null;
     },
+    agentBlocked() {
+      return !this.plannerMode && !this.benchmarkMode && !this.agentAvailable;
+    },
     applyButtonEnabled() {
       return (
         !this.loading &&
@@ -1166,14 +1177,14 @@ export default {
     },
     async apply(action) {
       const rebuild = action === "rebuild";
-      if (this.validating || this.submitDisabled || this.loading) return;
+      if (this.validating || this.submitDisabled || this.loading || this.agentBlocked) return;
       this.validating = true;
       try {
         const { valid } = await this.$refs.form.validate();
         const enabled = rebuild
           ? !this.loading && !this.dirtyForm && !this.resourceError && (!this.isAWS || this.awsStatus === "ready")
           : this.applyButtonEnabled;
-        if (valid && !this.awsDisposed && enabled && !this.submitDisabled) this.$emit(rebuild ? "rebuild" : "apply");
+        if (valid && !this.awsDisposed && enabled && !this.submitDisabled && !this.agentBlocked) this.$emit(rebuild ? "rebuild" : "apply");
       } finally {
         this.validating = false;
       }

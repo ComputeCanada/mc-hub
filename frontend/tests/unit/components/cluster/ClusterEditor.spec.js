@@ -4,6 +4,11 @@ import { cloneDeep } from "lodash";
 import moxios from "moxios";
 import Repository from "@/repositories/Repository";
 
+jest.mock("@/repositories/ProjectRepository", () => ({
+  ...jest.requireActual("@/repositories/ProjectRepository").default,
+  agentAvailability: jest.fn().mockResolvedValue({ data: { available: true } }),
+}));
+
 const DEFAULT_USER = Object.freeze({
   public_keys: [],
 });

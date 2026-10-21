@@ -10,6 +10,7 @@ from mchub.models.magic_castle.magic_castle import MagicCastle
 from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode as Status
 from mchub.exceptions.invalid_usage_exception import InvalidUsageException
 from mchub.services import capacity, capacity_worker as worker
+from mchub.services import cull_expired_cluster as cleanup
 from mchub.resources.capacity_api import CapacityAPI, serialize
 from tests.unit.test_usage import app, cluster, config_mock  # noqa: F401
 
@@ -129,16 +130,23 @@ def test_insufficient_start_quota_does_not_create(plan, mocker):
     create.assert_not_called()
 
 
-def test_cleanup_uses_lifetime_not_reused_hostname(plan, cluster, mocker):
+@pytest.fixture
+def cleanup_ready(mocker):
+    mocker.patch.object(cleanup.service_status, "read_status", return_value={"providers": []})
+    mocker.patch.object(cleanup.agent_health, "read_availability", return_value={"available": True, "message": ""})
+    return mocker.patch.object(cleanup, "get_terraform_cloud").return_value
+
+
+def test_cleanup_uses_lifetime_not_reused_hostname(plan, cluster, mocker, cleanup_ready):
     plan.cluster_usage_id = "a-different-cluster-lifetime"
     plan.status = "started"; plan.ends_at = time.time()-1; db.session.commit()
     destroy = mocker.patch.object(worker.lifecycle, "plan_teardown")
-    worker.end_plan(plan.id)
+    cleanup.end_capacity_plan(plan.id)
     assert plan.status == "ended"
     destroy.assert_not_called()
 
 
-def test_cleanup_applies_only_exact_destroy_run(plan, cluster, mocker):
+def test_cleanup_applies_only_exact_destroy_run(plan, cluster, mocker, cleanup_ready):
     plan.cluster_usage_id = cluster.usage_id; plan.status = "started"; plan.ends_at = time.time()-1
     cluster.undeployed = False; cluster.status = Status.PROVISIONING_SUCCESS
     db.session.commit()
@@ -153,7 +161,7 @@ def test_cleanup_applies_only_exact_destroy_run(plan, cluster, mocker):
     mocker.patch.object(worker.lifecycle, "get_terraform_cloud", return_value=tf)
     mocker.patch("mchub.services.terraform_cloud_api.get_terraform_cloud", return_value=tf)
     apply = mocker.patch.object(MagicCastle, "apply")
-    worker.end_plan(plan.id)
+    cleanup.end_capacity_plan(plan.id)
     apply.assert_called_once_with(initiated_by=None)
     tf.get_run_status.assert_called_with("destroy-plan")
     assert plan.status == "cleanup_pending"  # Await cloud confirmation.
@@ -214,13 +222,13 @@ def test_quota_outage_keeps_plans_visible(plan, mocker):
     assert "private cloud credentials" not in result["warning"]
 
 
-def test_cleanup_busy_cluster_retries_without_applying(plan, cluster, mocker):
+def test_cleanup_busy_cluster_retries_without_applying(plan, cluster, mocker, cleanup_ready):
     plan.status = "started"; plan.cluster_usage_id = cluster.usage_id; plan.ends_at = time.time()-1
     cluster.status = Status.BUILD_RUNNING; cluster.undeployed = False
     db.session.commit()
     mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud")
     apply = mocker.patch.object(worker.lifecycle, "apply_cluster")
-    worker.end_plan(plan.id)
+    cleanup.end_capacity_plan(plan.id)
     assert plan.status == "cleanup_pending"
     apply.assert_not_called()
 
@@ -251,6 +259,7 @@ def test_migration_round_trip():
 
 def test_manual_creation_links_once_and_keeps_end_cleanup(plan, app, mocker):
     from mchub.resources.magic_castle_api import MagicCastleAPI
+    mocker.patch("mchub.resources.magic_castle_api.get_terraform_cloud")
     plan.auto_create = False; db.session.commit()
     mocker.patch.object(MagicCastle, "validate_creation_version")
     mocker.patch.object(capacity, "resource_demand", return_value={"vcpus": 4})
@@ -442,3 +451,134 @@ def test_dashboard_forecast_starts_at_earliest_plan(plan, mocker, start_offset):
     segments = result["forecast"]["segments"]
     assert segments[0]["starts_at"] == capacity.iso(plan.starts_at)
     assert segments[-1]["ends_at"] == capacity.iso(later.ends_at)
+
+
+def test_capacity_worker_leaves_cleanup_for_cleanup_worker(plan, cluster, mocker):
+    plan.cluster_usage_id = cluster.usage_id
+    plan.status = "started"
+    plan.ends_at = time.time() - 1
+    db.session.commit()
+    teardown = mocker.patch.object(worker.lifecycle, "plan_teardown")
+    apply = mocker.patch.object(worker.lifecycle, "apply_cluster")
+    mocker.patch.object(worker, "check_upcoming_capacity")
+    worker.poll_once()
+    assert plan.status == "started"
+    teardown.assert_not_called()
+    apply.assert_not_called()
+
+
+@pytest.mark.parametrize("dependency", ["github", "terraform_cloud", "agent"])
+def test_shared_worker_defers_capacity_cleanup_and_retries(plan, cluster, mocker, cleanup_ready, dependency):
+    plan.cluster_usage_id = cluster.usage_id
+    plan.status = "started"
+    plan.ends_at = time.time() - 1
+    cluster.expiration_date = "2020-01-01"  # Only one attempt even if both deadlines are due.
+    cluster.undeployed = False
+    cluster.status = Status.PROVISIONING_SUCCESS
+    db.session.commit()
+    plan_id = plan.id
+    mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud")
+    if dependency == "agent":
+        cleanup.agent_health.read_availability.return_value = {"available": False, "message": "Agent down"}
+    else:
+        cleanup.service_status.read_status.return_value = {"providers": [{
+            "provider": dependency, "name": dependency, "reported_status": "disruption",
+        }]}
+    teardown = mocker.patch.object(worker.lifecycle, "plan_teardown", side_effect=lambda hostname, *_:
+                                  MagicCastle(worker.lifecycle.get_cluster(hostname)).complete_teardown())
+    cleanup.poll_once()
+    teardown.assert_not_called()
+    plan = db.session.get(CapacityPlan, plan_id)
+    assert plan.status == "cleanup_pending"
+    assert "deferred" in plan.message
+    cleanup.agent_health.read_availability.return_value = {"available": True, "message": ""}
+    cleanup.service_status.read_status.return_value = {"providers": []}
+    cleanup.poll_once()
+    assert teardown.call_count == 1
+    assert db.session.get(CapacityPlan, plan_id).status == "ended"
+
+
+def test_capacity_cleanup_retains_ready_destroy_plan_during_outage(plan, cluster, mocker, cleanup_ready):
+    from mchub.models.magic_castle.terraform_cloud_status import TFCloudStatusCode
+    plan.cluster_usage_id = cluster.usage_id
+    plan.status = "started"
+    plan.ends_at = time.time() - 1
+    cluster.expiration_date = None
+    cluster.undeployed = False
+    cluster.status = Status.PROVISIONING_SUCCESS
+    db.session.commit()
+    mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud")
+    def teardown(*_):
+        cluster.status = Status.CREATED
+        cluster.tfcloud_run.run_id = "capacity-destroy"
+        cluster.tfcloud_run.plan = {"resource_changes": []}
+        db.session.commit()
+        cleanup.agent_health.read_availability.return_value = {"available": False, "message": "Agent down"}
+    planned = mocker.patch.object(worker.lifecycle, "plan_teardown", side_effect=teardown)
+    cleanup_ready.get_run_status.return_value = (TFCloudStatusCode.PLANNED, True)
+    mocker.patch.object(worker.lifecycle, "get_terraform_cloud", return_value=cleanup_ready)
+    mocker.patch("mchub.services.terraform_cloud_api.get_terraform_cloud", return_value=cleanup_ready)
+    apply = mocker.patch.object(MagicCastle, "apply")
+    cleanup.end_capacity_plan(plan.id)
+    assert plan.status == "cleanup_pending"
+    assert cluster.tfcloud_run.run_id == "capacity-destroy"
+    apply.assert_not_called()
+    cleanup.agent_health.read_availability.return_value = {"available": True, "message": ""}
+    cleanup.end_capacity_plan(plan.id)
+    assert planned.call_count == 1
+    apply.assert_called_once_with(initiated_by=None)
+    assert plan.status == "cleanup_pending"
+
+
+@pytest.mark.parametrize("owner", ["capacity", "expiration"])
+def test_cleanup_worker_recovers_interrupted_capacity_cleanup(plan, cluster, owner):
+    plan.cluster_usage_id = cluster.usage_id
+    plan.status = "ending"
+    cluster.status = Status.BACKGROUND_TASK_RUNNING
+    cluster.creation_step = owner
+    cluster.tfcloud_run.run_id = "destroy-run"
+    db.session.commit()
+    cleanup.recover_interrupted_expiration()
+    assert plan.status == "cleanup_pending"
+    assert cluster.status == Status.PLAN_RUNNING
+    assert cluster.creation_step is None
+
+
+def test_planner_restart_does_not_release_cleanup_workers_claim(plan, cluster):
+    plan.cluster_usage_id = cluster.usage_id
+    plan.status = "ending"
+    cluster.status = Status.BACKGROUND_TASK_RUNNING
+    cluster.creation_step = "expiration"
+    db.session.commit()
+    worker.recover_interrupted()
+    assert plan.status == "ending"
+    assert cluster.status == Status.BACKGROUND_TASK_RUNNING
+    assert cluster.creation_step == "expiration"
+
+
+def test_extending_capacity_period_during_cleanup_health_check_prevents_apply(plan, cluster, mocker, cleanup_ready):
+    plan.cluster_usage_id = cluster.usage_id
+    plan.status = "started"
+    plan.ends_at = time.time() - 1
+    cluster.status = Status.PROVISIONING_SUCCESS
+    cluster.undeployed = False
+    db.session.commit()
+    mocker.patch.object(MagicCastle, "_update_status_from_tf_cloud")
+    def teardown(*_):
+        cluster.status = Status.CREATED
+        cluster.tfcloud_run.run_id = "destroy-run"
+        cluster.tfcloud_run.plan = {"resource_changes": []}
+        db.session.commit()
+    mocker.patch.object(worker.lifecycle, "plan_teardown", side_effect=teardown)
+    mocker.patch("mchub.services.terraform_cloud_api.get_terraform_cloud", return_value=cleanup_ready)
+    cleanup_ready.get_run_status.return_value = (None, True)
+    def health_check(_):
+        if cluster.status == Status.CREATED:
+            plan.ends_at = time.time() + 3600
+            db.session.commit()
+    cleanup_ready.ensure_agent_available.side_effect = health_check
+    apply = mocker.patch.object(worker.lifecycle, "apply_cluster")
+    cleanup.end_capacity_plan(plan.id)
+    apply.assert_not_called()
+    assert plan.status == "cleanup_pending"
+    assert "updated period" in plan.message

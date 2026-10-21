@@ -4,6 +4,9 @@ from mchub.services.terraform_cloud_api import TerraformCloudVariable
 
 
 class TerraformCloudMock:
+    def ensure_agent_available(self, project):
+        pass
+
     def discard_workspace_plans(self, workspace_id):
         pass
 

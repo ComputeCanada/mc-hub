@@ -320,6 +320,10 @@ changes and notification events are saved in one database transaction; deliverie
 are retried independently for each destination. Run `flask db upgrade` before
 starting the updated services (Compose's initialize service does this).
 
+The same operator destinations receive agent-pool outage, failed-check, and
+recovery events from the [background agent health monitor](terraform-agent-availability.md).
+These checks run even with no users connected to the hub.
+
 Add `notification_destinations` to `configuration.json` and restart the services:
 
 ```json

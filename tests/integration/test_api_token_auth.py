@@ -9,7 +9,7 @@ from mchub.resources.magic_castle_api import MagicCastleAPI
 
 from ..data import EXISTING_HOSTNAME, NON_EXISTING_HOSTNAME
 from ..mocks.configuration.config_mock import config_auth_saml_mock as config_mock
-from ..test_helpers import app, client, generate_test_clusters, mock_clusters_path
+from ..test_helpers import app, client, generate_test_clusters, mock_clusters_path, mock_terraform_cloud_api
 
 
 @pytest.fixture

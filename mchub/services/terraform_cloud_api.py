@@ -231,6 +231,48 @@ class TerraformCloud:
                 additional_details=f"{agent_pool_name=}, error: {response.text}",
             )
 
+    def ensure_agent_available(self, project):
+        """Check the operator-configured pool, without reading remote settings."""
+        from ..exceptions.invalid_usage_exception import InvalidUsageException
+        pool_name = configured_agent_pool(project)
+        if not pool_name:
+            return
+        result = self.check_agent_pool(pool_name)
+        if not result["available"]:
+            raise InvalidUsageException(result["message"] + " No operation was started.", status_code=503)
+
+    def check_agent_pool(self, pool_name):
+        """Read pool health; distinguish an outage from an unverifiable check."""
+        def read(path, **kwargs):
+            response = self._request("GET", f"{self.BASE_URL}/{path}", **kwargs)
+            if response.status_code != 200:
+                raise ValueError("Could not read Terraform agents")
+            return response.json()
+
+        try:
+            pool_id = self.get_agent_pool_id(pool_name)
+            page = 1
+            while True:
+                payload = read(
+                    f"agent-pools/{pool_id}/agents",
+                    params={"page[number]": page, "page[size]": 100},
+                )
+                if any(agent["attributes"]["status"] in {"idle", "busy"}
+                       for agent in payload["data"]):
+                    return {"available": True, "status": "healthy", "message": ""}
+                if not (payload.get("links") or {}).get("next"):
+                    break
+                page += 1
+        except (requests.RequestException, TerraformCloudException, KeyError, TypeError, ValueError):
+            return {
+                "available": False, "status": "unknown",
+                "message": "Could not verify Terraform Cloud agent availability. Try again or contact your administrator.",
+            }
+        return {
+            "available": False, "status": "unavailable",
+            "message": "No healthy Terraform Cloud agent is available. Contact your administrator or retry when the agent is back online.",
+        }
+
     def create_project(self, project_name, agent_pool_name: Optional[str] = None):
         url = f"{self.BASE_URL}/organizations/{self.organisation_name}/projects"
 
@@ -676,6 +718,16 @@ class TerraformCloud:
                     "Invalid Error for force_execute",
                     additional_details=f"{run_id=}, error: {res.text}",
                 )
+
+
+def configured_agent_pool(project):
+    from ..models.cloud.project import Provider
+
+    if project.provider != Provider.OPENSTACK:
+        return None
+    return next((cloud.get("agent_pool_name")
+                 for cloud in get_config().get("openstack_clouds", [])
+                 if cloud["auth_url"] == (project.env or {}).get("OS_AUTH_URL")), None)
 
 
 _terraform_cloud_instance = None

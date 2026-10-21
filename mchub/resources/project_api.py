@@ -5,6 +5,7 @@ from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from .api_view import ApiView
+from ..services.agent_health import read_availability
 from .project_notification_api import can_manage_notifications, retire_deliveries
 from ..configuration import get_config
 from ..database import db
@@ -46,11 +47,13 @@ def aws_settings(project):
 
 
 class ProjectAPI(ApiView):
-    def get(self, user: User, id: int = None):
+    def get(self, user: User, id: int = None, agent_availability=False):
         if id is not None:
             project = db.session.get(Project, id)
             if project is None or project not in user.projects:
                 raise InvalidUsageException("Invalid project id")
+            if agent_availability:
+                return read_availability(project)
             is_admin = user.is_project_admin(project)
             cloud_settings = {}
             if project.provider == Provider.OPENSTACK:

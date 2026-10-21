@@ -46,6 +46,71 @@ def test_get_default_template(client):
 import pytest
 
 
+@pytest.mark.parametrize("available", [True, False])
+def test_project_agent_availability(client, mocker, available):
+    from mchub.database import db
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    result = {"available": available, "message": "" if available else "Agent unavailable"}
+    check = mocker.patch("mchub.resources.project_api.read_availability", return_value=result)
+    response = client.get(f"/api/projects/{orm.project.id}/agent-availability")
+    assert response.status_code == 200
+    assert response.get_json() == result
+    check.assert_called_once_with(orm.project)
+
+
+def test_agent_availability_requires_project_membership(client, mocker):
+    from types import SimpleNamespace
+    from mchub.resources.project_api import ProjectAPI
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    check = mocker.patch("mchub.resources.project_api.read_availability")
+    with pytest.raises(InvalidUsageException, match="Invalid project id"):
+        ProjectAPI().get(SimpleNamespace(projects=[]), id=1, agent_availability=True)
+    check.assert_not_called()
+
+
+@pytest.mark.parametrize("operation", ["create", "modify", "apply", "teardown", "rebuild", "retry-plan"])
+def test_agent_outage_rejects_operation_before_mutation(client, mocker, operation):
+    from mchub.database import db
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    from mchub.models.magic_castle.cluster_status_code import ClusterStatusCode
+    from mchub.models.magic_castle.magic_castle import MagicCastleORM
+    from mchub.resources.magic_castle_api import MagicCastleAPI
+    from mchub.services.terraform_cloud_api import get_terraform_cloud
+
+    orm = db.session.scalar(db.select(MagicCastleORM).filter_by(hostname=EXISTING_HOSTNAME))
+    orm.status = ClusterStatusCode.CREATED
+    orm.tfcloud_run.run_id = "READY_RUN"
+    orm.tfcloud_run.plan = {"READY": "PLAN"}
+    db.session.commit()
+    count = db.session.query(MagicCastleORM).count()
+    background = mocker.patch.object(MagicCastleAPI, "_run_in_background")
+    check = mocker.patch.object(
+        get_terraform_cloud(), "ensure_agent_available",
+        side_effect=InvalidUsageException("No healthy Terraform Cloud agent is available.", status_code=503),
+    )
+    url = f"/api/magic-castles/{EXISTING_HOSTNAME}"
+    if operation == "create":
+        mocker.patch("mchub.resources.magic_castle_api.MagicCastle.validate_creation_version")
+        response = client.post("/api/magic-castles", json={
+            **NON_EXISTING_CLUSTER_CONFIGURATION, "cloud": {"id": orm.project.id},
+        })
+    elif operation == "modify":
+        response = client.put(url, json={"description": "Updated description"})
+    else:
+        response = client.post(f"{url}/{operation}")
+    assert response.status_code == 503
+    assert "No healthy Terraform Cloud agent" in response.get_json()["message"]
+    background.assert_not_called()
+    assert orm.status == ClusterStatusCode.CREATED
+    assert orm.tfcloud_run.run_id == "READY_RUN"
+    assert db.session.query(MagicCastleORM).count() == count
+    if operation != "create":
+        check.assert_called_once_with(orm.project)
+    else:
+        check.assert_called_once()
+
+
 # GET /api/magic_castle
 @freeze_time("2022-01-01")
 @pytest.mark.usefixtures("mock_status_logic")

@@ -97,6 +97,7 @@ class MagicCastleAPI(ApiView):
                     db.session.commit()
                     raise
                 return {}, 204
+            get_terraform_cloud().ensure_agent_available(orm.project)
             if action == "rebuild":
                 cluster = MagicCastle(orm)
                 cluster.validate_rebuild()
@@ -125,6 +126,7 @@ class MagicCastleAPI(ApiView):
 
             magic_castle = MagicCastle(orm)
             cluster_lifecycle.validate_apply(orm)
+            get_terraform_cloud().ensure_agent_available(orm.project)
             if orm.project.provider == "aws":
                 _, is_destroy = get_terraform_cloud().get_run_status(magic_castle.tfcloud_run.run_id)
                 if not is_destroy:
@@ -148,6 +150,7 @@ class MagicCastleAPI(ApiView):
                 raise InvalidUsageException("Invalid project id")
             MagicCastle.validate_creation_version(json_data)
             ensure_aws_feasible(project, json_data)
+            get_terraform_cloud().ensure_agent_available(project)
 
             user_id = user.orm.id
             if json_data.get("capacity_plan_id") is not None:
@@ -208,6 +211,7 @@ class MagicCastleAPI(ApiView):
         if json_data.get("cloud", {}).get("id", orm.project.id) != orm.project.id:
             raise InvalidUsageException("An existing cluster cannot change cloud project.")
         MagicCastle(orm).validate_modification_version(json_data)
+        get_terraform_cloud().ensure_agent_available(orm.project)
         ensure_aws_feasible(orm.project, json_data,
                             MagicCastle(orm).aws_resource_ids if orm.project.provider == "aws" else None)
         app = current_app._get_current_object()

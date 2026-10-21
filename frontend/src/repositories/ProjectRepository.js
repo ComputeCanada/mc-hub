@@ -3,6 +3,9 @@ import Repository from "./Repository";
 const resource = "/projects";
 
 export default {
+  agentAvailability(id) {
+    return Repository.get(`${resource}/${id}/agent-availability`, { timeout: 30000 });
+  },
   openstackClouds() {
     return Repository.get(`${resource}/openstack/clouds`);
   },
