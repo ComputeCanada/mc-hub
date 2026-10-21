@@ -8,6 +8,29 @@ Clusters whose initial plan has never been applied use the same undeployed lifec
 
 Deployed clusters offer **Tear down**. Review and apply the Terraform destroy plan to remove the deployed resources and their data. The cluster remains in the list as **Not deployed**, with its saved configuration, ownership, active GitHub repository, and Terraform workspace. Expiration performs this same teardown automatically. Busy clusters are retried on a later expiration sweep; undeployed clusters are skipped.
 
+Expiration sweeps wait five minutes between passes. Before refreshing remote
+cluster status or starting a destroy plan, the expiration worker checks the
+background agent snapshot and the enabled `github` and `terraform_cloud` service
+monitors. Reported disruptions, missing/stale snapshots, and failed status checks
+defer cleanup without claiming the cluster or marking it failed. Projects without
+an agent pool skip agent checks. Explicitly disabled provider monitors do not gate
+expiration. The worker also checks the agent live before proceeding.
+
+The worker rechecks health and expiration before applying. If an outage begins
+after planning, it retains the ready destroy plan and applies that same run on a
+later healthy sweep. Queued/running destroy operations remain busy; they are not
+replaced. Extending or clearing expiration prevents automatic apply. Deferral
+reasons are recorded in the expiration worker logs, and expired clusters remain
+eligible for retry after recovery. Timing can exceed five minutes when earlier
+clusters take time to process. An outage arising after a check can still cause a
+Terraform operation to fail; normal later sweeps retry eligible expired clusters.
+
+The same worker handles end-of-period cleanup for capacity plans. It reads due
+plans directly from the database, identifies their cluster by immutable usage ID,
+and uses this same health-checked teardown path. The planner worker only starts
+scheduled clusters. Capacity cleanup retains the exact end timestamp and updates
+the plan's pending, failed, or ended state for the planner UI.
+
 An undeployed cluster offers **Rebuild** and **Destroy cluster**. Saving configuration does not start a run. Rebuild writes the saved variables and creates a fresh plan using the existing repository and workspace, retaining the pinned Magic Castle version. Set a future expiration date or clear the date before rebuilding. Review the plan before applying it. Deleted data is not restored; connection details can change. The hostname and cloud project stay fixed so the existing integrations remain valid.
 
 Destroy removes only an empty cluster definition. The backend checks all pages of workspace runs and verifies that no managed resource instances remain, then discards eligible pending plans and waits for confirmation. It locks the workspace and rechecks runs and resources before deletion. Active planning or applying runs block deletion; they are not canceled. Failed checks retain the cluster and release any lock acquired by this operation. Successful destruction archives the repository, tags the workspace `deleted`, leaves that workspace locked, and removes the cluster record. Neither the repository nor the workspace is permanently deleted. Clusters that failed before workspace creation can also be removed after teardown.

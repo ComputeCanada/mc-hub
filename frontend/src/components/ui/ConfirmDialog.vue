@@ -11,7 +11,7 @@
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" :variant="encourageConfirm ? 'elevated' : 'text'" @click="confirm">Yes</v-btn>
+        <v-btn color="primary" :disabled="confirmDisabled" :variant="encourageConfirm ? 'elevated' : 'text'" @click="confirm">Yes</v-btn>
         <v-btn color="primary" :variant="encourageCancel ? 'elevated' : 'text'" @click="cancel">No</v-btn>
       </v-card-actions>
     </v-card>
@@ -23,6 +23,7 @@ export default {
   name: "ConfirmDialog",
   emits: ["update:modelValue", "confirm", "cancel"],
   props: {
+    confirmDisabled: Boolean,
     modelValue: {
       type: Boolean,
       required: true,
@@ -50,6 +51,7 @@ export default {
   },
   methods: {
     confirm() {
+      if (this.confirmDisabled) return;
       this.$emit("confirm");
       this.$emit("update:modelValue", false);
     },

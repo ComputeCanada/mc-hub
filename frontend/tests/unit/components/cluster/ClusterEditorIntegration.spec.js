@@ -12,7 +12,7 @@ jest.mock("@/repositories/AvailableResourcesRepository", () => ({
   checkCloud: jest.fn(),
 }));
 jest.mock("@/repositories/UserRepository", () => ({ getCurrent: jest.fn() }));
-jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn() }));
+jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn(), agentAvailability: jest.fn() }));
 const resources = {
   provider: "openstack",
   possible_resources: { domain: ["example.org"], mc_version: ["14"], image: ["image"], types: ["p1"], tag_types: {} },
@@ -38,6 +38,7 @@ const specs = () => ({
 let wrapper, warn, mocks;
 beforeEach(() => {
   jest.clearAllMocks();
+  Projects.agentAvailability.mockResolvedValue({ data: { available: true } });
   Resources.getHost.mockResolvedValue({ data: resources });
   Resources.getCloud.mockResolvedValue({ data: resources });
   Users.getCurrent.mockResolvedValue({ data: { public_keys: [], default_project_id: 1 } });
@@ -360,4 +361,17 @@ test("removing an invalid settings row clears its blocking error", async () => {
   wrapper.vm.rmInstanceRow("node");
   await flushPromises();
   expect(wrapper.vm.instanceSettingsErrors).toEqual({});
+});
+
+test("warns and disables Apply before submission when the agent is unavailable", async () => {
+  Projects.agentAvailability.mockResolvedValue({ data: { available: false, message: "Agent offline" } });
+  await render({ existingCluster: false, stateful: false, preserveSpecs: true, status: "created" });
+  const apply = wrapper.findAllComponents({ name: "VBtn" }).find((button) => button.text() === "Apply");
+  expect(wrapper.text()).toContain("Agent offline");
+  expect(apply.props("disabled")).toBe(true);
+  await wrapper.vm.apply();
+  expect(wrapper.emitted("apply")).toBeUndefined();
+  wrapper.findComponent({ name: "AgentAvailability" }).vm.$emit("availability", true);
+  await wrapper.vm.$nextTick();
+  expect(apply.props("disabled")).toBe(false);
 });

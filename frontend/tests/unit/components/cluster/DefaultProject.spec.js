@@ -7,7 +7,7 @@ import UserRepository from "@/repositories/UserRepository";
 import ProjectRepository from "@/repositories/ProjectRepository";
 
 jest.mock("@/repositories/UserRepository", () => ({ getCurrent: jest.fn(), setDefaultProject: jest.fn() }));
-jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn() }));
+jest.mock("@/repositories/ProjectRepository", () => ({ getAll: jest.fn(), agentAvailability: jest.fn() }));
 jest.mock("@/repositories/AvailableResourcesRepository", () => ({
   getCloud: jest.fn(),
   getHost: jest.fn(),
@@ -57,6 +57,7 @@ function projectMenu() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  ProjectRepository.agentAvailability.mockResolvedValue({ data: { available: true } });
   UserRepository.getCurrent.mockResolvedValue({ data: { default_project_id: 2, public_keys: [] } });
   ProjectRepository.getAll.mockResolvedValue({ data: projects });
   const resources = {

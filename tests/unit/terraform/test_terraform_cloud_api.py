@@ -48,6 +48,99 @@ def mock_response(status_code, json_data=None, text=""):
 
 
 @pytest.fixture
+def agent_project(mock_get_config):
+    from types import SimpleNamespace
+    mock_get_config.return_value["openstack_clouds"] = [{
+        "auth_url": "https://cloud.example.org/v3", "agent_pool_name": "test-pool",
+    }]
+    return SimpleNamespace(provider="openstack", env={"OS_AUTH_URL": "https://cloud.example.org/v3"})
+
+
+def agent_pool_response():
+    return mock_response(200, {"data": [{"id": "apool-test"}]})
+
+
+@pytest.mark.parametrize("response, status", [
+    (mock_response(200, {"data": []}), "unavailable"),
+    (mock_response(403), "unknown"),
+])
+def test_pool_check_distinguishes_outage_from_failed_check(tf_cloud_client, mock_request, response, status):
+    mock_request.side_effect = [agent_pool_response(), response]
+    result = tf_cloud_client.check_agent_pool("test-pool")
+    assert result["status"] == status
+    assert result["available"] is False
+
+
+@pytest.mark.parametrize("status", ["idle", "busy"])
+def test_agent_check_accepts_healthy_pool(tf_cloud_client, mock_request, agent_project, status):
+    mock_request.side_effect = [
+        agent_pool_response(),
+        mock_response(200, {"data": [{"attributes": {"status": status}}]}),
+    ]
+    tf_cloud_client.ensure_agent_available(agent_project)
+    assert mock_request.call_args_list[0].args == (
+        "GET", f"{tf_cloud_client.BASE_URL}/organizations/test-org/agent-pools",
+    )
+    assert mock_request.call_args_list[0].kwargs == {"params": {"filter[name]": "test-pool"}}
+    assert mock_request.call_args.args[1].endswith("/agent-pools/apool-test/agents")
+
+
+@pytest.mark.parametrize("statuses", [[], ["unknown"], ["errored"], ["exited"], ["unknown", "errored", "exited"]])
+def test_agent_check_rejects_unhealthy_pool(tf_cloud_client, mock_request, agent_project, statuses):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    mock_request.side_effect = [
+        agent_pool_response(),
+        mock_response(200, {"data": [{"attributes": {"status": s}} for s in statuses]}),
+    ]
+    with pytest.raises(InvalidUsageException, match="No healthy Terraform Cloud agent") as error:
+        tf_cloud_client.ensure_agent_available(agent_project)
+    assert error.value.status_code == 503
+
+
+def test_agent_check_searches_later_pages(tf_cloud_client, mock_request, agent_project):
+    mock_request.side_effect = [
+        agent_pool_response(),
+        mock_response(200, {"data": [{"attributes": {"status": "exited"}}], "links": {"next": "next-page"}}),
+        mock_response(200, {"data": [{"attributes": {"status": "busy"}}], "links": {"next": None}}),
+    ]
+    tf_cloud_client.ensure_agent_available(agent_project)
+    assert mock_request.call_args.kwargs["params"]["page[number]"] == 2
+
+
+@pytest.mark.parametrize("case", ["aws", "no_pool", "null_pool", "unmatched_cloud", "no_clouds"])
+def test_agent_check_without_configured_pool_makes_no_requests(
+    tf_cloud_client, mock_request, mock_get_config, agent_project, case,
+):
+    cloud = mock_get_config.return_value["openstack_clouds"][0]
+    if case == "aws":
+        agent_project.provider = "aws"
+    elif case == "no_pool":
+        del cloud["agent_pool_name"]
+    elif case == "null_pool":
+        cloud["agent_pool_name"] = None
+    elif case == "unmatched_cloud":
+        agent_project.env["OS_AUTH_URL"] = "https://other.example.org/v3"
+    else:
+        mock_get_config.return_value["openstack_clouds"] = []
+    mock_request.side_effect = requests.ConnectionError("Terraform Cloud is unavailable")
+    tf_cloud_client.ensure_agent_available(agent_project)
+    mock_request.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", [
+    requests.Timeout(), mock_response(403), mock_response(404), mock_response(500),
+    mock_response(200, {}), mock_response(200, {"data": None}),
+])
+@pytest.mark.parametrize("stage", ["pool", "agents"])
+def test_agent_check_fails_closed(tf_cloud_client, mock_request, agent_project, failure, stage):
+    from mchub.exceptions.invalid_usage_exception import InvalidUsageException
+    mock_request.side_effect = ([agent_pool_response()] if stage == "agents" else []) + [failure]
+    with pytest.raises(InvalidUsageException, match="Could not verify") as error:
+        tf_cloud_client.ensure_agent_available(agent_project)
+    assert error.value.status_code == 503
+
+
+@pytest.fixture
 def completed_apply():
     return {
         "data": {

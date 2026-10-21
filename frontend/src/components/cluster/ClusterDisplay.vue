@@ -88,9 +88,15 @@
       encourage-confirm
       :max-width="650"
       title="Build confirmation"
+      :confirm-disabled="!agentAvailable"
       v-model="clusterModificationDialog"
       @confirm="applyCluster"
     >
+      <agent-availability
+        v-if="clusterModificationDialog"
+        :project-id="magicCastle && magicCastle.cloud && magicCastle.cloud.id"
+        @availability="agentAvailable = $event"
+      />
       Are you sure you want to apply the following actions?
       <cluster-resources
         :resources-changes="resourcesChanges"
@@ -114,11 +120,17 @@
       encourage-cancel
       :max-width="650"
       title="Teardown confirmation"
+      :confirm-disabled="!agentAvailable"
       persistent
       v-model="clusterDestructionDialog"
       @confirm="applyCluster"
       @cancel="discardTeardown"
     >
+      <agent-availability
+        v-if="clusterDestructionDialog"
+        :project-id="magicCastle && magicCastle.cloud && magicCastle.cloud.id"
+        @availability="agentAvailable = $event"
+      />
       Delete this cluster’s deployed resources and their data? Keep its configuration, GitHub repository, and Terraform
       workspace so you can rebuild it later. Rebuilding does not restore deleted data.
       <cluster-resources
@@ -142,6 +154,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ClusterResources from "@/components/cluster/ClusterResources";
 import ClusterEditor from "@/components/cluster/ClusterEditor";
 import ClusterFailure from "@/components/cluster/ClusterFailure";
+import AgentAvailability from "@/components/cluster/AgentAvailability";
 import isEqual from "lodash/isEqual";
 
 const POLL_STATUS_INTERVAL = 1000;
@@ -151,6 +164,7 @@ const MAX_PLAN_WAIT_MS = 5 * 60 * 1000;
 export default {
   name: "ClusterDisplay",
   components: {
+    AgentAvailability,
     StatusChip,
     ClusterEditor,
     ClusterFailure,
@@ -171,6 +185,7 @@ export default {
   },
   data: function () {
     return {
+      agentAvailable: false,
       progress: 0,
       disposed: false,
       sleepTimers: new Map(),
@@ -504,7 +519,7 @@ export default {
       }
     },
     async applyCluster() {
-      if (this.disposed) return;
+      if (this.disposed || !this.agentAvailable) return;
       this.applyRequested = true;
       try {
         await MagicCastleRepository.apply(this.hostname);
@@ -588,14 +603,17 @@ export default {
         this.clusterPlanRunningDialog = false;
 
         // Display plan
+        if (!this.magicCastle?.cloud?.id) {
+          await this.loadCluster();
+          if (this.disposed) return;
+        }
+        this.agentAvailable = false;
         if (message) {
           this.showError(message);
         } else if (options.destroy === true) {
           this.clusterDestructionDialog = true;
-        } else if (this.resourcesChanges.length !== 0 || options.retry) {
-          this.clusterModificationDialog = true;
         } else {
-          this.applyCluster();
+          this.clusterModificationDialog = true;
         }
       } catch (e) {
         if (this.disposed) return;

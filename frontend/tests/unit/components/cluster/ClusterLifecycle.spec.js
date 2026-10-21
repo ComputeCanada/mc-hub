@@ -3,6 +3,10 @@ import { createAppVuetify } from "@/plugins/vuetify";
 import ClusterDisplay from "@/components/cluster/ClusterDisplay";
 import Repository from "@/repositories/MagicCastleRepository";
 
+jest.mock("@/repositories/ProjectRepository", () => ({
+  agentAvailability: jest.fn().mockResolvedValue({ data: { available: true } }),
+}));
+
 jest.mock("@/repositories/MagicCastleRepository", () => ({
   apply: jest.fn(),
   discardTeardown: jest.fn(),
@@ -34,10 +38,11 @@ test.each(["Yes", "No"])("teardown %s invokes only its confirmed action with rea
       attachTo: host,
       props: { hostname: "test.example.org" },
       data: () => ({
+        magicCastle: { cloud: { id: 1 } },
         clusterDestructionDialog: true,
         resourcesChanges: [{ address: "node", type: "vm", change: { actions: ["delete"] } }],
       }),
-      global: { plugins: [createAppVuetify()], stubs: { ClusterEditor: true }, mocks: { $router: { push } } },
+      global: { plugins: [createAppVuetify()], stubs: { ClusterEditor: true }, mocks: { $router: { push }, $route: { query: {} } } },
     }
   );
   await flushPromises();

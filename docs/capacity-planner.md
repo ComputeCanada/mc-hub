@@ -23,7 +23,17 @@ not link a cluster to a capacity plan.
 down.** MC-Hub keeps the undeployed cluster configuration, repository, and Terraform
 workspace, following its existing teardown lifecycle. Teardown waits for busy
 operations and retries failures. Start/end times are scheduling targets, not strict
-guarantees: the worker checks every 30 seconds and cloud operations take time.
+guarantees: the planner checks starts every 30 seconds, while the shared cleanup
+worker waits five minutes between sweeps. Cloud operations can add further delay.
+
+End-of-period cleanup runs in `cull_expired_cluster`, alongside ordinary expiration,
+using the same outage checks and retries. The stored plan deadline and linked
+cluster ID form the durable cleanup request; no browser or planner-worker handoff
+is needed. Agent, GitHub, or Terraform Cloud outages (including unverifiable health)
+leave the plan in `cleanup_pending` with a visible reason. Ready destroy plans are
+retained and resumed after recovery. The plan is marked `ended` only after the
+linked cluster is gone or its resources are confirmed removed. Exact period end
+timestamps are preserved; they are not converted to day-based cluster expirations.
 
 ## Forecast assumptions
 
@@ -83,9 +93,15 @@ These checks and notifications do not block saving plans or change their creatio
 
 ## Operations
 
-Apply database migrations through `0023` using the deployment's normal `flask db upgrade`
+Apply database migrations through `0025` using the deployment's normal `flask db upgrade`
 step and restart the web service and background-worker supervisor. The supervisor
 includes `mchub.services.capacity_worker`; keep one supervisor per database volume.
+The same supervisor runs `mchub.services.cull_expired_cluster`, which owns all
+capacity cleanup. Restart both workers together when deploying this change so an
+older planner worker cannot also perform teardown. No additional database migration
+is needed for this handoff beyond the agent-monitor migration `0025`. Interrupted
+cleanup claims are recovered by the cleanup worker; restarting the planner does
+not release that worker's active claims.
 Checks use existing project credentials. External alerts require a notification destination configured for the project.
 
 Automatic start claims are durable and are not retried blindly after a failure or

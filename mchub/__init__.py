@@ -131,6 +131,12 @@ def create_app(db_path=None):
     app.add_url_rule("/api/users/me", view_func=user_view, methods=["GET", "PATCH"])
 
     project_view = ProjectAPI.as_view("projects")
+    app.add_url_rule(
+        "/api/projects/<int:id>/agent-availability",
+        view_func=project_view,
+        defaults={"agent_availability": True},
+        methods=["GET"],
+    )
     app.add_url_rule("/api/projects/openstack/clouds", view_func=OpenStackCloudsAPI.as_view("openstack_clouds"), methods=["GET"])
     app.add_url_rule("/api/projects/openstack/subnets", view_func=OpenStackSubnetsAPI.as_view("openstack_subnets"), methods=["POST"])
     app.add_url_rule("/api/projects/aws/regions", view_func=AWSRegionsAPI.as_view("aws_regions"), methods=["POST"])
