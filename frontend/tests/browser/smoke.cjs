@@ -166,6 +166,8 @@ async function main() {
                     last_poll_at: null,
                 };
             else if (endpoint === "/projects/openstack/clouds") data = { clouds: [] };
+            else if (method === "GET" && /^\/projects\/\d+\/agent-availability$/.test(endpoint))
+                data = { available: true, message: "" };
             else {
                 errors.push(`Unexpected API request: ${method} ${endpoint}`);
                 return route.fulfill({ status: 500, json: {} });
